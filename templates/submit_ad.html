@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Fè Piblisite W</h2>
+    
+    <form method="POST" enctype="multipart/form-data" class="ad-form">
+        <div class="form-group">
+            <label for="whatsapp">Nimewo WhatsApp ou *</label>
+            <input type="tel" id="whatsapp" name="whatsapp" required
+                   placeholder="Egzamp: +50912345678" oninput="formatWhatsAppNumber(this)">
+        </div>
+
+        <div class="form-group">
+            <label>3 Imaj Piblisite w *</label>
+            <div class="image-upload-grid">
+                <div class="upload-box">
+                    <input type="file" name="image_1" accept="image/*" required>
+                    <span>Imaj 1</span>
+                </div>
+                <div class="upload-box">
+                    <input type="file" name="image_2" accept="image/*" required>
+                    <span>Imaj 2</span>
+                </div>
+                <div class="upload-box">
+                    <input type="file" name="image_3" accept="image/*" required>
+                    <span>Imaj 3</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Deskripsyon Kout *</label>
+            <textarea id="description" name="description" required 
+                      maxlength="300" placeholder="Ekri yon deskripsyon kout sou sa w ap vann oswa ofri..."></textarea>
+            <small>Maksimòm 300 karaktè</small>
+        </div>
+
+        <button type="submit" class="btn btn-gold">Soumèt Piblisite</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Telechaje Prèv Pèman w</h2>
+    
+    <div class="payment-instruction">
+        <div class="alert alert-info">
+            <h3>Telechaje PRÈV pÈman pa Moncash oubyen Natcash</h3>
+            <p>Pou piblisite w la afiche, ou dwe telechaje yon screenshot prèv pÈman w.</p>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="payment-form">
+        <div class="form-group">
+            <label for="payment_proof">Screenshot Prèv Pèman *</label>
+            <input type="file" id="payment_proof" name="payment_proof" accept="image/*,.pdf" required>
+            <small>Format pèmèt: JPG, PNG, GIF, PDF</small>
+        </div>
+
+        <button type="submit" class="btn btn-gold">Telechaje Prèv Pèman</button>
+    </form>
+
+    <div class="whatsapp-help">
+        <p>Gen yon pwoblèm? Kontakte nou sou WhatsApp:</p>
+        <a href="https://wa.me/+50942882076?text=Ey%20glory2YahPub" class="btn btn-whatsapp">
+            📱 Chat ak Administratè
+        </a>
+    </div>
+</div>
+{% endblock %}
