@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glory2yahPub - Piblisite Klasifye</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 class="logo">Glory2yahPub</h1>
+            <nav>
+                <a href="{{ url_for('index') }}">Akèy</a>
+                <a href="{{ url_for('submit_ad') }}">Fè Piblisite W</a>
+                <a href="{{ url_for('admin') }}">Administratè</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Glory2yahPub. Tout dwa rezève.</p>
+            <p>Kontakte administratè: <a href="https://wa.me/50942882076">+50942882076</a></p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

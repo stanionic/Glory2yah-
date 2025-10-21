@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% if batch.open_graph_data %}
+{% set og = batch.open_graph_data | fromjson %}
+<meta property="og:title" content="{{ og.title }}">
+<meta property="og:description" content="{{ og.description }}">
+{% for img in og.images %}
+<meta property="og:image" content="{{ img }}">
+{% endfor %}
+<meta property="og:url" content="{{ og.url }}">
+<meta property="og:type" content="website">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Gwoup Piblisite {{ batch.batch_id }}</h2>
+    
+    <div class="batch-stats">
+        <p>Pataj: {{ batch.share_count }} | Rekonpans Total: {{ batch.click_rewards }} klike</p>
+        <button onclick="shareBatch()" class="btn btn-gold">Pataje Gwoup sa (+50 klike!)</button>
+        <button onclick="copyLink()" class="btn btn-blue">Kopi Lyen</button>
+    </div>
+
+    <div class="batch-carousel" id="batch-carousel">
+        {% for ad in ads %}
+        <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.description }}')">
+            <div class="ad-image">
+                <img src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}"
+                     alt="Piblisite Imaj">
+            </div>
+            <div class="ad-text">
+                <p>{{ ad.description }}</p>
+            </div>
+            <div class="ad-actions">
+                <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') }}?text={{ ('Mwen enterese ak ' + ad.description[:50] + ' w lan') | urlencode }}"
+                   class="btn btn-whatsapp" target="_blank">
+                    📱 WhatsApp
+                </a>
+                <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
+                    FÈ PIBLISITE W
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Modal for full ad view -->
+    <div id="ad-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeAdModal()">&times;</span>
+            <div id="modal-images" class="modal-images"></div>
+            <div id="modal-description" class="modal-description"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function shareBatch() {
+    const batchId = "{{ batch.batch_id }}";
+    
+    const shareUrl = window.location.href;
+    const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(facebookShareUrl, '_blank');
+    
+    fetch(`/api/batch/${batchId}/share`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        });
+}
+
+function copyLink() {
+    const shareUrl = window.location.href;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Lyen kopye nan clipboard!');
+    }).catch(err => {
+        console.error('Erè nan kopye lyen:', err);
+        alert('Erè nan kopye lyen.');
+    });
+}
+</script>
+{% endblock %}
