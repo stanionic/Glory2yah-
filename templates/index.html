@@ -4,10 +4,20 @@
 <div class="hero">
     <div class="container">
         <h2>Byenveni nan Glory2yahPub</h2>
-        <p>FE PIBLISITE W SOU FACEBOOK AK INSTAGRAM A PATI 1000G,kliyan w yo ap konekte avè w  atravè WhatsApp ou</p>
+        <p>FE PIBLISITE W SOU FACEBOOK AK INSTAGRAM A PATI 1000G POU YON SEMEN,kliyan w yo ap konekte avè w  atravè WhatsApp ou</p>
         <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">Klike pou w fè piblisite w</a>
     </div>
 </div>
+
+{% if batch %}
+<div class="latest-batch">
+    <div class="container">
+        <div class="batch-embed">
+            <iframe src="{{ url_for('view_batch', batch_id=batch.batch_id) }}" width="100%" height="800" frameborder="0" scrolling="auto" style="border-radius: 8px;"></iframe>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div class="features">
     <div class="container">
@@ -27,4 +37,31 @@
         </div>
     </div>
 </div>
+
+<style>
+.latest-batch {
+    margin-bottom: 20px;
+}
+
+.batch-embed iframe {
+    width: 100%;
+    height: 800px;
+    border: none;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .batch-embed iframe {
+        height: 600px;
+    }
+}
+
+/* Hide batch title and stats in iframe */
+.batch-embed iframe #batch-title,
+.batch-embed iframe #batch-stats {
+    display: none !important;
+}
+</style>
+
+
 {% endblock %}

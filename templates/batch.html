@@ -1,23 +1,26 @@
-{% extends "base.html" %}
-
-{% block head %}
-{% if batch.open_graph_data %}
-{% set og = batch.open_graph_data | fromjson %}
-<meta property="og:title" content="{{ og.title }}">
-<meta property="og:description" content="{{ og.description }}">
-{% for img in og.images %}
-<meta property="og:image" content="{{ img }}">
-{% endfor %}
-<meta property="og:url" content="{{ og.url }}">
-<meta property="og:type" content="website">
-{% endif %}
-{% endblock %}
-
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gwoup Piblisite {{ batch.batch_id }}</title>
+    {% if batch.open_graph_data %}
+    {% set og = batch.open_graph_data | fromjson %}
+    <meta property="og:title" content="{{ og.title }}">
+    <meta property="og:description" content="{{ og.description }}">
+    {% for img in og.images %}
+    <meta property="og:image" content="{{ img }}">
+    {% endfor %}
+    <meta property="og:url" content="{{ og.url }}">
+    <meta property="og:type" content="website">
+    {% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
 <div class="container">
-    <h2>Gwoup Piblisite {{ batch.batch_id }}</h2>
-    
-    <div class="batch-stats">
+    <h2 id="batch-title">Gwoup Piblisite {{ batch.batch_id }}</h2>
+
+    <div class="batch-stats" id="batch-stats">
         <p>Pataj: {{ batch.share_count }} | Rekonpans Total: {{ batch.click_rewards }} klike</p>
         <button onclick="shareBatch()" class="btn btn-gold">Pataje Gwoup sa (+50 klike!)</button>
         <button onclick="copyLink()" class="btn btn-blue">Kopi Lyen</button>
@@ -56,14 +59,15 @@
     </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
 function shareBatch() {
     const batchId = "{{ batch.batch_id }}";
-    
+
     const shareUrl = window.location.href;
     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(facebookShareUrl, '_blank');
-    
+
     fetch(`/api/batch/${batchId}/share`, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
@@ -80,5 +84,37 @@ function copyLink() {
         alert('Erè nan kopye lyen.');
     });
 }
+
+function showAdModal(adId, images, description) {
+    const modal = document.getElementById('ad-modal');
+    const modalImages = document.getElementById('modal-images');
+    const modalDescription = document.getElementById('modal-description');
+
+    modalImages.innerHTML = '';
+    const imageList = images.split(',');
+    imageList.forEach(img => {
+        const imgElement = document.createElement('img');
+        imgElement.src = '{{ url_for("static", filename="uploads/") }}' + img;
+        imgElement.alt = 'Piblisite Imaj';
+        modalImages.appendChild(imgElement);
+    });
+
+    modalDescription.innerHTML = '<p>' + description + '</p>';
+    modal.style.display = 'block';
+}
+
+function closeAdModal() {
+    const modal = document.getElementById('ad-modal');
+    modal.style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('ad-modal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
 </script>
-{% endblock %}
+</body>
+</html>
