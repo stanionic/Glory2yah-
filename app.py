@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response
 from models import db, Ad, Batch
 import uuid
 import os
@@ -47,7 +47,19 @@ def admin_login():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Fetch the latest batch
+    latest_batch = Batch.query.order_by(Batch.created_at.desc()).first()
+    batch = None
+    ads = []
+    if latest_batch:
+        batch = latest_batch
+        ad_ids = batch.ads.split(',')
+        ads = Ad.query.filter(Ad.ad_id.in_(ad_ids)).all()
+    response = make_response(render_template('index.html', batch=batch, ads=ads))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/welcome', methods=['GET'])
 def welcome():
@@ -278,7 +290,17 @@ def view_batch(batch_id):
     ad_ids = batch.ads.split(',')
     ads = Ad.query.filter(Ad.ad_id.in_(ad_ids)).all()
 
-    return render_template('batch.html', batch=batch, ads=ads)
+    response = make_response(render_template('batch.html', batch=batch, ads=ads))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/achte')
+def achte():
+    # Fetch all approved ads
+    approved_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
+    return render_template('achte.html', ads=approved_ads)
 
 @app.route('/api/batch/<batch_id>/share', methods=['POST'])
 def share_batch(batch_id):

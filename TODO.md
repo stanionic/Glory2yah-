@@ -1,28 +1,9 @@
-# TODO List for Adding /welcome Endpoint with Logging
+# TODO: Create "Achte" Page for Approved Ads
 
-## Information Gathered
-- app.py is the main Flask application file.
-- The app handles ad submissions, admin functions, and batch management.
-- Uses SQLite for data storage.
-- No existing logging setup.
-- Need to add logging for request metadata (method, path).
-- Add a new /welcome endpoint that returns JSON with welcome message.
+## Steps to Complete
 
-## Plan
-- Create src/logger.py for logging setup.
-- Update app.py to import and initialize logger.
-- Add /welcome route in app.py that logs request and returns JSON.
-
-## Dependent Files to be edited
-- app.py: Add import, logger setup, and new route.
-- src/logger.py: New file for logging.
-
-## Followup steps
-- Run the app to test the new endpoint.
-- Verify logging works.
-
-## Steps
-- [x] Create src/logger.py with logging configuration.
-- [x] Update app.py to import logger and set it up.
-- [x] Add /welcome route to app.py.
-- [x] Test the endpoint by running the app and making a request.
+- [x] Add new route `/achte` in `app.py` to query approved ads and render `achte.html`
+- [x] Create `templates/achte.html` template extending `base.html` to display approved ads in a grid format
+- [x] Update `templates/base.html` navigation to include link to "Achte" page
+- [x] Test the new page at http://localhost:5000/achte to ensure it displays approved ads correctly
+- [x] Verify navigation link works from the header
