@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Telechaje Dokiman Apwobasyon w</h2>
+
+    <div class="payment-instruction">
+        <div class="alert alert-info">
+            <h3>Telechaje DOKIMAN APWOBASYON pou demann Gkach w</h3>
+            <p>Pou demann Gkach ou a apwouve, ou dwe telechaje yon dokiman apwobasyon valab (egz: ID, lisans, etc.).</p>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="payment-form">
+        <div class="form-group">
+            <label for="approval_document">Dokiman Apwobasyon *</label>
+            <input type="file" id="approval_document" name="approval_document" accept="image/*,.pdf" required>
+            <small>Format pèmèt: JPG, PNG, GIF, PDF</small>
+        </div>
+
+        <button type="submit" class="btn btn-gold">Telechaje Dokiman Apwobasyon</button>
+    </form>
+
+    <div class="whatsapp-help">
+        <p>Gen yon pwoblèm? Kontakte nou sou WhatsApp:</p>
+        <a href="https://wa.me/+50942882076?text=Ey%20glory2YahPub" class="btn btn-whatsapp">
+            📱 Chat ak Administratè
+        </a>
+    </div>
+</div>
+{% endblock %}

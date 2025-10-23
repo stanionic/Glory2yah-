@@ -7,18 +7,24 @@
     {% if ads %}
     <div class="ads-grid">
         {% for ad in ads %}
-        <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.description }}')">
+        <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.title }}', '{{ ad.description }}', '{{ ad.price_gkach }}')">
             <div class="ad-image">
                 <img src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}"
                      alt="Piblisite Imaj">
             </div>
             <div class="ad-text">
+                <h4>{{ ad.title }}</h4>
                 <p>{{ ad.description }}</p>
             </div>
             <div class="ad-actions">
-                <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') }}?text={{ ('Mwen enterese ak ' + ad.description[:50] + ' w lan') | urlencode }}"
+                <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
+                <form method="POST" action="{{ url_for('check_balance', ad_id=ad.ad_id) }}" style="display: inline;">
+                    <input type="text" name="whatsapp" placeholder="Numéro WhatsApp (+509...)" required style="width: 200px; padding: 5px; margin-right: 10px; display: none;" id="whatsapp-input-{{ ad.ad_id }}">
+                    <button type="button" class="btn btn-blue" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}">Achte</button>
+                </form>
+                <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + (ad.title or 'piblisite sa') + ' w lan') | urlencode }}"
                    class="btn btn-whatsapp" target="_blank">
-                    📱 WhatsApp
+                    📱 Kontak
                 </a>
                 <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
                     FÈ PIBLISITE W
@@ -116,6 +122,15 @@
     background-color: #ffed4e;
 }
 
+.btn-blue {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-blue:hover {
+    background-color: #0056b3;
+}
+
 /* Modal styles */
 .modal {
     position: fixed;
@@ -176,7 +191,7 @@
 </style>
 
 <script>
-function showAdModal(adId, images, description) {
+function showAdModal(adId, images, title, description, price) {
     const modal = document.getElementById('ad-modal');
     const modalImages = document.getElementById('modal-images');
     const modalDescription = document.getElementById('modal-description');
@@ -190,7 +205,7 @@ function showAdModal(adId, images, description) {
         modalImages.appendChild(imgElement);
     });
 
-    modalDescription.innerHTML = '<p>' + description + '</p>';
+    modalDescription.innerHTML = '<h3>' + title + '</h3><p>' + description + '</p><p><strong>Pri: ' + price + ' Gkach</strong></p>';
     modal.style.display = 'block';
 }
 
@@ -204,6 +219,20 @@ window.onclick = function(event) {
     const modal = document.getElementById('ad-modal');
     if (event.target == modal) {
         modal.style.display = 'none';
+    }
+}
+
+function showInput(adId) {
+    const input = document.getElementById('whatsapp-input-' + adId);
+    const btn = document.getElementById('achte-btn-' + adId);
+    if (input.style.display === 'none') {
+        input.style.display = 'inline-block';
+        btn.textContent = 'Konfime Achte';
+        btn.type = 'submit';
+    } else {
+        input.style.display = 'none';
+        btn.textContent = 'Achte';
+        btn.type = 'button';
     }
 }
 </script>

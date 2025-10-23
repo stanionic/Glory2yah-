@@ -30,10 +30,24 @@
         </div>
 
         <div class="form-group">
+            <label for="title">Tit Piblisite *</label>
+            <input type="text" id="title" name="title" required
+                   maxlength="100" placeholder="Ekri yon tit atraktif pou piblisite w la...">
+            <small>Maksimòm 100 karaktè</small>
+        </div>
+
+        <div class="form-group">
             <label for="description">Deskripsyon Kout *</label>
-            <textarea id="description" name="description" required 
+            <textarea id="description" name="description" required
                       maxlength="300" placeholder="Ekri yon deskripsyon kout sou sa w ap vann oswa ofri..."></textarea>
             <small>Maksimòm 300 karaktè</small>
+        </div>
+
+        <div class="form-group">
+            <label for="price_gkach">Pri Gkach *</label>
+            <input type="number" id="price_gkach" name="price_gkach" required min="1"
+                   placeholder="Egzamp: 100">
+            <small>Pri an Gkach pou achte piblisite sa a</small>
         </div>
 
         <button type="submit" class="btn btn-gold">Soumèt Piblisite</button>

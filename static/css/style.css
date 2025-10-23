@@ -189,56 +189,45 @@ nav a:hover {
     resize: vertical;
 }
 
+.upload-box:hover {
+    border-color: var(--royal-blue);
+}
+
+.upload-box input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
 .image-upload-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+    margin-bottom: 1rem;
 }
 
->>>>>>> 64863c0fee038296b7f208e557679a9bf2ed6a5a
-}
-
-.upload-box:hover {
-    border-color: var(--royal-blue);
-}
-
-    display: none;
->>>>>>> 64863c0fee038296b7f208e557679a9bf2ed6a5a
-}
-=======
-.upload-box input {
-    position: absolute;
-    top: 0;
-    left: 0;
+.upload-box {
+    position: relative;
     width: 100%;
-    height: 100%;
-    opacity: 0;
+    height: 120px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    transition: border-color 0.3s ease;
     cursor: pointer;
 }
-=======
->>>>>>> 64863c0fee038296b7f208e557679a9bf2ed6a5a
-}
 
-.upload-box:hover {
-    border-color: var(--royal-blue);
-}
-
-    display: none;
->>>>>>> 64863c0fee038296b7f208e557679a9bf2ed6a5a
-}
-=======
-.upload-box input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-}
-=======
-    display: none;
->>>>>>> 64863c0fee038296b7f208e557679a9bf2ed6a5a
+.upload-box span {
+    color: #666;
+    font-weight: bold;
+    pointer-events: none;
 }
 
 .admin-section {
@@ -326,6 +315,13 @@ nav a:hover {
 .ad-text {
     padding: 1rem;
     text-align: center;
+}
+
+.ad-text h4 {
+    font-size: 1.1rem;
+    color: var(--royal-blue);
+    margin-bottom: 0.5rem;
+    font-weight: bold;
 }
 
 .ad-text p {
