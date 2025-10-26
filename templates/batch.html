@@ -24,27 +24,41 @@
         <button onclick="copyLink()" class="btn btn-blue">Kopi Lyen</button>
     </div>
 
-    <div class="batch-carousel" id="batch-carousel">
-        {% for ad in ads %}
-        <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.description }}')">
-            <div class="ad-image">
-                <img src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}"
-                     alt="Piblisite Imaj">
+    <div class="carousel-container">
+        <div class="carousel">
+            {% for ad in ads %}
+            <div class="carousel-slide">
+                <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.title }}', '{{ ad.description }}', '{{ ad.price_gkach }}')">
+                    <div class="ad-image">
+                        <img src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}"
+                             alt="Piblisite Imaj">
+                    </div>
+                    <div class="ad-content">
+                        <div class="ad-text">
+                            <h4>{{ ad.title }}</h4>
+                            <p>{{ ad.description }}</p>
+                        </div>
+                        <div class="ad-actions">
+                            <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
+                            <form method="POST" action="{{ url_for('check_balance', ad_id=ad.ad_id) }}" style="display: inline;">
+                                <input type="text" name="whatsapp" placeholder="Numéro WhatsApp (+509...)" required style="width: 200px; padding: 5px; margin-right: 10px; display: none;" id="whatsapp-input-{{ ad.ad_id }}">
+                                <button type="button" class="btn btn-blue" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}">Achte</button>
+                            </form>
+                            <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + (ad.title or 'piblisite sa') + ' w lan') | urlencode }}"
+                               class="btn btn-whatsapp" target="_blank">
+                                📱 Kontak
+                            </a>
+                            <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
+                                FÈ PIBLISITE W
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="ad-text">
-                <p>{{ ad.description }}</p>
-            </div>
-            <div class="ad-actions">
-                <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') }}?text={{ ('Mwen enterese ak ' + ad.description[:50] + ' w lan') | urlencode }}"
-                   class="btn btn-whatsapp" target="_blank">
-                    📱 WhatsApp
-                </a>
-                <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
-                    FÈ PIBLISITE W
-                </a>
-            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        <button class="carousel-btn prev" onclick="prevSlide()">&#10094;</button>
+        <button class="carousel-btn next" onclick="nextSlide()">&#10095;</button>
     </div>
 
     <!-- Modal for full ad view -->
@@ -56,6 +70,222 @@
         </div>
     </div>
 </div>
+
+<style>
+.carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.carousel {
+    display: flex;
+    transition: transform 0.5s ease;
+    width: 100%;
+}
+
+.carousel-slide {
+    min-width: 25%;
+    box-sizing: border-box;
+    padding: 0 5px;
+}
+
+.whatsapp-ad-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    margin: 0 auto;
+    max-width: 300px;
+}
+
+.whatsapp-ad-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.ad-image {
+    flex: 0 0 60%;
+    overflow: hidden;
+}
+
+.ad-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.whatsapp-ad-card:hover .ad-image img {
+    transform: scale(1.05);
+}
+
+.ad-content {
+    flex: 0 0 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.ad-text {
+    padding: 5px;
+    flex-grow: 0;
+}
+
+.ad-text h4 {
+    margin: 0 0 3px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.ad-text p {
+    margin: 0 0 5px 0;
+    font-size: 12px;
+    line-height: 1.3;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.ad-actions {
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+
+.btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-whatsapp {
+    background-color: #25d366;
+    color: white;
+}
+
+.btn-whatsapp:hover {
+    background-color: #128c7e;
+}
+
+.btn-gold {
+    background-color: #ffd700;
+    color: #333;
+}
+
+.btn-gold:hover {
+    background-color: #ffed4e;
+}
+
+.btn-blue {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-blue:hover {
+    background-color: #0056b3;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.carousel-btn.prev {
+    left: 10px;
+}
+
+.carousel-btn.next {
+    right: 10px;
+}
+
+.carousel-btn:hover {
+    background-color: rgba(0,0,0,0.8);
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.modal-images img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.modal-description p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .ad-actions {
+        flex-direction: column;
+    }
+}
+</style>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
@@ -83,7 +313,7 @@ function copyLink() {
     });
 }
 
-function showAdModal(adId, images, description) {
+function showAdModal(adId, images, title, description, price) {
     const modal = document.getElementById('ad-modal');
     const modalImages = document.getElementById('modal-images');
     const modalDescription = document.getElementById('modal-description');
@@ -97,7 +327,7 @@ function showAdModal(adId, images, description) {
         modalImages.appendChild(imgElement);
     });
 
-    modalDescription.innerHTML = '<p>' + description + '</p>';
+    modalDescription.innerHTML = '<h3>' + title + '</h3><p>' + description + '</p><p><strong>Pri: ' + price + ' Gkach</strong></p>';
     modal.style.display = 'block';
 }
 
@@ -113,6 +343,47 @@ window.onclick = function(event) {
         modal.style.display = 'none';
     }
 }
+
+function showInput(adId) {
+    const input = document.getElementById('whatsapp-input-' + adId);
+    const btn = document.getElementById('achte-btn-' + adId);
+    if (input.style.display === 'none') {
+        input.style.display = 'inline-block';
+        btn.textContent = 'Konfime Achte';
+        btn.type = 'submit';
+    } else {
+        input.style.display = 'none';
+        btn.textContent = 'Achte';
+        btn.type = 'button';
+    }
+}
+
+let currentSlide = 0;
+const slides = document.querySelectorAll('.carousel-slide');
+const totalSlides = slides.length;
+
+function showSlide(index) {
+    const carousel = document.querySelector('.carousel');
+    if (index >= totalSlides) {
+        currentSlide = 0;
+    } else if (index < 0) {
+        currentSlide = totalSlides - 1;
+    } else {
+        currentSlide = index;
+    }
+    carousel.style.transform = `translateX(-${currentSlide * 25}%)`;
+}
+
+function nextSlide() {
+    showSlide(currentSlide + 1);
+}
+
+function prevSlide() {
+    showSlide(currentSlide - 1);
+}
+
+// Auto-play carousel
+setInterval(nextSlide, 5000); // Change slide every 5 seconds
 </script>
 </body>
 </html>

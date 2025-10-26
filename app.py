@@ -6,6 +6,22 @@ import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from src.logger import setup_logger
+from src.whatsapp_notifications import (
+    notify_admin_new_gkach_request,
+    notify_admin_balance_change,
+    notify_admin_request_approved,
+    notify_admin_request_rejected,
+    notify_admin_new_ad_submission,
+    notify_admin_payment_proof_uploaded,
+    notify_user_ad_approved,
+    notify_user_ad_rejected,
+    notify_admin_ad_purchased,
+    notify_user_ad_purchased,
+    notify_admin_gkach_approval_uploaded,
+    notify_user_gkach_request_approved,
+    notify_user_gkach_request_rejected,
+    notify_user_balance_added
+)
 
 app = Flask(__name__)
 app.secret_key = 'glory2yahpub_secret_key_2024'
@@ -103,6 +119,11 @@ def submit_ad():
             flash('Pri Gkach valab obligatwa (egz: 100).', 'error')
             return redirect(url_for('submit_ad'))
 
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            flash('Ou dwe aksepte kondisyon ak règleman yo pou soumèt piblisite.', 'error')
+            return redirect(url_for('submit_ad'))
+
         images = []
         for i in range(1, 4):
             image_field = f'image_{i}'
@@ -153,6 +174,8 @@ def submit_ad():
             db.session.add(new_ad)
             db.session.commit()
             logger.info(f"Ad submitted successfully: {ad_id}")
+            # Notify admin of new ad submission
+            notify_admin_new_ad_submission(user_whatsapp, ad_id)
             flash('Piblisite w la soumèt avèk siksè! Kounye a, telechaje prèv pèman w la.', 'success')
             return redirect(url_for('upload_payment', ad_id=ad_id))
         except Exception as e:
@@ -167,6 +190,12 @@ def submit_ad():
 def upload_payment(ad_id):
     if request.method == 'POST':
         logger.info(f"Upload payment POST for ad_id: {ad_id}")
+
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            flash('Ou dwe aksepte kondisyon ak règleman yo pou telechaje prèv pèman.', 'error')
+            return redirect(url_for('upload_payment', ad_id=ad_id))
+
         if 'payment_proof' not in request.files:
             logger.warning("No payment_proof file in request")
             flash('Pa gen dosye chwazi.', 'error')
@@ -192,6 +221,8 @@ def upload_payment(ad_id):
                     ad.payment_status = 'pending'
                     db.session.commit()
                     logger.info(f"Payment proof updated for ad: {ad_id}")
+                    # Notify admin of payment proof upload
+                    notify_admin_payment_proof_uploaded(ad.user_whatsapp, ad_id)
                     flash('Prèv pèman w la telechaje avèk siksè! Administratè a pral revize li byento.', 'success')
                     return redirect(url_for('success'))
                 else:
@@ -214,6 +245,12 @@ def upload_payment(ad_id):
 def upload_gkach_approval(request_id):
     if request.method == 'POST':
         logger.info(f"Upload Gkach approval POST for request_id: {request_id}")
+
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            flash('Ou dwe aksepte kondisyon ak règleman yo pou telechaje dokiman apwobasyon.', 'error')
+            return redirect(url_for('upload_gkach_approval', request_id=request_id))
+
         if 'approval_document' not in request.files:
             logger.warning("No approval_document file in request")
             flash('Pa gen dosye chwazi.', 'error')
@@ -271,12 +308,16 @@ def admin():
     try:
         ads = Ad.query.order_by(Ad.created_at.desc()).all()
         batches = Batch.query.order_by(Batch.created_at.desc()).all()
+        users_gkach = UserGkach.query.all()
+        gkach_rates = GkachRate.query.all()
     except Exception as e:
         logger.error(f"Error fetching admin data: {str(e)}")
         ads = []
         batches = []
+        users_gkach = []
+        gkach_rates = []
 
-    return render_template('admin.html', ads=ads, batches=batches)
+    return render_template('admin.html', ads=ads, batches=batches, users_gkach=users_gkach, gkach_rates=gkach_rates)
 
 @app.route('/admin/update_ad_status', methods=['POST'])
 def update_ad_status():
@@ -292,6 +333,11 @@ def update_ad_status():
             ad.admin_status = status
             ad.payment_status = payment_status
             db.session.commit()
+            # Notify user based on status
+            if status == 'approved':
+                notify_user_ad_approved(ad.user_whatsapp, ad_id)
+            elif status == 'rejected':
+                notify_user_ad_rejected(ad.user_whatsapp, ad_id)
             flash('Estati piblisite a mete ajou avèk siksè!', 'success')
         else:
             flash('Piblisite pa jwenn.', 'error')
@@ -418,27 +464,35 @@ def achte_gkach():
             flash('Kantite Gkach valab obligatwa.', 'error')
             return redirect(url_for('achte_gkach'))
 
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            flash('Ou dwe aksepte kondisyon ak règleman yo pou achte Gkach.', 'error')
+            return redirect(url_for('achte_gkach'))
+
         # Get or create user gkach record
         user_gkach = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
         if not user_gkach:
             user_gkach = UserGkach(user_whatsapp=user_whatsapp)
             db.session.add(user_gkach)
 
-        # Add request to pending
+        # Add request to pending WITHOUT document (will be uploaded in next step)
         request_id = str(uuid.uuid4())
         requests = json.loads(user_gkach.gkach_requests or '[]')
         requests.append({
             'request_id': request_id,
             'amount': amount,
             'status': 'pending',
+            'document': None,  # No document yet
             'requested_at': datetime.now().isoformat()
         })
         user_gkach.gkach_requests = json.dumps(requests)
         db.session.commit()
 
-        flash('Demann Gkach ou a soumèt! Kontakte administratè sou WhatsApp pou diskite kondisyon yo epi tann apwobasyon.', 'success')
-        whatsapp_url = f"https://wa.me/+50942882076?text=Demann%20Gkach%20ID:{request_id}%20-%20Ey%20glory2YahPub"
-        return redirect(whatsapp_url)
+        # Send WhatsApp notification to admin
+        notify_admin_new_gkach_request(user_whatsapp, amount, request_id)
+
+        flash('Demann Gkach ou a soumèt! Kounye a, telechaje prèv pèman ou a.', 'success')
+        return redirect(url_for('upload_gkach_approval', request_id=request_id))
 
     return render_template('achte_gkach.html')
 
@@ -506,24 +560,39 @@ def manage_gkach():
 
         if action == 'add_balance':
             user_gkach.gkach_balance += amount
+            notify_admin_balance_change(user_whatsapp, f"Added {amount}", amount)
             flash(f'{amount} Gkach ajoute nan balans {user_whatsapp}.', 'success')
+        elif action == 'edit_balance':
+            user_gkach.gkach_balance = amount
+            flash(f'Balans Gkach modifye a {amount} pou {user_whatsapp}.', 'success')
+        elif action == 'delete_user':
+            db.session.delete(user_gkach)
+            flash(f'Itilizatè {user_whatsapp} efase avèk siksè.', 'success')
+            db.session.commit()
+            return redirect(url_for('manage_gkach'))
         elif action == 'approve_request':
+            request_id = request.form.get('request_id')
             requests = json.loads(user_gkach.gkach_requests or '[]')
             for req in requests:
-                if req['status'] == 'pending' and 'document' in req:
+                if req.get('request_id') == request_id and req['status'] == 'pending' and req.get('document'):
                     req['status'] = 'approved'
                     user_gkach.gkach_balance += req['amount']
+                    notify_admin_request_approved(user_whatsapp, req['amount'], req['request_id'])
+                    notify_user_gkach_request_approved(user_whatsapp, req['amount'])
+                    flash(f'Demann Gkach apwouve pou {user_whatsapp}.', 'success')
                     break
             user_gkach.gkach_requests = json.dumps(requests)
-            flash(f'Demann Gkach apwouve pou {user_whatsapp}.', 'success')
         elif action == 'reject_request':
+            request_id = request.form.get('request_id')
             requests = json.loads(user_gkach.gkach_requests or '[]')
             for req in requests:
-                if req['status'] == 'pending':
+                if req.get('request_id') == request_id and req['status'] == 'pending':
                     req['status'] = 'rejected'
+                    notify_admin_request_rejected(user_whatsapp, req['amount'], req['request_id'])
+                    notify_user_gkach_request_rejected(user_whatsapp, req['amount'])
+                    flash(f'Demann Gkach rejte pou {user_whatsapp}.', 'info')
                     break
             user_gkach.gkach_requests = json.dumps(requests)
-            flash(f'Demann Gkach rejte pou {user_whatsapp}.', 'info')
 
         db.session.commit()
         return redirect(url_for('manage_gkach'))
@@ -551,6 +620,21 @@ def share_batch(batch_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': 'Erè nan pataje gwoup la.'}), 500
+
+@app.route('/api/gkach_rate', methods=['GET'])
+def get_gkach_rate():
+    try:
+        # Get the current rate, default to HTG if available, else USD, else default 50
+        rate = GkachRate.query.filter_by(currency='HTG').first()
+        if not rate:
+            rate = GkachRate.query.filter_by(currency='USD').first()
+        if rate:
+            return jsonify({'rate': rate.rate_per_gkach, 'currency': rate.currency})
+        else:
+            return jsonify({'rate': 50, 'currency': 'HTG'})  # Default rate
+    except Exception as e:
+        logger.error(f"Error fetching Gkach rate: {str(e)}")
+        return jsonify({'rate': 50, 'currency': 'HTG'}), 500
 
 @app.route('/admin/delete_ad/<ad_id>', methods=['POST'])
 def delete_ad(ad_id):

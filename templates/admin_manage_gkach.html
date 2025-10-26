@@ -24,7 +24,14 @@
 
         {% for user in users_gkach %}
         <div class="user-gkach-card">
-            <h4>{{ user.user_whatsapp }}</h4>
+            <div class="user-header">
+                <h4>{{ user.user_whatsapp }}</h4>
+                <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;" onsubmit="return confirm('Èske ou sèten ou vle efase itilizatè sa a?')">
+                    <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                    <input type="hidden" name="action" value="delete_user">
+                    <button type="submit" class="btn btn-delete">Efase Itilizatè</button>
+                </form>
+            </div>
             <p><strong>Balans Gkach:</strong> {{ user.gkach_balance }}</p>
 
             {% if user.gkach_requests %}
@@ -39,11 +46,13 @@
                         <div class="request-actions">
                             <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
                                 <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                <input type="hidden" name="request_id" value="{{ req.request_id }}">
                                 <input type="hidden" name="action" value="approve_request">
                                 <button type="submit" class="btn btn-success">Apwouve</button>
                             </form>
                             <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
                                 <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                <input type="hidden" name="request_id" value="{{ req.request_id }}">
                                 <input type="hidden" name="action" value="reject_request">
                                 <button type="submit" class="btn btn-danger">Rejte</button>
                             </form>
@@ -56,13 +65,23 @@
                 {% endfor %}
             {% endif %}
 
-            <div class="add-balance">
-                <form method="POST" action="{{ url_for('manage_gkach') }}">
-                    <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
-                    <input type="hidden" name="action" value="add_balance">
-                    <input type="number" name="amount" placeholder="Kantite Gkach" min="1" required>
-                    <button type="submit" class="btn btn-blue">Ajoute Balans</button>
-                </form>
+            <div class="balance-actions">
+                <div class="edit-balance">
+                    <form method="POST" action="{{ url_for('manage_gkach') }}">
+                        <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                        <input type="hidden" name="action" value="edit_balance">
+                        <input type="number" name="amount" placeholder="Nouvo balans" min="0" required>
+                        <button type="submit" class="btn btn-edit">Modifye Balans</button>
+                    </form>
+                </div>
+                <div class="add-balance">
+                    <form method="POST" action="{{ url_for('manage_gkach') }}">
+                        <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                        <input type="hidden" name="action" value="add_balance">
+                        <input type="number" name="amount" placeholder="Kantite Gkach" min="1" required>
+                        <button type="submit" class="btn btn-blue">Ajoute Balans</button>
+                    </form>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -197,6 +216,61 @@
 
 .btn-gold:hover {
     background-color: #ffed4e;
+}
+
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.user-header h4 {
+    margin: 0;
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+}
+
+.balance-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.edit-balance form,
+.add-balance form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-balance input[type="number"],
+.add-balance input[type="number"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 120px;
+}
+
+.btn-edit {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.btn-edit:hover {
+    background-color: #e0a800;
 }
 </style>
 {% endblock %}

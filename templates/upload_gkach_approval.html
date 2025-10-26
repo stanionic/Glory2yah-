@@ -7,7 +7,7 @@
     <div class="payment-instruction">
         <div class="alert alert-info">
             <h3>Telechaje DOKIMAN APWOBASYON pou demann Gkach w</h3>
-            <p>Pou demann Gkach ou a apwouve, ou dwe telechaje yon dokiman apwobasyon valab (egz: ID, lisans, etc.).</p>
+            <p>Pou demann Gkach ou a apwouve, ou dwe telechaje yon dokiman apwobasyon valab: screenshot oubyen resepsyon Moncash ou Natcash.</p>
         </div>
     </div>
 
@@ -16,6 +16,13 @@
             <label for="approval_document">Dokiman Apwobasyon *</label>
             <input type="file" id="approval_document" name="approval_document" accept="image/*,.pdf" required>
             <small>Format pèmèt: JPG, PNG, GIF, PDF</small>
+        </div>
+
+        <div class="form-group">
+            <div class="terms-checkbox">
+                <input type="checkbox" id="accept_terms" name="accept_terms" required>
+                <label for="accept_terms">Mwen li epi mwen aksepte <a href="#" onclick="showTermsModal()">Kondisyon ak Règleman</a> pou achte ak itilizasyon Gkach</label>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-gold">Telechaje Dokiman Apwobasyon</button>
