@@ -45,3 +45,17 @@ class GkachRate(db.Model):
     currency = db.Column(db.String(10), nullable=False, unique=True)  # e.g., 'HTG', 'USD'
     rate_per_gkach = db.Column(db.Float, nullable=False)  # How much currency per 1 Gkach
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Delivery(db.Model):
+    __tablename__ = 'deliveries'
+
+    delivery_id = db.Column(db.String(36), primary_key=True)
+    ad_id = db.Column(db.String(36), db.ForeignKey('ads.ad_id'), nullable=False)
+    buyer_whatsapp = db.Column(db.String(20), nullable=False)
+    seller_whatsapp = db.Column(db.String(20), nullable=False)
+    delivery_cost = db.Column(db.Integer, default=0)  # In Gkach
+    total_price = db.Column(db.Integer, nullable=False)  # Ad price + delivery cost
+    status = db.Column(db.String(20), default='negotiating')  # negotiating, accepted, confirmed
+    otp = db.Column(db.String(4))  # 4-digit OTP for confirmation
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    confirmed_at = db.Column(db.DateTime)

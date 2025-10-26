@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response
-from models import db, Ad, Batch, UserGkach, GkachRate
+from models import db, Ad, Batch, UserGkach, GkachRate, Delivery
 import uuid
 import os
 import json
+import random
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from src.logger import setup_logger
@@ -20,7 +21,9 @@ from src.notifications import (
     notify_admin_gkach_approval_uploaded,
     notify_user_gkach_request_approved,
     notify_user_gkach_request_rejected,
-    notify_user_balance_added
+    notify_user_balance_added,
+    notify_admin_traffic_alert,
+    notify_admin_otp
 )
 
 app = Flask(__name__)
@@ -35,6 +38,9 @@ db.init_app(app)
 # Set up logger
 logger = setup_logger()
 
+# Traffic tracking
+traffic_log = []
+
 # Custom Jinja2 filter for fromjson
 def fromjson(value):
     return json.loads(value)
@@ -46,19 +52,71 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def generate_otp():
+    """Generate a 4-digit random OTP"""
+    return str(random.randint(1000, 9999))
+
 with app.app_context():
     db.create_all()
+
+@app.before_request
+def log_traffic():
+    if request.endpoint not in ['static']:
+        traffic_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'ip': request.remote_addr,
+            'method': request.method,
+            'path': request.path,
+            'user_agent': request.headers.get('User-Agent', ''),
+            'referrer': request.headers.get('Referer', '')
+        }
+        traffic_log.append(traffic_entry)
+        # Keep only last 1000 entries
+        if len(traffic_log) > 1000:
+            traffic_log.pop(0)
+
+        # Notify admin if traffic exceeds threshold
+        if len(traffic_log) > 10:  # Example threshold
+            notify_admin_traffic_alert(len(traffic_log))
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password')
+        otp = request.form.get('otp')
+
         if password == 'StanGlory2YahPub0886':  # Hardcoded for now
-            session['admin'] = True
-            flash('Logged in as admin.', 'success')
-            return redirect(url_for('admin'))
+            # Generate and send OTP
+            generated_otp = generate_otp()
+            session['admin_otp'] = generated_otp
+            session['admin_otp_timestamp'] = datetime.now().timestamp()
+            notify_admin_otp(generated_otp)
+            flash('Kòd verifikasyon voye sou WhatsApp. Antre kòd la pou kontinye.', 'info')
+            return render_template('admin_login.html', otp_required=True)
+        elif otp:
+            # Verify OTP
+            stored_otp = session.get('admin_otp')
+            otp_timestamp = session.get('admin_otp_timestamp')
+
+            if stored_otp and otp_timestamp:
+                # Check if OTP is not expired (5 minutes)
+                if datetime.now().timestamp() - otp_timestamp < 300:  # 5 minutes
+                    if otp == stored_otp:
+                        session['admin'] = True
+                        session.pop('admin_otp', None)
+                        session.pop('admin_otp_timestamp', None)
+                        flash('Konekte kòm administratè avèk siksè.', 'success')
+                        return redirect(url_for('admin'))
+                    else:
+                        flash('Kòd verifikasyon envalid.', 'error')
+                else:
+                    flash('Kòd verifikasyon ekspire. Eseye ankò.', 'error')
+                    session.pop('admin_otp', None)
+                    session.pop('admin_otp_timestamp', None)
+            else:
+                flash('Kòd verifikasyon manke. Eseye ankò.', 'error')
         else:
-            flash('Invalid password.', 'error')
+            flash('Modpas envalid.', 'error')
     return render_template('admin_login.html')
 
 @app.route('/')

@@ -48,10 +48,12 @@
             <input type="number" id="price_gourdes" name="price_gourdes" required min="0.01" step="0.01"
                    placeholder="Egzamp: 5000.00">
             <small>Pri an Gourdes pou piblisite sa a. Pri an Gkach pral kalkile otomatikman.</small>
-            <div id="gkach-equivalent" class="gkach-info" style="display: none;">
-                <small>Egivalan: <span id="gkach-price"></span> Gkach</small>
+            <div id="gkach-equivalent" class="gkach-info" style="display: block;">
+                <small>Egivalan: <span id="gkach-price">0</span> Gkach</small>
             </div>
         </div>
+
+        <input type="hidden" id="price_gkach" name="price_gkach" value="0">
 
         <div class="form-group">
             <div class="terms-checkbox">

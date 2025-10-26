@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         function updateCharCount() {
             const remaining = 300 - descriptionTextarea.value.length;
             charCount.textContent = `${remaining} karaktè rete`;
-            
+
             if (remaining < 50) {
                 charCount.style.color = '#dc3545';
             } else if (remaining < 100) {
@@ -60,6 +60,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Gkach price calculation
+    const priceGourdesInput = document.getElementById('price_gourdes');
+    const priceGkachInput = document.getElementById('price_gkach');
+    const gkachEquivalentDiv = document.getElementById('gkach-equivalent');
+    const gkachPriceSpan = document.getElementById('gkach-price');
+
+    if (priceGourdesInput && priceGkachInput && gkachEquivalentDiv && gkachPriceSpan) {
+        let currentRate = 50; // Default rate
+
+        // Fetch current Gkach rate
+        fetch('/api/gkach_rate')
+            .then(response => response.json())
+            .then(data => {
+                currentRate = data.rate;
+                console.log('Fetched Gkach rate:', currentRate, data.currency);
+            })
+            .catch(error => {
+                console.error('Error fetching Gkach rate:', error);
+            });
+
+        function updateGkachPrice() {
+            const gourdesValue = parseFloat(priceGourdesInput.value);
+            if (!isNaN(gourdesValue) && gourdesValue > 0) {
+                const gkachValue = Math.ceil(gourdesValue / currentRate);
+                priceGkachInput.value = gkachValue;
+                gkachPriceSpan.textContent = gkachValue;
+                gkachEquivalentDiv.style.display = 'block';
+            } else {
+                gkachEquivalentDiv.style.display = 'none';
+                priceGkachInput.value = '0';
+            }
+        }
+
+        priceGourdesInput.addEventListener('input', updateGkachPrice);
+        // Initial calculation if there's a value
+        if (priceGourdesInput.value) {
+            updateGkachPrice();
+        }
+    }
 });
 
 function formatWhatsAppNumber(input) {

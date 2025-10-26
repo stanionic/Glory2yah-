@@ -140,3 +140,19 @@ def notify_user_balance_added(user_whatsapp, amount):
     """
     message = f"{amount} Gkach ajoute nan balans ou pa administratè."
     return send_whatsapp_message(user_whatsapp, message)
+
+def notify_admin_traffic_alert(traffic_count):
+    """
+    Notify admin when traffic exceeds threshold
+    """
+    admin_number = "+50942882076"
+    message = f"Alerte trafik: {traffic_count} demann resevwa nan dènye minit yo."
+    return send_whatsapp_message(admin_number, message)
+
+def notify_admin_otp(otp):
+    """
+    Send OTP to admin for login verification
+    """
+    admin_number = "+50942882076"
+    message = f"Kòd verifikasyon pou koneksyon administratè: {otp}. Kòd sa a ekspire nan 5 minit."
+    return send_whatsapp_message(admin_number, message)

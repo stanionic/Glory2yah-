@@ -108,7 +108,7 @@ nav a:hover {
 .hero {
     background: linear-gradient(135deg, var(--royal-blue), var(--light-blue));
     color: var(--white);
-    padding: 4rem 0;
+    padding: 2rem 0;
     text-align: center;
 }
 
@@ -123,7 +123,7 @@ nav a:hover {
 }
 
 .features {
-    padding: 4rem 0;
+    padding: 2rem 0;
     background: #f8f9fa;
 }
 
@@ -420,7 +420,7 @@ footer {
     color: var(--white);
     text-align: center;
     padding: 2rem 0;
-    margin-top: 4rem;
+    margin-top: 0px;
 }
 
 footer a {
