@@ -524,6 +524,10 @@ def buy_ad(ad_id):
     user_gkach.gkach_balance -= ad.price_gkach
     db.session.commit()
 
+    # Notify admin and user of the purchase
+    notify_admin_ad_purchased(user_whatsapp, ad_id, ad.price_gkach)
+    notify_user_ad_purchased(user_whatsapp, ad_id, ad.price_gkach)
+
     flash(f'Achte avèk siksè! Ou te depanse {ad.price_gkach} Gkach.', 'success')
     return redirect(url_for('achte'))
 
