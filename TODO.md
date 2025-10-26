@@ -44,3 +44,14 @@ Two-factor authentication has been successfully implemented for admin login with
 - Localized messages in Haitian Creole
 
 The admin login now requires both password and WhatsApp verification for enhanced security.
+
+---
+
+# UI Spacing and Deployment Fixes
+
+## Completed Tasks
+- [x] Reduce hero section padding from 4rem 0 to 2rem 0 in static/css/style.css
+- [x] Reduce features section padding from 4rem 0 to 2rem 0 in static/css/style.css
+- [x] Reduce latest-batch margin-bottom from 20px to 10px in templates/index.html
+- [x] Add requests==2.31.0 to requirements.txt to fix deployment ImportError
+- [x] Test changes by refreshing http://localhost:5000
