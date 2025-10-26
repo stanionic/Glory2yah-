@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from src.logger import setup_logger
-from src.whatsapp_notifications import (
+from src.notifications import (
     notify_admin_new_gkach_request,
     notify_admin_balance_change,
     notify_admin_request_approved,
