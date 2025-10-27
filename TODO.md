@@ -1,57 +1,36 @@
-# Traffic Monitoring Implementation
+# Glory2YahPub Updates TODO
 
-## Completed Tasks
-- [x] Added traffic_log list to store request metadata (timestamp, IP, method, path, user_agent, referrer)
-- [x] Implemented @app.before_request decorator to log traffic for non-static endpoints
-- [x] Added logic to keep only last 1000 entries in traffic_log
-- [x] Added notify_admin_traffic_alert function in notifications.py
-- [x] Integrated traffic alert in log_traffic function when traffic exceeds 10 requests
+## 1. Icon Changes
+- [x] Replace "+" with megaphone icon on "FÈ PIBLISITE W" buttons in all templates (index.html, batch.html, achte.html, base.html nav)
+- [x] Replace "$" with "$" in circle icon for Gkach button in base.html nav
 
-## Summary
-Traffic monitoring has been successfully implemented with the following features:
-- Logs all incoming requests with metadata
-- Maintains a rolling log of last 1000 requests
-- Alerts admin via WhatsApp when traffic exceeds threshold (currently set to 10 requests)
-- Uses existing notification system for alerts
+## 2. Responsive Design
+- [x] Ensure all pages have proper responsive design with media queries
+- [x] Make batch carousel fully responsive (adjust slide count, button sizes, etc.)
+- [x] Test on mobile, tablet, desktop
 
-The system is now active and monitoring traffic in real-time.
+## 3. Button Icons and Alignment
+- [x] Add icons to all ad buttons (Achte, Kontak, FÈ PIBLISITE W)
+- [x] Align the 3 buttons horizontally using flexbox (span mode)
 
----
+## 4. Shopping Cart Flow
+- [ ] Create new shopping cart template for delivery address and price setting
+- [ ] Modify Achte button to redirect to shopping cart instead of check_balance
+- [ ] Add route for shopping cart in app.py
+- [ ] After setting delivery, redirect to check_balance
+- [ ] Update models.py if needed for delivery info
 
-# Two-Factor Authentication (2FA) for Admin Login
+## 5. WhatsApp Communication
+- [x] Ensure all communication goes through WhatsApp (already implemented, verify)
 
-## Completed Tasks
-- [x] Added generate_otp() function to create 4-digit random OTP
-- [x] Added notify_admin_otp() function in src/notifications.py to send OTP via WhatsApp
-- [x] Modified admin_login route in app.py to implement 2FA:
-  - Password verification triggers OTP generation and sending
-  - OTP stored in session with timestamp for expiration check
-  - OTP verification with 5-minute expiration
-  - Proper session cleanup after successful login
-- [x] Updated admin_login.html template to support 2FA flow:
-  - Conditional display of password vs OTP input fields
-  - Added flash message display for user feedback
-  - Localized labels and messages in Haitian Creole
-  - Proper form validation and user guidance
+## 6. Search Functionality in Achte
+- [ ] Add search input for product name in achte.html
+- [ ] Add image upload for image search
+- [ ] Implement backend search logic in app.py
+- [ ] Update achte route to handle search queries
 
-## Summary
-Two-factor authentication has been successfully implemented for admin login with the following features:
-- Password-based first factor
-- WhatsApp OTP as second factor
-- 5-minute OTP expiration
-- Secure session management
-- User-friendly interface with clear instructions
-- Localized messages in Haitian Creole
-
-The admin login now requires both password and WhatsApp verification for enhanced security.
-
----
-
-# UI Spacing and Deployment Fixes
-
-## Completed Tasks
-- [x] Reduce hero section padding from 4rem 0 to 2rem 0 in static/css/style.css
-- [x] Reduce features section padding from 4rem 0 to 2rem 0 in static/css/style.css
-- [x] Reduce latest-batch margin-bottom from 20px to 10px in templates/index.html
-- [x] Add requests==2.31.0 to requirements.txt to fix deployment ImportError
-- [x] Test changes by refreshing http://localhost:5000
+## Testing
+- [ ] Test all changes on different devices
+- [ ] Verify button alignments and icons
+- [ ] Test shopping cart flow end-to-end
+- [ ] Test search functionality

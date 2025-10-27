@@ -475,18 +475,67 @@ def achte():
     approved_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
     return render_template('achte.html', ads=approved_ads)
 
-@app.route('/achte/check_balance/<ad_id>', methods=['POST'])
+@app.route('/shopping_cart/<ad_id>', methods=['GET', 'POST'])
+def shopping_cart(ad_id):
+    ad = Ad.query.filter_by(ad_id=ad_id, admin_status='approved').first()
+    if not ad:
+        flash('Piblisite pa jwenn.', 'error')
+        return redirect(url_for('achte'))
+
+    if request.method == 'POST':
+        user_whatsapp = request.form.get('whatsapp', '').strip()
+        delivery_address = request.form.get('delivery_address', '').strip()
+        price = request.form.get('price', '').strip()
+
+        # Format WhatsApp number
+        user_whatsapp = ''.join(filter(str.isdigit, user_whatsapp))
+        if not user_whatsapp.startswith('509'):
+            user_whatsapp = '509' + user_whatsapp
+        user_whatsapp = '+' + user_whatsapp
+
+        if not user_whatsapp or len(user_whatsapp) < 12:
+            flash('Numéro WhatsApp valab obligatwa.', 'error')
+            return redirect(url_for('shopping_cart', ad_id=ad_id))
+        if not delivery_address:
+            flash('Adrès livrezon obligatwa.', 'error')
+            return redirect(url_for('shopping_cart', ad_id=ad_id))
+        try:
+            price = int(price)
+            if price <= 0:
+                raise ValueError
+        except ValueError:
+            flash('Pri valab obligatwa.', 'error')
+            return redirect(url_for('shopping_cart', ad_id=ad_id))
+
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            flash('Ou dwe aksepte kondisyon ak règleman yo pou achte piblisite.', 'error')
+            return redirect(url_for('shopping_cart', ad_id=ad_id))
+
+        # Store in session
+        session['cart_ad_id'] = ad_id
+        session['cart_whatsapp'] = user_whatsapp
+        session['cart_delivery_address'] = delivery_address
+        session['cart_price'] = price
+
+        return redirect(url_for('check_balance', ad_id=ad_id))
+
+    return render_template('shopping_cart.html', ad=ad)
+
+@app.route('/achte/check_balance/<ad_id>', methods=['GET'])
 def check_balance(ad_id):
-    user_whatsapp = request.form.get('whatsapp', '').strip()
+    # Get data from session
+    cart_ad_id = session.get('cart_ad_id')
+    user_whatsapp = session.get('cart_whatsapp')
+    delivery_address = session.get('cart_delivery_address')
+    price = session.get('cart_price')
 
-    # Format WhatsApp number
-    user_whatsapp = ''.join(filter(str.isdigit, user_whatsapp))
-    if not user_whatsapp.startswith('509'):
-        user_whatsapp = '509' + user_whatsapp
-    user_whatsapp = '+' + user_whatsapp
+    if not all([cart_ad_id, user_whatsapp, delivery_address, price]):
+        flash('Sesyon ekspire. Eseye ankò.', 'error')
+        return redirect(url_for('achte'))
 
-    if not user_whatsapp or len(user_whatsapp) < 12:
-        flash('Numéro WhatsApp valab obligatwa.', 'error')
+    if cart_ad_id != ad_id:
+        flash('Erè nan sesyon. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
     ad = Ad.query.filter_by(ad_id=ad_id, admin_status='approved').first()
@@ -497,7 +546,7 @@ def check_balance(ad_id):
     user_gkach = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
     balance = user_gkach.gkach_balance if user_gkach else 0
 
-    return render_template('check_balance.html', balance=balance, ad=ad, whatsapp=user_whatsapp)
+    return render_template('check_balance.html', balance=balance, ad=ad, whatsapp=user_whatsapp, price=price)
 
 @app.route('/achte_gkach', methods=['GET', 'POST'])
 def achte_gkach():
@@ -556,16 +605,18 @@ def achte_gkach():
 
 @app.route('/achte/buy/<ad_id>', methods=['POST'])
 def buy_ad(ad_id):
-    user_whatsapp = request.form.get('whatsapp', '').strip()
+    # Get data from session
+    cart_ad_id = session.get('cart_ad_id')
+    user_whatsapp = session.get('cart_whatsapp')
+    delivery_address = session.get('cart_delivery_address')
+    price = session.get('cart_price')
 
-    # Format WhatsApp number
-    user_whatsapp = ''.join(filter(str.isdigit, user_whatsapp))
-    if not user_whatsapp.startswith('509'):
-        user_whatsapp = '509' + user_whatsapp
-    user_whatsapp = '+' + user_whatsapp
+    if not all([cart_ad_id, user_whatsapp, delivery_address, price]):
+        flash('Sesyon ekspire. Eseye ankò.', 'error')
+        return redirect(url_for('achte'))
 
-    if not user_whatsapp or len(user_whatsapp) < 12:
-        flash('Numéro WhatsApp valab obligatwa.', 'error')
+    if cart_ad_id != ad_id:
+        flash('Erè nan sesyon. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
     ad = Ad.query.filter_by(ad_id=ad_id, admin_status='approved').first()
@@ -574,19 +625,25 @@ def buy_ad(ad_id):
         return redirect(url_for('achte'))
 
     user_gkach = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
-    if not user_gkach or user_gkach.gkach_balance < ad.price_gkach:
+    if not user_gkach or user_gkach.gkach_balance < price:
         flash('Ou pa gen ase Gkach pou achte piblisite sa a. Ou bezwen achte Gkach.', 'error')
         return redirect(url_for('achte_gkach'))
 
     # Deduct balance
-    user_gkach.gkach_balance -= ad.price_gkach
+    user_gkach.gkach_balance -= price
     db.session.commit()
 
-    # Notify admin and user of the purchase
-    notify_admin_ad_purchased(user_whatsapp, ad_id, ad.price_gkach)
-    notify_user_ad_purchased(user_whatsapp, ad_id, ad.price_gkach)
+    # Clear session
+    session.pop('cart_ad_id', None)
+    session.pop('cart_whatsapp', None)
+    session.pop('cart_delivery_address', None)
+    session.pop('cart_price', None)
 
-    flash(f'Achte avèk siksè! Ou te depanse {ad.price_gkach} Gkach.', 'success')
+    # Notify admin and user of the purchase
+    notify_admin_ad_purchased(user_whatsapp, ad_id, price)
+    notify_user_ad_purchased(user_whatsapp, ad_id, price)
+
+    flash(f'Achte avèk siksè! Ou te depanse {price} Gkach.', 'success')
     return redirect(url_for('achte'))
 
 @app.route('/admin/manage_gkach', methods=['GET', 'POST'])

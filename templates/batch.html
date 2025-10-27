@@ -40,7 +40,7 @@
                         </div>
                         <div class="ad-actions">
                             <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
-                            <form method="POST" action="{{ url_for('check_balance', ad_id=ad.ad_id) }}" style="display: inline;">
+                            <form method="POST" action="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}" style="display: inline;">
                                 <input type="text" name="whatsapp" placeholder="Numéro WhatsApp (+509...)" required style="width: 200px; padding: 5px; margin-right: 10px; display: none;" id="whatsapp-input-{{ ad.ad_id }}">
                                 <button type="button" class="btn btn-blue" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}">Achte</button>
                             </form>
@@ -49,7 +49,7 @@
                                 📱 Kontak
                             </a>
                             <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
-                                FÈ PIBLISITE W
+                                <i class="fas fa-bullhorn"></i> FÈ PIBLISITE W
                             </a>
                         </div>
                     </div>
@@ -165,6 +165,7 @@
     flex-wrap: wrap;
     gap: 5px;
     align-items: center;
+    justify-content: space-between;
 }
 
 .btn {
@@ -281,6 +282,15 @@
 }
 
 @media (max-width: 768px) {
+    .carousel-slide {
+        min-width: 100%;
+    }
+    .carousel {
+        transform: none !important;
+    }
+    .carousel-btn {
+        display: none;
+    }
     .ad-actions {
         flex-direction: column;
     }

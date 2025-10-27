@@ -5,9 +5,9 @@
     <h2>Vèrifye Balans Gkach</h2>
 
     <p>Balans ou: <strong>{{ balance }} Gkach</strong></p>
-    <p>Pri piblisite: <strong>{{ ad.price_gkach }} Gkach</strong></p>
+    <p>Pri piblisite: <strong>{{ price }} Gkach</strong></p>
 
-    {% if balance >= ad.price_gkach %}
+    {% if balance >= price %}
         <p>Ou gen ase Gkach pou achte piblisite sa a.</p>
         <form method="POST" action="{{ url_for('buy_ad', ad_id=ad.ad_id) }}">
             <input type="hidden" name="whatsapp" value="{{ whatsapp }}">
