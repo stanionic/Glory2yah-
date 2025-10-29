@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+{% extends "base.html" %}
+
+{% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gwoup Piblisite {{ batch.batch_id }}</title>
@@ -14,16 +14,11 @@
     <meta property="og:url" content="{{ og.url }}">
     <meta property="og:type" content="website">
     {% endif %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-<div class="container">
-    <div class="batch-stats" id="batch-stats">
-        <p>Pataj: {{ batch.share_count }} | Rekonpans Total: {{ batch.click_rewards }} klike</p>
-        <button onclick="shareBatch()" class="btn btn-gold">Pataje Gwoup sa (+50 klike!)</button>
-        <button onclick="copyLink()" class="btn btn-blue">Kopi Lyen</button>
-    </div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
 
+{% block content %}
+<div class="container">
     <div class="carousel-container">
         <div class="carousel">
             {% for ad in ads %}
@@ -41,15 +36,14 @@
                         <div class="ad-actions">
                             <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
                             <form method="POST" action="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}" style="display: inline;">
-                                <input type="text" name="whatsapp" placeholder="Numéro WhatsApp (+509...)" required style="width: 200px; padding: 5px; margin-right: 10px; display: none;" id="whatsapp-input-{{ ad.ad_id }}">
-                                <button type="button" class="btn btn-blue" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}">Achte</button>
+                                <button type="submit" class="btn btn-blue btn-icon"><i class="fas fa-shopping-cart"></i></button>
                             </form>
                             <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + (ad.title or 'piblisite sa') + ' w lan') | urlencode }}"
-                               class="btn btn-whatsapp" target="_blank">
-                                📱 Kontak
+                               class="btn btn-whatsapp btn-icon" target="_blank">
+                                <i class="fab fa-whatsapp"></i>
                             </a>
-                            <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
-                                <i class="fas fa-bullhorn"></i> FÈ PIBLISITE W
+                            <a href="{{ url_for('submit_ad') }}" class="btn btn-gold btn-icon">
+                                <i class="fas fa-bullhorn"></i>
                             </a>
                         </div>
                     </div>
@@ -165,7 +159,7 @@
     flex-wrap: wrap;
     gap: 5px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
 }
 
 .btn {
@@ -178,6 +172,15 @@
     text-align: center;
     cursor: pointer;
     transition: background-color 0.2s;
+}
+
+.btn-icon {
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-whatsapp {
@@ -354,19 +357,7 @@ window.onclick = function(event) {
     }
 }
 
-function showInput(adId) {
-    const input = document.getElementById('whatsapp-input-' + adId);
-    const btn = document.getElementById('achte-btn-' + adId);
-    if (input.style.display === 'none') {
-        input.style.display = 'inline-block';
-        btn.textContent = 'Konfime Achte';
-        btn.type = 'submit';
-    } else {
-        input.style.display = 'none';
-        btn.textContent = 'Achte';
-        btn.type = 'button';
-    }
-}
+
 
 let currentSlide = 0;
 const slides = document.querySelectorAll('.carousel-slide');
@@ -395,5 +386,4 @@ function prevSlide() {
 // Auto-play carousel
 setInterval(nextSlide, 5000); // Change slide every 5 seconds
 </script>
-</body>
-</html>
+{% endblock %}

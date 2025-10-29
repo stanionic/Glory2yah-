@@ -60,12 +60,23 @@
     }
 }
 
-/* Hide batch title and stats in iframe */
+/* Hide batch title, stats, and navbar in iframe */
 .batch-embed iframe #batch-title,
-.batch-embed iframe #batch-stats {
+.batch-embed iframe #batch-stats,
+.batch-embed iframe .navbar {
     display: none !important;
 }
 </style>
+
+{% if batch %}
+<style>
+/* Hide navbar and footer on index page when batch is displayed */
+.navbar,
+.footer {
+    display: none !important;
+}
+</style>
+{% endif %}
 
 
 {% endblock %}

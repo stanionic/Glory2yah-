@@ -21,14 +21,14 @@
                     <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
                     <form method="POST" action="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}" style="display: inline;">
                         <input type="text" name="whatsapp" placeholder="Numéro WhatsApp (+509...)" required style="width: 200px; padding: 5px; margin-right: 10px; display: none;" id="whatsapp-input-{{ ad.ad_id }}">
-                        <button type="button" class="btn btn-blue" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}">Achte</button>
+                        <button type="button" class="btn btn-blue btn-icon" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}"><i class="fas fa-shopping-cart"></i></button>
                     </form>
                     <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + (ad.title or 'piblisite sa') + ' w lan') | urlencode }}"
-                       class="btn btn-whatsapp" target="_blank">
-                        📱 Kontak
+                       class="btn btn-whatsapp btn-icon" target="_blank">
+                        <i class="fab fa-whatsapp"></i>
                     </a>
-                    <a href="{{ url_for('submit_ad') }}" class="btn btn-gold">
-                        <i class="fas fa-bullhorn"></i> FÈ PIBLISITE W
+                    <a href="{{ url_for('submit_ad') }}" class="btn btn-gold btn-icon">
+                        <i class="fas fa-bullhorn"></i>
                     </a>
                 </div>
             </div>
@@ -267,11 +267,11 @@ function showInput(adId) {
     const btn = document.getElementById('achte-btn-' + adId);
     if (input.style.display === 'none') {
         input.style.display = 'inline-block';
-        btn.textContent = 'Konfime Achte';
+        btn.innerHTML = '<i class="fas fa-check"></i>';
         btn.type = 'submit';
     } else {
         input.style.display = 'none';
-        btn.textContent = 'Achte';
+        btn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
         btn.type = 'button';
     }
 }
