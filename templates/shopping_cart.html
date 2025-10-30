@@ -19,6 +19,12 @@
 
     <form method="POST" action="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}">
         <div class="form-group">
+            <label for="whatsapp">Numéro WhatsApp:</label>
+            <input type="text" id="whatsapp" name="whatsapp" required
+                   placeholder="eg: +50912345678">
+        </div>
+
+        <div class="form-group">
             <label for="delivery_address">Adrès Livrezon:</label>
             <textarea id="delivery_address" name="delivery_address" rows="4" required
                       placeholder="Antre adrès livrezon konplè w la..."></textarea>

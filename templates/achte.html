@@ -15,14 +15,10 @@
             <div class="ad-content">
                 <div class="ad-text">
                     <h4>{{ ad.title }}</h4>
-                    <p>{{ ad.description }}</p>
                 </div>
                 <div class="ad-actions">
                     <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
-                    <form method="POST" action="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}" style="display: inline;">
-                        <input type="text" name="whatsapp" placeholder="Numéro WhatsApp (+509...)" required style="width: 200px; padding: 5px; margin-right: 10px; display: none;" id="whatsapp-input-{{ ad.ad_id }}">
-                        <button type="button" class="btn btn-blue btn-icon" onclick="showInput('{{ ad.ad_id }}'); event.stopPropagation()" id="achte-btn-{{ ad.ad_id }}"><i class="fas fa-shopping-cart"></i></button>
-                    </form>
+                    <a href="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}" class="btn btn-blue btn-icon" onclick="event.stopPropagation()"><i class="fas fa-shopping-cart"></i></a>
                     <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + (ad.title or 'piblisite sa') + ' w lan') | urlencode }}"
                        class="btn btn-whatsapp btn-icon" target="_blank">
                         <i class="fab fa-whatsapp"></i>
@@ -263,6 +259,20 @@ window.onclick = function(event) {
 }
 
 function showInput(adId) {
+    const input = document.getElementById('whatsapp-input-' + adId);
+    const btn = document.getElementById('achte-btn-' + adId);
+    if (input.style.display === 'none') {
+        input.style.display = 'inline-block';
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.type = 'submit';
+    } else {
+        input.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
+        btn.type = 'button';
+    }
+}
+
+function addToCart(adId) {
     const input = document.getElementById('whatsapp-input-' + adId);
     const btn = document.getElementById('achte-btn-' + adId);
     if (input.style.display === 'none') {

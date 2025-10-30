@@ -16,20 +16,11 @@
                 {% endif %}
             {% endwith %}
             <form method="POST">
-                {% if not otp_required %}
                 <div class="mb-3">
                     <label for="password" class="form-label">Modpas Administratè</label>
                     <input type="password" class="form-control" id="password" name="password" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Antre</button>
-                {% else %}
-                <div class="mb-3">
-                    <label for="otp" class="form-label">Kòd Verifikasyon WhatsApp</label>
-                    <input type="text" class="form-control" id="otp" name="otp" maxlength="4" required>
-                    <div class="form-text">Antre kòd 4 chif ki te voye sou WhatsApp administratè.</div>
-                </div>
-                <button type="submit" class="btn btn-success w-100">Verifye Kòd</button>
-                {% endif %}
             </form>
         </div>
     </div>

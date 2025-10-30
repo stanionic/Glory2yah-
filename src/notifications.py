@@ -1,5 +1,6 @@
 import requests
 import logging
+from models import Delivery
 
 logger = logging.getLogger(__name__)
 
@@ -156,3 +157,31 @@ def notify_admin_otp(otp):
     admin_number = "+50942882076"
     message = f"Kòd verifikasyon pou koneksyon administratè: {otp}. Kòd sa a ekspire nan 5 minit."
     return send_whatsapp_message(admin_number, message)
+
+def notify_seller_delivery_request(seller_whatsapp, buyer_whatsapp, delivery_address, delivery_id, ad_title, ad_price):
+    """
+    Notify seller of new delivery request with detailed cart receipt and link to set delivery fees
+    """
+    set_delivery_url = f"https://yourdomain.com/set_delivery/{delivery_id}"  # Replace with actual domain
+    message = f"🛒 NOUVO DEMANN LIVREZON - REÇU PANIER\n\n📦 Piblisite: {ad_title}\n💰 Pri piblisite: {ad_price} Gkach\n👤 Achte pa: {buyer_whatsapp}\n📍 Adrès livrezon: {delivery_address}\n\n📋 Detay:\n- ID Livrezon: {delivery_id}\n- Pri inisyal: {ad_price} Gkach\n- Kou livrezon: TBD\n- Total: TBD\n\n🔗 Klik sou lyen sa a pou mete pri livrezon: {set_delivery_url}\n\n⚠️ Tanpri revize detay yo epi mete pri livrezon ki apwopriye."
+    return send_whatsapp_message(seller_whatsapp, message)
+
+def notify_buyer_delivery_updated(buyer_whatsapp, delivery_cost, total_price, delivery_id):
+    """
+    Notify buyer when seller sets delivery cost with updated cart link
+    """
+    # Get the delivery to find the ad_id
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id).first()
+    if delivery:
+        updated_cart_url = f"https://yourdomain.com/achte/check_balance/{delivery.ad_id}"  # Link to check balance page
+        message = f"Pri livrezon mete ajou! Kou livrezon: {delivery_cost} Gkach, Total: {total_price} Gkach.\n\nKlike sou lyen sa a pou konfime achte: {updated_cart_url}"
+    else:
+        message = f"Pri livrezon mete ajou! Kou livrezon: {delivery_cost} Gkach, Total: {total_price} Gkach.\n\nKontakte vandè pou konfime achte."
+    return send_whatsapp_message(buyer_whatsapp, message)
+
+def notify_buyer_cart_submitted(buyer_whatsapp, ad_title, price, delivery_address, delivery_id):
+    """
+    Notify buyer when shopping cart is submitted with cart details
+    """
+    message = f"Panier achte soumèt avèk siksè!\n\nPiblisite: {ad_title}\nPri: {price} Gkach\nAdrès livrezon: {delivery_address}\nID Livrezon: {delivery_id}\n\nVandè a pral mete pri livrezon byento. Ou pral resevwa yon mesaj lè pri a mete ajou."
+    return send_whatsapp_message(buyer_whatsapp, message)
