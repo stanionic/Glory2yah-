@@ -26,7 +26,8 @@ from src.notifications import (
     notify_admin_traffic_alert,
     notify_admin_otp,
     notify_seller_delivery_request,
-    notify_buyer_delivery_updated
+    notify_buyer_delivery_updated,
+    notify_buyer_cart_submitted
 )
 
 app = Flask(__name__)
@@ -460,9 +461,24 @@ def view_batch(batch_id):
 
 @app.route('/achte')
 def achte():
+    # Get search query from URL parameters
+    search_query = request.args.get('search', '').strip()
+
     # Fetch all approved ads
     approved_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
-    return render_template('achte.html', ads=approved_ads)
+
+    # Filter ads based on search query
+    if search_query:
+        filtered_ads = []
+        for ad in approved_ads:
+            title = ad.title or ""
+            description = ad.description or ""
+            if (search_query.lower() in title.lower() or
+                search_query.lower() in description.lower()):
+                filtered_ads.append(ad)
+        approved_ads = filtered_ads
+
+    return render_template('achte.html', ads=approved_ads, search_query=search_query)
 
 @app.route('/shopping_cart/<ad_id>', methods=['GET', 'POST'])
 def shopping_cart(ad_id):
@@ -647,12 +663,18 @@ def buy_ad(ad_id):
         flash('Ou pa gen ase Gkach pou achte piblisite sa a. Ou bezwen achte Gkach.', 'error')
         return redirect(url_for('achte_gkach'))
 
-    # Deduct balance
+    # Deduct balance from buyer
     user_gkach.gkach_balance -= total_price
+
+    # Credit balance to seller
+    seller_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.seller_whatsapp).first()
+    if seller_gkach:
+        seller_gkach.gkach_balance += total_price
+
     db.session.commit()
 
-    # Update delivery status to 'purchased'
-    delivery.status = 'purchased'
+    # Update delivery status to 'completed'
+    delivery.status = 'completed'
     db.session.commit()
 
     # Clear session
