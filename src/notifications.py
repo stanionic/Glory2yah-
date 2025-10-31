@@ -1,39 +1,82 @@
-import requests
 import logging
+from flask import url_for
+from models import Delivery
 
 logger = logging.getLogger(__name__)
 
-def send_whatsapp_message(to_number, message):
+def generate_whatsapp_link(phone_number, message=""):
     """
-    Send WhatsApp message using WhatsApp.me API
+    Generate WhatsApp Click-to-Chat link (wa.me format)
+    Format: https://wa.me/<PhoneNumber>
+    Example: https://wa.me/50948592888
     """
     try:
-        # WhatsApp.me API endpoint (placeholder - replace with actual API)
-        url = "https://api.whatsapp.me/send"
+        # Clean phone number - remove any non-numeric characters except +
+        clean_number = ''.join(c for c in phone_number if c.isdigit() or c == '+')
 
-        payload = {
-            "to": to_number,
-            "message": message
-        }
+        # Ensure it starts with +
+        if not clean_number.startswith('+'):
+            clean_number = '+' + clean_number
 
-        # Note: You'll need to add your API key to headers
-        headers = {
-            "Content-Type": "application/json",
-            # "Authorization": "Bearer YOUR_API_KEY"  # Add your API key here
-        }
+        # Create wa.me link
+        base_url = f"https://wa.me/{clean_number.replace('+', '')}"
 
-        response = requests.post(url, json=payload, headers=headers)
+        if message:
+            # URL encode the message
+            import urllib.parse
+            encoded_message = urllib.parse.quote(message)
+            return f"{base_url}?text={encoded_message}"
 
-        if response.status_code == 200:
-            logger.info(f"WhatsApp message sent successfully to {to_number}")
-            return True
-        else:
-            logger.error(f"Failed to send WhatsApp message: {response.text}")
-            return False
+        return base_url
 
     except Exception as e:
-        logger.error(f"Error sending WhatsApp message: {str(e)}")
-        return False
+        logger.error(f"Error generating WhatsApp link for {phone_number}: {str(e)}")
+        return None
+
+def pair_buyer_seller(buyer_whatsapp, seller_whatsapp, ad_title, delivery_id):
+    """
+    Create WhatsApp contact links for buyer-seller communication
+    Returns a dictionary with contact links for both parties
+    """
+    try:
+        # Message for buyer to contact seller
+        buyer_message = f"Bonjou! Mwen achte piblisite '{ad_title}' epi mwen ap tann pou w mete pri livrezon an. ID Livrezon: {delivery_id}"
+
+        # Message for seller to contact buyer
+        seller_message = f"Bonjou! Ou resevwa yon nouvo demann livrezon pou piblisite '{ad_title}'. Tanpri mete pri livrezon an. ID Livrezon: {delivery_id}"
+
+        buyer_contact_link = generate_whatsapp_link(seller_whatsapp, buyer_message)
+        seller_contact_link = generate_whatsapp_link(buyer_whatsapp, seller_message)
+
+        return {
+            'buyer_contact_link': buyer_contact_link,
+            'seller_contact_link': seller_contact_link,
+            'buyer_number': buyer_whatsapp,
+            'seller_number': seller_whatsapp
+        }
+
+    except Exception as e:
+        logger.error(f"Error pairing buyer {buyer_whatsapp} with seller {seller_whatsapp}: {str(e)}")
+        return None
+
+def send_whatsapp_message(to_number, message):
+    """
+    Legacy function - now returns WhatsApp link instead of sending message
+    """
+    logger.warning("send_whatsapp_message is deprecated. Use generate_whatsapp_link instead.")
+    return generate_whatsapp_link(to_number, message)
+
+def pair_user_chat(user_whatsapp):
+    """
+    Create a chat pairing for admin to communicate with user
+    """
+    try:
+        admin_number = "+50942882076"
+        pairing_message = f"Chat pairing established with user {user_whatsapp}. You can now communicate directly."
+        return generate_whatsapp_link(admin_number, pairing_message)
+    except Exception as e:
+        logger.error(f"Error pairing user chat: {str(e)}")
+        return None
 
 def notify_admin_new_gkach_request(user_whatsapp, amount, request_id):
     """
@@ -41,7 +84,7 @@ def notify_admin_new_gkach_request(user_whatsapp, amount, request_id):
     """
     admin_number = "+50942882076"
     message = f"Nouvo demann Gkach: {amount} Gkach pou {user_whatsapp}. ID: {request_id}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_admin_balance_change(user_whatsapp, action, amount):
     """
@@ -49,7 +92,7 @@ def notify_admin_balance_change(user_whatsapp, action, amount):
     """
     admin_number = "+50942882076"
     message = f"Chanjman balans Gkach: {action} {amount} Gkach pou {user_whatsapp}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_admin_request_approved(user_whatsapp, amount, request_id):
     """
@@ -57,7 +100,7 @@ def notify_admin_request_approved(user_whatsapp, amount, request_id):
     """
     admin_number = "+50942882076"
     message = f"Demann Gkach apwouve: {amount} Gkach pou {user_whatsapp}. ID: {request_id}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_admin_request_rejected(user_whatsapp, amount, request_id):
     """
@@ -65,7 +108,7 @@ def notify_admin_request_rejected(user_whatsapp, amount, request_id):
     """
     admin_number = "+50942882076"
     message = f"Demann Gkach rejte: {amount} Gkach pou {user_whatsapp}. ID: {request_id}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_admin_new_ad_submission(user_whatsapp, ad_id):
     """
@@ -73,7 +116,7 @@ def notify_admin_new_ad_submission(user_whatsapp, ad_id):
     """
     admin_number = "+50942882076"
     message = f"Nouvo piblisite soumèt pa {user_whatsapp}. ID: {ad_id}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_admin_payment_proof_uploaded(user_whatsapp, ad_id):
     """
@@ -81,21 +124,21 @@ def notify_admin_payment_proof_uploaded(user_whatsapp, ad_id):
     """
     admin_number = "+50942882076"
     message = f"Prèv pèman telechaje pou piblisite {ad_id} pa {user_whatsapp}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_user_ad_approved(user_whatsapp, ad_id):
     """
     Notify user when ad is approved
     """
     message = f"Piblisite w la (ID: {ad_id}) apwouve! Li pral parèt nan gwoup yo byento."
-    return send_whatsapp_message(user_whatsapp, message)
+    return generate_whatsapp_link(user_whatsapp, message)
 
 def notify_user_ad_rejected(user_whatsapp, ad_id):
     """
     Notify user when ad is rejected
     """
     message = f"Piblisite w la (ID: {ad_id}) rejte. Kontakte administratè pou plis detay."
-    return send_whatsapp_message(user_whatsapp, message)
+    return generate_whatsapp_link(user_whatsapp, message)
 
 def notify_admin_ad_purchased(user_whatsapp, ad_id, price):
     """
@@ -103,14 +146,14 @@ def notify_admin_ad_purchased(user_whatsapp, ad_id, price):
     """
     admin_number = "+50942882076"
     message = f"Piblisite {ad_id} achte pa {user_whatsapp} pou {price} Gkach"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_user_ad_purchased(user_whatsapp, ad_id, price):
     """
     Notify user when they purchase an ad
     """
     message = f"Achte avèk siksè! Ou te depanse {price} Gkach pou piblisite {ad_id}."
-    return send_whatsapp_message(user_whatsapp, message)
+    return generate_whatsapp_link(user_whatsapp, message)
 
 def notify_admin_gkach_approval_uploaded(user_whatsapp, request_id):
     """
@@ -118,28 +161,28 @@ def notify_admin_gkach_approval_uploaded(user_whatsapp, request_id):
     """
     admin_number = "+50942882076"
     message = f"Dokiman apwobasyon Gkach telechaje pou demann {request_id} pa {user_whatsapp}"
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_user_gkach_request_approved(user_whatsapp, amount):
     """
     Notify user when Gkach request is approved
     """
     message = f"Demann Gkach ou a apwouve! {amount} Gkach ajoute nan balans ou."
-    return send_whatsapp_message(user_whatsapp, message)
+    return generate_whatsapp_link(user_whatsapp, message)
 
 def notify_user_gkach_request_rejected(user_whatsapp, amount):
     """
     Notify user when Gkach request is rejected
     """
     message = f"Demann Gkach ou a ({amount} Gkach) rejte. Kontakte administratè pou plis detay."
-    return send_whatsapp_message(user_whatsapp, message)
+    return generate_whatsapp_link(user_whatsapp, message)
 
 def notify_user_balance_added(user_whatsapp, amount):
     """
     Notify user when balance is added by admin
     """
     message = f"{amount} Gkach ajoute nan balans ou pa administratè."
-    return send_whatsapp_message(user_whatsapp, message)
+    return generate_whatsapp_link(user_whatsapp, message)
 
 def notify_admin_traffic_alert(traffic_count):
     """
@@ -147,7 +190,7 @@ def notify_admin_traffic_alert(traffic_count):
     """
     admin_number = "+50942882076"
     message = f"Alerte trafik: {traffic_count} demann resevwa nan dènye minit yo."
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
 
 def notify_admin_otp(otp):
     """
@@ -155,4 +198,47 @@ def notify_admin_otp(otp):
     """
     admin_number = "+50942882076"
     message = f"Kòd verifikasyon pou koneksyon administratè: {otp}. Kòd sa a ekspire nan 5 minit."
-    return send_whatsapp_message(admin_number, message)
+    return generate_whatsapp_link(admin_number, message)
+
+def notify_seller_delivery_request(seller_whatsapp, buyer_whatsapp, delivery_address, delivery_id, ad_title, ad_price):
+    """
+    Notify seller of new delivery request with detailed cart receipt and link to set delivery fees
+    """
+    try:
+        # Generate the actual URL using Flask's url_for
+        from flask import current_app
+        with current_app.app_context():
+            set_delivery_url = url_for('set_delivery', delivery_id=delivery_id, _external=True)
+    except Exception as e:
+        logger.error(f"Error generating URL for delivery {delivery_id}: {str(e)}")
+        set_delivery_url = f"https://yourdomain.com/set_delivery/{delivery_id}"  # Fallback
+
+    message = f"🛒 NOUVO DEMANN LIVREZON - REÇU PANIER\n\n📦 Piblisite: {ad_title}\n💰 Pri piblisite: {ad_price} Gkach\n👤 Achte pa: {buyer_whatsapp}\n📍 Adrès livrezon: {delivery_address}\n\n📋 Detay:\n- ID Livrezon: {delivery_id}\n- Pri inisyal: {ad_price} Gkach\n- Kou livrezon: TBD\n- Total: TBD\n\n🔗 Klik sou lyen sa a pou mete pri livrezon: {set_delivery_url}\n\n⚠️ Tanpri revize detay yo epi mete pri livrezon ki apwopriye."
+    return generate_whatsapp_link(seller_whatsapp, message)
+
+def notify_buyer_delivery_updated(buyer_whatsapp, delivery_cost, total_price, delivery_id):
+    """
+    Notify buyer when seller sets delivery cost with updated cart link
+    """
+    # Get the delivery to find the ad_id
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id).first()
+    if delivery:
+        try:
+            # Generate the actual URL using Flask's url_for
+            from flask import current_app
+            with current_app.app_context():
+                updated_cart_url = url_for('check_balance', ad_id=delivery.ad_id, _external=True)
+        except Exception as e:
+            logger.error(f"Error generating URL for balance check {delivery.ad_id}: {str(e)}")
+            updated_cart_url = f"https://yourdomain.com/achte/check_balance/{delivery.ad_id}"  # Fallback
+        message = f"Pri livrezon mete ajou! Kou livrezon: {delivery_cost} Gkach, Total: {total_price} Gkach.\n\nKlike sou lyen sa a pou konfime achte: {updated_cart_url}"
+    else:
+        message = f"Pri livrezon mete ajou! Kou livrezon: {delivery_cost} Gkach, Total: {total_price} Gkach.\n\nKontakte vandè pou konfime achte."
+    return generate_whatsapp_link(buyer_whatsapp, message)
+
+def notify_buyer_cart_submitted(buyer_whatsapp, ad_title, price, delivery_address, delivery_id):
+    """
+    Notify buyer when shopping cart is submitted with cart details
+    """
+    message = f"Panier achte soumèt avèk siksè!\n\nPiblisite: {ad_title}\nPri: {price} Gkach\nAdrès livrezon: {delivery_address}\nID Livrezon: {delivery_id}\n\nVandè a pral mete pri livrezon byento. Ou pral resevwa yon mesaj lè pri a mete ajou."
+    return generate_whatsapp_link(buyer_whatsapp, message)

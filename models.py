@@ -59,3 +59,12 @@ class Delivery(db.Model):
     otp = db.Column(db.String(4))  # 4-digit OTP for confirmation
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     confirmed_at = db.Column(db.DateTime)
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    delivery_id = db.Column(db.String(36), db.ForeignKey('deliveries.delivery_id'), nullable=False)
+    sender_whatsapp = db.Column(db.String(20), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

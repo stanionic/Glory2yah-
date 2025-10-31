@@ -183,19 +183,35 @@ function closeAdModal() {
     document.getElementById('ad-modal').style.display = 'none';
 }
 
-// Autoplay carousel
+// Carousel functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const carousel = document.getElementById('batch-carousel');
-    if (carousel) {
-        const cards = carousel.querySelectorAll('.whatsapp-ad-card');
-        if (cards.length > 0) {
-            const cardWidth = cards[0].offsetWidth + 16; // 16 for gap
-            let currentIndex = 0;
+    const carousel = document.querySelector('.carousel');
+    const slides = document.querySelectorAll('.carousel-slide');
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
 
-            setInterval(() => {
-                currentIndex = (currentIndex + 1) % cards.length;
-                carousel.scrollLeft = currentIndex * cardWidth;
-            }, 1000); // 1 second per ad
+    if (carousel && slides.length > 0) {
+        let currentIndex = 0;
+
+        function showSlide(index) {
+            carousel.style.transform = `translateX(-${index * 100}%)`;
         }
+
+        function nextSlide() {
+            currentIndex = (currentIndex + 1) % slides.length;
+            showSlide(currentIndex);
+        }
+
+        function prevSlide() {
+            currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+            showSlide(currentIndex);
+        }
+
+        // Event listeners for buttons
+        if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+        if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+
+        // Auto-play
+        setInterval(nextSlide, 5000); // Change slide every 5 seconds
     }
 });

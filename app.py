@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response
-from models import db, Ad, Batch, UserGkach, GkachRate, Delivery
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, send_from_directory
+from models import db, Ad, Batch, UserGkach, GkachRate, Delivery, Message
 import uuid
 import os
 import json
 import random
+import csv
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from src.logger import setup_logger
@@ -23,8 +24,12 @@ from src.notifications import (
     notify_user_gkach_request_rejected,
     notify_user_balance_added,
     notify_admin_traffic_alert,
-    notify_admin_otp
+    notify_admin_otp,
+    notify_seller_delivery_request,
+    notify_buyer_delivery_updated,
+    notify_buyer_cart_submitted
 )
+from src.communication import send_message, get_messages, get_delivery_participants
 
 app = Flask(__name__)
 app.secret_key = 'glory2yahpub_secret_key_2024'
@@ -83,38 +88,11 @@ def log_traffic():
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password')
-        otp = request.form.get('otp')
 
         if password == 'StanGlory2YahPub0886':  # Hardcoded for now
-            # Generate and send OTP
-            generated_otp = generate_otp()
-            session['admin_otp'] = generated_otp
-            session['admin_otp_timestamp'] = datetime.now().timestamp()
-            notify_admin_otp(generated_otp)
-            flash('Kòd verifikasyon voye sou WhatsApp. Antre kòd la pou kontinye.', 'info')
-            return render_template('admin_login.html', otp_required=True)
-        elif otp:
-            # Verify OTP
-            stored_otp = session.get('admin_otp')
-            otp_timestamp = session.get('admin_otp_timestamp')
-
-            if stored_otp and otp_timestamp:
-                # Check if OTP is not expired (5 minutes)
-                if datetime.now().timestamp() - otp_timestamp < 300:  # 5 minutes
-                    if otp == stored_otp:
-                        session['admin'] = True
-                        session.pop('admin_otp', None)
-                        session.pop('admin_otp_timestamp', None)
-                        flash('Konekte kòm administratè avèk siksè.', 'success')
-                        return redirect(url_for('admin'))
-                    else:
-                        flash('Kòd verifikasyon envalid.', 'error')
-                else:
-                    flash('Kòd verifikasyon ekspire. Eseye ankò.', 'error')
-                    session.pop('admin_otp', None)
-                    session.pop('admin_otp_timestamp', None)
-            else:
-                flash('Kòd verifikasyon manke. Eseye ankò.', 'error')
+            session['admin'] = True
+            flash('Konekte kòm administratè avèk siksè.', 'success')
+            return redirect(url_for('admin'))
         else:
             flash('Modpas envalid.', 'error')
     return render_template('admin_login.html')
@@ -377,6 +355,17 @@ def admin():
 
     return render_template('admin.html', ads=ads, batches=batches, users_gkach=users_gkach, gkach_rates=gkach_rates)
 
+@app.route('/admin/csv/<ad_id>')
+def download_csv(ad_id):
+    if 'admin' not in session:
+        return redirect(url_for('admin_login'))
+    csv_path = f'csv/{ad_id}.csv'
+    if os.path.exists(csv_path):
+        return send_from_directory('csv', f'{ad_id}.csv', as_attachment=True)
+    else:
+        flash('CSV pa jwenn.', 'error')
+        return redirect(url_for('admin'))
+
 @app.route('/admin/update_ad_status', methods=['POST'])
 def update_ad_status():
     if 'admin' not in session:
@@ -410,14 +399,16 @@ def create_batch():
     if 'admin' not in session:
         return redirect(url_for('admin_login'))
     try:
-        available_ads = Ad.query.filter_by(admin_status='approved', batch_id=None).limit(5).all()
+        available_ads = Ad.query.filter_by(admin_status='approved', batch_id=None).all()
 
         if len(available_ads) < 5:
             flash(f'Pa ase piblisite apwouve. Bezwen 5, gen {len(available_ads)} disponib.', 'error')
             return redirect(url_for('admin'))
 
+        # Take up to 5 ads
+        selected_ads = available_ads[:5]
         batch_id = str(uuid.uuid4())
-        ad_ids = [ad.ad_id for ad in available_ads]
+        ad_ids = [ad.ad_id for ad in selected_ads]
 
         # Generate Open Graph data for carousel
         og_data = {
@@ -426,7 +417,7 @@ def create_batch():
             'url': url_for('view_batch', batch_id=batch_id, _external=True),
             'images': []
         }
-        for ad in available_ads:
+        for ad in selected_ads:
             first_image = ad.images.split(',')[0]
             image_url = url_for('static', filename='uploads/' + first_image, _external=True)
             og_data['images'].append(image_url)
@@ -440,7 +431,7 @@ def create_batch():
         )
         db.session.add(new_batch)
 
-        for ad in available_ads:
+        for ad in selected_ads:
             ad.batch_id = batch_id
 
         db.session.commit()
@@ -471,9 +462,24 @@ def view_batch(batch_id):
 
 @app.route('/achte')
 def achte():
+    # Get search query from URL parameters
+    search_query = request.args.get('search', '').strip()
+
     # Fetch all approved ads
     approved_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
-    return render_template('achte.html', ads=approved_ads)
+
+    # Filter ads based on search query
+    if search_query:
+        filtered_ads = []
+        for ad in approved_ads:
+            title = ad.title or ""
+            description = ad.description or ""
+            if (search_query.lower() in title.lower() or
+                search_query.lower() in description.lower()):
+                filtered_ads.append(ad)
+        approved_ads = filtered_ads
+
+    return render_template('achte.html', ads=approved_ads, search_query=search_query)
 
 @app.route('/shopping_cart/<ad_id>', methods=['GET', 'POST'])
 def shopping_cart(ad_id):
@@ -487,14 +493,15 @@ def shopping_cart(ad_id):
         delivery_address = request.form.get('delivery_address', '').strip()
         price = request.form.get('price', '').strip()
 
-        # Format WhatsApp number
-        user_whatsapp = ''.join(filter(str.isdigit, user_whatsapp))
-        if not user_whatsapp.startswith('509'):
-            user_whatsapp = '509' + user_whatsapp
-        user_whatsapp = '+' + user_whatsapp
+        # Format WhatsApp number: ensure +509xxxxxxxx format
+        user_whatsapp_digits = ''.join(filter(str.isdigit, user_whatsapp))
+        if len(user_whatsapp_digits) >= 8:
+            user_whatsapp = '+509' + user_whatsapp_digits[-8:]
+        else:
+            user_whatsapp = ''
 
-        if not user_whatsapp or len(user_whatsapp) < 12:
-            flash('Numéro WhatsApp valab obligatwa.', 'error')
+        if not user_whatsapp:
+            flash('Numéro WhatsApp valab obligatwa (eg: +50912345678).', 'error')
             return redirect(url_for('shopping_cart', ad_id=ad_id))
         if not delivery_address:
             flash('Adrès livrezon obligatwa.', 'error')
@@ -512,29 +519,65 @@ def shopping_cart(ad_id):
             flash('Ou dwe aksepte kondisyon ak règleman yo pou achte piblisite.', 'error')
             return redirect(url_for('shopping_cart', ad_id=ad_id))
 
-        # Store in session
-        session['cart_ad_id'] = ad_id
-        session['cart_whatsapp'] = user_whatsapp
-        session['cart_delivery_address'] = delivery_address
-        session['cart_price'] = price
+        # Create Delivery record
+        delivery_id = str(uuid.uuid4())
+        delivery = Delivery(
+            delivery_id=delivery_id,
+            ad_id=ad_id,
+            buyer_whatsapp=user_whatsapp,
+            seller_whatsapp=ad.user_whatsapp,
+            delivery_cost=0,  # To be set by seller
+            total_price=price,  # Ad price initially
+            status='negotiating'
+        )
+        db.session.add(delivery)
+        db.session.commit()
 
+        # Send WhatsApp notification to seller
+        notify_seller_delivery_request(ad.user_whatsapp, user_whatsapp, delivery_address, delivery_id, ad.title, price)
+
+        # Send WhatsApp notification to buyer with cart details
+        notify_buyer_cart_submitted(user_whatsapp, ad.title, price, delivery_address, delivery_id)
+
+        # Store delivery_id in session for later use
+        session['delivery_id'] = delivery_id
+
+        flash('Demann livrezon voye bay vandè a! Vandè a pral mete pri livrezon byento. Ou pral resevwa yon mesaj lè pri a mete ajou.', 'info')
         return redirect(url_for('check_balance', ad_id=ad_id))
 
     return render_template('shopping_cart.html', ad=ad)
 
+@app.route('/cart_success/<ad_id>')
+def cart_success(ad_id):
+    ad = Ad.query.filter_by(ad_id=ad_id, admin_status='approved').first()
+    if not ad:
+        flash('Piblisite pa jwenn.', 'error')
+        return redirect(url_for('achte'))
+
+    # Get delivery_id from session to get buyer info
+    delivery_id = session.get('delivery_id')
+    delivery = None
+    contact_links = None
+    if delivery_id:
+        delivery = Delivery.query.filter_by(delivery_id=delivery_id, ad_id=ad_id).first()
+        if delivery:
+            # Create buyer-seller contact links for shipping negotiation
+            from src.notifications import pair_buyer_seller
+            contact_links = pair_buyer_seller(delivery.buyer_whatsapp, ad.user_whatsapp, ad.title, delivery_id)
+
+    return render_template('cart_success.html', ad=ad, delivery=delivery, contact_links=contact_links)
+
 @app.route('/achte/check_balance/<ad_id>', methods=['GET'])
 def check_balance(ad_id):
-    # Get data from session
-    cart_ad_id = session.get('cart_ad_id')
-    user_whatsapp = session.get('cart_whatsapp')
-    delivery_address = session.get('cart_delivery_address')
-    price = session.get('cart_price')
+    # Get delivery_id from session
+    delivery_id = session.get('delivery_id')
 
-    if not all([cart_ad_id, user_whatsapp, delivery_address, price]):
+    if not delivery_id:
         flash('Sesyon ekspire. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
-    if cart_ad_id != ad_id:
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id).first()
+    if not delivery or delivery.ad_id != ad_id:
         flash('Erè nan sesyon. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
@@ -543,10 +586,13 @@ def check_balance(ad_id):
         flash('Piblisite pa jwenn.', 'error')
         return redirect(url_for('achte'))
 
-    user_gkach = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
+    user_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.buyer_whatsapp).first()
     balance = user_gkach.gkach_balance if user_gkach else 0
 
-    return render_template('check_balance.html', balance=balance, ad=ad, whatsapp=user_whatsapp, price=price)
+    # Total price includes ad price + delivery cost
+    total_price = delivery.total_price + delivery.delivery_cost
+
+    return render_template('check_balance.html', balance=balance, ad=ad, whatsapp=delivery.buyer_whatsapp, price=total_price, delivery=delivery)
 
 @app.route('/achte_gkach', methods=['GET', 'POST'])
 def achte_gkach():
@@ -605,17 +651,15 @@ def achte_gkach():
 
 @app.route('/achte/buy/<ad_id>', methods=['POST'])
 def buy_ad(ad_id):
-    # Get data from session
-    cart_ad_id = session.get('cart_ad_id')
-    user_whatsapp = session.get('cart_whatsapp')
-    delivery_address = session.get('cart_delivery_address')
-    price = session.get('cart_price')
+    # Get delivery_id from session
+    delivery_id = session.get('delivery_id')
 
-    if not all([cart_ad_id, user_whatsapp, delivery_address, price]):
+    if not delivery_id:
         flash('Sesyon ekspire. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
-    if cart_ad_id != ad_id:
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id, ad_id=ad_id).first()
+    if not delivery:
         flash('Erè nan sesyon. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
@@ -624,26 +668,36 @@ def buy_ad(ad_id):
         flash('Piblisite pa jwenn.', 'error')
         return redirect(url_for('achte'))
 
-    user_gkach = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
-    if not user_gkach or user_gkach.gkach_balance < price:
+    # Total price includes ad price + delivery cost
+    total_price = delivery.total_price + delivery.delivery_cost
+
+    user_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.buyer_whatsapp).first()
+    if not user_gkach or user_gkach.gkach_balance < total_price:
         flash('Ou pa gen ase Gkach pou achte piblisite sa a. Ou bezwen achte Gkach.', 'error')
         return redirect(url_for('achte_gkach'))
 
-    # Deduct balance
-    user_gkach.gkach_balance -= price
+    # Deduct balance from buyer
+    user_gkach.gkach_balance -= total_price
+
+    # Credit balance to seller
+    seller_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.seller_whatsapp).first()
+    if seller_gkach:
+        seller_gkach.gkach_balance += total_price
+
+    db.session.commit()
+
+    # Update delivery status to 'completed'
+    delivery.status = 'completed'
     db.session.commit()
 
     # Clear session
-    session.pop('cart_ad_id', None)
-    session.pop('cart_whatsapp', None)
-    session.pop('cart_delivery_address', None)
-    session.pop('cart_price', None)
+    session.pop('delivery_id', None)
 
     # Notify admin and user of the purchase
-    notify_admin_ad_purchased(user_whatsapp, ad_id, price)
-    notify_user_ad_purchased(user_whatsapp, ad_id, price)
+    notify_admin_ad_purchased(delivery.buyer_whatsapp, ad_id, total_price)
+    notify_user_ad_purchased(delivery.buyer_whatsapp, ad_id, total_price)
 
-    flash(f'Achte avèk siksè! Ou te depanse {price} Gkach.', 'success')
+    flash(f'Achte avèk siksè! Ou te depanse {total_price} Gkach.', 'success')
     return redirect(url_for('achte'))
 
 @app.route('/admin/manage_gkach', methods=['GET', 'POST'])
@@ -817,6 +871,190 @@ def delete_batch(batch_id):
         flash('Erè nan efasman gwoup la.', 'error')
 
     return redirect(url_for('admin'))
+
+@app.route('/admin/edit_batch/<batch_id>')
+def edit_batch(batch_id):
+    if 'admin' not in session:
+        return redirect(url_for('admin_login'))
+
+    batch = Batch.query.filter_by(batch_id=batch_id).first()
+    if not batch:
+        flash('Gwoup pa jwenn.', 'error')
+        return redirect(url_for('admin'))
+
+    ad_ids = batch.ads.split(',')
+    batch_ads = Ad.query.filter(Ad.ad_id.in_(ad_ids)).all()
+
+    # Get approved ads not in any batch
+    available_ads = Ad.query.filter_by(admin_status='approved', batch_id=None).all()
+
+    return render_template('admin_edit_batch.html', batch=batch, batch_ads=batch_ads, available_ads=available_ads)
+
+@app.route('/admin/add_ad_to_batch/<batch_id>/<ad_id>', methods=['POST'])
+def add_ad_to_batch(batch_id, ad_id):
+    if 'admin' not in session:
+        return redirect(url_for('admin_login'))
+
+    batch = Batch.query.filter_by(batch_id=batch_id).first()
+    ad = Ad.query.filter_by(ad_id=ad_id, admin_status='approved', batch_id=None).first()
+
+    if not batch or not ad:
+        flash('Gwoup oubyen piblisite pa jwenn.', 'error')
+        return redirect(url_for('edit_batch', batch_id=batch_id))
+
+    # Add ad to batch
+    ad_ids = batch.ads.split(',')
+    ad_ids.append(ad_id)
+    batch.ads = ','.join(ad_ids)
+    ad.batch_id = batch_id
+
+    # Update Open Graph data
+    og_data = {
+        'title': 'Glory2yahPub Ad Batch',
+        'description': 'Check out these amazing ads from Glory2yahPub!',
+        'url': url_for('view_batch', batch_id=batch_id, _external=True),
+        'images': []
+    }
+    for ad_id in ad_ids:
+        ad = Ad.query.filter_by(ad_id=ad_id).first()
+        if ad:
+            first_image = ad.images.split(',')[0]
+            image_url = url_for('static', filename='uploads/' + first_image, _external=True)
+            og_data['images'].append(image_url)
+    batch.open_graph_data = json.dumps(og_data)
+
+    db.session.commit()
+
+    flash('Piblisite ajoute nan gwoup avèk siksè!', 'success')
+    return redirect(url_for('edit_batch', batch_id=batch_id))
+
+@app.route('/admin/remove_ad_from_batch/<batch_id>/<ad_id>', methods=['POST'])
+def remove_ad_from_batch(batch_id, ad_id):
+    if 'admin' not in session:
+        return redirect(url_for('admin_login'))
+
+    batch = Batch.query.filter_by(batch_id=batch_id).first()
+    ad = Ad.query.filter_by(ad_id=ad_id, batch_id=batch_id).first()
+
+    if not batch or not ad:
+        flash('Gwoup oubyen piblisite pa jwenn.', 'error')
+        return redirect(url_for('edit_batch', batch_id=batch_id))
+
+    # Remove ad from batch
+    ad_ids = batch.ads.split(',')
+    ad_ids.remove(ad_id)
+    batch.ads = ','.join(ad_ids)
+    ad.batch_id = None
+
+    # Update Open Graph data
+    if ad_ids:
+        og_data = {
+            'title': 'Glory2yahPub Ad Batch',
+            'description': 'Check out these amazing ads from Glory2yahPub!',
+            'url': url_for('view_batch', batch_id=batch_id, _external=True),
+            'images': []
+        }
+        for ad_id in ad_ids:
+            ad = Ad.query.filter_by(ad_id=ad_id).first()
+            if ad:
+                first_image = ad.images.split(',')[0]
+                image_url = url_for('static', filename='uploads/' + first_image, _external=True)
+                og_data['images'].append(image_url)
+        batch.open_graph_data = json.dumps(og_data)
+    else:
+        # If no ads left, delete the batch
+        db.session.delete(batch)
+        db.session.commit()
+        flash('Gwoup la efase paske li pa gen ase piblisite.', 'info')
+        return redirect(url_for('admin'))
+
+    db.session.commit()
+
+    flash('Piblisite retire nan gwoup avèk siksè!', 'success')
+    return redirect(url_for('edit_batch', batch_id=batch_id))
+
+@app.route('/set_delivery/<delivery_id>', methods=['GET', 'POST'])
+def set_delivery(delivery_id):
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id).first()
+    if not delivery:
+        flash('Demann livrezon pa jwenn.', 'error')
+        return redirect(url_for('index'))
+
+    ad = Ad.query.filter_by(ad_id=delivery.ad_id).first()
+    if not ad:
+        flash('Piblisite pa jwenn.', 'error')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        delivery_cost = request.form.get('delivery_cost', '').strip()
+        notes = request.form.get('notes', '').strip()
+
+        try:
+            delivery_cost = int(delivery_cost)
+            if delivery_cost < 0:
+                raise ValueError
+        except ValueError:
+            flash('Pri livrezon valab obligatwa.', 'error')
+            return redirect(url_for('set_delivery', delivery_id=delivery_id))
+
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            flash('Ou dwe aksepte kondisyon ak règleman yo.', 'error')
+            return redirect(url_for('set_delivery', delivery_id=delivery_id))
+
+        # Update delivery cost
+        delivery.delivery_cost = delivery_cost
+        delivery.status = 'price_set'
+        db.session.commit()
+
+        # Send WhatsApp notification to buyer with updated price
+        total_price = delivery.total_price + delivery_cost
+        notify_buyer_delivery_updated(delivery.buyer_whatsapp, delivery_cost, total_price, delivery_id)
+
+        flash('Pri livrezon mete ajou avèk siksè! Achete a resevwa mesaj WhatsApp.', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('set_delivery.html', delivery=delivery, ad=ad)
+
+# Communication API routes
+@app.route('/api/delivery/<delivery_id>/messages', methods=['GET'])
+def get_delivery_messages(delivery_id):
+    user_whatsapp = request.args.get('whatsapp')
+    if not user_whatsapp:
+        return jsonify({'error': 'WhatsApp number required'}), 400
+
+    try:
+        messages = get_messages(delivery_id, user_whatsapp)
+        return jsonify({'messages': messages})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 403
+
+@app.route('/api/delivery/<delivery_id>/send_message', methods=['POST'])
+def send_delivery_message(delivery_id):
+    data = request.get_json()
+    sender_whatsapp = data.get('sender_whatsapp')
+    message = data.get('message')
+
+    if not sender_whatsapp or not message:
+        return jsonify({'error': 'Sender WhatsApp and message required'}), 400
+
+    try:
+        new_message = send_message(delivery_id, sender_whatsapp, message)
+        return jsonify({
+            'message': 'Message sent successfully',
+            'message_id': new_message.id,
+            'created_at': new_message.created_at.isoformat()
+        })
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 403
+
+@app.route('/api/delivery/<delivery_id>/participants', methods=['GET'])
+def get_delivery_participants_api(delivery_id):
+    try:
+        participants = get_delivery_participants(delivery_id)
+        return jsonify(participants)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
