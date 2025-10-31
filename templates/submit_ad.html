@@ -12,6 +12,20 @@
         </div>
 
         <div class="form-group">
+            <label>Chwazi Tip Medya *</label>
+            <div class="media-type-selector">
+                <label class="media-option">
+                    <input type="radio" name="media_type" value="images" checked>
+                    <span>3 Imaj</span>
+                </label>
+                <label class="media-option">
+                    <input type="radio" name="media_type" value="video">
+                    <span>1 Videyo (maks 30 segonn, 100MB)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" id="images-section">
             <label>3 Imaj Piblisite w *</label>
             <div class="image-upload-grid">
                 <div class="upload-box">
@@ -27,6 +41,15 @@
                     <span>Imaj 3</span>
                 </div>
             </div>
+        </div>
+
+        <div class="form-group" id="video-section" style="display: none;">
+            <label>Videyo Piblisite w (maks 30 segonn, 100MB) *</label>
+            <div class="upload-box" style="position: relative;">
+                <input type="file" name="video" accept="video/mp4,video/avi,video/mov,video/mkv" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                <span>Klike pou chwazi videyo</span>
+            </div>
+            <small>Videyo dwe gen maksimòm 30 segonn ak 100MB. Tip aksepte: MP4, AVI, MOV, MKV.</small>
         </div>
 
         <div class="form-group">

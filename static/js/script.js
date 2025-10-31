@@ -25,6 +25,29 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCharCount();
     }
 
+    // Media type selection
+    const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
+    const imagesSection = document.getElementById('images-section');
+    const videoSection = document.getElementById('video-section');
+
+    mediaTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'images') {
+                imagesSection.style.display = 'block';
+                videoSection.style.display = 'none';
+                // Make image inputs required and video input not required
+                document.querySelectorAll('input[name^="image_"]').forEach(input => input.required = true);
+                document.querySelector('input[name="video"]').required = false;
+            } else if (this.value === 'video') {
+                imagesSection.style.display = 'none';
+                videoSection.style.display = 'block';
+                // Make video input required and image inputs not required
+                document.querySelectorAll('input[name^="image_"]').forEach(input => input.required = false);
+                document.querySelector('input[name="video"]').required = true;
+            }
+        });
+    });
+
     const uploadBoxes = document.querySelectorAll('.upload-box');
     uploadBoxes.forEach(box => {
         const span = box.querySelector('span');
@@ -41,15 +64,39 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Validate video duration if it's a video
+                if (input.name === 'video') {
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.onloadedmetadata = function() {
+                        window.URL.revokeObjectURL(video.src);
+                        if (video.duration > 30) {
+                            alert('Videyo a dwe gen maksimòm 30 segonn.');
+                            input.value = '';
+                            return;
+                        }
+                    };
+                    video.src = URL.createObjectURL(file);
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const preview = document.createElement('img');
+                    let preview;
+                    if (file.type.startsWith('video/')) {
+                        preview = document.createElement('video');
+                        preview.controls = true;
+                        preview.style.maxWidth = '200px';
+                        preview.style.maxHeight = '150px';
+                        preview.style.marginTop = '10px';
+                    } else {
+                        preview = document.createElement('img');
+                        preview.style.maxWidth = '100px';
+                        preview.style.maxHeight = '100px';
+                        preview.style.marginTop = '10px';
+                    }
                     preview.src = e.target.result;
-                    preview.style.maxWidth = '100px';
-                    preview.style.maxHeight = '100px';
-                    preview.style.marginTop = '10px';
 
-                    const existingPreview = input.parentNode.querySelector('img');
+                    const existingPreview = input.parentNode.querySelector('img, video');
                     if (existingPreview) {
                         existingPreview.remove();
                     }

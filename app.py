@@ -8,6 +8,9 @@ import csv
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from src.logger import setup_logger
+from moviepy.editor import VideoFileClip
+from PIL import Image
+from image_search import find_similar_ads
 from src.notifications import (
     notify_admin_new_gkach_request,
     notify_admin_balance_change,
@@ -34,7 +37,7 @@ from src.communication import send_message, get_messages, get_delivery_participa
 app = Flask(__name__)
 app.secret_key = 'glory2yahpub_secret_key_2024'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB for video uploads
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///glory2yahpub.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -63,6 +66,18 @@ def generate_otp():
 
 with app.app_context():
     db.create_all()
+    # Add missing columns if not exists
+    from sqlalchemy import text
+    try:
+        db.session.execute(text("ALTER TABLE ads ADD COLUMN media_type VARCHAR(10) DEFAULT 'images'"))
+        db.session.commit()
+    except:
+        pass  # Column already exists
+    try:
+        db.session.execute(text("ALTER TABLE ads ADD COLUMN video VARCHAR(255)"))
+        db.session.commit()
+    except:
+        pass  # Column already exists
 
 @app.before_request
 def log_traffic():
@@ -160,38 +175,82 @@ def submit_ad():
             flash('Ou dwe aksepte kondisyon ak règleman yo pou soumèt piblisite.', 'error')
             return redirect(url_for('submit_ad'))
 
+        media_type = request.form.get('media_type', 'images')
         images = []
-        for i in range(1, 4):
-            image_field = f'image_{i}'
-            if image_field in request.files:
-                file = request.files[image_field]
-                logger.info(f"Processing file {image_field}: filename={file.filename}, content_type={file.content_type}")
-                if file and allowed_file(file.filename):
-                    images.append(file)
-                else:
-                    logger.warning(f"File {image_field} not allowed: {file.filename}")
+        video = None
 
-        logger.info(f"Total valid images: {len(images)}")
-        if len(images) != 3:
-            logger.error(f"Expected 3 images, got {len(images)}")
-            flash('Ou dwe upload egzakteman 3 imaj pou piblisite w la.', 'error')
-            return redirect(url_for('submit_ad'))
+        if media_type == 'images':
+            for i in range(1, 4):
+                image_field = f'image_{i}'
+                if image_field in request.files:
+                    file = request.files[image_field]
+                    logger.info(f"Processing file {image_field}: filename={file.filename}, content_type={file.content_type}")
+                    if file and allowed_file(file.filename):
+                        images.append(file)
+                    else:
+                        logger.warning(f"File {image_field} not allowed: {file.filename}")
+
+            logger.info(f"Total valid images: {len(images)}")
+            if len(images) != 3:
+                logger.error(f"Expected 3 images, got {len(images)}")
+                flash('Ou dwe upload egzakteman 3 imaj pou piblisite w la.', 'error')
+                return redirect(url_for('submit_ad'))
+        elif media_type == 'video':
+            if 'video' in request.files:
+                file = request.files['video']
+                logger.info(f"Processing video file: filename={file.filename}, content_type={file.content_type}")
+                if file and file.filename and file.filename.rsplit('.', 1)[1].lower() in ['mp4', 'avi', 'mov', 'mkv']:
+                    video = file
+                else:
+                    logger.warning(f"Video file not allowed: {file.filename}")
+                    flash('Tip videyo pa aksepte. Sèlman MP4, AVI, MOV, oubyen MKV.', 'error')
+                    return redirect(url_for('submit_ad'))
+            else:
+                flash('Ou dwe upload yon videyo pou piblisite w la.', 'error')
+                return redirect(url_for('submit_ad'))
 
         # Ensure upload directory exists
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
         # Now save files
         saved_images = []
-        for file in images:
-            filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
+        saved_video = None
+
+        if media_type == 'images':
+            for file in images:
+                filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                try:
+                    file.save(filepath)
+                    # Compress the image
+                    try:
+                        img = Image.open(filepath)
+                        if img.format in ['JPEG', 'JPG']:
+                            img.save(filepath, 'JPEG', quality=80, optimize=True)
+                        elif img.format == 'PNG':
+                            img.save(filepath, 'PNG', optimize=True)
+                        # GIF and others left uncompressed
+                        img.close()
+                        logger.info(f"Image compressed successfully: {filename}")
+                    except Exception as compress_e:
+                        logger.warning(f"Error compressing image {filename}: {str(compress_e)}")
+                        # Continue without compression
+                    saved_images.append(filename)
+                    logger.info(f"File saved successfully: {filename}")
+                except Exception as e:
+                    logger.error(f"Error saving file {filename}: {str(e)}")
+                    flash('Erè nan telechajman imaj yo. Eseye ankò.', 'error')
+                    return redirect(url_for('submit_ad'))
+        elif media_type == 'video':
+            filename = f"{uuid.uuid4()}_{secure_filename(video.filename)}"
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             try:
-                file.save(filepath)
-                saved_images.append(filename)
-                logger.info(f"File saved successfully: {filename}")
+                video.save(filepath)
+                saved_video = filename
+                logger.info(f"Video saved successfully: {filename}")
             except Exception as e:
-                logger.error(f"Error saving file {filename}: {str(e)}")
-                flash('Erè nan telechajman imaj yo. Eseye ankò.', 'error')
+                logger.error(f"Error saving video {filename}: {str(e)}")
+                flash('Erè nan telechajman videyo a. Eseye ankò.', 'error')
                 return redirect(url_for('submit_ad'))
 
         ad_id = str(uuid.uuid4())
@@ -201,7 +260,9 @@ def submit_ad():
             new_ad = Ad(
                 ad_id=ad_id,
                 user_whatsapp=user_whatsapp,
-                images=','.join(saved_images),
+                media_type=media_type,
+                images=','.join(saved_images) if saved_images else '',
+                video=saved_video,
                 description=description,
                 title=title,
                 price_gkach=price_gkach,
@@ -470,16 +531,57 @@ def achte():
 
     # Filter ads based on search query
     if search_query:
-        filtered_ads = []
-        for ad in approved_ads:
-            title = ad.title or ""
-            description = ad.description or ""
-            if (search_query.lower() in title.lower() or
-                search_query.lower() in description.lower()):
-                filtered_ads.append(ad)
-        approved_ads = filtered_ads
+        if search_query.startswith('image_search:'):
+            # Handle image search results
+            ad_ids_str = search_query.replace('image_search:', '')
+            ad_ids = ad_ids_str.split(',') if ad_ids_str else []
+            approved_ads = [ad for ad in approved_ads if ad.ad_id in ad_ids]
+        else:
+            # Regular text search
+            filtered_ads = []
+            for ad in approved_ads:
+                title = ad.title or ""
+                description = ad.description or ""
+                if (search_query.lower() in title.lower() or
+                    search_query.lower() in description.lower()):
+                    filtered_ads.append(ad)
+            approved_ads = filtered_ads
 
     return render_template('achte.html', ads=approved_ads, search_query=search_query)
+
+@app.route('/search_by_image', methods=['POST'])
+def search_by_image():
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': 'Pa gen imaj chwazi.'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'Pa gen imaj chwazi.'}), 400
+
+    if file and allowed_file(file.filename):
+        # Save the uploaded image temporarily
+        filename = f"search_{uuid.uuid4()}_{secure_filename(file.filename)}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        try:
+            # Perform image search
+            similar_ads = find_similar_ads(filepath)
+
+            # Clean up the temporary file
+            os.remove(filepath)
+
+            # Return the ad IDs of similar ads
+            ad_ids = [ad.ad_id for ad in similar_ads]
+            return jsonify({'success': True, 'ad_ids': ad_ids})
+        except Exception as e:
+            # Clean up the temporary file in case of error
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            logger.error(f"Error in image search: {str(e)}")
+            return jsonify({'success': False, 'message': 'Erè nan rechèch pa imaj.'}), 500
+    else:
+        return jsonify({'success': False, 'message': 'Tip dosye pa aksepte.'}), 400
 
 @app.route('/shopping_cart/<ad_id>', methods=['GET', 'POST'])
 def shopping_cart(ad_id):
@@ -488,84 +590,158 @@ def shopping_cart(ad_id):
         flash('Piblisite pa jwenn.', 'error')
         return redirect(url_for('achte'))
 
+    # Get cart from session or initialize empty cart
+    cart = session.get('cart', {})
+
     if request.method == 'POST':
-        user_whatsapp = request.form.get('whatsapp', '').strip()
-        delivery_address = request.form.get('delivery_address', '').strip()
-        price = request.form.get('price', '').strip()
+        action = request.form.get('action', 'add_to_cart')
 
-        # Format WhatsApp number: ensure +509xxxxxxxx format
-        user_whatsapp_digits = ''.join(filter(str.isdigit, user_whatsapp))
-        if len(user_whatsapp_digits) >= 8:
-            user_whatsapp = '+509' + user_whatsapp_digits[-8:]
-        else:
-            user_whatsapp = ''
+        if action == 'add_to_cart':
+            # Add item to cart
+            if ad_id not in cart:
+                cart[ad_id] = {
+                    'quantity': 1,
+                    'price': ad.price_gkach,
+                    'title': ad.title,
+                    'seller_whatsapp': ad.user_whatsapp
+                }
+            else:
+                cart[ad_id]['quantity'] += 1
 
-        if not user_whatsapp:
-            flash('Numéro WhatsApp valab obligatwa (eg: +50912345678).', 'error')
-            return redirect(url_for('shopping_cart', ad_id=ad_id))
-        if not delivery_address:
-            flash('Adrès livrezon obligatwa.', 'error')
-            return redirect(url_for('shopping_cart', ad_id=ad_id))
-        try:
-            price = int(price)
-            if price <= 0:
-                raise ValueError
-        except ValueError:
-            flash('Pri valab obligatwa.', 'error')
-            return redirect(url_for('shopping_cart', ad_id=ad_id))
+            session['cart'] = cart
+            flash('Piblisite ajoute nan panier!', 'success')
+            return redirect(url_for('achte'))
 
-        # Check terms acceptance
-        if not request.form.get('accept_terms'):
-            flash('Ou dwe aksepte kondisyon ak règleman yo pou achte piblisite.', 'error')
-            return redirect(url_for('shopping_cart', ad_id=ad_id))
+        elif action == 'checkout':
+            user_whatsapp = request.form.get('whatsapp', '').strip()
+            delivery_address = request.form.get('delivery_address', '').strip()
 
-        # Create Delivery record
-        delivery_id = str(uuid.uuid4())
-        delivery = Delivery(
-            delivery_id=delivery_id,
-            ad_id=ad_id,
-            buyer_whatsapp=user_whatsapp,
-            seller_whatsapp=ad.user_whatsapp,
-            delivery_cost=0,  # To be set by seller
-            total_price=price,  # Ad price initially
-            status='negotiating'
-        )
-        db.session.add(delivery)
-        db.session.commit()
+            # Format WhatsApp number: ensure +509xxxxxxxx format
+            user_whatsapp_digits = ''.join(filter(str.isdigit, user_whatsapp))
+            if len(user_whatsapp_digits) >= 8:
+                user_whatsapp = '+509' + user_whatsapp_digits[-8:]
+            else:
+                user_whatsapp = ''
 
-        # Send WhatsApp notification to seller
-        notify_seller_delivery_request(ad.user_whatsapp, user_whatsapp, delivery_address, delivery_id, ad.title, price)
+            if not user_whatsapp:
+                flash('Numéro WhatsApp valab obligatwa (eg: +50912345678).', 'error')
+                return redirect(url_for('shopping_cart', ad_id=ad_id))
+            if not delivery_address:
+                flash('Adrès livrezon obligatwa.', 'error')
+                return redirect(url_for('shopping_cart', ad_id=ad_id))
+            if not cart:
+                flash('Panier ou vid.', 'error')
+                return redirect(url_for('shopping_cart', ad_id=ad_id))
 
-        # Send WhatsApp notification to buyer with cart details
-        notify_buyer_cart_submitted(user_whatsapp, ad.title, price, delivery_address, delivery_id)
+            # Check terms acceptance
+            if not request.form.get('accept_terms'):
+                flash('Ou dwe aksepte kondisyon ak règleman yo pou achte piblisite.', 'error')
+                return redirect(url_for('shopping_cart', ad_id=ad_id))
 
-        # Store delivery_id in session for later use
-        session['delivery_id'] = delivery_id
+            # Group cart items by seller
+            seller_carts = {}
+            for item_ad_id, item_data in cart.items():
+                seller = item_data['seller_whatsapp']
+                if seller not in seller_carts:
+                    seller_carts[seller] = []
+                seller_carts[seller].append({
+                    'ad_id': item_ad_id,
+                    'quantity': item_data['quantity'],
+                    'price': item_data['price'],
+                    'title': item_data['title']
+                })
 
-        flash('Demann livrezon voye bay vandè a! Vandè a pral mete pri livrezon byento. Ou pral resevwa yon mesaj lè pri a mete ajou.', 'info')
-        return redirect(url_for('check_balance', ad_id=ad_id))
+            # Create delivery records for each seller
+            delivery_ids = []
+            for seller_whatsapp, items in seller_carts.items():
+                delivery_id = str(uuid.uuid4())
+                total_price = sum(item['price'] * item['quantity'] for item in items)
 
-    return render_template('shopping_cart.html', ad=ad)
+                delivery = Delivery(
+                    delivery_id=delivery_id,
+                    buyer_whatsapp=user_whatsapp,
+                    seller_whatsapp=seller_whatsapp,
+                    delivery_cost=0,  # To be set by seller
+                    total_price=total_price,
+                    status='negotiating',
+                    cart_items=json.dumps(items),
+                    delivery_address=delivery_address
+                )
+                db.session.add(delivery)
+                delivery_ids.append(delivery_id)
 
-@app.route('/cart_success/<ad_id>')
-def cart_success(ad_id):
-    ad = Ad.query.filter_by(ad_id=ad_id, admin_status='approved').first()
-    if not ad:
-        flash('Piblisite pa jwenn.', 'error')
+                # Send WhatsApp notification to seller with cart details
+                notify_seller_delivery_request(seller_whatsapp, user_whatsapp, delivery_address, delivery_id, items, total_price)
+
+            db.session.commit()
+
+            # Send WhatsApp notification to buyer
+            notify_buyer_cart_submitted(user_whatsapp, cart, delivery_address, delivery_ids)
+
+            # Store delivery_ids in session
+            session['delivery_ids'] = delivery_ids
+            session.pop('cart', None)  # Clear cart after checkout
+
+            flash('Demann livrezon voye bay vandè yo! Vandè yo pral mete pri livrezon byento. Ou pral resevwa yon mesaj lè pri yo mete ajou.', 'info')
+            return redirect(url_for('cart_success_page'))
+
+    # Calculate cart totals
+    cart_items = []
+    total_items = 0
+    total_price = 0
+
+    for item_ad_id, item_data in cart.items():
+        item_ad = Ad.query.filter_by(ad_id=item_ad_id).first()
+        if item_ad:
+            cart_items.append({
+                'ad': item_ad,
+                'quantity': item_data['quantity'],
+                'subtotal': item_data['price'] * item_data['quantity']
+            })
+            total_items += item_data['quantity']
+            total_price += item_data['price'] * item_data['quantity']
+
+    return render_template('shopping_cart.html', ad=ad, cart=cart, cart_items=cart_items, total_items=total_items, total_price=total_price)
+
+@app.route('/cart_success')
+def cart_success_page():
+    # Get delivery_ids from session
+    delivery_ids = session.get('delivery_ids', [])
+    if not delivery_ids:
+        flash('Sesyon ekspire. Eseye ankò.', 'error')
         return redirect(url_for('achte'))
 
-    # Get delivery_id from session to get buyer info
-    delivery_id = session.get('delivery_id')
-    delivery = None
-    contact_links = None
-    if delivery_id:
-        delivery = Delivery.query.filter_by(delivery_id=delivery_id, ad_id=ad_id).first()
-        if delivery:
-            # Create buyer-seller contact links for shipping negotiation
-            from src.notifications import pair_buyer_seller
-            contact_links = pair_buyer_seller(delivery.buyer_whatsapp, ad.user_whatsapp, ad.title, delivery_id)
+    # Get all deliveries for this cart
+    deliveries = Delivery.query.filter(Delivery.delivery_id.in_(delivery_ids)).all()
+    if not deliveries:
+        flash('Erè nan sesyon. Eseye ankò.', 'error')
+        return redirect(url_for('achte'))
 
-    return render_template('cart_success.html', ad=ad, delivery=delivery, contact_links=contact_links)
+    # Group deliveries by seller for display
+    seller_deliveries = {}
+    total_cart_price = 0
+    for delivery in deliveries:
+        seller = delivery.seller_whatsapp
+        if seller not in seller_deliveries:
+            seller_deliveries[seller] = []
+        seller_deliveries[seller].append(delivery)
+        total_cart_price += delivery.total_price
+
+    # Get cart items for display
+    cart_items = []
+    for delivery in deliveries:
+        if delivery.cart_items:
+            items = json.loads(delivery.cart_items)
+            for item in items:
+                ad = Ad.query.filter_by(ad_id=item['ad_id']).first()
+                if ad:
+                    cart_items.append({
+                        'ad': ad,
+                        'quantity': item['quantity'],
+                        'subtotal': item['price'] * item['quantity']
+                    })
+
+    return render_template('cart_success.html', deliveries=deliveries, seller_deliveries=seller_deliveries, cart_items=cart_items, total_cart_price=total_cart_price)
 
 @app.route('/achte/check_balance/<ad_id>', methods=['GET'])
 def check_balance(ad_id):
