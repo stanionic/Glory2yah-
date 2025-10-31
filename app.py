@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, send_from_directory
-from models import db, Ad, Batch, UserGkach, GkachRate, Delivery
+from models import db, Ad, Batch, UserGkach, GkachRate, Delivery, Message
 import uuid
 import os
 import json
@@ -29,6 +29,7 @@ from src.notifications import (
     notify_buyer_delivery_updated,
     notify_buyer_cart_submitted
 )
+from src.communication import send_message, get_messages, get_delivery_participants
 
 app = Flask(__name__)
 app.secret_key = 'glory2yahpub_secret_key_2024'
@@ -542,7 +543,7 @@ def shopping_cart(ad_id):
         session['delivery_id'] = delivery_id
 
         flash('Demann livrezon voye bay vandè a! Vandè a pral mete pri livrezon byento. Ou pral resevwa yon mesaj lè pri a mete ajou.', 'info')
-        return redirect(url_for('cart_success', ad_id=ad_id))
+        return redirect(url_for('check_balance', ad_id=ad_id))
 
     return render_template('shopping_cart.html', ad=ad)
 
@@ -552,7 +553,19 @@ def cart_success(ad_id):
     if not ad:
         flash('Piblisite pa jwenn.', 'error')
         return redirect(url_for('achte'))
-    return render_template('cart_success.html', ad=ad)
+
+    # Get delivery_id from session to get buyer info
+    delivery_id = session.get('delivery_id')
+    delivery = None
+    contact_links = None
+    if delivery_id:
+        delivery = Delivery.query.filter_by(delivery_id=delivery_id, ad_id=ad_id).first()
+        if delivery:
+            # Create buyer-seller contact links for shipping negotiation
+            from src.notifications import pair_buyer_seller
+            contact_links = pair_buyer_seller(delivery.buyer_whatsapp, ad.user_whatsapp, ad.title, delivery_id)
+
+    return render_template('cart_success.html', ad=ad, delivery=delivery, contact_links=contact_links)
 
 @app.route('/achte/check_balance/<ad_id>', methods=['GET'])
 def check_balance(ad_id):
@@ -1002,6 +1015,46 @@ def set_delivery(delivery_id):
         return redirect(url_for('index'))
 
     return render_template('set_delivery.html', delivery=delivery, ad=ad)
+
+# Communication API routes
+@app.route('/api/delivery/<delivery_id>/messages', methods=['GET'])
+def get_delivery_messages(delivery_id):
+    user_whatsapp = request.args.get('whatsapp')
+    if not user_whatsapp:
+        return jsonify({'error': 'WhatsApp number required'}), 400
+
+    try:
+        messages = get_messages(delivery_id, user_whatsapp)
+        return jsonify({'messages': messages})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 403
+
+@app.route('/api/delivery/<delivery_id>/send_message', methods=['POST'])
+def send_delivery_message(delivery_id):
+    data = request.get_json()
+    sender_whatsapp = data.get('sender_whatsapp')
+    message = data.get('message')
+
+    if not sender_whatsapp or not message:
+        return jsonify({'error': 'Sender WhatsApp and message required'}), 400
+
+    try:
+        new_message = send_message(delivery_id, sender_whatsapp, message)
+        return jsonify({
+            'message': 'Message sent successfully',
+            'message_id': new_message.id,
+            'created_at': new_message.created_at.isoformat()
+        })
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 403
+
+@app.route('/api/delivery/<delivery_id>/participants', methods=['GET'])
+def get_delivery_participants_api(delivery_id):
+    try:
+        participants = get_delivery_participants(delivery_id)
+        return jsonify(participants)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

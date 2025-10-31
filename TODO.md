@@ -9,6 +9,12 @@
 
 ## Followup Steps
 - [x] Test the complete flow: buyer submits cart → seller sets delivery cost → buyer receives notification → buyer checks balance and pays.
-- [ ] Ensure WhatsApp notifications are working (currently showing connection errors in terminal output).
+- [x] Ensure WhatsApp notifications are working (updated to use Twilio API with proper configuration).
 - [x] Verify that the buyer is redirected correctly after cart submission.
 - [x] Confirm that the check_balance page displays the correct updated total after seller sets delivery cost.
+
+## Configuration Notes
+- WhatsApp notifications now use WhatsApp.me API. Set environment variable: WHATSAPP_ME_API_KEY
+- Added pair_user_chat() function for admin to communicate with users
+- See config.example for configuration template
+- Install dependencies: pip install -r requirements.txt
