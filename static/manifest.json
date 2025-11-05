@@ -1,0 +1,21 @@
+{
+  "name": "Glory2yahPub",
+  "short_name": "Glory2yahPub",
+  "description": "Haitian advertising platform for buying and selling products and services",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#002366",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "business"],
+  "lang": "ht-HT",
+  "dir": "ltr"
+}

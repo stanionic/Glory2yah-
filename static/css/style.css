@@ -558,12 +558,73 @@ footer a {
         gap: 1rem;
     }
 
+    nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     nav a {
-        margin: 0 1rem;
+        margin: 0 0.5rem;
+        font-size: 1rem;
     }
 
     .hero h2 {
         font-size: 2rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+
+    .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .ad-form, .payment-form {
+        margin: 1rem auto;
+        padding: 1rem;
+    }
+
+    .image-upload-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .upload-box {
+        height: 100px;
+    }
+
+    .admin-dashboard {
+        flex-direction: column;
+    }
+
+    .ads-section, .other-widgets, .batches-section, .gkach-section {
+        flex: none;
+    }
+
+    .batch-carousel {
+        padding: 1rem 0;
+    }
+
+    .carousel-slide {
+        flex-direction: column;
+    }
+
+    .carousel-slide img {
+        width: 100%;
+        height: 200px;
+    }
+
+    .ad-details {
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .whatsapp-ad-card {
+        min-width: 200px;
+        max-width: 250px;
     }
 
     .ad-actions {
@@ -572,6 +633,7 @@ footer a {
 
     .ad-actions .btn {
         width: 100%;
+        margin-bottom: 0.5rem;
     }
 
     .success-actions {
@@ -581,5 +643,79 @@ footer a {
 
     .success-actions .btn {
         width: 200px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+
+    footer .container {
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+
+    .hero {
+        padding: 1rem 0;
+    }
+
+    .hero h2 {
+        font-size: 1.5rem;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .ad-card, .batch-card {
+        padding: 1rem;
+    }
+
+    .carousel-prev, .carousel-next {
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+    }
+
+    .carousel-prev {
+        left: -15px;
+    }
+
+    .carousel-next {
+        right: -15px;
+    }
+
+    .whatsapp-ad-card {
+        min-width: 150px;
+        max-width: 200px;
+    }
+
+    .ad-image img {
+        height: 120px;
+    }
+
+    .ad-text {
+        padding: 0.5rem;
+    }
+
+    .ad-text h4 {
+        font-size: 1rem;
+    }
+
+    .ad-text p {
+        font-size: 0.8rem;
     }
 }
