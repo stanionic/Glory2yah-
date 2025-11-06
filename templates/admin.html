@@ -3,6 +3,16 @@
 {% block content %}
 <div class="container">
     <h2>Panno Administratè Glory2yahPub</h2>
+    
+    <!-- Facebook Connection Test -->
+    <div class="facebook-section">
+        <a href="{{ url_for('test_facebook_connection') }}" class="btn btn-blue">
+            <i class="fab fa-facebook"></i> Teste Koneksyon Facebook
+        </a>
+        <a href="{{ url_for('show_facebook_batch_results') }}" class="btn btn-gold">
+            <i class="fas fa-chart-bar"></i> Wè Dènye Rezilta Facebook
+        </a>
+    </div>
 
     <div class="admin-dashboard">
         <div class="ads-section">
@@ -58,6 +68,11 @@
                             <a href="{{ url_for('download_csv', ad_id=ad.ad_id) }}" class="btn btn-gold" target="_blank">
                                 📄 Telechaje CSV
                             </a>
+                            <form method="POST" action="{{ url_for('publish_ad_to_facebook', ad_id=ad.ad_id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-blue" title="Pibliye sou Facebook">
+                                    <i class="fab fa-facebook"></i> Pibliye Facebook
+                                </button>
+                            </form>
                             {% endif %}
 
                             <a href="https://wa.me/{{ ad.user_whatsapp }}?text=Ey%20Admin..." class="btn btn-whatsapp" target="_blank">
@@ -89,6 +104,11 @@
                                 <a href="{{ url_for('view_batch', batch_id=batch.batch_id) }}" class="btn btn-blue">Wè Gwoup</a>
                                 <a href="{{ url_for('edit_batch', batch_id=batch.batch_id) }}" class="btn btn-green">Modifye Gwoup</a>
                                 <button onclick="copyBatchLink('{{ batch.batch_id }}')" class="btn btn-gold">Kopi Lyen</button>
+                                <form method="POST" action="{{ url_for('publish_batch_to_facebook', batch_id=batch.batch_id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-blue" title="Pibliye gwoup sou Facebook">
+                                        <i class="fab fa-facebook"></i> Pibliye Facebook
+                                    </button>
+                                </form>
                                 <form method="POST" action="{{ url_for('delete_batch', batch_id=batch.batch_id) }}"
                                       onsubmit="return confirm('Èske w sèten w vle efase gwoup sa?')">
                                     <button type="submit" class="btn btn-danger">Efase</button>
@@ -192,6 +212,37 @@
         </div>
     </div>
 </div>
+
+<style>
+.facebook-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.facebook-section .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .facebook-section {
+        flex-direction: column;
+    }
+    
+    .facebook-section .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
 
 <script>
 function copyBatchLink(batchId) {

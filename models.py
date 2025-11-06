@@ -3,6 +3,19 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    product_id = db.Column(db.String(36), db.ForeignKey('ads.ad_id'))
+    quantity = db.Column(db.Integer, default=1)
+    shipping_fee_set = db.Column(db.Boolean, default=False)
+    shipping_fee = db.Column(db.Float, default=0.0)
+    negotiation_status = db.Column(db.String(20), default='cart')  # 'cart', 'buyer_submitted', 'seller_updated'
+    cart_id = db.Column(db.String(36), nullable=True)  # Unique ID for each cart submission
+    delivery_address = db.Column(db.Text, nullable=True)  # Store delivery address
+
 class Ad(db.Model):
     __tablename__ = 'ads'
 
@@ -72,19 +85,6 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     whatsapp = db.Column(db.String(20))
-
-class CartItem(db.Model):
-    __tablename__ = 'cart_items'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    product_id = db.Column(db.String(36), db.ForeignKey('ads.ad_id'))  # ad_id as product_id
-    quantity = db.Column(db.Integer, default=1)
-    shipping_fee_set = db.Column(db.Boolean, default=False)
-    shipping_fee = db.Column(db.Float, default=0.0)
-    negotiation_status = db.Column(db.String(20), default='cart')  # 'cart', 'buyer_submitted', 'seller_updated'
-    cart_id = db.Column(db.String(36), nullable=True)  # Unique ID for each cart submission
-    delivery_address = db.Column(db.Text, nullable=True)  # Store delivery address
 
 class Ads_Owner(db.Model):
     __tablename__ = 'ads_owner'
