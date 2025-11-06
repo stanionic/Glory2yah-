@@ -32,87 +32,91 @@
                     {% endif %}
                 {% endwith %}
 
-                <!-- Cart Items -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-shopping-cart me-2"></i>
-                            Atik yo nan Panier
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        {% for item in cart_items %}
-                            <div class="row align-items-center mb-3 pb-3 border-bottom">
-                                <div class="col-2">
-                                    {% if item.ad.images %}
-                                        <img src="{{ url_for('static', filename='uploads/' + item.ad.images.split(',')[0]) }}" 
-                                             class="img-fluid rounded" alt="{{ item.ad.title }}">
-                                    {% else %}
-                                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="height: 60px;">
-                                            <i class="fas fa-image"></i>
-                                        </div>
-                                    {% endif %}
+                <!-- Update Form with Cart Items -->
+                <form method="POST">
+                    <!-- Cart Items -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-shopping-cart me-2"></i>
+                                Atik yo nan Panier
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for item in cart_items %}
+                                <div class="row align-items-center mb-3 pb-3 border-bottom">
+                                    <div class="col-2">
+                                        {% if item.ad.images %}
+                                            <img src="{{ url_for('static', filename='uploads/' + item.ad.images.split(',')[0]) }}" 
+                                                 class="img-fluid rounded" alt="{{ item.ad.title }}">
+                                        {% else %}
+                                            <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="height: 60px;">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-5">
+                                        <h6 class="mb-1">{{ item.ad.title }}</h6>
+                                        <small class="text-muted">Kantite: {{ item.quantity }}</small>
+                                        <div class="text-success fw-bold">{{ item.subtotal }} Gkach</div>
+                                    </div>
+                                    <div class="col-5">
+                                        <label class="form-label small">
+                                            <i class="fas fa-truck me-1"></i>
+                                            Pri Livrezon (Gkach)
+                                        </label>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               name="shipping_{{ item.id }}" 
+                                               value="{{ item.shipping_fee }}" 
+                                               min="0" required>
+                                        <div class="form-text">Mete pri livrezon pou atik sa a</div>
+                                    </div>
                                 </div>
-                                <div class="col-5">
-                                    <h6 class="mb-1">{{ item.ad.title }}</h6>
-                                    <small class="text-muted">Kantite: {{ item.quantity }}</small>
-                                    <div class="text-success fw-bold">{{ item.subtotal }} Gkach</div>
-                                </div>
-                                <div class="col-5">
-                                    <label class="form-label small">
-                                        <i class="fas fa-truck me-1"></i>
-                                        Pri Livrezon (Gkach)
-                                    </label>
-                                    <input type="number" class="form-control form-control-sm" 
-                                           name="shipping_{{ item.id }}" 
-                                           value="{{ item.shipping_fee }}" 
-                                           min="0" required>
-                                    <div class="form-text">Mete pri livrezon pou atik sa a</div>
-                                </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
 
-                        <div class="row mt-3 pt-3 border-top">
-                            <div class="col-6">
-                                <strong>Total Pwodwi:</strong>
+                            <div class="row mt-3 pt-3 border-top">
+                                <div class="col-6">
+                                    <strong>Total Pwodwi:</strong>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <strong>{{ total_product_price }} Gkach</strong>
+                                </div>
                             </div>
-                            <div class="col-6 text-end">
-                                <strong>{{ total_product_price }} Gkach</strong>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <strong>Total Livrezon Aktiyèl:</strong>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <strong>{{ current_shipping_total }} Gkach</strong>
+                                </div>
                             </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-6">
-                                <strong>Total Livrezon Aktiyèl:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                <strong>{{ current_shipping_total }} Gkach</strong>
-                            </div>
-                        </div>
-                        <div class="row mt-2 pt-2 border-top">
-                            <div class="col-6">
-                                <strong>Pri Total Aktiyèl:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                <strong class="text-primary">{{ total_current }} Gkach</strong>
+                            <div class="row mt-2 pt-2 border-top">
+                                <div class="col-6">
+                                    <strong>Pri Total Aktiyèl:</strong>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <strong class="text-primary">{{ total_current }} Gkach</strong>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Update Form -->
-                <div class="card">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="fas fa-paper-plane me-2"></i>
-                            Renvoye Bay Achte a
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST">
+                    <!-- Submit Section -->
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Renvoye Bay Achte a
+                            </h5>
+                        </div>
+                        <div class="card-body">
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
                                 Mete ajou pri livrezon an pou chak atik, epi klike sou 'Renvoye Bay Achte' pou voye nouvo pri total la bay achete a sou WhatsApp.
                             </div>
+
+                            <!-- Hidden field for buyer WhatsApp -->
+                            <input type="hidden" name="whatsapp" value="{{ buyer_whatsapp }}">
 
                             <div class="mb-3">
                                 <label class="form-label">
@@ -144,9 +148,9 @@
                                     </a>
                                 </div>
                             </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
+                </form>
 
                 <!-- Instructions -->
                 <div class="card mt-4">
