@@ -1720,6 +1720,7 @@ def seller_update_cart(buyer_whatsapp):
                 if new_shipping < 0:
                     raise ValueError
                 item.shipping_fee = new_shipping
+                item.shipping_fee_set = True  # Seller has now set the shipping fee
                 item.negotiation_status = 'seller_updated'
             except ValueError:
                 flash(f'Pri livrezon valab obligatwa pou atik {item.id}.', 'error')
@@ -1739,21 +1740,15 @@ def seller_update_cart(buyer_whatsapp):
                 total_shipping += item.shipping_fee
                 ad_titles.append(ad.title)
 
-        # Send WhatsApp notification to buyer with updated prices
+        # Send WhatsApp notification to buyer with updated prices (same format as seller notification)
         ad_titles_str = ", ".join(ad_titles[:3])
         if len(ad_titles) > 3:
             ad_titles_str += f" ak {len(ad_titles) - 3} lòt atik"
             
         buyer_update_url = url_for('shopping_card_update', whatsapp=buyer_whatsapp, _external=True)
         
-        message = f"🛒 PRI LIVREZON AJOUSTE\n\n"
-        message += f"📦 Atik yo: {ad_titles_str}\n"
-        message += f"💰 Pri total pwodwi: {total_product_price} Gkach\n"
-        message += f"🚚 Pri livrezon total: {total_shipping} Gkach\n"
-        message += f"💵 NOUVO PRI TOTAL: {total_product_price + total_shipping} Gkach\n\n"
-        message += f"🔗 Klik sou lyen sa a pou konfime achte a: {buyer_update_url}\n\n"
-        message += f"✅ Klike sou 'Konfime Achte' pou finalize achte a\n"
-        message += f"❌ Oubyen 'Anile Achte' si ou pa dakò ak nouvo pri a"
+        # Format message similar to seller's initial notification
+        message = f"A seller has updated the delivery details for your cart '{ad_titles_str}' for {total_product_price + total_shipping} Gkach. Please confirm or decline the purchase. Confirm here: {buyer_update_url}"
 
         whatsapp_url = f"https://wa.me/{buyer_whatsapp.replace('+', '')}?text={urllib.parse.quote(message)}"
         
