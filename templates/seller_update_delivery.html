@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mete Pri Livrezon - Glory2yahPub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+        .total-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <div class="text-center mb-4">
+                        <h2 class="mb-3"><i class="fas fa-truck text-primary"></i> Mete Pri Livrezon</h2>
+                        <p class="text-muted">Achte pa: <strong>{{ delivery.buyer_whatsapp }}</strong></p>
+                        <p class="text-muted">Adrès: <strong>{{ delivery.delivery_address }}</strong></p>
+                    </div>
+
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Cart Items -->
+                    <h5 class="mb-3"><i class="fas fa-shopping-bag"></i> Atik yo</h5>
+                    {% for item in cart_items %}
+                    <div class="product-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">{{ item.ad.title }}</h5>
+                                <p class="text-muted mb-2">{{ item.ad.description[:100] }}...</p>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Pri piblisite:</small>
+                                        <p class="mb-0 fw-bold">{{ item.price }} Gkach</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Kantite:</small>
+                                        <p class="mb-0 fw-bold">{{ item.quantity }}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Subtotal:</small>
+                                    <p class="mb-0 fw-bold text-success">{{ item.subtotal }} Gkach</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Delivery Cost Form -->
+                    <form method="POST" class="mt-4">
+                        <div class="card bg-light p-3 mb-3">
+                            <h5 class="mb-3"><i class="fas fa-money-bill-wave"></i> Mete Pri Livrezon</h5>
+                            <div class="mb-3">
+                                <label for="delivery_cost" class="form-label fw-bold">Pri Livrezon (Gkach)</label>
+                                <input type="number" class="form-control form-control-lg" id="delivery_cost" name="delivery_cost"
+                                       value="{{ delivery.delivery_cost }}" min="0" step="1" required>
+                                <div class="form-text">Antre pri livrezon pou tout atik yo.</div>
+                            </div>
+                        </div>
+
+                        <div class="total-section">
+                            <h4 class="mb-3"><i class="fas fa-calculator"></i> Rezime Total</h4>
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="mb-1">Pri piblisite total:</p>
+                                    <p class="mb-1">Pri livrezon:</p>
+                                    <hr class="my-2">
+                                    <p class="mb-0 fs-5 fw-bold">Total:</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="mb-1">{{ total_product_price }} Gkach</p>
+                                    <p class="mb-1"><span id="shipping_display">{{ delivery.delivery_cost }}</span> Gkach</p>
+                                    <hr class="my-2">
+                                    <p class="mb-0 fs-5 fw-bold"><span id="total_display">{{ total_product_price + delivery.delivery_cost }}</span> Gkach</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check-circle"></i> Konfime Pri Livrezon
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Aprè ou mete pri livrezon an, achete a pral resevwa yon notifikasyon WhatsApp pou konfime achte a.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update total when delivery cost changes
+        document.getElementById('delivery_cost').addEventListener('input', function() {
+            const deliveryCost = parseInt(this.value) || 0;
+            const productTotal = {{ total_product_price }};
+            document.getElementById('shipping_display').textContent = deliveryCost;
+            document.getElementById('total_display').textContent = productTotal + deliveryCost;
+        });
+    </script>
+</body>
+</html>

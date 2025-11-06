@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfime Achte - Glory2yahPub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <h2 class="text-primary">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Konfime Achte a
+                    </h2>
+                    <p class="text-muted">Revize detay livrezon an</p>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Delivery Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-truck me-2"></i>
+                            Detay Livrezon
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong><i class="fas fa-map-marker-alt me-2"></i>Adrès Livrezon:</strong>
+                            <p class="mb-0">{{ delivery.delivery_address }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <strong><i class="fas fa-user me-2"></i>Vandè:</strong>
+                            <p class="mb-0">{{ delivery.seller_whatsapp }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Summary -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Atik nan Panier Ou
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for item in cart_items %}
+                            <div class="row align-items-center mb-3 pb-3 border-bottom">
+                                <div class="col-3">
+                                    {% if item.ad.images %}
+                                        <img src="{{ url_for('static', filename='uploads/' + item.ad.images.split(',')[0]) }}" 
+                                             class="img-fluid rounded" alt="{{ item.ad.title }}">
+                                    {% else %}
+                                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="height: 80px;">
+                                            <i class="fas fa-image fa-2x"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-9">
+                                    <h6 class="mb-1">{{ item.ad.title }}</h6>
+                                    <small class="text-muted">Kantite: {{ item.quantity }}</small>
+                                    <div class="text-success fw-bold">{{ item.subtotal }} Gkach</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Total Pwodwi:</strong>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>{{ delivery.total_price }} Gkach</strong>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>Pri Livrezon:</strong>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>{{ delivery.delivery_cost }} Gkach</strong>
+                            </div>
+                        </div>
+                        <div class="row mt-2 pt-2 border-top">
+                            <div class="col-6">
+                                <strong>PRI TOTAL:</strong>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong class="text-success h5">{{ total_price }} Gkach</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmation Card -->
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-question-circle me-2"></i>
+                            Aksyon
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Vandè a mete pri livrezon an. Tanpri konfime si ou dakò ak pri total la.
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Lè ou klike sou "Konfime Achte", ou pral peye ak Gkach ou genyen nan balans ou.
+                        </div>
+
+                        <form method="POST">
+                            <div class="d-grid gap-2">
+                                <button type="submit" name="action" value="confirm" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check me-2"></i>
+                                    Konfime Achte ({{ total_price }} Gkach)
+                                </button>
+                                <button type="submit" name="action" value="decline" class="btn btn-outline-danger">
+                                    <i class="fas fa-times me-2"></i>
+                                    Anile Achte
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                Si ou pa gen ase Gkach, ou ka 
+                                <a href="{{ url_for('achte_gkach') }}" class="text-primary">achte Gkach la</a>.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
