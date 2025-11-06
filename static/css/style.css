@@ -396,49 +396,174 @@ nav a:hover {
     background: var(--dark-blue);
 }
 
+/* Facebook-style Ad Cards */
 .whatsapp-ad-card {
     min-width: 250px;
-    max-width: 300px;
-    border: 1px solid #ddd;
-    border-radius: 15px;
+    max-width: 500px;
+    border: none;
+    border-radius: 8px;
     overflow: hidden;
     background: var(--white);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+    margin-bottom: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .whatsapp-ad-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Facebook-style Ad Header */
+.ad-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #e4e6eb;
+}
+
+.ad-header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--royal-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.ad-header-info {
+    flex: 1;
+}
+
+.ad-header-info h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #050505;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+}
+
+.ad-header-info p {
+    font-size: 13px;
+    color: #65676b;
+    margin: 0;
+}
+
+/* Facebook-style Ad Image */
+.ad-image {
+    position: relative;
+    width: 100%;
+    background: #f0f2f5;
 }
 
 .ad-image img {
     width: 100%;
-    height: 150px;
+    height: auto;
+    max-height: 500px;
     object-fit: cover;
+    display: block;
 }
 
+/* Facebook-style Ad Text/Description */
 .ad-text {
-    padding: 1rem;
-    text-align: center;
+    padding: 12px 16px;
+    text-align: left;
 }
 
 .ad-text h4 {
-    font-size: 1.1rem;
-    color: var(--royal-blue);
-    margin-bottom: 0.5rem;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 600;
+    color: #050505;
+    margin: 0 0 4px 0;
+    line-height: 1.3;
 }
 
 .ad-text p {
-    font-size: 0.9rem;
-    color: #333;
-    margin: 0;
+    font-size: 14px;
+    color: #050505;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
 }
 
+.ad-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--royal-blue);
+    margin: 8px 0;
+}
+
+.ad-meta {
+    font-size: 13px;
+    color: #65676b;
+    margin-top: 4px;
+}
+
+/* Facebook-style Ad Actions */
 .ad-actions {
-    padding: 0 1rem 1rem;
-    text-align: center;
+    padding: 8px 16px 12px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #e4e6eb;
+}
+
+.ad-actions .btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ad-actions .btn-primary {
+    background: #1877f2;
+    color: white;
+}
+
+.ad-actions .btn-primary:hover {
+    background: #166fe5;
+}
+
+.ad-actions .btn-success {
+    background: #42b72a;
+    color: white;
+}
+
+.ad-actions .btn-success:hover {
+    background: #36a420;
+}
+
+.ad-actions .btn-whatsapp {
+    background: #25D366;
+    color: white;
+}
+
+.ad-actions .btn-whatsapp:hover {
+    background: #128C7E;
+}
+
+/* Facebook-style Sponsored Label */
+.sponsored-label {
+    font-size: 12px;
+    color: #65676b;
+    font-weight: 400;
+}
+
+/* Ad Grid Layout (Facebook Feed Style) */
+.ads-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 0;
 }
 
 .flash {
@@ -681,8 +806,12 @@ footer a {
 }
 
 @media (max-width: 480px) {
+    body {
+        background-color: #f0f2f5;
+    }
+
     .container {
-        padding: 0 10px;
+        padding: 0;
     }
 
     .hero {
@@ -729,40 +858,92 @@ footer a {
         right: 5px;
     }
 
+    /* Facebook-style Mobile Ad Cards */
     .whatsapp-ad-card {
         min-width: 100%;
         max-width: 100%;
-        height: auto;
-        min-height: 350px;
+        margin: 0 0 8px 0;
+        border-radius: 0;
+        box-shadow: none;
+        border-bottom: 8px solid #f0f2f5;
     }
 
-    .ad-image {
-        flex: 0 0 50%;
+    .whatsapp-ad-card:hover {
+        box-shadow: none;
     }
 
+    /* Mobile Ad Header */
+    .ad-header {
+        padding: 12px;
+    }
+
+    .ad-header-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .ad-header-info h4 {
+        font-size: 14px;
+    }
+
+    .ad-header-info p {
+        font-size: 12px;
+    }
+
+    /* Mobile Ad Image */
     .ad-image img {
-        height: 100%;
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        object-fit: cover;
     }
 
-    .ad-content {
-        flex: 0 0 50%;
-    }
-
+    /* Mobile Ad Text */
     .ad-text {
-        padding: 0.5rem;
+        padding: 12px;
     }
 
     .ad-text h4 {
-        font-size: 0.95rem;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.3;
     }
 
     .ad-text p {
-        font-size: 0.75rem;
+        font-size: 13px;
+        line-height: 1.4;
     }
 
+    .ad-price {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .ad-meta {
+        font-size: 12px;
+    }
+
+    /* Mobile Ad Actions */
     .ad-actions {
-        padding: 0.5rem;
-        gap: 5px;
+        padding: 8px 12px 12px;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .ad-actions .btn {
+        flex: 1;
+        padding: 9px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Mobile Ads Grid */
+    .ads-grid {
+        padding: 0;
+        gap: 0;
+        max-width: 100%;
     }
 
     .btn-icon {
@@ -773,11 +954,47 @@ footer a {
     }
 
     nav a {
-        font-size: 1.2rem;
+        font-size: 1rem;
         margin: 0 0.3rem;
     }
 
     .logo {
         font-size: 1.3rem;
+    }
+
+    /* Ensure full-width on mobile */
+    .features {
+        padding: 1rem 0;
+        background: #f0f2f5;
+    }
+}
+
+/* Extra small devices (iPhone SE, etc.) */
+@media (max-width: 375px) {
+    .ad-header-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .ad-header-info h4 {
+        font-size: 13px;
+    }
+
+    .ad-text h4 {
+        font-size: 14px;
+    }
+
+    .ad-text p {
+        font-size: 12px;
+    }
+
+    .ad-price {
+        font-size: 16px;
+    }
+
+    .ad-actions .btn {
+        padding: 8px 10px;
+        font-size: 13px;
     }
 }

@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konfime Achte - Glory2yahPub</title>
+    <title>Konfime Livrezon - Glory2yahPub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container py-4">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <!-- Header -->
                 <div class="text-center mb-4">
                     <h2 class="text-primary">
                         <i class="fas fa-check-circle me-2"></i>
-                        Konfime Achte a
+                        Konfime Achte w la
                     </h2>
-                    <p class="text-muted">Revize detay livrezon an</p>
+                    <p class="text-muted">ID Livrezon: {{ delivery.delivery_id }}</p>
                 </div>
 
                 <!-- Flash Messages -->
@@ -32,38 +32,42 @@
                     {% endif %}
                 {% endwith %}
 
-                <!-- Delivery Details -->
+                <!-- Delivery Information -->
                 <div class="card mb-4">
                     <div class="card-header bg-info text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-truck me-2"></i>
-                            Detay Livrezon
+                            <i class="fas fa-info-circle me-2"></i>
+                            Enfòmasyon Livrezon
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <strong><i class="fas fa-map-marker-alt me-2"></i>Adrès Livrezon:</strong>
-                            <p class="mb-0">{{ delivery.delivery_address }}</p>
-                        </div>
-                        <div class="mb-3">
-                            <strong><i class="fas fa-user me-2"></i>Vandè:</strong>
-                            <p class="mb-0">{{ delivery.seller_whatsapp }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong><i class="fas fa-store me-2"></i>Vandè:</strong> {{ delivery.seller_whatsapp }}</p>
+                                <p><strong><i class="fas fa-map-marker-alt me-2"></i>Adrès Livrezon:</strong> {{ delivery.delivery_address }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong><i class="fas fa-clock me-2"></i>Estati:</strong> 
+                                    <span class="badge bg-success">Pri Mete Ajou</span>
+                                </p>
+                                <p><strong><i class="fas fa-calendar me-2"></i>Dat:</strong> {{ delivery.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Cart Summary -->
+                <!-- Cart Items -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Atik nan Panier Ou
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Atik yo nan Panier w
                         </h5>
                     </div>
                     <div class="card-body">
                         {% for item in cart_items %}
                             <div class="row align-items-center mb-3 pb-3 border-bottom">
-                                <div class="col-3">
+                                <div class="col-md-2">
                                     {% if item.ad.images %}
                                         <img src="{{ url_for('static', filename='uploads/' + item.ad.images.split(',')[0]) }}" 
                                              class="img-fluid rounded" alt="{{ item.ad.title }}">
@@ -73,23 +77,37 @@
                                         </div>
                                     {% endif %}
                                 </div>
-                                <div class="col-9">
+                                <div class="col-md-6">
                                     <h6 class="mb-1">{{ item.ad.title }}</h6>
-                                    <small class="text-muted">Kantite: {{ item.quantity }}</small>
+                                    <small class="text-muted">Kantite: {{ item.quantity }}</small><br>
+                                    <small class="text-muted">Pri Inite: {{ item.price }} Gkach</small>
+                                </div>
+                                <div class="col-md-4 text-end">
                                     <div class="text-success fw-bold">{{ item.subtotal }} Gkach</div>
                                 </div>
                             </div>
                         {% endfor %}
+                    </div>
+                </div>
 
-                        <div class="row mt-3">
+                <!-- Price Summary -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Rezime Pri
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
                             <div class="col-6">
-                                <strong>Total Pwodwi:</strong>
+                                <strong>Pri Pwodwi:</strong>
                             </div>
                             <div class="col-6 text-end">
                                 <strong>{{ delivery.total_price }} Gkach</strong>
                             </div>
                         </div>
-                        <div class="row mt-2">
+                        <div class="row mb-2">
                             <div class="col-6">
                                 <strong>Pri Livrezon:</strong>
                             </div>
@@ -97,55 +115,106 @@
                                 <strong>{{ delivery.delivery_cost }} Gkach</strong>
                             </div>
                         </div>
-                        <div class="row mt-2 pt-2 border-top">
+                        <hr>
+                        <div class="row">
                             <div class="col-6">
-                                <strong>PRI TOTAL:</strong>
+                                <h5 class="mb-0">Total:</h5>
                             </div>
                             <div class="col-6 text-end">
-                                <strong class="text-success h5">{{ total_price }} Gkach</strong>
+                                <h5 class="mb-0 text-primary">{{ total_price }} Gkach</h5>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Confirmation Card -->
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-question-circle me-2"></i>
-                            Aksyon
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-success">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Vandè a mete pri livrezon an. Tanpri konfime si ou dakò ak pri total la.
+                <!-- Action Buttons -->
+                <form method="POST">
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-question-circle me-2"></i>
+                                Aksyon
+                            </h5>
                         </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Atansyon:</strong> Si ou konfime, {{ total_price }} Gkach pral dedwi nan balans ou epi ou pa ka anile achte a.
+                            </div>
 
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Lè ou klike sou "Konfime Achte", ou pral peye ak Gkach ou genyen nan balans ou.
-                        </div>
-
-                        <form method="POST">
                             <div class="d-grid gap-2">
                                 <button type="submit" name="action" value="confirm" class="btn btn-success btn-lg">
                                     <i class="fas fa-check me-2"></i>
-                                    Konfime Achte ({{ total_price }} Gkach)
+                                    Konfime Achte a ({{ total_price }} Gkach)
                                 </button>
-                                <button type="submit" name="action" value="decline" class="btn btn-outline-danger">
+                                <button type="submit" name="action" value="decline" class="btn btn-danger btn-lg">
                                     <i class="fas fa-times me-2"></i>
-                                    Anile Achte
+                                    Refize Achte a
                                 </button>
+                                <a href="{{ url_for('achte') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Retounen nan Magazen an
+                                </a>
                             </div>
-                        </form>
-                        
-                        <div class="mt-3 text-center">
-                            <small class="text-muted">
-                                Si ou pa gen ase Gkach, ou ka 
-                                <a href="{{ url_for('achte_gkach') }}" class="text-primary">achte Gkach la</a>.
-                            </small>
                         </div>
+                    </div>
+                </form>
+
+                <!-- Messaging Section -->
+                {% if messages %}
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments me-2"></i>
+                            Mesaj yo
+                        </h5>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        {% for msg in messages %}
+                            <div class="mb-3 {% if msg.sender_whatsapp == delivery.buyer_whatsapp %}text-end{% endif %}">
+                                <div class="d-inline-block p-2 rounded {% if msg.sender_whatsapp == delivery.buyer_whatsapp %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 70%;">
+                                    <small class="d-block fw-bold">{{ msg.sender_whatsapp }}</small>
+                                    <p class="mb-1">{{ msg.message }}</p>
+                                    <small class="text-muted">{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Contact Seller -->
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fab fa-whatsapp me-2"></i>
+                            Kontakte Vandè a
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Ou ka kontakte vandè a dirèkteman sou WhatsApp pou diskite detay livrezon yo.</p>
+                        <a href="https://wa.me/{{ delivery.seller_whatsapp.replace('+', '') }}" 
+                           class="btn btn-success" target="_blank">
+                            <i class="fab fa-whatsapp me-2"></i>
+                            Kontakte {{ delivery.seller_whatsapp }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-question-circle me-2"></i>
+                            Kijan sa travay?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ol class="small">
+                            <li><strong>Konfime:</strong> Si ou dakò ak pri a, klike sou "Konfime Achte a". Gkach yo pral dedwi nan balans ou epi vandè a pral resevwa pèman an.</li>
+                            <li><strong>Refize:</strong> Si ou pa dakò ak pri a, klike sou "Refize Achte a". Panier ou pral vide epi okenn pèman pa pral fèt.</li>
+                            <li><strong>Kontakte Vandè:</strong> Ou ka kontakte vandè a sou WhatsApp pou negosye oswa poze kesyon.</li>
+                        </ol>
                     </div>
                 </div>
             </div>

@@ -12,6 +12,7 @@ ENV/
 .venv
 
 # Database
+*.db
 *.db-journal
 
 # IDE

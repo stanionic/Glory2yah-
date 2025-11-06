@@ -8,10 +8,13 @@ import csv
 import urllib.parse
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
+from dotenv import load_dotenv
 from src.logger import setup_logger
 from moviepy.editor import VideoFileClip
 from PIL import Image
 from image_search import find_similar_ads
+from utils import format_whatsapp_number, sanitize_input, validate_file_upload, generate_secure_filename, validate_whatsapp_number, calculate_cart_total
 from src.notifications import (
     notify_admin_new_gkach_request,
     notify_admin_balance_change,
@@ -36,12 +39,16 @@ from src.communication import send_message, get_messages, get_delivery_participa
 from src.gif_utils import generate_ad_gif
 from src.facebook_publisher import facebook_publisher
 
+# Load environment variables
+load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = 'glory2yahpub_secret_key_2024'
-ADMIN_WHATSAPP = "+50942882076"
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.secret_key = os.environ.get('SECRET_KEY', 'glory2yahpub_secret_key_2024_CHANGE_THIS')
+ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub0886')  # Should be changed in production
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'static/uploads')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB for video uploads
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///glory2yahpub.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', 'sqlite:///glory2yahpub.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -114,7 +121,7 @@ def admin_login():
     if request.method == 'POST':
         password = request.form.get('password')
 
-        if password == 'StanGlory2YahPub0886':  # Hardcoded for now
+        if password == ADMIN_PASSWORD:
             session['admin'] = True
             flash('Konekte kòm administratè avèk siksè.', 'success')
             return redirect(url_for('admin'))
@@ -158,14 +165,11 @@ def submit_ad():
         ad_type = request.form.get('ad_type', 'publish')
         price_gkach = request.form.get('price_gkach', '').strip()
 
-        # Format WhatsApp number: remove non-digits, ensure +509 prefix
-        user_whatsapp = ''.join(filter(str.isdigit, user_whatsapp))
-        if not user_whatsapp.startswith('509'):
-            user_whatsapp = '509' + user_whatsapp
-        user_whatsapp = '+' + user_whatsapp
+        # Format WhatsApp number: ensure + prefix for international format
+        user_whatsapp = format_whatsapp_number(user_whatsapp)
 
-        if not user_whatsapp or len(user_whatsapp) < 12:  # Basic validation for +509xxxxxxxx
-            flash('Numéro WhatsApp valab obligatwa (egz: +50912345678).', 'error')
+        if not user_whatsapp or len(user_whatsapp) < 10:  # Basic validation for international numbers
+            flash('Numéro WhatsApp valab obligatwa (egz: +1234567890).', 'error')
             return redirect(url_for('submit_ad'))
         if not title:
             flash('Tit piblisite a obligatwa.', 'error')
@@ -619,11 +623,8 @@ def add_to_cart():
     quantity = request.form.get('quantity', 1)
     product_id = request.form.get('product_id', '').strip()
 
-    # Format WhatsApp number
-    whatsapp_digits = ''.join(filter(str.isdigit, whatsapp))
-    if not whatsapp_digits.startswith('509'):
-        whatsapp_digits = '509' + whatsapp_digits
-    whatsapp = '+' + whatsapp_digits
+    # Format WhatsApp number using utility function
+    whatsapp = format_whatsapp_number(whatsapp)
 
     if not whatsapp or not name or not product_id:
         flash('Tout enfòmasyon obligatwa.', 'error')
@@ -670,11 +671,8 @@ def add_to_cart():
 def view_cart():
     whatsapp = request.args.get('whatsapp', '').strip()
 
-    # Format WhatsApp number
-    whatsapp_digits = ''.join(filter(str.isdigit, whatsapp))
-    if not whatsapp_digits.startswith('509'):
-        whatsapp_digits = '509' + whatsapp_digits
-    whatsapp = '+' + whatsapp_digits
+    # Format WhatsApp number using utility function
+    whatsapp = format_whatsapp_number(whatsapp)
 
     if not whatsapp:
         flash('Numéro WhatsApp obligatwa.', 'error')
@@ -747,11 +745,8 @@ def set_shipping():
 def checkout():
     whatsapp = request.form.get('whatsapp', '').strip()
 
-    # Format WhatsApp number
-    whatsapp_digits = ''.join(filter(str.isdigit, whatsapp))
-    if not whatsapp_digits.startswith('509'):
-        whatsapp_digits = '509' + whatsapp_digits
-    whatsapp = '+' + whatsapp_digits
+    # Format WhatsApp number using utility function
+    whatsapp = format_whatsapp_number(whatsapp)
 
     if not whatsapp:
         flash('Numéro WhatsApp obligatwa.', 'error')
@@ -917,13 +912,10 @@ def shopping_cart(ad_id):
         delivery_address = request.form.get('delivery_address', '').strip()
         price = request.form.get('price', '').strip()
 
-        # Format WhatsApp number
-        whatsapp_digits = ''.join(filter(str.isdigit, whatsapp))
-        if not whatsapp_digits.startswith('509'):
-            whatsapp_digits = '509' + whatsapp_digits
-        whatsapp = '+' + whatsapp_digits
+        # Format WhatsApp number using utility function
+        whatsapp = format_whatsapp_number(whatsapp)
 
-        if not whatsapp or len(whatsapp) < 12:
+        if not whatsapp or len(whatsapp) < 10:
             flash('Numéro WhatsApp valab obligatwa.', 'error')
             return redirect(url_for('shopping_cart', ad_id=ad_id))
 
@@ -988,13 +980,10 @@ def achte_gkach():
         user_whatsapp = request.form.get('whatsapp', '').strip()
         amount = request.form.get('amount', '').strip()
 
-        # Format WhatsApp number
-        user_whatsapp = ''.join(filter(str.isdigit, user_whatsapp))
-        if not user_whatsapp.startswith('509'):
-            user_whatsapp = '509' + user_whatsapp
-        user_whatsapp = '+' + user_whatsapp
+        # Format WhatsApp number using utility function
+        user_whatsapp = format_whatsapp_number(user_whatsapp)
 
-        if not user_whatsapp or len(user_whatsapp) < 12:
+        if not user_whatsapp or len(user_whatsapp) < 10:
             flash('Numéro WhatsApp valab obligatwa.', 'error')
             return redirect(url_for('achte_gkach'))
         try:
@@ -1453,11 +1442,8 @@ def get_delivery_participants_api(delivery_id):
 def shopping_card_update():
     whatsapp = request.args.get('whatsapp', '').strip()
     
-    # Format WhatsApp number
-    whatsapp_digits = ''.join(filter(str.isdigit, whatsapp))
-    if not whatsapp_digits.startswith('509'):
-        whatsapp_digits = '509' + whatsapp_digits
-    whatsapp = '+' + whatsapp_digits
+    # Format WhatsApp number using utility function
+    whatsapp = format_whatsapp_number(whatsapp)
 
     if not whatsapp:
         flash('Numéro WhatsApp obligatwa.', 'error')
@@ -1543,7 +1529,7 @@ def shopping_card_update():
             
             update_delivery_url = url_for('seller_update_delivery', delivery_id=delivery_id, _external=True)
             
-            message = f"A buyer wants to purchase your ads '{ad_titles_str}' for {total_product_price} Gkach. Please set the delivery details. Set here: {update_delivery_url}"
+            message = f"Yon achte vle achte piblisite ou yo '{ad_titles_str}' pou {total_product_price} Gkach. Tanpri mete detay livrezon yo. Mete isit la: {update_delivery_url}"
 
             whatsapp_url = f"https://wa.me/{seller_whatsapp.replace('+', '')}?text={urllib.parse.quote(message)}"
             
@@ -1732,7 +1718,7 @@ def seller_update_delivery(delivery_id):
         if len(ad_titles) > 3:
             ad_titles_str += f" ak {len(ad_titles) - 3} lòt atik"
         
-        message = f"A seller has updated the delivery details for your cart '{ad_titles_str}' for {total_price} Gkach. Please confirm or decline the purchase. Confirm here: {buyer_confirm_url}"
+        message = f"Vandè a mete ajou detay livrezon pou panier ou '{ad_titles_str}' pou {total_price} Gkach. Tanpri konfime oswa refize acha a. Konfime isit la: {buyer_confirm_url}"
 
         whatsapp_url = f"https://wa.me/{delivery.buyer_whatsapp.replace('+', '')}?text={urllib.parse.quote(message)}"
         
@@ -1854,11 +1840,8 @@ def buyer_confirm_delivery(delivery_id):
 
 @app.route('/seller_update_cart/<buyer_whatsapp>', methods=['GET', 'POST'])
 def seller_update_cart(buyer_whatsapp):
-    # Format WhatsApp number
-    whatsapp_digits = ''.join(filter(str.isdigit, buyer_whatsapp))
-    if not whatsapp_digits.startswith('509'):
-        whatsapp_digits = '509' + whatsapp_digits
-    buyer_whatsapp = '+' + whatsapp_digits
+    # Format WhatsApp number using utility function
+    buyer_whatsapp = format_whatsapp_number(buyer_whatsapp)
 
     if not buyer_whatsapp:
         flash('Numéro WhatsApp achete obligatwa.', 'error')
@@ -1911,8 +1894,8 @@ def seller_update_cart(buyer_whatsapp):
             
         buyer_update_url = url_for('shopping_card_update', whatsapp=buyer_whatsapp, _external=True)
         
-        # Format message similar to seller's initial notification
-        message = f"A seller has updated the delivery details for your cart '{ad_titles_str}' for {total_product_price + total_shipping} Gkach. Please confirm or decline the purchase. Confirm here: {buyer_update_url}"
+        # Format message in Haitian Creole
+        message = f"Vandè a mete ajou detay livrezon pou panier ou '{ad_titles_str}' pou {total_product_price + total_shipping} Gkach. Tanpri konfime oswa refize acha a. Konfime isit la: {buyer_update_url}"
 
         whatsapp_url = f"https://wa.me/{buyer_whatsapp.replace('+', '')}?text={urllib.parse.quote(message)}"
         
