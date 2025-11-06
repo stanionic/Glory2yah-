@@ -1486,18 +1486,9 @@ def shopping_card_update():
     if request.method == 'POST':
         if mode == 'enter_shipping':
             delivery_address = request.form.get('delivery_address', '').strip()
-            shipping_price = request.form.get('shipping_price', '').strip()
 
             if not delivery_address:
                 flash('Adrès livrezon obligatwa.', 'error')
-                return redirect(url_for('shopping_card_update', whatsapp=whatsapp))
-
-            try:
-                shipping_price = int(shipping_price)
-                if shipping_price < 0:
-                    raise ValueError
-            except ValueError:
-                flash('Pri livrezon valab obligatwa.', 'error')
                 return redirect(url_for('shopping_card_update', whatsapp=whatsapp))
 
             # Check terms acceptance
@@ -1508,17 +1499,17 @@ def shopping_card_update():
             # Generate unique cart_id for this submission
             cart_id = str(uuid.uuid4())
 
-            # Update cart items with shipping fee, address, status, and cart_id
+            # Update cart items with address, status, and cart_id (NO shipping fee from buyer)
             for item in cart_items:
-                item.shipping_fee = shipping_price
-                item.shipping_fee_set = True
+                item.shipping_fee = 0  # Seller will set this
+                item.shipping_fee_set = False  # Not set yet
                 item.negotiation_status = 'buyer_submitted'
                 item.delivery_address = delivery_address
                 item.cart_id = cart_id
 
             db.session.commit()
 
-            # Send WhatsApp notification to seller with link to update cart
+            # Send WhatsApp notification to seller with link to set shipping price
             seller_whatsapp = None
             ad_titles = []
             total_price = 0
@@ -1541,16 +1532,16 @@ def shopping_card_update():
                 message += f"📦 Atik yo: {ad_titles_str}\n"
                 message += f"💰 Pri total pwodwi: {total_price} Gkach\n"
                 message += f"👤 Achte pa: {whatsapp}\n"
-                message += f"📍 Adrès livrezon: {delivery_address}\n"
-                message += f"💸 Pri livrezon pwopoze: {shipping_price} Gkach\n\n"
-                message += f"📋 Detay konplè:\n"
-                message += f"- Pri total pwopoze: {total_price + shipping_price} Gkach\n\n"
-                message += f"🔗 Klik sou lyen sa a pou mete ajou pri livrezon an: {update_cart_url}\n\n"
-                message += f"⚠️ Tanpri revize pri livrezon an epi mete ajou li si nesesè."
+                message += f"📍 Adrès livrezon: {delivery_address}\n\n"
+                message += f"📋 Detay:\n"
+                message += f"- Ou bezwen mete pri livrezon an\n"
+                message += f"- Pri pwodwi total: {total_price} Gkach\n\n"
+                message += f"🔗 Klik sou lyen sa a pou mete pri livrezon an: {update_cart_url}\n\n"
+                message += f"⚠️ Tanpri mete pri livrezon an pou achte a ka kontinye."
 
                 whatsapp_url = f"https://wa.me/{seller_whatsapp.replace('+', '')}?text={urllib.parse.quote(message)}"
                 
-                flash('Demann ou a soumèt avèk siksè! Vandè a pral kontakte ou sou WhatsApp.', 'success')
+                flash('Demann ou a soumèt avèk siksè! Vandè a pral mete pri livrezon an epi kontakte ou.', 'success')
                 return redirect(whatsapp_url)
 
         elif mode == 'seller_updated':

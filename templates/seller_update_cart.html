@@ -78,11 +78,11 @@
                                             <p class="mb-0 fw-bold">{{ item.quantity }}</p>
                                         </div>
                                     </div>
-                                    <small class="text-muted">Pri livrezon pwopoze:</small>
+                                    <small class="text-muted">Pri livrezon aktyèl:</small>
                                     <p class="mb-0 fw-bold text-primary">{{ item.shipping_fee }} Gkach</p>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="shipping_{{ item.id }}" class="form-label fw-bold">Nouvo pri livrezon (Gkach)</label>
+                                    <label for="shipping_{{ item.id }}" class="form-label fw-bold">Mete pri livrezon (Gkach)</label>
                                     <input type="number" class="form-control" id="shipping_{{ item.id }}" name="shipping_{{ item.id }}"
                                            value="{{ item.shipping_fee }}" min="0" step="1" required>
                                 </div>
@@ -95,22 +95,22 @@
                             <div class="row">
                                 <div class="col-6">
                                     <p class="mb-1">Pri piblisite total:</p>
-                                    <p class="mb-1">Pri livrezon pwopoze:</p>
+                                    <p class="mb-1">Pri livrezon aktyèl:</p>
                                     <hr class="my-2">
-                                    <p class="mb-0 fs-5 fw-bold">Total pwopoze:</p>
+                                    <p class="mb-0 fs-5 fw-bold">Total aktyèl:</p>
                                 </div>
                                 <div class="col-6 text-end">
                                     <p class="mb-1">{{ total_product_price }} Gkach</p>
-                                    <p class="mb-1">{{ total_shipping_proposed }} Gkach</p>
+                                    <p class="mb-1">{{ current_shipping_total }} Gkach</p>
                                     <hr class="my-2">
-                                    <p class="mb-0 fs-5 fw-bold">{{ total_proposed }} Gkach</p>
+                                    <p class="mb-0 fs-5 fw-bold">{{ total_current }} Gkach</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="text-center mt-4">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save"></i> Mete Ajou Pri Livrezon
+                                <i class="fas fa-check-circle"></i> Konfime Pri Livrezon
                             </button>
                         </div>
                     </form>
@@ -118,7 +118,7 @@
                     <div class="text-center mt-4">
                         <p class="text-muted">
                             <i class="fas fa-info-circle"></i>
-                            Aprè ou mete ajou pri livrezon an, achete a pral resevwa yon notifikasyon WhatsApp pou konfime achte a.
+                            Aprè ou mete pri livrezon an, achete a pral resevwa yon notifikasyon WhatsApp pou konfime achte a.
                         </p>
                     </div>
                 </div>
