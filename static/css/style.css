@@ -924,19 +924,32 @@ footer a {
         font-size: 12px;
     }
 
-    /* Mobile Ad Actions */
+    /* Mobile Ad Actions - Keep buttons horizontal */
     .ad-actions {
         padding: 8px 12px 12px;
         gap: 6px;
-        flex-wrap: nowrap;
+        flex-wrap: nowrap !important;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: space-between;
     }
 
     .ad-actions .btn {
-        flex: 1;
-        padding: 9px 12px;
-        font-size: 14px;
+        flex: 0 0 auto;
+        padding: 8px 10px;
+        font-size: 13px;
         font-weight: 600;
         white-space: nowrap;
+        min-width: 40px;
+    }
+
+    .ad-actions p {
+        flex: 1;
+        margin: 0;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Mobile Ads Grid */
@@ -993,8 +1006,18 @@ footer a {
         font-size: 16px;
     }
 
+    .ad-actions {
+        padding: 6px 10px 10px;
+        gap: 4px;
+    }
+
     .ad-actions .btn {
-        padding: 8px 10px;
-        font-size: 13px;
+        padding: 7px 8px;
+        font-size: 12px;
+        min-width: 36px;
+    }
+
+    .ad-actions p {
+        font-size: 11px;
     }
 }

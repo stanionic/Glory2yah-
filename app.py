@@ -14,7 +14,7 @@ from src.logger import setup_logger
 from moviepy.editor import VideoFileClip
 from PIL import Image
 from image_search import find_similar_ads
-from utils import format_whatsapp_number, sanitize_input, validate_file_upload, generate_secure_filename, validate_whatsapp_number, calculate_cart_total
+from utils import format_whatsapp_number, sanitize_input, validate_file_upload, generate_secure_filename, validate_whatsapp_number, calculate_cart_total, generate_receipt
 from src.notifications import (
     notify_admin_new_gkach_request,
     notify_admin_balance_change,
@@ -1787,13 +1787,33 @@ def buyer_confirm_delivery(delivery_id):
             delivery.confirmed_at = datetime.utcnow()
             db.session.commit()
 
+            # Generate receipt for seller
+            cart_items_list = json.loads(delivery.cart_items) if delivery.cart_items else []
+            receipt_text = generate_receipt(
+                delivery_id=delivery.delivery_id,
+                buyer_whatsapp=delivery.buyer_whatsapp,
+                seller_whatsapp=delivery.seller_whatsapp,
+                cart_items_data=cart_items_list,
+                total_product_price=delivery.total_price,
+                total_shipping=delivery.delivery_cost,
+                grand_total=total_price,
+                transaction_date=delivery.confirmed_at
+            )
+            
+            # Send receipt to seller via WhatsApp
+            receipt_message = urllib.parse.quote(receipt_text)
+            receipt_whatsapp_url = f"https://wa.me/{delivery.seller_whatsapp.replace('+', '')}?text={receipt_message}"
+            
+            # Log receipt generation
+            logger.info(f"Receipt generated for delivery {delivery_id}, seller: {delivery.seller_whatsapp}")
+
             # Clear cart items for this buyer
             user = User.query.filter_by(whatsapp=delivery.buyer_whatsapp).first()
             if user:
                 CartItem.query.filter_by(user_id=user.id).delete()
                 db.session.commit()
 
-            flash(f'Achte konfime avèk siksè! Ou te depanse {total_price} Gkach.', 'success')
+            flash(f'Achte konfime avèk siksè! Ou te depanse {total_price} Gkach. Resi voye bay vandè a.', 'success')
             return redirect(url_for('achte'))
             
         elif action == 'decline':

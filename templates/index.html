@@ -262,10 +262,23 @@
     padding: 10px;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 5px;
     align-items: center;
     justify-content: space-between;
+}
+
+.ad-actions p {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.ad-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .btn-icon {
@@ -415,10 +428,17 @@
     
     .ad-actions {
         padding: 0.5rem;
+        flex-wrap: nowrap !important;
     }
     
     .ad-actions p {
         font-size: 0.85rem;
+        flex: 1;
+    }
+
+    .ad-actions .btn {
+        flex: 0 0 auto;
+        min-width: 32px;
     }
     
     .btn-icon {

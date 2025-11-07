@@ -142,3 +142,74 @@ def calculate_cart_total(cart_items):
         'shipping_total': shipping_total,
         'grand_total': product_total + shipping_total
     }
+
+def generate_receipt(delivery_id, buyer_whatsapp, seller_whatsapp, cart_items_data, total_product_price, total_shipping, grand_total, transaction_date=None):
+    """
+    Generate a formatted receipt text for a completed transaction
+    
+    Args:
+        delivery_id (str): Unique delivery/transaction ID
+        buyer_whatsapp (str): Buyer's WhatsApp number
+        seller_whatsapp (str): Seller's WhatsApp number
+        cart_items_data (list): List of cart items with details
+        total_product_price (int): Total price of products
+        total_shipping (int): Total shipping cost
+        grand_total (int): Grand total (products + shipping)
+        transaction_date (datetime, optional): Transaction date
+        
+    Returns:
+        str: Formatted receipt text
+    """
+    from datetime import datetime
+    
+    if transaction_date is None:
+        transaction_date = datetime.now()
+    
+    # Format date
+    date_str = transaction_date.strftime("%d/%m/%Y %H:%M")
+    
+    # Build receipt
+    receipt = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    receipt += "🧾 RESI TRANZAKSYON\n"
+    receipt += "   Glory2yahPub\n"
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    
+    receipt += f"📅 Dat: {date_str}\n"
+    receipt += f"🆔 ID Tranzaksyon: {delivery_id[:8]}...\n\n"
+    
+    receipt += "👤 ENFÒMASYON:\n"
+    receipt += f"   Vandè: {seller_whatsapp}\n"
+    receipt += f"   Achte: {buyer_whatsapp}\n\n"
+    
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    receipt += "📦 ATIK YO:\n"
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    
+    for idx, item in enumerate(cart_items_data, 1):
+        title = item.get('title', 'N/A')
+        quantity = item.get('quantity', 1)
+        price = item.get('price', 0)
+        subtotal = price * quantity
+        
+        receipt += f"{idx}. {title}\n"
+        receipt += f"   Kantite: {quantity}\n"
+        receipt += f"   Pri Inite: {price} Gkach\n"
+        receipt += f"   Sou-total: {subtotal} Gkach\n\n"
+    
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    receipt += "💰 REZIME:\n"
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    
+    receipt += f"Pri Pwodwi:      {total_product_price} Gkach\n"
+    receipt += f"Pri Livrezon:    {total_shipping} Gkach\n"
+    receipt += "─────────────────────────────\n"
+    receipt += f"TOTAL:           {grand_total} Gkach\n\n"
+    
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    receipt += "✅ TRANZAKSYON KONPLETE\n"
+    receipt += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    
+    receipt += "Mèsi pou biznis ou! 🙏\n"
+    receipt += "Glory2yahPub - Platfòm Piblisite #1\n"
+    
+    return receipt
