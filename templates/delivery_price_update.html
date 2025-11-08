@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pri Livrezon Mete Ajou - Glory2yahPub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Glory2yahPub</h1>
+            <p>Pri Livrezon Mete Ajou Avèk Siksè</p>
+        </header>
+
+        <main>
+            <div class="form-container">
+                <h2>✅ Pri Livrezon Mete Ajou!</h2>
+
+                <div class="success-message">
+                    <p>Pri livrezon an te mete ajou avèk siksè. Enfòmasyon yo pral voye bay achete a.</p>
+                </div>
+
+                <h3>📦 Detay Demann Livrezon</h3>
+                <div class="delivery-details">
+                    <div class="detail-item">
+                        <strong>Piblisite:</strong> {{ ad.title }}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Pri Piblisite:</strong> {{ delivery.total_price }} Gkach
+                    </div>
+                    <div class="detail-item">
+                        <strong>Pri Livrezon:</strong> {{ delivery.delivery_cost }} Gkach
+                    </div>
+                    <div class="detail-item">
+                        <strong>Total:</strong> {{ delivery.total_price + delivery.delivery_cost }} Gkach
+                    </div>
+                    <div class="detail-item">
+                        <strong>Achte pa:</strong> {{ delivery.buyer_whatsapp }}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Adrès Livrezon:</strong> {{ delivery.delivery_address }}
+                    </div>
+                    <div class="detail-item">
+                        <strong>ID Livrezon:</strong> {{ delivery.delivery_id }}
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="{{ whatsapp_url }}" class="btn btn-primary" target="_blank">
+                        📱 Voye Mesaj WhatsApp Bay Achete a
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                        🏠 Retounen Lakay
+                    </a>
+                </div>
+
+                <div class="info-box">
+                    <h3>📋 Pwochèn Etap</h3>
+                    <ul>
+                        <li>Klike sou bouton "Voye Mesaj WhatsApp" pou kontakte achete a</li>
+                        <li>Achete a pral resevwa yon notifikasyon otomatik tou</li>
+                        <li>Achete a ka konfime oswa refize acha a</li>
+                        <li>Ou pral resevwa yon notifikasyon lè achete a pran desizyon li</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Glory2yahPub. Tout dwa rezève.</p>
+        </footer>
+    </div>
+</body>
+</html>

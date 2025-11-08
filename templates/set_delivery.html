@@ -25,6 +25,12 @@
                         <strong>Pri Piblisite:</strong> {{ delivery.total_price }} Gkach
                     </div>
                     <div class="detail-item">
+                        <strong>Pri Livrezon:</strong> <span id="shipping-display">0</span> Gkach
+                    </div>
+                    <div class="detail-item">
+                        <strong>Total:</strong> <span id="total-display">{{ delivery.total_price }}</span> Gkach
+                    </div>
+                    <div class="detail-item">
                         <strong>Achte pa:</strong> {{ delivery.buyer_whatsapp }}
                     </div>
                     <div class="detail-item">
@@ -54,8 +60,19 @@
                         <label for="accept_terms">Mwen aksepte kondisyon ak règleman Glory2yahPub</label>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Mete Pri Livrezon epi Voye</button>
+                    <button type="submit" class="btn btn-primary">Klike la pou voye l bay Achete a</button>
                 </form>
+
+                <script>
+                    // Update total when delivery cost changes
+                    document.getElementById('delivery_cost').addEventListener('input', function() {
+                        const deliveryCost = parseInt(this.value) || 0;
+                        const adPrice = parseInt('{{ delivery.total_price }}');
+                        const total = adPrice + deliveryCost;
+                        document.getElementById('shipping-display').textContent = deliveryCost;
+                        document.getElementById('total-display').textContent = total;
+                    });
+                </script>
 
                 <div class="info-box">
                     <h3>⚠️ Enfòmasyon Enpòtan</h3>

@@ -1394,18 +1394,33 @@ def set_delivery(delivery_id):
         delivery.status = 'price_set'
         db.session.commit()
 
-        # Prepare WhatsApp message for seller to send to buyer
-        total_price = delivery.total_price + delivery_cost
-        whatsapp_message = f"Pri livrezon mete ajou. Pri total: {total_price} Gkach. Tanpri tcheke balans ou epi achte: {url_for('check_balance', ad_id=delivery.ad_id, delivery_id=delivery_id, _external=True)}"
-        whatsapp_url = f"https://wa.me/{delivery.buyer_whatsapp.replace('+', '')}?text={whatsapp_message}"
-
         # Send WhatsApp notification to buyer with updated price
+        total_price = delivery.total_price + delivery_cost
         notify_buyer_delivery_updated(delivery.buyer_whatsapp, delivery_cost, total_price, delivery_id)
 
-        flash('Pri livrezon mete ajou avèk siksè! Ou ka voye mesaj WhatsApp bay achete a.', 'success')
-        return render_template('set_delivery.html', delivery=delivery, ad=ad, success=True, whatsapp_url=whatsapp_url)
+        # Redirect to delivery_price_update page
+        return redirect(url_for('delivery_price_update', delivery_id=delivery_id))
 
     return render_template('set_delivery.html', delivery=delivery, ad=ad)
+
+@app.route('/delivery_price_update/<delivery_id>')
+def delivery_price_update(delivery_id):
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id).first()
+    if not delivery:
+        flash('Demann livrezon pa jwenn.', 'error')
+        return redirect(url_for('index'))
+
+    ad = Ad.query.filter_by(ad_id=delivery.ad_id).first()
+    if not ad:
+        flash('Piblisite pa jwenn.', 'error')
+        return redirect(url_for('index'))
+
+    # Prepare WhatsApp message for seller to send to buyer
+    total_price = delivery.total_price + delivery.delivery_cost
+    whatsapp_message = f"📦 Detay Demann Livrezon\n\nPiblisite: {ad.title}\nPri Piblisite: {delivery.total_price} Gkach\nPri Livrezon: {delivery.delivery_cost} Gkach\nTotal: {total_price} Gkach\nAchte pa: {delivery.buyer_whatsapp}\nAdrès Livrezon: {delivery.delivery_address}\nID Livrezon: {delivery.delivery_id}\n\nTanpri tcheke balans ou epi achte: {url_for('check_balance', ad_id=delivery.ad_id, delivery_id=delivery_id, _external=True)}"
+    whatsapp_url = f"https://wa.me/{delivery.buyer_whatsapp.replace('+', '')}?text={urllib.parse.quote(whatsapp_message)}"
+
+    return render_template('delivery_price_update.html', delivery=delivery, ad=ad, whatsapp_url=whatsapp_url)
 
 # Communication API routes
 @app.route('/api/delivery/<delivery_id>/messages', methods=['GET'])
