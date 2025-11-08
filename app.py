@@ -975,8 +975,8 @@ def shopping_cart(ad_id):
         if ads_owner:
             seller_whatsapp = ads_owner.publishers_whatsapp
             set_delivery_url = url_for('set_delivery', delivery_id=delivery_id, _external=True)
-            message = f"A buyer wants to purchase your ad '{ad.title}' for {price} Gkach. Please set the delivery details. Set here: {set_delivery_url}"
-            whatsapp_url = f"https://wa.me/{seller_whatsapp.replace('+', '')}?text={message}"
+            message = f"Yon achte vle achte piblisite ou '{ad.title}' pou {price} Gkach. Tanpri mete detay livrezon yo. Mete isit la: {set_delivery_url}"
+            whatsapp_url = f"https://wa.me/{seller_whatsapp.replace('+', '')}?text={urllib.parse.quote(message)}"
             return redirect(whatsapp_url)
         else:
             flash('Seller not found.', 'error')
