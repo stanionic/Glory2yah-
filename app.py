@@ -48,8 +48,18 @@ ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub0886')  # Should be changed in production
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'static/uploads')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB for video uploads
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI', 'sqlite:///glory2yahpub.db')
+
+# Database configuration - Handle both Render's DATABASE_URL and custom DATABASE_URI
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_URI', 'sqlite:///glory2yahpub.db')
+# Fix for Render PostgreSQL: convert postgres:// to postgresql://
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
 
 db.init_app(app)
 

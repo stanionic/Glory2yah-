@@ -1,34 +1,23 @@
-# TODO: Fix Delivery Flow - Only Seller Sets Shipping Price
+# Deployment Fix TODO
 
 ## Tasks to Complete
 
-- [x] 1. Update `templates/shopping_card_update.html`
-  - [x] Remove shipping_price input field from buyer's form (mode='enter_shipping')
-  - [x] Update form to only collect delivery address
-  - [x] Update UI text and instructions
+- [x] Update requirements.txt - Add psycopg2-binary for PostgreSQL support
+- [x] Fix app.py - Database URI configuration for Render compatibility
+- [x] Update render.yaml - Optimize build commands and ensure proper setup
+- [x] Optimize Procfile - Better gunicorn configuration for production
+- [x] Update DEPLOYMENT_FIX.md - Document all changes made
 
-- [x] 2. Update `app.py` - `shopping_card_update` route
-  - [x] Remove shipping_price from POST request handling
-  - [x] Set initial shipping_fee to 0 (not set by buyer)
-  - [x] Update WhatsApp notification to seller (remove proposed shipping price)
+## Progress
+- ✅ Added psycopg2-binary==2.9.9 to requirements.txt
+- ✅ Fixed database URI handling in app.py (handles both DATABASE_URL and DATABASE_URI)
+- ✅ Added postgres:// to postgresql:// conversion for SQLAlchemy compatibility
+- ✅ Added connection pool settings for better database performance
+- ✅ Optimized Procfile with sync workers, preload, and logging
+- ✅ Enhanced render.yaml with proper build commands and directory creation
+- ✅ Changed DATABASE_URI to DATABASE_URL in render.yaml (Render standard)
+- ✅ Updated DEPLOYMENT_FIX.md with comprehensive documentation
 
-- [x] 3. Update `templates/seller_update_cart.html`
-  - [x] Change "Nouvo pri livrezon" to "Mete pri livrezon"
-  - [x] Remove reference to "proposed" shipping price
-  - [x] Update UI to reflect seller is setting price (not updating)
+## All Tasks Completed! ✅
 
-- [x] 4. Update `app.py` - `seller_update_cart` route (if needed)
-  - [x] Verified seller is setting shipping price correctly
-  - [x] Notification messages already updated (no proposed price mentioned)
-
-- [ ] 5. Testing
-  - [ ] Test complete flow: buyer submits → seller sets price → buyer confirms/declines
-  - [ ] Verify all notifications are correct
-  - [ ] Verify database updates properly
-
-## Current Status
-✅ All code changes completed!
-✅ Buyer can only provide delivery address (no shipping price input)
-✅ Seller sets the shipping price (not updating a proposed price)
-✅ Buyer can confirm or decline after seller sets price
-🔄 Ready for testing...
+Ready to commit and deploy.
