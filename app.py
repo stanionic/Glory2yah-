@@ -438,6 +438,15 @@ def upload_gkach_approval(request_id):
 
 @app.route('/success')
 def success():
+    # Check if there's a pending delivery to return to
+    if 'pending_delivery_id' in session and 'return_to' in session:
+        delivery_id = session.pop('pending_delivery_id')
+        return_to = session.pop('return_to')
+        
+        if return_to == 'buyer_confirm_delivery':
+            flash('Gkach ou a pral apwouve byento. Retounen nan paj konfime livrezon an pou kontinye.', 'info')
+            return redirect(url_for('buyer_confirm_delivery', delivery_id=delivery_id))
+    
     return render_template('success.html')
 
 @app.route('/admin')
@@ -1796,7 +1805,10 @@ def buyer_confirm_delivery(delivery_id):
             user_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.buyer_whatsapp).first()
             
             if not user_gkach or user_gkach.gkach_balance < total_price:
-                flash('Ou pa gen ase Gkach.', 'error')
+                # Store delivery_id in session to return after getting Gkach
+                session['pending_delivery_id'] = delivery_id
+                session['return_to'] = 'buyer_confirm_delivery'
+                flash('Ou pa gen ase Gkach. Achte Gkach epi retounen pou kontinye peye.', 'error')
                 return redirect(url_for('achte_gkach'))
 
             # Deduct from buyer
