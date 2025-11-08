@@ -3,9 +3,24 @@ services:
     name: glory2yahpub
     runtime: python3
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 120
     envVars:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
-        value: glory2yahpub_secret_key_2024
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: DATABASE_URI
+        fromDatabase:
+          name: glory2yahpub-db
+          property: connectionString
+    disk:
+      name: glory2yahpub-disk
+      mountPath: /opt/render/project/src/instance
+      sizeGB: 1
+
+databases:
+  - name: glory2yahpub-db
+    databaseName: glory2yahpub
+    user: glory2yahpub
