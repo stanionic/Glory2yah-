@@ -33,7 +33,12 @@ from src.notifications import (
     notify_admin_traffic_alert,
     notify_admin_otp,
     notify_seller_delivery_request,
-    notify_buyer_delivery_updated
+    notify_buyer_delivery_updated,
+    notify_seller_purchase_confirmed,
+    notify_seller_purchase_declined,
+    notify_seller_delivery_confirmed,
+    notify_buyer_awaiting_delivery,
+    notify_admin_delivery_completed
 )
 from src.communication import send_message, get_messages, get_delivery_participants
 from src.gif_utils import generate_ad_gif
@@ -1811,38 +1816,19 @@ def buyer_confirm_delivery(delivery_id):
                 flash('Ou pa gen ase Gkach. Achte Gkach epi retounen pou kontinye peye.', 'error')
                 return redirect(url_for('achte_gkach'))
 
-            # Deduct from buyer
+            # Deduct from buyer (but don't credit seller yet - wait for delivery confirmation)
             user_gkach.gkach_balance -= total_price
             
-            # Credit seller
-            seller_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.seller_whatsapp).first()
-            if seller_gkach:
-                seller_gkach.gkach_balance += total_price
-            
-            # Update delivery status
-            delivery.status = 'confirmed'
+            # Update delivery status to awaiting_delivery (not confirmed yet)
+            delivery.status = 'awaiting_delivery'
             delivery.confirmed_at = datetime.utcnow()
             db.session.commit()
 
-            # Generate receipt for seller
-            cart_items_list = json.loads(delivery.cart_items) if delivery.cart_items else []
-            receipt_text = generate_receipt(
-                delivery_id=delivery.delivery_id,
-                buyer_whatsapp=delivery.buyer_whatsapp,
-                seller_whatsapp=delivery.seller_whatsapp,
-                cart_items_data=cart_items_list,
-                total_product_price=delivery.total_price,
-                total_shipping=delivery.delivery_cost,
-                grand_total=total_price,
-                transaction_date=delivery.confirmed_at
-            )
+            # Notify seller that purchase is confirmed and they should deliver
+            notify_seller_purchase_confirmed(delivery.seller_whatsapp, delivery.buyer_whatsapp, delivery_id, total_price)
             
-            # Send receipt to seller via WhatsApp
-            receipt_message = urllib.parse.quote(receipt_text)
-            receipt_whatsapp_url = f"https://wa.me/{delivery.seller_whatsapp.replace('+', '')}?text={receipt_message}"
-            
-            # Log receipt generation
-            logger.info(f"Receipt generated for delivery {delivery_id}, seller: {delivery.seller_whatsapp}")
+            # Notify buyer that purchase is confirmed and awaiting delivery
+            notify_buyer_awaiting_delivery(delivery.buyer_whatsapp, delivery.seller_whatsapp, delivery_id, total_price)
 
             # Clear cart items for this buyer
             user = User.query.filter_by(whatsapp=delivery.buyer_whatsapp).first()
@@ -1850,13 +1836,17 @@ def buyer_confirm_delivery(delivery_id):
                 CartItem.query.filter_by(user_id=user.id).delete()
                 db.session.commit()
 
-            flash(f'Achte konfime avèk siksè! Ou te depanse {total_price} Gkach. Resi voye bay vandè a.', 'success')
-            return redirect(url_for('achte'))
+            # Redirect to delivery confirmation page
+            flash(f'Acha konfime! Ou te depanse {total_price} Gkach. Lè ou resevwa livrezon an, tanpri konfime resepsyon.', 'success')
+            return redirect(url_for('confirm_delivery_received', delivery_id=delivery_id))
             
         elif action == 'decline':
             # Update delivery status to declined
             delivery.status = 'declined'
             db.session.commit()
+            
+            # Notify seller that purchase was declined
+            notify_seller_purchase_declined(delivery.seller_whatsapp, delivery.buyer_whatsapp, delivery_id)
             
             # Clear cart
             user = User.query.filter_by(whatsapp=delivery.buyer_whatsapp).first()
@@ -1894,6 +1884,103 @@ def buyer_confirm_delivery(delivery_id):
                          cart_items=cart_data,
                          total_price=total_price,
                          messages=messages)
+
+@app.route('/confirm_delivery_received/<delivery_id>', methods=['GET', 'POST'])
+def confirm_delivery_received(delivery_id):
+    delivery = Delivery.query.filter_by(delivery_id=delivery_id).first()
+    if not delivery:
+        flash('Livrezon pa jwenn.', 'error')
+        return redirect(url_for('achte'))
+
+    if delivery.status != 'awaiting_delivery':
+        flash('Livrezon sa a pa nan estati ki pèmèt konfime resepsyon.', 'info')
+        return redirect(url_for('achte'))
+
+    if request.method == 'POST':
+        # Buyer confirms delivery was received
+        total_price = delivery.total_price + delivery.delivery_cost
+        
+        # Credit seller with Gkach
+        seller_gkach = UserGkach.query.filter_by(user_whatsapp=delivery.seller_whatsapp).first()
+        if seller_gkach:
+            seller_gkach.gkach_balance += total_price
+        else:
+            # Create seller gkach account if doesn't exist
+            seller_gkach = UserGkach(user_whatsapp=delivery.seller_whatsapp, gkach_balance=total_price)
+            db.session.add(seller_gkach)
+        
+        # Update delivery status to completed
+        delivery.status = 'completed'
+        delivery.delivered_at = datetime.utcnow()
+        db.session.commit()
+
+        # Generate PDF receipt
+        from utils import generate_pdf_receipt
+        cart_items_list = json.loads(delivery.cart_items) if delivery.cart_items else []
+        
+        try:
+            pdf_path = generate_pdf_receipt(
+                delivery_id=delivery.delivery_id,
+                buyer_whatsapp=delivery.buyer_whatsapp,
+                seller_whatsapp=delivery.seller_whatsapp,
+                cart_items_data=cart_items_list,
+                total_product_price=delivery.total_price,
+                total_shipping=delivery.delivery_cost,
+                grand_total=total_price,
+                transaction_date=delivery.delivered_at
+            )
+            
+            # Get the PDF filename for WhatsApp sharing
+            pdf_filename = os.path.basename(pdf_path)
+            pdf_url = url_for('static', filename=f'uploads/{pdf_filename}', _external=True)
+            
+            logger.info(f"PDF receipt generated: {pdf_path}")
+        except Exception as e:
+            logger.error(f"Error generating PDF receipt: {str(e)}")
+            pdf_url = None
+
+        # Notify seller that delivery is confirmed and payment is released
+        notify_seller_delivery_confirmed(delivery.seller_whatsapp, delivery.buyer_whatsapp, delivery_id, total_price)
+        
+        # Notify admin of completed delivery
+        notify_admin_delivery_completed(delivery.buyer_whatsapp, delivery.seller_whatsapp, delivery_id, total_price)
+
+        # Prepare WhatsApp messages with PDF receipt link
+        if pdf_url:
+            # Message to buyer with PDF receipt
+            buyer_message = f"✅ Resepsyon livrezon konfime!\n\nMèsi pou acha ou. Resi PDF ou disponib isit la: {pdf_url}\n\nID Livrezon: {delivery_id}\nTotal: {total_price} Gkach"
+            buyer_whatsapp_url = f"https://wa.me/{delivery.buyer_whatsapp.replace('+', '')}?text={urllib.parse.quote(buyer_message)}"
+            
+            # Message to admin with PDF receipt
+            admin_message = f"📦 LIVREZON KONPLETE\n\nAchte: {delivery.buyer_whatsapp}\nVandè: {delivery.seller_whatsapp}\nID: {delivery_id}\nTotal: {total_price} Gkach\n\nResi PDF: {pdf_url}"
+            admin_whatsapp_url = f"https://wa.me/{ADMIN_WHATSAPP.replace('+', '')}?text={urllib.parse.quote(admin_message)}"
+            
+            flash(f'Livrezon konfime! Vandè a resevwa {total_price} Gkach. Resi PDF voye.', 'success')
+        else:
+            flash(f'Livrezon konfime! Vandè a resevwa {total_price} Gkach.', 'success')
+        
+        return redirect(url_for('achte'))
+
+    # GET: Display delivery confirmation page
+    cart_items_list = json.loads(delivery.cart_items) if delivery.cart_items else []
+    cart_data = []
+    
+    for item_data in cart_items_list:
+        ad = Ad.query.filter_by(ad_id=item_data['ad_id']).first()
+        if ad:
+            cart_data.append({
+                'ad': ad,
+                'quantity': item_data['quantity'],
+                'price': item_data['price'],
+                'subtotal': item_data['price'] * item_data['quantity']
+            })
+
+    total_price = delivery.total_price + delivery.delivery_cost
+
+    return render_template('confirm_delivery_received.html',
+                         delivery=delivery,
+                         cart_items=cart_data,
+                         total_price=total_price)
 
 @app.route('/seller_update_cart/<buyer_whatsapp>', methods=['GET', 'POST'])
 def seller_update_cart(buyer_whatsapp):

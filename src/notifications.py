@@ -287,3 +287,39 @@ def notify_seller_cart_declined(seller_whatsapp, buyer_whatsapp, ad_title):
     """
     message = f"Achte a refize pa {buyer_whatsapp} pou piblisite '{ad_title}'. Panier an efase."
     return generate_whatsapp_link(seller_whatsapp, message)
+
+def notify_seller_purchase_confirmed(seller_whatsapp, buyer_whatsapp, delivery_id, total_price):
+    """
+    Notify seller when buyer confirms purchase
+    """
+    message = f"✅ ACHA KONFIME!\n\nAchte a konfime acha a pou {total_price} Gkach.\n\n👤 Achte: {buyer_whatsapp}\n🆔 ID Livrezon: {delivery_id}\n\n📦 Tanpri livre pwodwi a bay achte a. Lè achte a resevwa livrezon an, li pral konfime epi ou pral resevwa Gkach ou."
+    return generate_whatsapp_link(seller_whatsapp, message)
+
+def notify_seller_purchase_declined(seller_whatsapp, buyer_whatsapp, delivery_id):
+    """
+    Notify seller when buyer declines purchase
+    """
+    message = f"❌ ACHA REFIZE\n\nAchte a refize acha a.\n\n👤 Achte: {buyer_whatsapp}\n🆔 ID Livrezon: {delivery_id}"
+    return generate_whatsapp_link(seller_whatsapp, message)
+
+def notify_seller_delivery_confirmed(seller_whatsapp, buyer_whatsapp, delivery_id, total_price):
+    """
+    Notify seller when buyer confirms delivery receipt and payment is released
+    """
+    message = f"💰 PEMAN RESEVWA!\n\nAchte a konfime resepsyon livrezon an. {total_price} Gkach kredite nan balans ou.\n\n👤 Achte: {buyer_whatsapp}\n🆔 ID Livrezon: {delivery_id}\n\n✅ Tranzaksyon konplete!"
+    return generate_whatsapp_link(seller_whatsapp, message)
+
+def notify_buyer_awaiting_delivery(buyer_whatsapp, seller_whatsapp, delivery_id, total_price):
+    """
+    Notify buyer that purchase is confirmed and awaiting delivery
+    """
+    message = f"✅ ACHA KONFIME!\n\nAcha ou a konfime pou {total_price} Gkach.\n\n👤 Vandè: {seller_whatsapp}\n🆔 ID Livrezon: {delivery_id}\n\n📦 Vandè a pral livre pwodwi a. Lè ou resevwa livrezon an, tanpri konfime resepsyon pou finaliz tranzaksyon an."
+    return generate_whatsapp_link(buyer_whatsapp, message)
+
+def notify_admin_delivery_completed(buyer_whatsapp, seller_whatsapp, delivery_id, total_price):
+    """
+    Notify admin when delivery is completed and payment is released
+    """
+    admin_number = ADMIN_WHATSAPP
+    message = f"📦 LIVREZON KONPLETE\n\nAchte: {buyer_whatsapp}\nVandè: {seller_whatsapp}\nID: {delivery_id}\nTotal: {total_price} Gkach\n\n✅ Peman voye bay vandè."
+    return generate_whatsapp_link(admin_number, message)
