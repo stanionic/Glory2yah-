@@ -110,6 +110,28 @@ with app.app_context():
         db.session.commit()
     except:
         pass  # Column already exists
+    
+    # Add new delivery date columns if not exists
+    try:
+        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivered_at DATETIME"))
+        db.session.commit()
+    except:
+        pass  # Column already exists
+    try:
+        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_date DATETIME"))
+        db.session.commit()
+    except:
+        pass  # Column already exists
+    try:
+        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_date_set_at DATETIME"))
+        db.session.commit()
+    except:
+        pass  # Column already exists
+    try:
+        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_notes TEXT"))
+        db.session.commit()
+    except:
+        pass  # Column already exists
 
 @app.before_request
 def log_traffic():
