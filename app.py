@@ -99,39 +99,72 @@ def generate_otp():
 with app.app_context():
     db.create_all()
     # Add missing columns if not exists
-    from sqlalchemy import text
-    try:
-        db.session.execute(text("ALTER TABLE ads ADD COLUMN media_type VARCHAR(10) DEFAULT 'images'"))
-        db.session.commit()
-    except:
-        pass  # Column already exists
-    try:
-        db.session.execute(text("ALTER TABLE ads ADD COLUMN video VARCHAR(255)"))
-        db.session.commit()
-    except:
-        pass  # Column already exists
+    from sqlalchemy import text, inspect
     
-    # Add new delivery date columns if not exists
+    inspector = inspect(db.engine)
+    
+    # Check and add ads columns
+    ads_columns = [col['name'] for col in inspector.get_columns('ads')]
+    
+    if 'media_type' not in ads_columns:
+        try:
+            db.session.execute(text("ALTER TABLE ads ADD COLUMN media_type VARCHAR(10) DEFAULT 'images'"))
+            db.session.commit()
+            logger.info("Added media_type column to ads table")
+        except Exception as e:
+            db.session.rollback()
+            logger.warning(f"Could not add media_type column: {e}")
+    
+    if 'video' not in ads_columns:
+        try:
+            db.session.execute(text("ALTER TABLE ads ADD COLUMN video VARCHAR(255)"))
+            db.session.commit()
+            logger.info("Added video column to ads table")
+        except Exception as e:
+            db.session.rollback()
+            logger.warning(f"Could not add video column: {e}")
+    
+    # Check and add delivery columns
     try:
-        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivered_at DATETIME"))
-        db.session.commit()
-    except:
-        pass  # Column already exists
-    try:
-        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_date DATETIME"))
-        db.session.commit()
-    except:
-        pass  # Column already exists
-    try:
-        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_date_set_at DATETIME"))
-        db.session.commit()
-    except:
-        pass  # Column already exists
-    try:
-        db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_notes TEXT"))
-        db.session.commit()
-    except:
-        pass  # Column already exists
+        delivery_columns = [col['name'] for col in inspector.get_columns('deliveries')]
+        
+        if 'delivered_at' not in delivery_columns:
+            try:
+                db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivered_at TIMESTAMP"))
+                db.session.commit()
+                logger.info("Added delivered_at column to deliveries table")
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Could not add delivered_at column: {e}")
+        
+        if 'delivery_date' not in delivery_columns:
+            try:
+                db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_date TIMESTAMP"))
+                db.session.commit()
+                logger.info("Added delivery_date column to deliveries table")
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Could not add delivery_date column: {e}")
+        
+        if 'delivery_date_set_at' not in delivery_columns:
+            try:
+                db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_date_set_at TIMESTAMP"))
+                db.session.commit()
+                logger.info("Added delivery_date_set_at column to deliveries table")
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Could not add delivery_date_set_at column: {e}")
+        
+        if 'delivery_notes' not in delivery_columns:
+            try:
+                db.session.execute(text("ALTER TABLE deliveries ADD COLUMN delivery_notes TEXT"))
+                db.session.commit()
+                logger.info("Added delivery_notes column to deliveries table")
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Could not add delivery_notes column: {e}")
+    except Exception as e:
+        logger.warning(f"Could not inspect deliveries table: {e}")
 
 @app.before_request
 def log_traffic():
