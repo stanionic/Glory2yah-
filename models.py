@@ -18,6 +18,13 @@ class CartItem(db.Model):
 
 class Ad(db.Model):
     __tablename__ = 'ads'
+    __table_args__ = (
+        db.Index('idx_ad_status', 'admin_status'),
+        db.Index('idx_ad_batch', 'batch_id'),
+        db.Index('idx_ad_user', 'user_whatsapp'),
+        db.Index('idx_ad_created', 'created_at'),
+        db.Index('idx_ad_type', 'ad_type'),
+    )
 
     ad_id = db.Column(db.String(36), primary_key=True)
     user_whatsapp = db.Column(db.String(20), nullable=False)
@@ -47,12 +54,35 @@ class Batch(db.Model):
 
 class UserGkach(db.Model):
     __tablename__ = 'user_gkach'
+    __table_args__ = (
+        db.Index('idx_user_whatsapp', 'user_whatsapp'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     user_whatsapp = db.Column(db.String(20), nullable=False, unique=True)
     gkach_balance = db.Column(db.Integer, default=0)
     gkach_requests = db.Column(db.Text)  # JSON string for pending requests
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class GkachCashoutRequest(db.Model):
+    __tablename__ = 'gkach_cashout_requests'
+    __table_args__ = (
+        db.Index('idx_cashout_user', 'user_whatsapp'),
+        db.Index('idx_cashout_status', 'status'),
+        db.Index('idx_cashout_created', 'created_at'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_id = db.Column(db.String(36), unique=True, nullable=False)
+    user_whatsapp = db.Column(db.String(20), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)  # Amount in Gkach
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected, completed
+    payment_method = db.Column(db.String(20), nullable=False)  # moncash, natcash, bank
+    payment_details = db.Column(db.Text, nullable=False)  # JSON string with payment info
+    request_date = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_date = db.Column(db.DateTime, nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    proof_of_payment = db.Column(db.String(255), nullable=True)  # Admin uploads proof
 
 class GkachRate(db.Model):
     __tablename__ = 'gkach_rates'
@@ -64,6 +94,12 @@ class GkachRate(db.Model):
 
 class Delivery(db.Model):
     __tablename__ = 'deliveries'
+    __table_args__ = (
+        db.Index('idx_delivery_buyer', 'buyer_whatsapp'),
+        db.Index('idx_delivery_seller', 'seller_whatsapp'),
+        db.Index('idx_delivery_status', 'status'),
+        db.Index('idx_delivery_created', 'created_at'),
+    )
 
     delivery_id = db.Column(db.String(36), primary_key=True)
     ad_id = db.Column(db.String(36), db.ForeignKey('ads.ad_id'), nullable=True)  # Nullable for multiple ads
@@ -75,9 +111,14 @@ class Delivery(db.Model):
     otp = db.Column(db.String(4))  # 4-digit OTP for confirmation
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     confirmed_at = db.Column(db.DateTime)
+    delivered_at = db.Column(db.DateTime, nullable=True)  # When delivery was completed
     # New fields for cart functionality
     cart_items = db.Column(db.Text)  # JSON string for multiple cart items
     delivery_address = db.Column(db.Text, nullable=True)  # Store delivery address here
+    # New fields for delivery date management
+    delivery_date = db.Column(db.DateTime, nullable=True)  # Expected delivery date
+    delivery_date_set_at = db.Column(db.DateTime, nullable=True)  # When delivery date was set
+    delivery_notes = db.Column(db.Text, nullable=True)  # Seller notes about delivery
 
 class User(db.Model):
     __tablename__ = 'users'

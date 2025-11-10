@@ -24,10 +24,24 @@
         <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.video }}', '{{ ad.media_type }}', '{{ ad.title }}', '{{ ad.description }}', '{{ ad.price_gkach }}')">
             <div class="ad-image">
                 {% if ad.media_type == 'video' %}
-                <video controls loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
-                    <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+                <div class="video-container">
+                    <video 
+                        data-autoplay 
+                        data-loop 
+                        data-hover-unmute
+                        data-preload="metadata"
+                        muted 
+                        loop 
+                        playsinline 
+                        preload="metadata"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                        <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="video-autoplay-badge">
+                        <i class="fas fa-play"></i> Auto
+                    </div>
+                </div>
                 {% else %}
                 <img src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}"
                      alt="Piblisite Imaj">
@@ -338,13 +352,26 @@ function showAdModal(adId, images, video, mediaType, title, description, price) 
 
     modalImages.innerHTML = '';
     if (mediaType === 'video') {
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'video-container';
+        videoContainer.style.maxWidth = '100%';
+        videoContainer.style.height = 'auto';
+        
         const videoElement = document.createElement('video');
         videoElement.src = '{{ url_for("static", filename="uploads/") }}' + video;
         videoElement.controls = true;
         videoElement.autoplay = true;
+        videoElement.muted = false; // Unmuted in modal
+        videoElement.loop = true;
         videoElement.style.maxWidth = '100%';
         videoElement.style.height = 'auto';
-        modalImages.appendChild(videoElement);
+        videoElement.style.borderRadius = '8px';
+        
+        videoContainer.appendChild(videoElement);
+        modalImages.appendChild(videoContainer);
+        
+        // Play video when modal opens
+        videoElement.play().catch(err => console.log('Autoplay prevented:', err));
     } else {
         const imageList = images.split(',');
         imageList.forEach(img => {

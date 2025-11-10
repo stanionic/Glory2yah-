@@ -1,0 +1,434 @@
+/**
+ * Enhanced Video Styles for Glory2YahPub
+ * Provides better video display, loading states, and interactions
+ */
+
+/* Video Container */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+}
+
+/* Video Element Enhancements */
+video[data-autoplay] {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+video[data-autoplay]:hover {
+    opacity: 0.95;
+}
+
+/* Video States */
+video.video-playing {
+    border: 2px solid #28a745;
+}
+
+video.video-paused {
+    border: 2px solid #ffc107;
+}
+
+/* Loading Indicator */
+.video-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    pointer-events: none;
+}
+
+.video-loading i {
+    display: block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Play Button Overlay */
+.video-play-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.video-play-overlay:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.video-play-overlay i {
+    font-size: 64px;
+    color: white;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.video-play-overlay:hover i {
+    transform: scale(1.1);
+}
+
+/* Error Indicator */
+.video-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: rgba(220, 53, 69, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+    pointer-events: none;
+}
+
+.video-error i {
+    font-size: 32px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.video-error p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Video Controls Overlay */
+.video-controls-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 15;
+}
+
+.video-container:hover .video-controls-overlay {
+    opacity: 1;
+}
+
+.video-control-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: transform 0.2s ease;
+}
+
+.video-control-btn:hover {
+    transform: scale(1.1);
+}
+
+.video-progress {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+.video-progress-bar {
+    height: 100%;
+    background: #ffd700;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+.video-time {
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Mute/Unmute Indicator */
+.video-mute-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 15;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-mute-indicator.show {
+    opacity: 1;
+}
+
+/* Video Quality Badge */
+.video-quality-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 15;
+}
+
+/* Autoplay Badge */
+.video-autoplay-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(40, 167, 69, 0.9);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.video-autoplay-badge i {
+    font-size: 8px;
+}
+
+/* Pulse Animation for Autoplay */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.video-autoplay-badge.playing {
+    animation: pulse 2s infinite;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .video-play-overlay i {
+        font-size: 48px;
+    }
+
+    .video-controls-overlay {
+        padding: 8px;
+    }
+
+    .video-control-btn {
+        font-size: 16px;
+        padding: 3px 8px;
+    }
+
+    .video-time {
+        font-size: 10px;
+    }
+
+    .video-loading {
+        padding: 15px;
+        font-size: 20px;
+    }
+}
+
+/* Extra Small Devices */
+@media (max-width: 480px) {
+    .video-play-overlay i {
+        font-size: 40px;
+    }
+
+    .video-controls-overlay {
+        padding: 5px;
+        gap: 5px;
+    }
+
+    .video-control-btn {
+        font-size: 14px;
+        padding: 2px 6px;
+    }
+
+    .video-quality-badge,
+    .video-autoplay-badge {
+        font-size: 8px;
+        padding: 2px 6px;
+    }
+}
+
+/* Accessibility */
+video:focus {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+
+.video-control-btn:focus {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+
+/* Smooth Transitions */
+.video-container * {
+    transition: all 0.3s ease;
+}
+
+/* Performance Optimization */
+video[data-autoplay] {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Preload Optimization */
+video[data-autoplay][data-preload="metadata"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+video[data-autoplay][data-preload="auto"] {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Video Thumbnail Placeholder */
+.video-thumbnail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.video-thumbnail.hidden {
+    opacity: 0;
+}
+
+/* Buffering Indicator */
+.video-buffering {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 12;
+    pointer-events: none;
+}
+
+.video-buffering::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Video Card Enhancements for Ad Display */
+.whatsapp-ad-card .ad-image video {
+    border-radius: 0;
+    transition: transform 0.3s ease;
+}
+
+.whatsapp-ad-card:hover .ad-image video {
+    transform: scale(1.02);
+}
+
+/* Modal Video Enhancements */
+.modal-content video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Video Duration Badge */
+.video-duration-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 15;
+}
+
+/* Sound Wave Animation for Unmuted Videos */
+.video-sound-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 2px;
+    z-index: 15;
+}
+
+.video-sound-indicator span {
+    width: 3px;
+    height: 12px;
+    background: #ffd700;
+    border-radius: 2px;
+    animation: soundWave 0.8s ease-in-out infinite;
+}
+
+.video-sound-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.video-sound-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes soundWave {
+    0%, 100% {
+        height: 12px;
+    }
+    50% {
+        height: 20px;
+    }
+}
