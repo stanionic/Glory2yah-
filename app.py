@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, send_from_directory
-from models import db, Ad, Batch, UserGkach, GkachRate, Delivery, Message, User, CartItem, Ads_Owner, GkachCashoutRequest
+from models import db, Ad, Batch, UserGkach, GkachRate, Delivery, Message, User, CartItem, Ads_Owner
 import uuid
 import os
 import json
