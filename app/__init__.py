@@ -216,3 +216,9 @@ def setup_logging(app):
     
     app.logger.addHandler(file_handler)
     app.logger.setLevel(log_level)
+
+
+# Gunicorn entrypoint compatibility:
+# Procfile runs `gunicorn app:app ...` which expects an attribute named `app`
+# in this module. Provide it using the application factory.
+app = create_app(os.environ.get('FLASK_ENV', 'development'))
