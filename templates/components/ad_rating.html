@@ -1,0 +1,65 @@
+<!-- Ad Rating and Comment Component -->
+<!-- Include this in your ad detail pages -->
+
+<div class="ad-rating-section">
+    <!-- Rating Summary -->
+    <div class="rating-summary">
+        <div class="avg-rating" id="avg-rating-{{ ad.ad_id }}">
+            {{ ad.average_rating|default(0)|round(1) }}
+        </div>
+        <div>
+            <div class="star-rating" data-ad-id="{{ ad.ad_id }}" data-current-rating="{{ ad.average_rating|default(0) }}">
+                <span class="star" data-rating="1">★</span>
+                <span class="star" data-rating="2">★</span>
+                <span class="star" data-rating="3">★</span>
+                <span class="star" data-rating="4">★</span>
+                <span class="star" data-rating="5">★</span>
+            </div>
+            <div class="rating-count" id="rating-count-{{ ad.ad_id }}">
+                ({{ ad.rating_count|default(0) }} evalyasyon)
+            </div>
+        </div>
+    </div>
+
+    {% if is_logged_in %}
+    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+        Klike sou zetwal yo pou evalye piblisite sa a
+    </p>
+    {% else %}
+    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+        <a href="{{ url_for('login') }}">Konekte</a> pou evalye piblisite sa a
+    </p>
+    {% endif %}
+
+    <!-- Comments Section -->
+    <div class="comments-section" data-ad-id="{{ ad.ad_id }}">
+        <h3>Kòmantè</h3>
+        
+        {% if is_logged_in %}
+        <div class="comment-form">
+            <textarea 
+                id="comment-text-{{ ad.ad_id }}" 
+                class="comment-input" 
+                placeholder="Ekri kòmantè ou..."></textarea>
+            <button class="submit-comment-btn" data-ad-id="{{ ad.ad_id }}">
+                Voye Kòmantè
+            </button>
+        </div>
+        {% else %}
+        <p style="font-size: 14px; color: #666;">
+            <a href="{{ url_for('login') }}">Konekte</a> pou kòmante
+        </p>
+        {% endif %}
+
+        <div class="comments-list" id="comments-list-{{ ad.ad_id }}">
+            <!-- Comments will be loaded here via AJAX -->
+        </div>
+    </div>
+</div>
+
+<!-- Include jQuery (if not already included) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Include rating CSS and JS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ad-rating.css') }}">
+<script src="{{ url_for('static', filename='js/ad-rating.js') }}"></script>

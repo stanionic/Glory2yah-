@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    /* Styles spécifiques pour la salle de conférence */
+    .conference-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: calc(100vh - 150px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .container-conf {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .logo-conf {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+    }
+
+    .form-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .btn-conf {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .btn-conf:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .divider {
+        margin: 20px 0;
+        border-bottom: 1px solid #eee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="conference-wrapper">
+    <div class="container-conf">
+        <div class="logo-conf">Konferans</div>
+        <p class="subtitle">Sal Konferans Videyo Glory2Yah</p>
+
+        <div class="form-section">
+            <h3>Kreye yon Sal</h3>
+            <div class="form-group">
+                <label for="create_room_name">Non Sal la</label>
+                <input type="text" id="create_room_name" placeholder="Egz: Reyinyon Fanmi">
+            </div>
+            <div class="form-group">
+                <label for="create_user_name">Non w</label>
+                <input type="text" id="create_user_name" placeholder="Egz: Jean Philippe">
+            </div>
+            <div class="form-group">
+                <label for="create_password">Modpas (Opsyonèl)</label>
+                <input type="password" id="create_password" placeholder="Kite vid si w pa vle modpas">
+            </div>
+            <button class="btn-conf" onclick="createRoom()">Kreye Sal</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-section">
+            <h3>Antre nan yon Sal</h3>
+            <div class="form-group">
+                <label for="join_room_code">Kòd Sal la</label>
+                <input type="text" id="join_room_code" placeholder="Egz: AB1234">
+            </div>
+            <div class="form-group">
+                <label for="join_user_name">Non w</label>
+                <input type="text" id="join_user_name" placeholder="Egz: Jean Philippe">
+            </div>
+            <div class="form-group">
+                <label for="join_password">Modpas (Si genyen)</label>
+                <input type="password" id="join_password" placeholder="Antre modpas sal la">
+            </div>
+            <button class="btn-conf" onclick="joinRoom()">Antre nan Sal</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function createRoom() {
+        const roomName = document.getElementById('create_room_name').value;
+        const creatorName = document.getElementById('create_user_name').value;
+        const password = document.getElementById('create_password').value;
+
+        if (!roomName || !creatorName) {
+            alert('Tanpri ranpli non sal la ak non w.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/konferans/create_room', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    room_name: roomName,
+                    creator_name: creatorName,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.href = `/konferans/room/${data.room_code}?user_name=${encodeURIComponent(creatorName)}`;
+                }
+            } else {
+                alert(data.error || 'Erè nan kreasyon sal la.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Yon erè rive. Eseye ankò.');
+        }
+    }
+
+    async function joinRoom() {
+        const roomCode = document.getElementById('join_room_code').value.toUpperCase();
+        const userName = document.getElementById('join_user_name').value;
+        const password = document.getElementById('join_password').value;
+
+        if (!roomCode || !userName) {
+            alert('Tanpri ranpli kòd sal la ak non w.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/konferans/join_room', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    room_code: roomCode,
+                    user_name: userName,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.href = `/konferans/room/${roomCode}?user_name=${encodeURIComponent(userName)}`;
+                }
+            } else {
+                alert(data.error || 'Erè nan antre nan sal la.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Yon erè rive. Eseye ankò.');
+        }
+    }
+</script>
+{% endblock %}

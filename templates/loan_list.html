@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Prè - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">📋 Prè</h1>
+            <p class="lead">Jwenn prè pou pwojè ou yo</p>
+        </div>
+    </div>
+
+    <!-- Loan Products -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="mb-3">Pwodwi Prè Disponib</h3>
+        </div>
+        {% for product in loan_products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description or 'Pa gen deskripsyon' }}</p>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">Min: {{ product.min_amount }} Gkach</li>
+                        <li class="list-group-item">Max: {{ product.max_amount }} Gkach</li>
+                        <li class="list-group-item">Enterè: {{ product.interest_rate }}% pa ane</li>
+                        <li class="list-group-item">Dire: {{ product.duration_days }} jou</li>
+                    </ul>
+                    <a href="{{ url_for('loan_apply', product_id=product.id) }}" class="btn btn-primary w-100">Fè Demann</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">Pa gen pwodwi prè disponib kounye a.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- My Loans -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-3">Prè Mwen Yo</h3>
+            <div class="card">
+                <div class="card-body">
+                    {% if user_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Dat</th>
+                                    <th>Pwodwi</th>
+                                    <th>Kantite</th>
+                                    <th>Enterè</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Dat Echèans</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in user_loans %}
+                                <tr>
+                                    <td>{{ loan.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ loan.product.name }}</td>
+                                    <td>{{ loan.amount }} Gkach</td>
+                                    <td>{{ loan.interest_amount }} Gkach</td>
+                                    <td>{{ loan.total_due }} Gkach</td>
+                                    <td>
+                                        {% if loan.status == 'pending' %}
+                                        <span class="badge bg-warning">An atant</span>
+                                        {% elif loan.status == 'active' %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% elif loan.status == 'completed' %}
+                                        <span class="badge bg-info">Konplè</span>
+                                        {% elif loan.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejte</span>
+                                        {% elif loan.status == 'defaulted' %}
+                                        <span class="badge bg-dark">Default</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ loan.due_date.strftime('%d/%m/%Y') if loan.due_date else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Ou pa gen prè ankò.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('bank_dashboard') }}" class="btn btn-secondary">← Retounen nan Bank</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

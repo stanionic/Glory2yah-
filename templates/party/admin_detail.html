@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>🎉 Detay Fètnenyen: {{ party.name }}</h1>
+    
+    <a href="{{ url_for('party.admin_parties') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retounen
+    </a>
+    
+    <div class="party-info-card">
+        <div class="info-row">
+            <strong>Dat:</strong> {{ party.date.strftime('%d/%m/%Y') }}
+        </div>
+        {% if party.location %}
+        <div class="info-row">
+            <strong>Kote:</strong> {{ party.location }}
+        </div>
+        {% endif %}
+        {% if party.description %}
+        <div class="info-row">
+            <strong>Deskripsyon:</strong> {{ party.description }}
+        </div>
+        {% endif %}
+        <div class="info-row">
+            <strong>Pri:</strong> 
+            {% if party.price > 0 %}
+                {{ party.price }} Gkach
+            {% else %}
+                Gratis
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="participants-section">
+        <h2>Moun ki Enskri ({{ participants|length }})</h2>
+        
+        {% if participants %}
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Non</th>
+                        <th>WhatsApp</th>
+                        <th>Chwa Manje</th>
+                        <th>Chwa Bwed</th>
+                        <th>Dat Ensksripsiyon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participant in participants %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ participant.name }}</td>
+                        <td>
+                            <a href="https://wa.me/{{ participant.whatsapp.replace('+', '') }}" target="_blank">
+                                {{ participant.whatsapp }}
+                            </a>
+                        </td>
+                        <td>{{ participant.food_choice or '-' }}</td>
+                        <td>{{ participant.drink_choice or '-' }}</td>
+                        <td>{{ participant.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="export-section">
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="fas fa-print"></i> Pri
+                </button>
+            </div>
+        {% else %}
+            <p class="no-participants">Pa gen moun ki enskri ankò.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .party-info-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .info-row {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-row strong {
+        color: #333;
+        margin-right: 10px;
+    }
+    
+    .participants-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .participants-section h2 {
+        color: #333;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ff6b6b;
+        padding-bottom: 10px;
+    }
+    
+    .participants-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    
+    .participants-table th, .participants-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .participants-table th {
+        background: #f8f9fa;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    .participants-table a {
+        color: #25D366;
+        text-decoration: none;
+    }
+    
+    .participants-table a:hover {
+        text-decoration: underline;
+    }
+    
+    .export-section {
+        margin-top: 20px;
+    }
+    
+    .no-participants {
+        text-align: center;
+        padding: 40px;
+        color: #888;
+        font-style: italic;
+    }
+    
+    @media print {
+        .btn, .container > a {
+            display: none;
+        }
+        
+        .party-info-card, .participants-section {
+            box-shadow: none;
+        }
+    }
+</style>
+{% endblock %}

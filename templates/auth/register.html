@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Kreye Kont - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+            Kreye kont ou gratis
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-500">
+            Antre detay ou yo pou kòmanse vann ak achte
+        </p>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form class="space-y-4" action="{{ url_for('auth.register') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-900">Non konplè</label>
+                <div class="mt-1">
+                    <input id="name" name="name" type="text" required 
+                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label for="pseudo" class="block text-sm font-medium text-gray-900">Pseudo (Username)</label>
+                <div class="mt-1">
+                    <input id="pseudo" name="pseudo" type="text" required 
+                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label for="whatsapp" class="block text-sm font-medium text-gray-900">Nimewo WhatsApp</label>
+                <div class="mt-1">
+                    <input id="whatsapp" name="whatsapp" type="tel" placeholder="+509..." required 
+                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-900">Modpas</label>
+                <div class="mt-1">
+                    <input id="password" name="password" type="password" required 
+                           placeholder="Chwazi modpas ou..."
+                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
+                </div>
+                <div class="mt-2">
+                    <p class="text-xs text-gray-500">
+                        💡 <strong>De (2) opsyon modpas:</strong><br>
+                        • 6 chif sèlman (ex: 123456)<br>
+                        • Alfanimerik: lèt ak chif (ex: pass123)
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" 
+                        class="flex w-full justify-center rounded-xl bg-primary px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 tap-scale">
+                    Enskri kounye a
+                </button>
+            </div>
+        </form>
+
+        <p class="mt-8 text-center text-sm text-gray-500">
+            Ou gen kont deja?
+            <a href="{{ url_for('auth.login') }}" class="font-semibold text-primary hover:text-primary/80">Konekte isit la</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

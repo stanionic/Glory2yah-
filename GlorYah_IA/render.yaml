@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: mandemmapbaw
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r requirements-basic.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_HOST
+        value: 0.0.0.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: False

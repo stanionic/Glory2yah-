@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-section">
+        <h2>Rezilta Pibliyasyon Facebook</h2>
+        
+        {% if results %}
+        <div class="results-summary">
+            <p><strong>Dat:</strong> {{ results.timestamp }}</p>
+            <p><strong>Total Siksè:</strong> {{ results.successful|length }}</p>
+            <p><strong>Total Echwe:</strong> {{ results.failed|length }}</p>
+        </div>
+
+        {% if results.successful %}
+        <div class="success-section">
+            <h3>✅ Piblisite Pibliye Avèk Siksè</h3>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Tit</th>
+                        <th>ID Piblisite</th>
+                        <th>ID Post Facebook</th>
+                        <th>Mesaj</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results.successful %}
+                    <tr>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.ad_id[:8] }}...</td>
+                        <td>{{ item.post_id }}</td>
+                        <td>{{ item.message }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if results.failed %}
+        <div class="error-section">
+            <h3>❌ Piblisite Ki Pa T Kapab Pibliye</h3>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Tit</th>
+                        <th>ID Piblisite</th>
+                        <th>Erè</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results.failed %}
+                    <tr>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.ad_id[:8] }}...</td>
+                        <td>{{ item.error }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="actions">
+            <a href="{{ url_for('admin') }}" class="btn btn-blue">Retounen nan Admin</a>
+        </div>
+        {% else %}
+        <p>Pa gen rezilta pou montre.</p>
+        <a href="{{ url_for('admin') }}" class="btn btn-blue">Retounen nan Admin</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.results-summary {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.results-summary p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.success-section, .error-section {
+    margin: 2rem 0;
+}
+
+.success-section h3 {
+    color: #28a745;
+    margin-bottom: 1rem;
+}
+
+.error-section h3 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.results-table th,
+.results-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.results-table th {
+    background-color: var(--royal-blue);
+    color: white;
+    font-weight: bold;
+}
+
+.results-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.actions {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .results-table {
+        font-size: 0.9rem;
+    }
+    
+    .results-table th,
+    .results-table td {
+        padding: 8px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-edit-user-container">
+        <div class="admin-header">
+            <h2>✏️ Modifye Itilizatè</h2>
+            <p class="subtitle">Modifye enfòmasyon itilizatè: <strong>{{ user.pseudo }}</strong></p>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin_edit_user', user_id=user.id) }}" class="edit-user-form">
+            <div class="form-section">
+                <h4>📋 Enfòmasyon Pwofil</h4>
+                
+                <div class="form-group">
+                    <label for="pseudo">👤 Pseudo *</label>
+                    <input type="text" id="pseudo" name="pseudo" value="{{ user.pseudo }}" required minlength="3">
+                    <small class="form-text">Dwe gen omwen 3 karaktè epi dwe inik</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">📝 Non Konplè</label>
+                    <input type="text" id="name" name="name" value="{{ user.name or '' }}" placeholder="Non konplè itilizatè a">
+                </div>
+
+                <div class="form-group">
+                    <label for="whatsapp">📱 WhatsApp *</label>
+                    <input type="tel" id="whatsapp" name="whatsapp" value="{{ user.whatsapp }}" required>
+                    <small class="form-text">Nimewo WhatsApp ak kòd peyi (egz: +50912345678)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="bio">📋 Biyografi</label>
+                    <textarea id="bio" name="bio" rows="3" placeholder="Biyografi itilizatè a">{{ user.bio or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h4>⚙️ Paramèt Kont</h4>
+                
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                        <span class="checkmark"></span>
+                        Kont Aktif
+                    </label>
+                    <small class="form-text">Dechèche pou dezaktive kont sa a</small>
+                </div>
+            </div>
+
+            <div class="form-section user-info">
+                <h4>ℹ️ Enfòmasyon Sistèm</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">ID:</span>
+                        <span class="info-value">{{ user.id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Kreye:</span>
+                        <span class="info-value">{{ user.created_at.strftime('%d %B %Y à %H:%M') if user.created_at else 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Dènye Mizajou:</span>
+                        <span class="info-value">{{ user.updated_at.strftime('%d %B %Y à %H:%M') if user.updated_at else 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Pwovizyon:</span>
+                        <span class="info-value">{{ user.auth_provider or 'whatsapp' }}</span>
+                    </div>
+                    {% if user.email %}
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ user.email }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.gmail_id %}
+                    <div class="info-item">
+                        <span class="info-label">Gmail ID:</span>
+                        <span class="info-value">{{ user.gmail_id }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Anrejistre Chanje yo
+                </button>
+                <a href="{{ url_for('admin_view_user', user_id=user.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Anile
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-info">
+                    <i class="fas fa-arrow-left"></i> Retounen nan Lis
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.admin-edit-user-container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.admin-header h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.subtitle strong {
+    color: #007bff;
+}
+
+.form-section {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 30px;
+    padding-bottom: 0;
+}
+
+.form-section h4 {
+    margin: 0 0 25px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.edit-user-form .form-group {
+    margin-bottom: 25px;
+}
+
+.edit-user-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.edit-user-form input[type="text"],
+.edit-user-form input[type="tel"],
+.edit-user-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.edit-user-form input:focus,
+.edit-user-form textarea:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.user-info {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+}
+
+.info-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.info-value {
+    color: #333;
+    text-align: right;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-actions .btn {
+    flex: 1;
+    min-width: 150px;
+    padding: 14px;
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .admin-edit-user-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        flex: 100%;
+    }
+
+    .info-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .info-value {
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}

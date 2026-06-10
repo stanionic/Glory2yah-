@@ -1,0 +1,25 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block eb_content %}
+<h2>Student Dashboard</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Course</th>
+            <th>Assignments</th>
+            <th>Exam</th>
+            <th>Average</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for grade in grades %}
+            <tr>
+                <td>{{ grade.course.name }}</td>
+                <td>{{ grade.assignments or 'N/A' }}</td>
+                <td>{{ grade.exam or 'N/A' }}</td>
+                <td>{{ grade.average or 'N/A' }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

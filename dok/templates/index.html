@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Dòk GlorYah se yon aplikasyon medikal ki itilize entèlijans atifisyèl (IA) pou ede moun jwenn enfòmasyon sou sante yo an kreyòl">
+    <meta name="theme-color" content="#2563eb">
+    <title>Dòk GlorYah - Asistan Sante IA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">🏥</div>
+            <h1 class="title">Dòk GlorYah</h1>
+            <p class="subtitle">Dòk GlorYah se yon aplikasyon medikal ki itilize entèlijans atifisyèl (IA) pou ede moun jwenn enfòmasyon sou sante yo. Ou ka ekri sentòm ou yo an kreyòl oswa an fransè, epi aplikasyon an ap ba ou konsèy.</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <div class="input-section">
+                <label for="symptoms" class="label">Dekri sa w ap santi a...</label>
+                <textarea 
+                    id="symptoms" 
+                    class="textarea" 
+                    placeholder="Ekri sentòm ou yo isit la. Egzanp: 'Mwen gen lafyèv epi tèt mwen fè mal'"
+                    rows="6"
+                ></textarea>
+                
+                <button id="analyzeBtn" class="btn btn-primary">
+                    <span class="btn-icon">🔍</span>
+                    <span class="btn-text">Mande Konsèy</span>
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Analiz sentòm ou yo...</p>
+            </div>
+
+            <!-- Response Section -->
+            <div id="responseSection" class="response-section hidden">
+                <div class="response-header">
+                    <span id="severityIcon" class="severity-icon"></span>
+                    <span id="severityLevel" class="severity-level"></span>
+                </div>
+                
+                <div id="responseText" class="response-text"></div>
+                
+                <div id="warningText" class="warning-text"></div>
+            </div>
+
+            <!-- WhatsApp Contact Button -->
+            <div class="whatsapp-section">
+                <p class="whatsapp-label">Bezwen pale ak yon moun?</p>
+                <a 
+                    href="https://wa.me/50942882076" 
+                    target="_blank" 
+                    class="btn btn-whatsapp"
+                >
+                    <span class="btn-icon">💬</span>
+                    <span class="btn-text">Kontakte sou WhatsApp</span>
+                </a>
+            </div>
+
+            <!-- Donation Section -->
+            <div class="donation-section">
+                <div class="donation-header">
+                    <span class="donation-icon">❤️</span>
+                    <h3 class="donation-title">Sipòte Pwojè a</h3>
+                </div>
+                <p class="donation-description">
+                    Si aplikasyon sa a ede w, ou ka kontribye volontèman pou sipòte devlopman li.
+                </p>
+                
+                <div class="donation-methods">
+                    <div class="donation-method">
+                        <div class="method-header">
+                            <span class="method-icon">📱</span>
+                            <strong>MonCash</strong>
+                        </div>
+                        <p class="method-number">+509 4859 2888</p>
+                    </div>
+                    
+                    <div class="donation-method">
+                        <div class="method-header">
+                            <span class="method-icon">💳</span>
+                            <strong>NatCash</strong>
+                        </div>
+                        <p class="method-number">+509 4288 2076</p>
+                    </div>
+                </div>
+                
+                <div class="donation-info">
+                    <p class="donation-name">📝 Nom: <strong>Desinat Stanley</strong></p>
+                    <p class="donation-thanks">Mèsi anpil pou sipò w! 🙏</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 Dòk GlorYah | Fèt pou Ayiti 🇭🇹</p>
+            <p class="disclaimer">
+                Aplikasyon sa a bay enfòmasyon jeneral sèlman.<br>
+                Li pa ranplase konsiltasyon ak yon doktè pwofesyonèl.
+            </p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Éléments DOM
+        const symptomsInput = document.getElementById('symptoms');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const responseSection = document.getElementById('responseSection');
+        const severityIcon = document.getElementById('severityIcon');
+        const severityLevel = document.getElementById('severityLevel');
+        const responseText = document.getElementById('responseText');
+        const warningText = document.getElementById('warningText');
+
+        // Fonction pour analyser les symptômes
+        async function analyzeSymptoms() {
+            const symptoms = symptomsInput.value.trim();
+
+            // Validation
+            if (!symptoms) {
+                alert('Tanpri ekri sentòm ou yo');
+                symptomsInput.focus();
+                return;
+            }
+
+            // Afficher le loading
+            analyzeBtn.disabled = true;
+            loading.classList.remove('hidden');
+            responseSection.classList.add('hidden');
+
+            try {
+                // Envoyer la requête
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symptoms: symptoms })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.message);
+                }
+
+                // Afficher la réponse
+                displayResponse(data.response);
+
+            } catch (error) {
+                alert('Yon erè rive: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                // Cacher le loading
+                loading.classList.add('hidden');
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        // Fonction pour afficher la réponse
+        function displayResponse(response) {
+            // Définir l'icône et le niveau
+            severityIcon.textContent = response.icon;
+            severityLevel.textContent = 'Nivo Ijans: ' + response.level;
+            
+            // Définir la couleur selon le niveau
+            severityLevel.className = 'severity-level';
+            if (response.level === 'WOUJ') {
+                severityLevel.classList.add('level-urgent');
+            } else if (response.level === 'JÒN') {
+                severityLevel.classList.add('level-moderate');
+            } else {
+                severityLevel.classList.add('level-mild');
+            }
+
+            // Afficher le texte de réponse (avec formatage markdown simple)
+            responseText.innerHTML = formatResponse(response.response);
+            
+            // Afficher l'avertissement
+            warningText.textContent = response.warning;
+
+            // Afficher la section de réponse
+            responseSection.classList.remove('hidden');
+            
+            // Scroller vers la réponse
+            responseSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Fonction pour formater le texte (simple markdown)
+        function formatResponse(text) {
+            // Remplacer les retours à la ligne par des <br>
+            let formatted = text.replace(/\n/g, '<br>');
+            
+            // Remplacer **texte** par <strong>texte</strong>
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Remplacer • par des puces HTML
+            formatted = formatted.replace(/•/g, '&bull;');
+            
+            return formatted;
+        }
+
+        // Event listeners
+        analyzeBtn.addEventListener('click', analyzeSymptoms);
+
+        // Permettre d'envoyer avec Enter (Ctrl+Enter sur mobile)
+        symptomsInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                analyzeSymptoms();
+            }
+        });
+
+        // Auto-focus sur le textarea au chargement
+        window.addEventListener('load', function() {
+            symptomsInput.focus();
+        });
+    </script>
+</body>
+</html>

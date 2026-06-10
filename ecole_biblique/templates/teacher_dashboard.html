@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    /* Correction pour l'affichage avec la navbar globale */
+    header .container {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    nav a {
+        color: white !important;
+    }
+    nav a:hover {
+        color: #FFD700 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>Teacher Dashboard</h2>
+
+<h3>My Courses</h3>
+<ul class="list-group mb-4">
+    {% for course in courses %}
+        <li class="list-group-item">
+            {{ course.name }}
+            <a href="#" class="btn btn-sm btn-primary float-end">Manage Grades</a>
+        </li>
+    {% endfor %}
+</ul>
+
+<h3>Enter Grades</h3>
+<form id="grade-form">
+    <div class="mb-3">
+        <label for="course" class="form-label">Course</label>
+        <select class="form-select" id="course" name="course" required>
+            {% for course in courses %}
+                <option value="{{ course.id }}">{{ course.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="student" class="form-label">Student</label>
+        <select class="form-select" id="student" name="student" required>
+            <!-- Populated dynamically -->
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="assignments" class="form-label">Assignments Average</label>
+        <input type="number" step="0.01" class="form-control" id="assignments" name="assignments">
+    </div>
+    <div class="mb-3">
+        <label for="exam" class="form-label">Exam Grade</label>
+        <input type="number" step="0.01" class="form-control" id="exam" name="exam">
+    </div>
+    <button type="submit" class="btn btn-success">Save Grade</button>
+</form>
+
+<table class="table table-striped mt-4" id="grades-table">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Assignments</th>
+            <th>Exam</th>
+            <th>Average</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Populated by JS -->
+    </tbody>
+</table>
+
+{% block scripts %}
+<script>
+document.getElementById('course').addEventListener('change', function() {
+    const courseId = this.value;
+    // Fetch students for the course and populate student select
+    // For simplicity, assuming students are enrolled, but in real app, need enrollment table
+});
+
+document.getElementById('grade-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    // Submit grade via AJAX
+    // Calculate average: (assignments * 0.3) + (exam * 0.7)
+});
+</script>
+{% endblock %}
+{% endblock %}

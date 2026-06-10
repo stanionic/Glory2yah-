@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+{% block title %}Checkout - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+        <div class="step active">
+            <div class="step-circle">1</div>
+            <div class="step-label">Revize</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+            <div class="step-circle">2</div>
+            <div class="step-label">Livrezon</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+            <div class="step-circle">3</div>
+            <div class="step-label">Konfime</div>
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-section">
+        <h3 class="section-title">📦 Rezime Kòmand</h3>
+        
+        <div class="order-items">
+            {% for item in cart_items %}
+            {% set ad = item.ad if item.ad else {} %}
+            {% set ad_title = ad.title if ad else 'Pwodui' %}
+            {% set ad_price = ad.price_gkach if ad else 0 %}
+            {% set ad_images = ad.get_images_list() if ad and hasattr(ad, 'get_images_list') else [] %}
+            
+            <div class="order-item">
+                <div class="order-item-image">
+                    {% if ad_images %}
+                    <img src="/static/uploads/{{ ad_images[0] }}" alt="{{ ad_title }}">
+                    {% else %}
+                    <div class="order-placeholder">📦</div>
+                    {% endif %}
+                </div>
+                <div class="order-item-info">
+                    <div class="order-item-title">{{ ad_title[:30] }}{% if ad_title|length > 30 %}...{% endif %}</div>
+                    <div class="order-item-qty">Kantite: {{ item.quantity }}</div>
+                </div>
+                <div class="order-item-price">🪙 {{ ad_price * item.quantity }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Delivery Info -->
+    <div class="delivery-section">
+        <h3 class="section-title">🚚 Enfòmasyon Livrezon</h3>
+        
+        <div class="info-card">
+            <div class="info-icon">ℹ️</div>
+            <div class="info-text">
+                <p><strong>Livrezon pou negosye</strong></p>
+                <p>Apre ou konfime kòmand ou, vandè a ap kontakte ou pou diskite pri livrezon ak detay.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method -->
+    <div class="payment-section">
+        <h3 class="section-title">💰 Metòd Peman</h3>
+        
+        <div class="payment-option selected">
+            <div class="payment-radio">
+                <input type="radio" name="payment" id="gkach" checked>
+                <label for="gkach"></label>
+            </div>
+            <div class="payment-info">
+                <div class="payment-icon">🪙</div>
+                <div class="payment-details">
+                    <div class="payment-name">Gkach</div>
+                    <div class="payment-balance">Balans: <span id="userBalance">{{ balance }}</span> Gkach</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Total -->
+    <div class="total-section">
+        <div class="total-row">
+            <span class="total-label">Soutotal</span>
+            <span class="total-value">🪙 {{ subtotal }}</span>
+        </div>
+        <div class="total-row">
+            <span class="total-label">Livrezon</span>
+            <span class="total-value total-pending">Pou negosye</span>
+        </div>
+        <div class="total-divider"></div>
+        <div class="total-row total-grand">
+            <span class="total-label">Total</span>
+            <span class="total-value">🪙 {{ subtotal }}</span>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-section">
+        {% if current_user and current_user.is_authenticated %}
+            {% if balance >= subtotal %}
+            <button class="confirm-btn" onclick="confirmOrder()">
+                <span>✓</span>
+                <span>Konfime Kòmand</span>
+            </button>
+            {% else %}
+            <div class="insufficient-balance">
+                <div class="warning-icon">⚠️</div>
+                <div class="warning-text">
+                    <p><strong>Balans ensifisan</strong></p>
+                    <p>Ou bezwen {{ subtotal - balance }} Gkach plis</p>
+                </div>
+            </div>
+            <a href="/gkach/request" class="recharge-btn">
+                <span>💰</span>
+                <span>Achte Gkach</span>
+            </a>
+            {% endif %}
+        {% else %}
+        <div class="login-required">
+            <div class="warning-icon">🔒</div>
+            <div class="warning-text">
+                <p><strong>Koneksyon obligatwa</strong></p>
+                <p>Ou dwe konekte pou konfime kòmand ou</p>
+            </div>
+        </div>
+        <a href="/auth/login?next=/cart/checkout" class="login-btn">
+            <span>🔑</span>
+            <span>Konekte</span>
+        </a>
+        {% endif %}
+        
+        <a href="/cart" class="back-btn">
+            <span>←</span>
+            <span>Retounen nan Panyen</span>
+        </a>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal" id="confirmModal" style="display: none;">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-content">
+        <div class="modal-icon">✅</div>
+        <h3 class="modal-title">Kòmand Konfime!</h3>
+        <p class="modal-text">Vandè a ap kontakte ou byento pou diskite livrezon.</p>
+        <div class="modal-actions">
+            <a href="/" class="modal-btn modal-btn-primary">Retounen Akèy</a>
+            <a href="/delivery/list" class="modal-btn modal-btn-secondary">Wè Kòmand</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.checkout-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: 100px;
+}
+
+/* Step Indicator */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e4e6eb;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-circle {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: scale(1.1);
+}
+
+.step-label {
+    font-size: 12px;
+    color: #65676b;
+    font-weight: 600;
+}
+
+.step.active .step-label {
+    color: #667eea;
+}
+
+.step-line {
+    width: 40px;
+    height: 2px;
+    background: #e4e6eb;
+    margin: 0 8px;
+}
+
+/* Section Title */
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 16px 0;
+}
+
+/* Order Section */
+.order-section {
+    margin-bottom: 16px;
+}
+
+.order-items {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-item-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f0f2f5;
+}
+
+.order-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.order-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.order-item-info {
+    flex: 1;
+}
+
+.order-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.order-item-qty {
+    font-size: 12px;
+    color: #65676b;
+}
+
+.order-item-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* Delivery Section */
+.delivery-section {
+    margin-bottom: 16px;
+}
+
+.info-card {
+    background: #fff3e0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.info-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.info-text {
+    flex: 1;
+}
+
+.info-text p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
+.info-text p:last-child {
+    margin-bottom: 0;
+    color: #65676b;
+}
+
+/* Payment Section */
+.payment-section {
+    margin-bottom: 16px;
+}
+
+.payment-option {
+    background: white;
+    border: 2px solid #e4e6eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option.selected {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.payment-radio {
+    position: relative;
+}
+
+.payment-radio input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.payment-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.payment-icon {
+    font-size: 32px;
+}
+
+.payment-details {
+    flex: 1;
+}
+
+.payment-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.payment-balance {
+    font-size: 13px;
+    color: #65676b;
+}
+
+/* Total Section */
+.total-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.total-label {
+    font-size: 14px;
+    color: #65676b;
+}
+
+.total-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.total-pending {
+    color: #f57c00;
+    font-size: 12px;
+}
+
+.total-divider {
+    height: 1px;
+    background: #e4e6eb;
+    margin: 16px 0;
+}
+
+.total-grand {
+    margin-bottom: 0;
+}
+
+.total-grand .total-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.total-grand .total-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* Action Section */
+.action-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.confirm-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.confirm-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.insufficient-balance,
+.login-required {
+    background: #fff3e0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.warning-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.warning-text p {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
+.warning-text p:last-child {
+    margin-bottom: 0;
+    color: #65676b;
+}
+
+.recharge-btn,
+.login-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    border: none;
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.recharge-btn:hover,
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(245, 124, 0, 0.4);
+}
+
+.back-btn {
+    width: 100%;
+    background: white;
+    border: 2px solid #e4e6eb;
+    color: #65676b;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #f0f2f5;
+    border-color: #65676b;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 12px 0;
+}
+
+.modal-text {
+    font-size: 14px;
+    color: #65676b;
+    margin: 0 0 24px 0;
+}
+
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.modal-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.modal-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.modal-btn-secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.modal-btn-secondary:hover {
+    background: #f0f2f5;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .checkout-page {
+        padding: 12px;
+    }
+    
+    .step-indicator {
+        padding: 16px 12px;
+    }
+    
+    .step-circle {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    
+    .step-line {
+        width: 30px;
+    }
+}
+</style>
+
+<script>
+function confirmOrder() {
+    const btn = event.target.closest('.confirm-btn');
+    const originalContent = btn.innerHTML;
+    
+    btn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
+    btn.disabled = true;
+    
+    fetch('/cart/checkout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showModal();
+        } else {
+            alert(data.error || 'Erè nan konfime kòmand');
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        alert('Erè nan konfime kòmand');
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    });
+}
+
+function showModal() {
+    document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+}
+</script>
+{% endblock %}

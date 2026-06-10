@@ -1,0 +1,192 @@
+ {% extends "base.html" %}
+
+{% block content %}
+<style>
+.marketplace-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.marketplace-header h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.search-bar {
+    max-width: 600px;
+    margin: 20px auto;
+    display: flex;
+    gap: 10px;
+}
+
+.search-bar input {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+}
+
+.search-bar button {
+    padding: 12px 30px;
+    background: white;
+    color: #667eea;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.product-image {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 15px;
+}
+
+.product-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-price {
+    font-size: 24px;
+    color: #e82e04;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.product-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-view {
+    flex: 1;
+    padding: 10px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn-cart {
+    padding: 10px 15px;
+    background: #e82e04;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+}
+</style>
+
+<div class="marketplace-header">
+    <h1><i class="fas fa-store"></i> Marketplace</h1>
+    <p>Dekouvri pwodwi yo, achte, epi jwenn rekonpans</p>
+    
+    <div class="search-bar">
+        <form method="GET" action="{{ url_for('achte') }}" style="display: flex; width: 100%; gap: 10px;">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Chèche pwodwi...">
+            <button type="submit"><i class="fas fa-search"></i> Chèche</button>
+        </form>
+    </div>
+</div>
+
+<div class="product-grid">
+    {% if ads %}
+        {% for ad in ads %}
+        <div class="product-card" onclick="location.href='{{ url_for('ad_detail', ad_id=ad.ad_id) }}'">
+            {% if ad.media_type == 'video' %}
+                <video class="product-image" muted loop playsinline preload="metadata">
+                    <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
+                </video>
+            {% else %}
+                <img class="product-image" src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}" alt="{{ ad.title }}">
+            {% endif %}
+            
+            <div class="product-info">
+                <div class="product-title">{{ ad.title }}</div>
+                <div class="product-price">{{ ad.price_gkach }} Gkach</div>
+                
+                <div class="product-actions">
+                    <a href="{{ url_for('ad_detail', ad_id=ad.ad_id) }}" class="btn-view" onclick="event.stopPropagation()">
+                        <i class="fas fa-eye"></i> Wè
+                    </a>
+                    <button class="btn-cart" onclick="event.stopPropagation(); addToCart('{{ ad.ad_id }}')">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #666;">
+            <i class="fas fa-box-open" style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"></i>
+            <h3>Pa gen pwodwi jwenn</h3>
+            <p>Eseye yon lòt rechèch</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function addToCart(adId) {
+    window.location.href = '{{ url_for("shopping_cart", ad_id="") }}' + adId;
+}
+
+// Auto-play videos on hover
+document.querySelectorAll('.product-card video').forEach(video => {
+    video.parentElement.addEventListener('mouseenter', () => video.play());
+    video.parentElement.addEventListener('mouseleave', () => {
+        video.pause();
+        video.currentTime = 0;
+    });
+});
+</script>
+
+{% endblock %}

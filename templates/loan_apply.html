@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Demann Prè - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">📋 Demann Prè: {{ product.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5>Detay Pwodwi:</h5>
+                        <ul class="mb-0">
+                            <li>Kantite Minimòm: {{ product.min_amount }} Gkach</li>
+                            <li>Kantite Maksimòm: {{ product.max_amount }} Gkach</li>
+                            <li>Enterè: {{ product.interest_rate }}% pa ane</li>
+                            <li>Dire: {{ product.duration_days }} jou</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Kantite Prè (Gkach)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                   min="{{ product.min_amount }}" max="{{ product.max_amount }}" required>
+                            <div class="form-text">Antre yon kantite ant {{ product.min_amount }} ak {{ product.max_amount }} Gkach</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="purpose" class="form-label">Rezon pou Prè a</label>
+                            <textarea class="form-control" id="purpose" name="purpose" rows="3" 
+                                      placeholder="Eksplike poukisa ou bezwen prè sa a..." required></textarea>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6>Kalkil Enterè:</h6>
+                            <p class="mb-0">Enterè ap kalkile otomatikman sou baz {{ product.interest_rate }}% pa ane pou {{ product.duration_days }} jou.</p>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Soumèt Demann</button>
+                            <a href="{{ url_for('loan_list') }}" class="btn btn-secondary">Anile</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

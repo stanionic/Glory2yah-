@@ -1,0 +1,2517 @@
+{% extends "base.html" %}
+{% block title %}Akèy - Glory2YahPub{% endblock %}
+
+{% block content %}
+
+<!-- ═══ STORIES SECTION (RECTANGULAR GRID) ═══ -->
+<section class="stories-section">
+    <div class="stories-grid" id="storiesGrid">
+        <!-- Stories loaded dynamically via JavaScript -->
+    </div>
+</section>
+
+<!-- ═══ QUICK POST FORM ═══ -->
+<section class="quick-post-section" id="quickPostSection">
+    <div class="quick-post-container">
+        {% if current_user %}
+        <div class="quick-post-header">
+            <div class="user-avatar">
+                <span>{{ current_user.whatsapp[-2:] if current_user.whatsapp else '??' }}</span>
+            </div>
+            <div class="post-type-selector">
+                <button class="type-btn active" data-type="text" onclick="selectPostType('text')">
+                    <span class="type-icon">📝</span>
+                    <span>Teks</span>
+                </button>
+                <button class="type-btn" data-type="url" onclick="selectPostType('url')">
+                    <span class="type-icon">🔗</span>
+                    <span>Liyen</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="quick-post-form">
+            <!-- Text Post Form -->
+            <div class="post-form-content" id="textPostForm">
+                <textarea 
+                    id="textContent" 
+                    placeholder="Ekri yon mesaj la..."
+                    maxlength="10485760"
+                    oninput="updateCharCount(this)"
+                ></textarea>
+                <div class="form-footer">
+                    <span class="char-count" id="textCharCount">0 / 10MB</span>
+                    <button class="post-btn" onclick="submitTextPost()" id="textPostBtn">
+                        <span>📤</span>
+                        <span>Poste</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- URL Post Form -->
+            <div class="post-form-content hidden" id="urlPostForm">
+                <input 
+                    type="url" 
+                    id="urlContent" 
+                    placeholder="Mete yon URL la..."
+                    oninput="previewURL(this.value)"
+                />
+                <div class="url-preview" id="urlPreview" style="display: none;">
+                    <div class="preview-image" id="previewImage">
+                        <img src="" alt="" id="previewImg" onerror="this.style.display='none'">
+                    </div>
+                    <div class="preview-content">
+                        <h4 id="previewTitle"></h4>
+                        <p id="previewDescription"></p>
+                        <span class="preview-site" id="previewSite"></span>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <span class="url-status" id="urlStatus">Mete yon URL valab</span>
+                    <button class="post-btn" onclick="submitURLPost()" id="urlPostBtn" disabled>
+                        <span>🔗</span>
+                        <span>Poste</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Login Required Message -->
+        <div class="login-required-container">
+            <div class="login-required-content">
+                <div class="login-icon">🔒</div>
+                <h3>Koneksyon Reki</h3>
+                <p>Ou dwe konekte pou kapab pibliye kontni sou Glory2YahPub.</p>
+                <div class="login-actions">
+                    <a href="{{ url_for('auth.login') }}" class="login-btn">
+                        <span>🔑</span>
+                        <span>Konekte</span>
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="register-btn">
+                        <span>📝</span>
+                        <span>Kreye Kont</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ═══ GADE MONDYAL LIVE TV SECTION ═══ -->
+<section class="gade-mondyal-section">
+    <div class="gade-mondyal-container">
+        <button class="gade-mondyal-btn" onclick="window.open('https://famelack.com/tv/ht/9dYnjnGkh6Gk0r', '_blank')" title="Gade Mondyal - Transmisyon Dirèk">
+            <span class="soccer-icon">⚽</span>
+            <span class="btn-text">GADE MONDYAL</span>
+            <span class="live-badge">LIVE</span>
+        </button>
+    </div>
+</section>
+
+<!-- ═══ KREYE PIBLISITE SECTION ═══ -->
+<section class="kreye-piblisite-hero">
+    <div class="hero-container">
+        <h2 class="hero-title">🚀 KREYE PIBLISITE W BUTTONS</h2>
+        <p class="hero-subtitle">Vann pwodwi ou, sèvis ou, oswa ankò fè reklamasyon ou</p>
+        <div class="hero-buttons">
+            <a href="/piblisite" class="hero-btn primary">
+                <span class="btn-icon">✨</span>
+                KREYE PIBLISITE
+            </a>
+            <div class="sub-buttons">
+                <a href="/piblisite/teks" class="sub-btn">📝 Teks</a>
+                <a href="/piblisite/foto" class="sub-btn">📸 Foto</a>
+                <a href="/piblisite/video" class="sub-btn">🎥 Video</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ MAIN CONTENT: 2-COLUMN LAYOUT ═══ -->
+<section class="main-content-grid">
+    
+    <!-- ═══ MAIN CONTENT GRID (POSTS + ADS) ═══ -->
+    <section class="main-content-grid">
+        
+        <!-- LEFT COLUMN: POSTS FEED -->
+        <div class="posts-column">
+            <div class="section-header">
+                <h2 class="section-title">📱 Piblisite</h2>
+                <div class="section-filters">
+                    <button class="filter-btn active" data-filter="all">Tout</button>
+                    <button class="filter-btn" data-filter="recent">Resan</button>
+                    <button class="filter-btn" data-filter="popular">Popilè</button>
+                </div>
+            </div>
+            
+            <div class="posts-feed" id="postsFeed">
+                {% if posts %}
+                    {% for post in posts %}
+                    {% set post_id = post.ad_id if post is mapping else post.get('ad_id','') %}
+                    {% set post_title = post.title if post is mapping else post.get('title','') %}
+                    {% set post_desc = post.description if post is mapping else post.get('description','') %}
+                    {% set post_whatsapp = post.user_whatsapp if post is mapping else post.get('user_whatsapp','') %}
+                    {% set post_likes = post.like_count if post is mapping else post.get('like_count', 0) %}
+                    {% set post_shares = post.share_count if post is mapping else post.get('share_count', 0) %}
+                    {% set post_images = post.get_images_list() if not (post is mapping) else post.get('images', []) %}
+                    {% set post_created = post.created_at if post is mapping else post.get('created_at','') %}
+
+                    <article class="post-card" data-post-id="{{ post_id }}">
+                        <div class="post-header">
+                            <div class="post-avatar">{{ post_whatsapp[-2:] if post_whatsapp else '??' }}</div>
+                            <div class="post-meta">
+                                <div class="post-username">{{ post_whatsapp[:10] }}***</div>
+                                <div class="post-time">
+                                    {% if post_created %}
+                                        {% if post_created is string %}{{ post_created[:10] }}{% else %}{{ post_created.strftime('%d %b') }}{% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="post-content">
+                            <h3 class="post-title">{{ post_title }}</h3>
+                            {% if post_desc %}
+                            <p class="post-description">{{ post_desc[:150] }}{% if post_desc|length > 150 %}...<button class="read-more">wè plis</button>{% endif %}</p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if post_images %}
+                        <div class="post-image">
+                            <img src="/static/uploads/{{ post_images[0] }}" alt="{{ post_title }}" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                        {% endif %}
+                        
+                        <div class="post-actions">
+                            <button class="action-btn" onclick="likePost('{{ post_id }}', this)" data-likes="{{ post_likes }}">
+                                <span class="action-icon">❤️</span>
+                                <span class="action-count">{{ post_likes }}</span>
+                            </button>
+                            <button class="action-btn">
+                                <span class="action-icon">💬</span>
+                                <span class="action-text">Kòmantè</span>
+                            </button>
+                            <button class="action-btn" onclick="sharePost('{{ post_id }}')">
+                                <span class="action-icon">↗️</span>
+                                <span class="action-count">{{ post_shares }}</span>
+                            </button>
+                        </div>
+                    </article>
+                    {% endfor %}
+                    
+                    <div class="load-more" id="loadMoreTrigger">
+                        <div class="spinner"></div>
+                        <p>Chaje plis...</p>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h3>Pa gen piblisite</h3>
+                        <p>Soyez premye a pibliye!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- RIGHT COLUMN: MARKETPLACE ADS CAROUSEL -->
+        <div class="ads-column">
+            <div class="section-header">
+                <h2 class="section-title">🛒 Mache</h2>
+                <a href="/mache" class="view-all-link">Wè tout →</a>
+            </div>
+            
+            <div class="carousel-container">
+                {% if marketplace_ads %}
+                    <div class="carousel-wrapper">
+                        <div class="carousel-track" id="carouselTrack">
+                            {% for ad in marketplace_ads %}
+                            {% set ad_id = ad.ad_id if ad is mapping else ad.get('ad_id','') %}
+                            {% set ad_title = ad.title if ad is mapping else ad.get('title','') %}
+                            {% set ad_desc = ad.description if ad is mapping else ad.get('description','') %}
+                            {% set ad_price = ad.price_gkach if ad is mapping else ad.get('price_gkach', 0) %}
+                            {% set ad_images = ad.get_images_list() if not (ad is mapping) else ad.get('images', []) %}
+                            
+                            <div class="carousel-slide" data-slide="{{ loop.index0 }}">
+                                <div class="carousel-card">
+                                    {% if ad_images %}
+                                    <div class="carousel-image">
+                                        <img src="/static/uploads/{{ ad_images[0] }}" alt="{{ ad_title }}" loading="lazy" onerror="this.src='/static/images/logo.png'">
+                                        <div class="carousel-badge">Vann</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="carousel-content">
+                                        <h3 class="carousel-title">{{ ad_title }}</h3>
+                                        <p class="carousel-description">{{ ad_desc[:80] }}{% if ad_desc|length > 80 %}...{% endif %}</p>
+                                        
+                                        <div class="carousel-footer">
+                                            <div class="carousel-price">
+                                                <span class="price-icon">🪙</span>
+                                                <span class="price-amount">{{ ad_price }}</span>
+                                            </div>
+                                            <button class="carousel-buy-btn" onclick="buyProduct('{{ ad_id }}')">
+                                                Achte
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Carousel Controls -->
+                        <button class="carousel-control prev" onclick="carouselPrev()">‹</button>
+                        <button class="carousel-control next" onclick="carouselNext()">›</button>
+                        
+                        <!-- Carousel Indicators -->
+                        <div class="carousel-indicators" id="carouselIndicators">
+                            {% for ad in marketplace_ads %}
+                            <button class="indicator {% if loop.index0 == 0 %}active{% endif %}" onclick="carouselGoTo({{ loop.index0 }})"></button>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Carousel Counter -->
+                        <div class="carousel-counter">
+                            <span id="currentSlide">1</span> / <span id="totalSlides">{{ marketplace_ads|length }}</span>
+                        </div>
+
+                        <!-- Mobile View More Button -->
+                        <button class="view-more-btn" id="viewMoreBtn" onclick="viewMoreToggle()" style="display: none;">
+                            👀 Wè Plis Pwodwi
+                        </button>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-carousel">
+                    <div class="empty-icon">🛒</div>
+                    <h3>Pa gen pwodwi</h3>
+                    <p>Pwodwi yo ap vini byento!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+</section>
+
+<!-- ═══ STYLES FOR 2-COLUMN GRID LAYOUT ═══ -->
+<style>
+/* Main Content Grid */
+.main-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8f9fa;
+    min-height: calc(100vh - 200px);
+}
+
+/* Posts Column */
+.posts-column {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    height: fit-content;
+}
+
+/* Ads Column */
+.ads-column {
+    position: sticky;
+    top: 80px;
+    height: fit-content;
+}
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.section-filters {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    background: #f0f2f5;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #65676b;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Posts Feed */
+.posts-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.post-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #e4e6eb;
+    transition: all 0.3s ease;
+}
+
+.post-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.post-meta {
+    flex: 1;
+}
+
+.post-username {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+.post-time {
+    font-size: 12px;
+    color: #65676b;
+}
+
+.post-menu {
+    font-size: 20px;
+    color: #65676b;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.post-menu:hover {
+    background: #f0f2f5;
+}
+
+.post-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.post-description {
+    font-size: 14px;
+    color: #4b4f56;
+    line-height: 1.4;
+    margin: 0 0 12px 0;
+}
+
+.read-more {
+    background: none;
+    border: none;
+    color: #1877f2;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.post-image {
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.post-image img {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+}
+
+.post-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: #f0f2f5;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    color: #65676b;
+}
+
+.action-btn:hover {
+    background: #e4e6eb;
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+.action-icon {
+    font-size: 16px;
+}
+
+/* Carousel Styles */
+.carousel-container {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.carousel-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.carousel-slide {
+    min-width: 100%;
+    padding: 0 4px;
+}
+
+.carousel-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e4e6eb;
+    transition: all 0.3s ease;
+}
+
+.carousel-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.carousel-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.carousel-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.carousel-content {
+    padding: 16px;
+}
+
+.carousel-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.carousel-description {
+    font-size: 13px;
+    color: #65676b;
+    line-height: 1.4;
+    margin: 0 0 16px 0;
+}
+
+.carousel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.carousel-price {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.price-icon {
+    font-size: 16px;
+}
+
+.price-amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.carousel-buy-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-buy-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Carousel Controls */
+.carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+}
+
+.carousel-control:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-control.prev {
+    left: 8px;
+}
+
+.carousel-control.next {
+    right: 8px;
+}
+
+/* Carousel Indicators */
+.carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: #e4e6eb;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.indicator.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* Carousel Counter */
+.carousel-counter {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #65676b;
+    font-weight: 600;
+}
+
+/* Empty States */
+.empty-state, .empty-carousel {
+    text-align: center;
+    padding: 40px 20px;
+    color: #65676b;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-state h3, .empty-carousel h3 {
+    font-size: 18px;
+    margin: 0 0 8px 0;
+    color: #1a1a1a;
+}
+
+/* Load More */
+.load-more {
+    text-align: center;
+    padding: 20px;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e4e6eb;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Quick Post Form Styles */
+.quick-post-section {
+    background: white;
+    margin: 0 0 20px 0;
+    padding: 0;
+    border-radius: 0;
+}
+
+.quick-post-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.quick-post-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.post-type-selector {
+    display: flex;
+    background: #f0f2f5;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.type-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    color: #65676b;
+}
+
+.type-btn.active {
+    background: white;
+    color: #1a1a1a;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.type-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.type-icon {
+    font-size: 16px;
+}
+
+.post-form-content {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.post-form-content.hidden {
+    display: none;
+}
+
+#textContent {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid #e4e6eb;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+#textContent:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+#urlContent {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e4e6eb;
+    border-radius: 12px;
+    font-size: 15px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+#urlContent:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.url-preview {
+    margin-top: 12px;
+    background: white;
+    border: 1px solid #e4e6eb;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    transition: all 0.3s ease;
+}
+
+.url-preview:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-image {
+    width: 120px;
+    height: 80px;
+    flex-shrink: 0;
+    background: #f0f2f5;
+    overflow: hidden;
+}
+
+.preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-content {
+    flex: 1;
+    padding: 12px;
+}
+
+.preview-content h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.3;
+}
+
+.preview-content p {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #65676b;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.preview-site {
+    font-size: 11px;
+    color: #667eea;
+    font-weight: 500;
+}
+
+.form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.char-count, .url-status {
+    font-size: 12px;
+    color: #65676b;
+}
+
+.post-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.post-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.post-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Login Required Styles */
+.login-required-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    border: 2px dashed #dee2e6;
+}
+
+.login-required-content {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.login-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.7;
+}
+
+.login-required-content h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 12px 0;
+}
+
+.login-required-content p {
+    font-size: 14px;
+    color: #65676b;
+    line-height: 1.5;
+    margin: 0 0 24px 0;
+}
+
+.login-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.login-btn, .register-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 24px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.login-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.register-btn {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.register-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+/* Text and URL Post Styles */
+.post-card.text-post {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #667eea;
+}
+
+.post-card.url-post {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #28a745;
+}
+
+.post-content.text-content {
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.url-content {
+    background: white;
+    border: 1px solid #e4e6eb;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.url-content:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.url-content-display {
+    display: flex;
+    align-items: flex-start;
+}
+
+.url-content-image {
+    width: 100px;
+    height: 70px;
+    flex-shrink: 0;
+    background: #f0f2f5;
+    overflow: hidden;
+}
+
+.url-content-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.url-content-info {
+    flex: 1;
+    padding: 12px;
+}
+
+.url-content-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.3;
+}
+
+.url-content-info p {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #65676b;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.url-content-site {
+    font-size: 11px;
+    color: #28a745;
+    font-weight: 500;
+}
+
+.post-badge.text-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.post-badge.url-badge {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .main-content-grid {
+        grid-template-columns: 1fr 350px;
+        gap: 16px;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .ads-column {
+        position: static;
+        order: -1;
+    }
+    
+    .section-filters {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .carousel-wrapper {
+        max-width: 100%;
+    }
+
+    .carousel-wrapper:not(.expanded) .carousel-track {
+        width: 300% !important;
+    }
+
+    .carousel-wrapper:not(.expanded) .carousel-slide {
+        width: 33.333% !important;
+    }
+
+    .carousel-wrapper:not(.expanded) .carousel-control,
+    .carousel-wrapper:not(.expanded) .carousel-indicators,
+    .carousel-wrapper:not(.expanded) .carousel-counter {
+        display: none !important;
+    }
+
+    .view-more-btn {
+        display: block !important;
+        width: 100%;
+        margin-top: 12px;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .view-more-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .carousel-wrapper.expanded .carousel-track {
+        width: 100% !important;
+    }
+
+    .carousel-wrapper.expanded .carousel-slide {
+        width: 100% !important;
+    }
+
+    .carousel-wrapper.expanded .carousel-control,
+    .carousel-wrapper.expanded .carousel-indicators,
+    .carousel-wrapper.expanded .carousel-counter {
+        display: flex !important;
+    }
+
+    .carousel-wrapper.expanded #viewMoreBtn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .carousel-wrapper.expanded #viewMoreBtn::after {
+        content: " 👆 Fèmen";
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content-grid {
+        padding: 8px;
+    }
+    
+    .posts-column, .carousel-container {
+        padding: 12px;
+    }
+    
+    .post-card {
+        padding: 12px;
+    }
+    
+    .carousel-image {
+        height: 160px;
+    }
+
+    .carousel-wrapper:not(.expanded) .carousel-slide {
+        padding: 0 2px !important;
+    }
+}
+
+/* ═══ GADE MONDYAL BUTTON STYLES ═══ */
+.gade-mondyal-section {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #c44569 100%);
+    padding: 16px 0;
+    margin: 12px 0;
+    box-shadow: 0 8px 24px rgba(255, 107, 107, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.gade-mondyal-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.gade-mondyal-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.gade-mondyal-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.gade-mondyal-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.gade-mondyal-btn:active {
+    transform: translateY(0);
+}
+
+.soccer-icon {
+    font-size: 28px;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.gade-mondyal-btn .btn-text {
+    flex: 1;
+}
+
+.live-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .gade-mondyal-btn {
+        padding: 14px 20px;
+        font-size: 16px;
+        gap: 10px;
+    }
+    
+    .soccer-icon {
+        font-size: 24px;
+    }
+    
+    .live-badge {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .gade-mondyal-section {
+        padding: 12px 0;
+        margin: 8px 0;
+    }
+    
+    .gade-mondyal-container {
+        padding: 0 12px;
+    }
+    
+    .gade-mondyal-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        gap: 8px;
+    }
+    
+    .soccer-icon {
+        font-size: 20px;
+    }
+    
+    .live-badge {
+        padding: 3px 8px;
+        font-size: 10px;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ═══ STORIES LOADER (RECTANGULAR GRID) ═══
+async function loadStories() {
+    try {
+        const response = await fetch('/api/stories');
+        const data = await response.json();
+        
+        if (data.success && data.stories.length > 0) {
+            const container = document.getElementById('storiesGrid');
+            container.innerHTML = data.stories.map((story, i) => `
+                <div class="story-card" onclick="openStory(${i})">
+                    <img class="story-img" src="${story.image}" alt="${story.name}" onerror="this.src='/static/images/logo.png'">
+                    <div class="story-info">
+                        <span class="story-name">${story.name}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading stories:', error);
+    }
+}
+
+// ═══ CAROUSEL FUNCTIONALITY ═══
+let currentSlide = 0;
+let totalSlides = {{ marketplace_ads|length if marketplace_ads else 0 }};
+let autoSlideInterval;
+let isPaused = false;
+let isExpandedMobile = false;
+
+function viewMoreToggle() {
+    const wrapper = document.querySelector('.carousel-wrapper');
+    const btn = document.getElementById('viewMoreBtn');
+    if (!wrapper) return;
+    isExpandedMobile = !isExpandedMobile;
+    wrapper.classList.toggle('expanded', isExpandedMobile);
+    if (isExpandedMobile) {
+        currentSlide = 0;
+        updateCarousel();
+        btn.textContent = '👆 Fèmen Plen Ekspansyon';
+    } else {
+        btn.textContent = '👀 Wè Plis Pwodwi';
+    }
+    pauseAutoSlide();
+    setTimeout(startAutoSlide, 2000);
+}
+
+function updateCarousel() {
+    const track = document.getElementById('carouselTrack');
+    const indicators = document.querySelectorAll('.indicator');
+    const currentSlideEl = document.getElementById('currentSlide');
+    
+    if (!track) return;
+    
+    track.style.transform = `translateX(-${currentSlide * 100}%)`;
+    
+    indicators.forEach((ind, i) => {
+        ind.classList.toggle('active', i === currentSlide);
+    });
+    
+    if (currentSlideEl) {
+        currentSlideEl.textContent = currentSlide + 1;
+    }
+}
+
+function carouselNext() {
+    currentSlide = (currentSlide + 1) % totalSlides;
+    updateCarousel();
+}
+
+function carouselPrev() {
+    currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+    updateCarousel();
+}
+
+function carouselGoTo(index) {
+    currentSlide = index;
+    updateCarousel();
+    // Pause auto-slide when user manually navigates
+    pauseAutoSlide();
+    setTimeout(startAutoSlide, 3000); // Resume after 3 seconds
+}
+
+function startAutoSlide() {
+    if (totalSlides > 0) {
+        autoSlideInterval = setInterval(() => {
+            if (!isPaused) {
+                carouselNext();
+            }
+        }, 2000); // Auto-slide every 2 seconds as requested
+    }
+}
+
+function pauseAutoSlide() {
+    isPaused = true;
+    setTimeout(() => {
+        isPaused = false;
+    }, 2000); // Pause for 2 seconds after user interaction
+}
+
+// Initialize carousel on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Start auto-slide after 2 seconds
+    setTimeout(startAutoSlide, 2000);
+    
+    // Pause on hover
+    const carouselWrapper = document.querySelector('.carousel-wrapper');
+    if (carouselWrapper) {
+        carouselWrapper.addEventListener('mouseenter', () => {
+            isPaused = true;
+        });
+        
+        carouselWrapper.addEventListener('mouseleave', () => {
+            isPaused = false;
+        });
+    }
+    
+    // Pause on touch for mobile
+    const carouselTrack = document.getElementById('carouselTrack');
+    if (carouselTrack) {
+        carouselTrack.addEventListener('touchstart', () => {
+            isPaused = true;
+        });
+        
+        carouselTrack.addEventListener('touchend', () => {
+            setTimeout(() => {
+                isPaused = false;
+            }, 2000);
+        });
+    }
+});
+
+function stopAutoSlide() {
+    clearInterval(autoSlideInterval);
+}
+
+// Pause on hover
+const carouselWrapper = document.querySelector('.carousel-wrapper');
+if (carouselWrapper) {
+    carouselWrapper.addEventListener('mouseenter', () => {
+        isPaused = true;
+    });
+    
+    carouselWrapper.addEventListener('mouseleave', () => {
+        isPaused = false;
+    });
+}
+
+// ═══ POSTS FUNCTIONALITY ═══
+let postsPage = 2;
+let postsLoading = false;
+let postsDone = false;
+
+async function likePost(postId, btn) {
+    try {
+        const response = await fetch(`/api/ads/${postId}/like`, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            btn.classList.add('liked');
+            const countEl = btn.querySelector('.action-count');
+            if (countEl) {
+                countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+            }
+            
+            // Animation
+            btn.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+            }, 200);
+        }
+    } catch (error) {
+        console.error('Error liking post:', error);
+    }
+}
+
+async function sharePost(postId) {
+    try {
+        await fetch(`/api/ads/${postId}/share`, { method: 'POST' });
+        
+        const url = `${window.location.origin}/ad/${postId}`;
+        if (navigator.share) {
+            await navigator.share({ 
+                title: 'Glory2YahPub',
+                text: 'Gade piblisite sa!',
+                url: url 
+            });
+        } else {
+            await navigator.clipboard.writeText(url);
+            showToast(' Lyen kopye!');
+        }
+    } catch (error) {
+        console.error('Error sharing post:', error);
+    }
+}
+
+function buyProduct(adId) {
+    window.location.href = `/cart/add/${adId}`;
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 24px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        animation: slideDown 0.3s ease;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Infinite scroll for posts
+const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !postsLoading && !postsDone) {
+        loadMorePosts();
+    }
+}, { threshold: 0.1 });
+
+const trigger = document.getElementById('loadMoreTrigger');
+if (trigger) observer.observe(trigger);
+
+async function loadMorePosts() {
+    if (postsLoading || postsDone) return;
+    
+    postsLoading = true;
+    
+    try {
+        const response = await fetch(`/api/feed?page=${postsPage}`);
+        const data = await response.json();
+        
+        if (!data.ads || data.ads.length === 0) {
+            postsDone = true;
+            trigger.innerHTML = '<p style="text-align:center;color:#999;padding:20px">Ou wè tout piblisite yo 🎉</p>';
+            return;
+        }
+        
+        const feed = document.getElementById('postsFeed');
+        data.ads.forEach(post => {
+            const card = buildPostCard(post);
+            feed.insertBefore(card, trigger);
+        });
+        
+        postsPage++;
+    } catch (error) {
+        console.error('Error loading posts:', error);
+    } finally {
+        postsLoading = false;
+    }
+}
+
+function buildPostCard(post) {
+    const article = document.createElement('article');
+    article.className = 'post-card';
+    article.dataset.postId = post.ad_id;
+    
+    const img = post.images && post.images.length > 0 ? 
+        `<div class="post-image"><img src="/static/uploads/${post.images[0]}" alt="${post.title}" loading="lazy" onerror="this.style.display='none'"></div>` : '';
+    
+    article.innerHTML = `
+        <div class="post-header">
+            <div class="post-avatar">${(post.user_whatsapp||'??').slice(-2)}</div>
+            <div class="post-meta">
+                <div class="post-username">${(post.user_whatsapp||'').slice(0,10)}***</div>
+                <div class="post-time">${(post.created_at||'').slice(0,10)}</div>
+            </div>
+        </div>
+        <div class="post-content">
+            <h3 class="post-title">${post.title}</h3>
+            <p class="post-description">${(post.description||'').slice(0,120)}</p>
+        </div>
+        ${img}
+        <div class="post-actions">
+            <button class="action-btn" onclick="likePost('${post.ad_id}', this)" data-likes="${post.like_count||0}">
+                <span class="action-icon">❤️</span>
+                <span class="action-count">${post.like_count||0}</span>
+            </button>
+            <button class="action-btn">
+                <span class="action-icon">💬</span>
+                <span class="action-text">Kòmantè</span>
+            </button>
+            <button class="action-btn" onclick="sharePost('${post.ad_id}')">
+                <span class="action-icon">↗️</span>
+                <span class="action-count">${post.share_count||0}</span>
+            </button>
+        </div>
+    `;
+    
+    return article;
+}
+
+function openStory(index) {
+    console.log('Open story:', index);
+    // TODO: Implement story viewer
+}
+
+// ═══ QUICK POST FORM FUNCTIONALITY ═══
+let currentPostType = 'text';
+let urlPreviewTimeout;
+
+function selectPostType(type) {
+    currentPostType = type;
+    
+    // Update button states
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
+    });
+    
+    // Show/hide forms
+    document.getElementById('textPostForm').classList.toggle('hidden', type !== 'text');
+    document.getElementById('urlPostForm').classList.toggle('hidden', type !== 'url');
+    
+    // Clear URL preview when switching
+    if (type !== 'url') {
+        document.getElementById('urlPreview').style.display = 'none';
+        document.getElementById('urlContent').value = '';
+        document.getElementById('urlStatus').textContent = 'Mete yon URL valab';
+        document.getElementById('urlPostBtn').disabled = true;
+    }
+}
+
+function updateCharCount(textarea) {
+    const content = textarea.value;
+    const sizeBytes = new Blob([content]).size;
+    const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
+    const charCount = document.getElementById('textCharCount');
+    
+    charCount.textContent = `${content.length} karaktè / ${sizeMB}MB`;
+    
+    // Change color if approaching limit
+    if (sizeMB > 9) {
+        charCount.style.color = '#ff6b6b';
+    } else if (sizeMB > 7) {
+        charCount.style.color = '#ffa500';
+    } else {
+        charCount.style.color = '#65676b';
+    }
+}
+
+async function previewURL(url) {
+    const urlStatus = document.getElementById('urlStatus');
+    const urlPreview = document.getElementById('urlPreview');
+    const urlPostBtn = document.getElementById('urlPostBtn');
+    
+    // Clear previous timeout
+    if (urlPreviewTimeout) {
+        clearTimeout(urlPreviewTimeout);
+    }
+    
+    if (!url.trim()) {
+        urlPreview.style.display = 'none';
+        urlStatus.textContent = 'Mete yon URL valab';
+        urlPostBtn.disabled = true;
+        return;
+    }
+    
+    // Basic URL validation
+    const urlPattern = /^https?:\/\/.+/i;
+    if (!urlPattern.test(url)) {
+        urlStatus.textContent = 'URL envalid';
+        urlStatus.style.color = '#ff6b6b';
+        urlPreview.style.display = 'none';
+        urlPostBtn.disabled = true;
+        return;
+    }
+    
+    urlStatus.textContent = 'Chaje preview...';
+    urlStatus.style.color = '#667eea';
+    urlPostBtn.disabled = true;
+    
+    // Debounce preview request
+    urlPreviewTimeout = setTimeout(async () => {
+        try {
+            // Get CSRF token from meta tag or form
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                             document.querySelector('input[name=csrf_token]')?.value ||
+                             '{{ csrf_token() }}';
+            
+            const response = await fetch('/api/posts/preview-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ url: url })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                displayURLPreview(data.metadata);
+                urlStatus.textContent = 'Preview pare';
+                urlStatus.style.color = '#28a745';
+                urlPostBtn.disabled = false;
+            } else {
+                urlStatus.textContent = data.message || 'Erè preview';
+                urlStatus.style.color = '#ff6b6b';
+                urlPreview.style.display = 'none';
+                urlPostBtn.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error previewing URL:', error);
+            urlStatus.textContent = 'Erè rezo';
+            urlStatus.style.color = '#ff6b6b';
+            urlPreview.style.display = 'none';
+            urlPostBtn.disabled = true;
+        }
+    }, 800);
+}
+
+function displayURLPreview(metadata) {
+    const urlPreview = document.getElementById('urlPreview');
+    const previewImg = document.getElementById('previewImg');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewDescription = document.getElementById('previewDescription');
+    const previewSite = document.getElementById('previewSite');
+    
+    previewTitle.textContent = metadata.title;
+    previewDescription.textContent = metadata.description;
+    previewSite.textContent = metadata.site_name;
+    
+    if (metadata.image) {
+        previewImg.src = metadata.image;
+        previewImg.style.display = 'block';
+        previewImg.onerror = () => {
+            previewImg.style.display = 'none';
+        };
+    } else {
+        previewImg.style.display = 'none';
+    }
+    
+    urlPreview.style.display = 'flex';
+}
+
+async function submitTextPost() {
+    const content = document.getElementById('textContent').value.trim();
+    const textPostBtn = document.getElementById('textPostBtn');
+    
+    if (!content) {
+        showToast('Ekri yon mesaj avan poste');
+        return;
+    }
+    
+    // Check size
+    const sizeBytes = new Blob([content]).size;
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    if (sizeBytes > maxSize) {
+        showToast('Teks twò long (10MB max)');
+        return;
+    }
+    
+    // Disable button and show loading
+    textPostBtn.disabled = true;
+    textPostBtn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
+    
+    try {
+        // Get CSRF token from meta tag or form
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                         document.querySelector('input[name=csrf_token]')?.value ||
+                         '{{ csrf_token() }}';
+        
+        const response = await fetch('/api/posts/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                content: content,
+                type: 'text'
+            })
+        });
+        
+        // Handle different HTTP status codes
+        if (!response.ok) {
+            if (response.status === 401) {
+                showToast('🔒 Ou dwe konekte pou poste. Redireksyon...');
+                setTimeout(() => {
+                    window.location.href = '/auth/login';
+                }, 2000);
+                return;
+            } else if (response.status === 400) {
+                const errorData = await response.json();
+                showToast(errorData.message || '❌ Envalid data. Verify your content.');
+                return;
+            } else if (response.status === 429) {
+                showToast('⏱️ Trop de requests. Reesaye plita.');
+                return;
+            } else if (response.status >= 500) {
+                showToast('🔥 Erè serveur. Reesaye plita.');
+                return;
+            } else {
+                showToast(`❌ Erè ${response.status}. Reesaye.`);
+                return;
+            }
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('✅ Post teks kreye ak siksè!');
+            document.getElementById('textContent').value = '';
+            updateCharCount(document.getElementById('textContent'));
+            
+            // Add new post to feed (optional refresh)
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast(data.message || 'Erè pandan kreyasyon post');
+        }
+    } catch (error) {
+        console.error('Error creating text post:', error);
+        
+        // Handle network errors specifically
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verify your connection.');
+        } else if (error.name === 'AbortError') {
+            showToast('⏱️ Request anile. Reesaye.');
+        } else {
+            showToast('💥 Erè inaten. Reesaye ou kontakte admin.');
+        }
+    } finally {
+        textPostBtn.disabled = false;
+        textPostBtn.innerHTML = '<span>📤</span><span>Poste</span>';
+    }
+}
+
+async function submitURLPost() {
+    const url = document.getElementById('urlContent').value.trim();
+    const urlPostBtn = document.getElementById('urlPostBtn');
+    
+    if (!url) {
+        showToast('Mete yon URL avan poste');
+        return;
+    }
+    
+    // Disable button and show loading
+    urlPostBtn.disabled = true;
+    urlPostBtn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
+    
+    try {
+        // Get CSRF token from meta tag or form
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                         document.querySelector('input[name=csrf_token]')?.value ||
+                         '{{ csrf_token() }}';
+        
+        const response = await fetch('/api/posts/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                content: url,
+                type: 'url'
+            })
+        });
+        
+        // Handle different HTTP status codes
+        if (!response.ok) {
+            if (response.status === 401) {
+                showToast('🔒 Ou dwe konekte pou poste. Redireksyon...');
+                setTimeout(() => {
+                    window.location.href = '/auth/login';
+                }, 2000);
+                return;
+            } else if (response.status === 400) {
+                const errorData = await response.json();
+                showToast(errorData.message || '❌ URL envalid. Verify your link.');
+                return;
+            } else if (response.status === 429) {
+                showToast('⏱️ Trop de requests. Reesaye plita.');
+                return;
+            } else if (response.status >= 500) {
+                showToast('🔥 Erè serveur. Reesaye plita.');
+                return;
+            } else {
+                showToast(`❌ Erè ${response.status}. Reesaye.`);
+                return;
+            }
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('✅ Post lyen kreye ak siksè!');
+            document.getElementById('urlContent').value = '';
+            document.getElementById('urlPreview').style.display = 'none';
+            document.getElementById('urlStatus').textContent = 'Mete yon URL valab';
+            
+            // Add new post to feed (optional refresh)
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast(data.message || 'Erè pandan kreyasyon post');
+        }
+    } catch (error) {
+        console.error('Error creating URL post:', error);
+        
+        // Handle network errors specifically
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verify your connection.');
+        } else if (error.name === 'AbortError') {
+            showToast('⏱️ Request anile. Reesaye.');
+        } else {
+            showToast('💥 Erè inaten. Reesaye ou kontakte admin.');
+        }
+    } finally {
+        urlPostBtn.disabled = false;
+        urlPostBtn.innerHTML = '<span>🔗</span><span>Poste</span>';
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadStories();
+    startAutoSlide();
+});
+</script>
+
+<style>
+/* ═══ GLOBAL STYLES ═══ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ═══ STORIES SECTION ═══ */
+.stories-section {
+    background: linear-gradient(135deg, #1e40af, #1e3a8a);
+    padding: 16px;
+    margin-bottom: 8px;
+    overflow-x: auto;
+}
+
+.stories-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.stories-scroll::-webkit-scrollbar { display: none; }
+
+.story-item {
+    flex-shrink: 0;
+    text-align: center;
+    cursor: pointer;
+}
+
+.story-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #daa520, #ffc700);
+}
+
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+}
+
+.story-name {
+    display: block;
+    font-size: 11px;
+    color: white;
+    margin-top: 4px;
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ═══ MAIN CONTENT GRID ═══ */
+.main-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+}
+
+.section-header {
+    background: white;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e4e6eb;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.view-all-link {
+    color: #1e40af;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ═══ POSTS COLUMN ═══ */
+.posts-column {
+    background: #f5f5f5;
+}
+
+.posts-feed {
+    background: #f5f5f5;
+}
+
+.post-card {
+    background: white;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e40af, #daa520);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.post-meta {
+    flex: 1;
+}
+
+.post-username {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+.post-time {
+    font-size: 12px;
+    color: #65676b;
+}
+
+.post-content {
+    padding: 0 16px 12px;
+}
+
+.post-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+}
+
+.post-description {
+    font-size: 14px;
+    color: #4b4f56;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.post-image {
+    width: 100%;
+}
+
+.post-image img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+}
+
+.post-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 16px;
+    border-top: 1px solid #e4e6eb;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #65676b;
+    font-size: 14px;
+}
+
+.action-btn:hover {
+    background: #f0f2f5;
+}
+
+.action-btn.liked .action-icon {
+    color: #e74c3c;
+}
+
+.action-icon {
+    font-size: 18px;
+}
+
+.action-count, .action-text {
+    font-weight: 600;
+}
+
+/* ═══ ADS CAROUSEL COLUMN ═══ */
+.ads-column {
+    background: white;
+    position: sticky;
+    top: 60px;
+    height: fit-content;
+    max-height: calc(100vh - 140px);
+    overflow: hidden;
+}
+
+.carousel-container {
+    position: relative;
+}
+
+.carousel-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.carousel-slide {
+    min-width: 100%;
+    flex-shrink: 0;
+}
+
+.carousel-card {
+    padding: 16px;
+}
+
+.carousel-image {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.carousel-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #27ae60;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.carousel-content {
+    padding: 0 8px;
+}
+
+.carousel-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+}
+
+.carousel-description {
+    font-size: 14px;
+    color: #65676b;
+    line-height: 1.4;
+    margin: 0 0 16px 0;
+}
+
+.carousel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.carousel-price {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.price-icon {
+    font-size: 20px;
+}
+
+.price-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.price-label {
+    font-size: 12px;
+    color: #65676b;
+}
+
+.carousel-btn {
+    background: linear-gradient(135deg, #1e40af, #1e3a8a);
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.carousel-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.carousel-control:hover {
+    background: rgba(0,0,0,0.8);
+}
+
+.carousel-control.prev {
+    left: 10px;
+}
+
+.carousel-control.next {
+    right: 10px;
+}
+
+.carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d0d0d0;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.indicator.active {
+    background: #1e40af;
+    width: 24px;
+    border-radius: 4px;
+}
+
+.carousel-counter {
+    text-align: center;
+    padding: 8px;
+    font-size: 14px;
+    color: #65676b;
+    font-weight: 600;
+}
+
+/* ═══ LOADING & EMPTY STATES ═══ */
+.load-more {
+    text-align: center;
+    padding: 20px;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e4e6eb;
+    border-top: 3px solid #1e40af;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.empty-state, .empty-carousel {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.empty-state h3, .empty-carousel h3 {
+    font-size: 18px;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+}
+
+.empty-state p, .empty-carousel p {
+    color: #65676b;
+    margin: 0;
+}
+
+/* ═══ TOAST ═══ */
+.toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: linear-gradient(135deg, #1e40af, #1e3a8a);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 10000;
+    box-shadow: 0 4px 16px rgba(30, 64, 175, 0.4);
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* ═══ MOBILE RESPONSIVE ═══ */
+@media (max-width: 768px) {
+    .main-content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ads-column {
+        position: relative;
+        top: 0;
+        max-height: none;
+    }
+    
+    .carousel-image {
+        height: 250px;
+    }
+    
+    .story-ring {
+        width: 56px;
+        height: 56px;
+    }
+    
+    .story-name {
+        font-size: 10px;
+        max-width: 56px;
+    }
+}
+
+@media (max-width: 480px) {
+    .carousel-image {
+        height: 200px;
+    }
+    
+    .carousel-title {
+        font-size: 16px;
+    }
+    
+    .carousel-description {
+        font-size: 13px;
+    }
+    
+    .price-value {
+        font-size: 20px;
+    }
+    
+    .post-title {
+        font-size: 15px;
+    }
+    
+    .post-description {
+        font-size: 13px;
+    }
+}
+</style>
+
+{% endblock %}

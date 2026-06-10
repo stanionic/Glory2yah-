@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glory2YahPub - Reels</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .reels-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .reel {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .reel.active {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .reel-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reel-media {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .reel-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 40px 20px 20px;
+            color: white;
+            z-index: 5;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .reel-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .reel-description {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reel-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .reel-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .reel-controls {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 20;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .reel-counter {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 16px;
+            z-index: 20;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+        }
+
+        .feeds-section {
+            width: 100%;
+            background: #000;
+            color: white;
+            padding: 20px;
+        }
+
+        .feeds-header {
+            text-align: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .feeds-header h2 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+        }
+
+        .feeds-header p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .feeds-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .feed-item {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .feed-item:hover {
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+        }
+
+        .feed-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .feed-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .feed-user-info {
+            flex: 1;
+        }
+
+        .feed-user-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .feed-time {
+            font-size: 12px;
+            opacity: 0.6;
+            margin: 0;
+        }
+
+        .feed-link-preview {
+            background: #0a0a0a;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+            margin-top: 12px;
+        }
+
+        .feed-link-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: #333;
+        }
+
+        .feed-link-content {
+            padding: 12px;
+        }
+
+        .feed-link-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin: 0 0 5px 0;
+            color: #4CAF50;
+        }
+
+        .feed-link-description {
+            font-size: 12px;
+            opacity: 0.8;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+
+        .feed-link-site {
+            font-size: 11px;
+            opacity: 0.6;
+            margin: 0;
+        }
+
+        .feed-link-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .feed-link-btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .no-feeds {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.6;
+        }
+
+        .no-feeds p {
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .tabs-container {
+                padding: 10px;
+                gap: 5px;
+            }
+
+            .tab-btn {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+
+            .feeds-list {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .feed-item {
+                padding: 12px;
+            }
+        }
+
+        .reel-user {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            z-index: 15;
+        }
+
+        .reel-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .swipe-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 12px;
+            opacity: 0.7;
+            animation: bounce 2s infinite;
+            z-index: 20;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        .no-ads {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .reel-controls {
+                right: 10px;
+                gap: 15px;
+            }
+
+            .control-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .reel-title {
+                font-size: 18px;
+            }
+
+            .reel-description {
+                font-size: 12px;
+            }
+
+            .tab-content {
+                height: calc(100% - 50px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="logo-container" title="Glory2Yah">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Glory2Yah" class="logo-image">
+            <nav>
+                <a href="{{ url_for('index') }}" title="Akèy"><i class="fas fa-home"></i></a>
+                <a href="{{ url_for('achte') }}" title="Achte"><i class="fas fa-shopping-cart"></i></a>
+                <a href="{{ url_for('achte_gkach') }}" title="Achte GKach"><i class="fas fa-dollar-sign"></i></a>
+                <a href="{{ url_for('bank_dashboard') }}" title="🏦 Bank"><i class="fas fa-university"></i></a>
+                <a href="{{ url_for('submit_ad') }}" title="Fè Piblisite W"><i class="fas fa-bullhorn"></i></a>
+                <a href="{{ url_for('konferans.index') }}" title="Konferans"><i class="fas fa-video"></i></a>
+                <a href="{{ url_for('ecole_biblique.ranking') }}" title="🏫 Palmarès"><i class="fas fa-graduation-cap"></i></a>
+                <a href="{{ url_for('dok_index') }}" title="🏥 Dòk - Asistan Sante"><i class="fas fa-user-md"></i></a>
+                <a href="{{ url_for('mennenm_index') }}" title="🚕 Mennen M - Taksi"><i class="fas fa-taxi"></i></a>
+                <a href="{{ url_for('gloryah_ia') }}" title="🤖 GlorYah IA - Asistan Entelijan" class="nav-ai-link"><i class="fas fa-robot"></i></a>
+                <a href="{{ url_for('tchat_ave_m') }}" title="💬 Tchat Ave M"><i class="fas fa-comments"></i></a>
+                <a href="{{ url_for('party.index') }}" title="🎉 Fèt" class="nav-party-link"><i class="fas fa-birthday-cake"></i></a>
+                {% if is_logged_in and current_user %}
+                <a href="{{ url_for('profile') }}" title="Pwofil" class="user-profile-link">
+                    <i class="fas fa-user"></i>
+                    <span class="user-name">{{ current_user.pseudo or current_user.name or 'Pwofil' }}</span>
+                </a>
+                <a href="{{ url_for('profile') }}" title="Balans Gkach" class="gkach-balance-link">
+                    <i class="fas fa-coins"></i>
+                    <span class="gkach-balance">{{ gkach_balance }} Gkach</span>
+                </a>
+                <a href="{{ url_for('logout') }}" title="Dekonekte"><i class="fas fa-sign-out-alt"></i></a>
+                {% else %}
+                <a href="{{ url_for('login') }}" title="Konekte"><i class="fas fa-sign-in-alt"></i></a>
+                <a href="{{ url_for('register') }}" title="Enskri"><i class="fas fa-user-plus"></i></a>
+                {% endif %}
+                <a href="{{ url_for('admin') }}" title="Administratè"><i class="fas fa-user-shield"></i></a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="reels-container">
+        {% if approved_ads %}
+            <div class="reel-counter">
+                <span id="current-reel">1</span> / <span id="total-reels">{{ approved_ads|length }}</span>
+            </div>
+
+            {% for ad in approved_ads %}
+                <div class="reel {% if loop.first %}active{% endif %}" data-reel-index="{{ loop.index0 }}">
+                    <div class="reel-content">
+                        {% if ad.media_type == 'video' and ad.video %}
+                            <video class="reel-media" autoplay muted playsinline>
+                                <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
+                            </video>
+                        {% elif ad.images %}
+                            {% set first_image = ad.images.split(',')[0] %}
+                            <img class="reel-media" src="{{ url_for('static', filename='uploads/' + first_image) }}" alt="{{ ad.title }}">
+                        {% endif %}
+
+                        <div class="reel-user">
+                            <div class="reel-user-avatar">{{ ad.user_whatsapp[0:1] }}</div>
+                            <span>{{ ad.user_whatsapp }}</span>
+                        </div>
+
+                        <div class="reel-overlay">
+                            <div class="reel-title">{{ ad.title }}</div>
+                            <div class="reel-description">{{ ad.description[:100] }}...</div>
+                            {% if ad.price_gkach > 0 %}
+                                <div class="reel-price">💰 {{ ad.price_gkach }} Gkach</div>
+                            {% endif %}
+                            <div class="reel-actions">
+                                <button class="btn btn-primary" onclick="buyAd('{{ ad.ad_id }}')">Achte</button>
+                                <button class="btn btn-secondary" onclick="shareAd('{{ ad.ad_id }}')">Pataje</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="reel-controls">
+                <button class="control-btn" onclick="previousReel()" title="Anvan">❮</button>
+                <button class="control-btn" onclick="togglePlay()" title="Jwe/Poz" id="play-btn">⏸</button>
+                <button class="control-btn" onclick="nextReel()" title="Apre">❯</button>
+            </div>
+
+            <div class="swipe-hint">Swipe up/down oswa klike bouton yo</div>
+        {% else %}
+            <div class="no-ads">
+                <div>
+                    <p>Pa gen piblisite disponib kounye a</p>
+                    <p style="font-size: 14px; margin-top: 10px; opacity: 0.7;">Retounen pita</p>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+
+        <div class="feeds-section">
+            <div class="feeds-header">
+                <h2>📰 Feeds - Pataje Lyen</h2>
+                <p>Dekouvri lyen ki pataje pa itilizatè yo</p>
+            </div>
+            <div class="feeds-list" id="feeds-list">
+                <!-- Feeds will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Glory2yahPub. Tout dwa rezève.</p>
+            <p>Konseptè Sit la : <a href="https://wa.me/50942882076">+50942882076</a></p>
+        </div>
+    </footer>
+
+    <script>
+        let currentIndex = 0;
+        let isPlaying = true;
+        let autoSlideInterval = null;
+        const reels = document.querySelectorAll('.reel');
+        const totalReels = reels.length;
+        const AUTO_SLIDE_INTERVAL = 2000; // 2 seconds
+
+        function showReel(index) {
+            if (totalReels === 0) return;
+            
+            reels.forEach(reel => reel.classList.remove('active'));
+            currentIndex = (index + totalReels) % totalReels;
+            reels[currentIndex].classList.add('active');
+            
+            document.getElementById('current-reel').textContent = currentIndex + 1;
+            
+            // Pause other videos and play current
+            document.querySelectorAll('video').forEach(video => video.pause());
+            const currentVideo = reels[currentIndex].querySelector('video');
+            if (currentVideo && isPlaying) {
+                currentVideo.play();
+            }
+            
+            // Reset auto-slide timer
+            resetAutoSlide();
+        }
+
+        function startAutoSlide() {
+            if (autoSlideInterval) clearInterval(autoSlideInterval);
+            autoSlideInterval = setInterval(() => {
+                nextReel();
+            }, AUTO_SLIDE_INTERVAL);
+        }
+
+        function stopAutoSlide() {
+            if (autoSlideInterval) {
+                clearInterval(autoSlideInterval);
+                autoSlideInterval = null;
+            }
+        }
+
+        function resetAutoSlide() {
+            stopAutoSlide();
+            startAutoSlide();
+        }
+
+        function nextReel() {
+            showReel(currentIndex + 1);
+        }
+
+        function previousReel() {
+            showReel(currentIndex - 1);
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const playBtn = document.getElementById('play-btn');
+            const currentVideo = reels[currentIndex].querySelector('video');
+            
+            if (isPlaying) {
+                playBtn.textContent = '⏸';
+                if (currentVideo) currentVideo.play();
+                startAutoSlide();
+            } else {
+                playBtn.textContent = '▶';
+                if (currentVideo) currentVideo.pause();
+                stopAutoSlide();
+            }
+        }
+
+        function buyAd(adId) {
+            window.location.href = `/shopping_cart/${adId}`;
+        }
+
+        function shareAd(adId) {
+            const url = window.location.origin + `/ad/${adId}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Glory2YahPub',
+                    text: 'Gade piblisite sa a',
+                    url: url
+                });
+            } else {
+                alert('Link: ' + url);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                previousReel();
+                resetAutoSlide();
+            }
+            if (e.key === 'ArrowDown') {
+                nextReel();
+                resetAutoSlide();
+            }
+            if (e.key === ' ') {
+                e.preventDefault();
+                togglePlay();
+            }
+        });
+
+        // Touch/Swipe controls
+        let touchStartY = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            const diff = touchStartY - touchEndY;
+            
+            if (diff > 50) {
+                nextReel();
+                resetAutoSlide();
+            }
+            if (diff < -50) {
+                previousReel();
+                resetAutoSlide();
+            }
+        });
+
+        // Auto-play next reel when video ends
+        document.querySelectorAll('video').forEach(video => {
+            video.addEventListener('ended', nextReel);
+        });
+
+        // Initialize
+        showReel(0);
+        startAutoSlide();
+
+        // Load feeds on page load
+        loadFeeds();
+
+        // Load feeds from server
+        function loadFeeds() {
+            const feedsList = document.getElementById('feeds-list');
+            feedsList.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.6;">Chajman feeds...</div>';
+
+            fetch('/api/feeds')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.feeds.length > 0) {
+                        feedsList.innerHTML = '';
+                        data.feeds.forEach(feed => {
+                            const feedItem = createFeedItem(feed);
+                            feedsList.appendChild(feedItem);
+                        });
+                    } else {
+                        feedsList.innerHTML = '<div class="no-feeds"><p>📭 Pa gen feeds disponib kounye a</p><p style="font-size: 12px;">Itilizatè yo pral pataje lyen yo isit la</p></div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading feeds:', error);
+                    feedsList.innerHTML = '<div class="no-feeds"><p>❌ Erè nan chajman feeds</p></div>';
+                });
+        }
+
+        // Create feed item element
+        function createFeedItem(feed) {
+            const item = document.createElement('div');
+            item.className = 'feed-item';
+
+            const userInitial = (feed.user.pseudo || feed.user.name || 'U')[0].toUpperCase();
+            const timeAgo = getTimeAgo(new Date(feed.created_at));
+
+            let linkPreview = '';
+            if (feed.link_url) {
+                linkPreview = `
+                    <div class="feed-link-preview">
+                        ${feed.link_image ? `<img src="${feed.link_image}" alt="" class="feed-link-image" onerror="this.style.display='none'">` : ''}
+                        <div class="feed-link-content">
+                            ${feed.link_title ? `<p class="feed-link-title">${escapeHtml(feed.link_title)}</p>` : ''}
+                            ${feed.link_description ? `<p class="feed-link-description">${escapeHtml(feed.link_description.substring(0, 100))}</p>` : ''}
+                            ${feed.link_site_name ? `<p class="feed-link-site">🔗 ${escapeHtml(feed.link_site_name)}</p>` : ''}
+                            <a href="${feed.link_url}" target="_blank" class="feed-link-btn">Vizite Lyen</a>
+                        </div>
+                    </div>
+                `;
+            }
+
+            item.innerHTML = `
+                <div class="feed-header">
+                    <div class="feed-avatar">${userInitial}</div>
+                    <div class="feed-user-info">
+                        <p class="feed-user-name">${escapeHtml(feed.user.pseudo || feed.user.name || 'Itilizatè')}</p>
+                        <p class="feed-time">${timeAgo}</p>
+                    </div>
+                </div>
+                ${linkPreview}
+            `;
+
+            return item;
+        }
+
+        // Helper function to format time ago
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+
+            if (interval > 1) return Math.floor(interval) + ' ane';
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + ' mwa';
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + ' jou';
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + ' èdtan';
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + ' minit';
+            return Math.floor(seconds) + ' sekon';
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

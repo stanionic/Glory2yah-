@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Pwofil mwen - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <!-- Profile Header -->
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div class="h-32 bg-gradient-to-r from-primary to-blue-400 relative">
+            <div class="absolute -bottom-12 left-6">
+                <div class="h-24 w-24 rounded-2xl border-4 border-white bg-white shadow-md overflow-hidden">
+                    <img src="https://ui-avatars.com/api/?name={{ user.pseudo }}&background=random&size=128" alt="Avatar" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </div>
+        <div class="pt-16 pb-6 px-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold">{{ user.name or user.pseudo }}</h1>
+                    <p class="text-gray-500 text-sm">@{{ user.pseudo }}</p>
+                </div>
+                <a href="{{ url_for('auth.edit_profile') }}" class="px-4 py-2 bg-gray-50 text-gray-600 text-xs font-bold rounded-xl border border-gray-100 tap-scale">
+                    Modifye Pwofil
+                </a>
+            </div>
+            
+            <div class="mt-6 flex items-center gap-6">
+                <div class="text-center">
+                    <p class="text-lg font-bold">0</p>
+                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Posts</p>
+                </div>
+                <div class="text-center border-x border-gray-100 px-6">
+                    <p class="text-lg font-bold">0</p>
+                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Vant</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-lg font-bold text-primary">{{ gkach_balance }}</p>
+                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Gkach</p>
+                </div>
+            </div>
+            
+            {% if user.bio %}
+            <p class="mt-6 text-sm text-gray-600 leading-relaxed">
+                {{ user.bio }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+        <a href="{{ url_for('gkach.wallet') }}" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 tap-scale">
+            <div class="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <span class="text-sm font-bold">Bous</span>
+        </a>
+        <a href="{{ url_for('delivery.my_deliveries') }}" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 tap-scale">
+            <div class="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                <i class="fas fa-truck-fast"></i>
+            </div>
+            <span class="text-sm font-bold">Livrezon</span>
+        </a>
+    </div>
+
+    <!-- Tabs (Placeholder) -->
+    <div class="flex border-b border-gray-100 mb-6">
+        <button class="px-6 py-3 border-b-2 border-primary text-primary text-sm font-bold">Piblisite m yo</button>
+        <button class="px-6 py-3 text-gray-400 text-sm font-medium">Acha m yo</button>
+    </div>
+
+    <!-- Empty State -->
+    <div class="bg-white rounded-2xl p-12 text-center border border-gray-100 border-dashed">
+        <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-2xl">
+            <i class="fas fa-images"></i>
+        </div>
+        <h3 class="text-gray-900 font-bold mb-1">Pa gen piblisite ankò</h3>
+        <p class="text-gray-400 text-sm mb-6">Kòmanse vann sou Glory2YahPub kounye a!</p>
+        <a href="#" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 tap-scale">
+            <i class="fas fa-plus"></i>
+            Kreye premye piblisite w
+        </a>
+    </div>
+</div>
+{% endblock %}

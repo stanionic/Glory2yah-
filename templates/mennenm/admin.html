@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="mennenm-admin">
+        <h2>🚕 Mennen M - Admin</h2>
+        <p class="subtitle">Jere chofè yo</p>
+        
+        {% if drivers %}
+        <div class="drivers-list">
+            <h3>Lis Chofè Yo</h3>
+            
+            {% for driver in drivers %}
+            <div class="driver-item {% if driver.active %}active{% else %}inactive{% endif %}">
+                <div class="driver-header">
+                    <div class="driver-photo-small">
+                        {% if driver.photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + driver.photo) }}" alt="{{ driver.name }}">
+                        {% else %}
+                        <div class="no-photo-small">👤</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="driver-details">
+                        <h4>{{ driver.name }}</h4>
+                        <p>{{ driver.phone }}</p>
+                        <p class="location">📍 {{ "%.4f"|format(driver.lat) }}, {{ "%.4f"|format(driver.lon) }}</p>
+                    </div>
+                    
+                    <div class="driver-status">
+                        <span class="status-badge {% if driver.active %}badge-success{% else %}badge-danger{% endif %}">
+                            {% if driver.active %}Aktif{% else %}Enaktif{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="driver-actions">
+                    <form method="POST" action="{{ url_for('mennenm_admin', phone=admin_phone) }}" class="action-form">
+                        <input type="hidden" name="driver_id" value="{{ driver.id }}">
+                        
+                        {% if driver.active %}
+                        <button type="submit" name="action" value="deactivate" class="btn btn-danger btn-sm">
+                            <i class="fas fa-ban"></i> Dezaktive
+                        </button>
+                        {% else %}
+                        <button type="submit" name="action" value="activate" class="btn btn-success btn-sm">
+                            <i class="fas fa-check"></i> Aktive
+                        </button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-drivers">
+            <p>Pa gen chofè anrejistre ankò.</p>
+        </div>
+        {% endif %}
+        
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h4>Total Chofè</h4>
+                <p class="stat-number">{{ drivers|length }}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Aktif</h4>
+                <p class="stat-number">{{ drivers|selectattr('active', 'equalto', true)|list|length }}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Enaktif</h4>
+                <p class="stat-number">{{ drivers|selectattr('active', 'equalto', false)|list|length }}</p>
+            </div>
+        </div>
+        
+        <div class="back-link">
+            <a href="{{ url_for('mennenm_index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retounen
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.mennenm-admin {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.mennenm-admin h2 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.mennenm-admin .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.drivers-list h3 {
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.driver-item {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #dc3545;
+}
+
+.driver-item.active {
+    border-left-color: #28a745;
+}
+
+.driver-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.driver-photo-small {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.driver-photo-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-photo-small {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: #f0f0f0;
+}
+
+.driver-details {
+    flex-grow: 1;
+}
+
+.driver-details h4 {
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+.driver-details p {
+    margin-bottom: 0.25rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.driver-details .location {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.driver-status {
+    flex-shrink: 0;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.badge-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.driver-actions {
+    text-align: right;
+}
+
+.action-form {
+    display: inline;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.no-drivers {
+    text-align: center;
+    padding: 3rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.no-drivers p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-card h4 {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.back-link {
+    text-align: center;
+    margin-top: 2rem;
+}
+</style>
+{% endblock %}

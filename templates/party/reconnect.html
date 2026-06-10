@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('party.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retounen
+    </a>
+    
+    <div class="reconnect-form">
+        <h2><i class="fas fa-key"></i> Konekte anko ak Fet ou</h2>
+        <p class="text-muted">Si ou pèdi sesyon ou, ou ka konekte lè w tounen.</p>
+        
+        <form method="POST" action="{{ url_for('party.reconnect', party_id=party_id) }}">
+            <div class="mb-3">
+                <label for="access_code">Kod Aksè:</label>
+                <input type="text" id="access_code" name="access_code" class="form-control" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Konekte
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+.reconnect-form {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.reconnect-form h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+</style>
+
+{% endblock %}

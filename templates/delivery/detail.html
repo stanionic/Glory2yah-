@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Detay Livrezon - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ url_for('delivery.my_deliveries') }}" class="h-10 w-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-gray-600 tap-scale">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-xl font-bold">Livrezon #{{ delivery.delivery_id[:8] }}</h1>
+            <p class="text-xs text-gray-400 font-medium uppercase">{{ delivery.status }}</p>
+        </div>
+    </div>
+
+    <!-- Status Tracker -->
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+        <div class="flex justify-between items-center relative">
+            <div class="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-100 -z-0"></div>
+            
+            <!-- Step 1 -->
+            <div class="z-10 flex flex-col items-center gap-2">
+                <div class="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold 
+                    {% if delivery.status != 'cancelled' %}bg-primary text-white{% else %}bg-gray-100 text-gray-400{% endif %}">
+                    1
+                </div>
+                <span class="text-[8px] font-bold text-gray-400 uppercase">Negosye</span>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="z-10 flex flex-col items-center gap-2">
+                <div class="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold 
+                    {% if delivery.status in ['awaiting_delivery', 'completed'] %}bg-primary text-white{% else %}bg-gray-100 text-gray-400{% endif %}">
+                    2
+                </div>
+                <span class="text-[8px] font-bold text-gray-400 uppercase">Peye</span>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="z-10 flex flex-col items-center gap-2">
+                <div class="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold 
+                    {% if delivery.status == 'completed' %}bg-primary text-white{% else %}bg-gray-100 text-gray-400{% endif %}">
+                    3
+                </div>
+                <span class="text-[8px] font-bold text-gray-400 uppercase">Resevwa</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Order Info -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 class="font-bold text-sm mb-4 flex items-center gap-2">
+                <i class="fas fa-circle-info text-primary"></i>
+                Enfòmasyon
+            </h2>
+            <div class="space-y-3">
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-400">Achtè:</span>
+                    <span class="font-bold">{{ delivery.buyer_whatsapp }}</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-400">Vandè:</span>
+                    <span class="font-bold">{{ delivery.seller_whatsapp }}</span>
+                </div>
+                <div class="pt-3 border-t border-gray-50">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Adrès:</p>
+                    <p class="text-xs text-gray-600 leading-relaxed">{{ delivery.delivery_address }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Card -->
+        <div class="bg-primary rounded-3xl p-6 shadow-lg shadow-primary/20 text-white flex flex-col justify-between">
+            <div>
+                <h2 class="font-bold text-sm mb-4 opacity-80">Total pou peye</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="opacity-70">Atik:</span>
+                        <span class="font-bold">{{ delivery.total_price }} Gkach</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="opacity-70">Livrezon:</span>
+                        <span class="font-bold">{{ delivery.delivery_cost }} Gkach</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 pt-4 border-t border-white/20 flex justify-between items-end">
+                <span class="text-[10px] font-bold uppercase opacity-70">Grand Total</span>
+                <span class="text-2xl font-black">{{ delivery.total_price + delivery.delivery_cost }} Gkach</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-4 mb-8">
+        {% if current_user.whatsapp == delivery.seller_whatsapp and delivery.status == 'negotiating' %}
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 class="font-bold text-sm mb-4">Mete pri livrezon</h2>
+            <form action="{{ url_for('delivery.set_cost', delivery_id=delivery.delivery_id) }}" method="POST" class="flex gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="number" name="cost" required placeholder="Ex: 50" 
+                       class="flex-1 rounded-xl border-gray-100 bg-gray-50 focus:ring-primary focus:border-primary text-sm">
+                <button type="submit" class="bg-primary text-white px-6 py-2 rounded-xl font-bold text-sm tap-scale">
+                    Voye
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if current_user.whatsapp == delivery.buyer_whatsapp and delivery.status == 'awaiting_buyer_confirmation' %}
+        <form action="{{ url_for('delivery.confirm', delivery_id=delivery.delivery_id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="w-full bg-secondary text-white py-4 rounded-2xl font-bold shadow-lg shadow-secondary/20 tap-scale flex items-center justify-center gap-3">
+                <i class="fas fa-check-circle"></i>
+                Konfime epi Peye kounye a
+            </button>
+        </form>
+        {% endif %}
+
+        {% if current_user.whatsapp == delivery.buyer_whatsapp and delivery.status == 'awaiting_delivery' %}
+        <form action="{{ url_for('delivery.complete', delivery_id=delivery.delivery_id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 tap-scale flex items-center justify-center gap-3">
+                <i class="fas fa-box-open"></i>
+                Mwen resevwa kòmand lan
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Chat (Simple placeholder for now) -->
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[400px]">
+        <div class="p-4 border-b border-gray-50 bg-gray-50/50 flex items-center gap-3">
+            <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <i class="fas fa-comments"></i>
+            </div>
+            <span class="font-bold text-sm text-gray-700">Diskisyon</span>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages">
+            {% for msg in messages %}
+            <div class="flex {% if msg.sender_whatsapp == current_user.whatsapp %}justify-end{% endif %}">
+                <div class="max-w-[80%] p-3 rounded-2xl text-sm 
+                    {% if msg.sender_whatsapp == current_user.whatsapp %}bg-primary text-white rounded-tr-none{% else %}bg-gray-100 text-gray-800 rounded-tl-none{% endif %}">
+                    {{ msg.message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="p-4 border-t border-gray-50">
+            <div class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Ekri yon mesaj..." 
+                       class="flex-1 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-primary text-sm px-4">
+                <button onclick="sendMessage()" class="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20 tap-scale">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        fetch(`{{ url_for('delivery.message', delivery_id=delivery.delivery_id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': '{{ csrf_token() }}'
+            },
+            body: `message=${encodeURIComponent(text)}`
+        }).then(res => {
+            if (res.ok) {
+                location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

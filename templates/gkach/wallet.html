@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% block title %}Bous Gkach - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="gkach-wallet-page">
+    <!-- Balance Card -->
+    <div class="balance-card">
+        <div class="balance-header">
+            <span class="balance-icon">🪙</span>
+            <span class="balance-label">Balans Total</span>
+        </div>
+        <div class="balance-amount">{{ balance }}</div>
+        <div class="balance-subtitle">Gkach</div>
+        
+        <div class="balance-actions">
+            <a href="/gkach/request" class="balance-btn balance-btn-primary">
+                <span>💰</span>
+                <span>Achte Gkach</span>
+            </a>
+            <a href="/gkach/transfer" class="balance-btn balance-btn-secondary">
+                <span>↗</span>
+                <span>Transfere</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Earnings Dashboard -->
+    <div class="earnings-dashboard">
+        <h3 class="section-title">📊 Rezime Revni</h3>
+        
+        <div class="earnings-grid">
+            <div class="earning-card">
+                <div class="earning-icon">👁️</div>
+                <div class="earning-info">
+                    <div class="earning-label">Klik Total</div>
+                    <div class="earning-value" id="totalClicks">0</div>
+                </div>
+            </div>
+            
+            <div class="earning-card">
+                <div class="earning-icon">🎁</div>
+                <div class="earning-info">
+                    <div class="earning-label">Rekonpans</div>
+                    <div class="earning-value" id="rewardEarnings">0</div>
+                </div>
+            </div>
+            
+            <div class="earning-card">
+                <div class="earning-icon">💰</div>
+                <div class="earning-info">
+                    <div class="earning-label">Vant</div>
+                    <div class="earning-value" id="salesEarnings">0</div>
+                </div>
+            </div>
+            
+            <div class="earning-card">
+                <div class="earning-icon">🔗</div>
+                <div class="earning-info">
+                    <div class="earning-label">Referans</div>
+                    <div class="earning-value" id="referralEarnings">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Referral Link -->
+    <div class="referral-section">
+        <h3 class="section-title">🔗 Lyen Referans Ou</h3>
+        <div class="referral-card">
+            <div class="referral-info">
+                <p class="referral-desc">Pataje lyen sa a pou jwenn 10 Gkach chak 100 klik!</p>
+                <div class="referral-link-box">
+                    <input type="text" readonly value="{{ request.url_root }}s/{{ current_user.whatsapp }}" id="referralLink" class="referral-input">
+                    <button onclick="copyReferralLink()" class="copy-btn">
+                        <span id="copyIcon">📋</span>
+                    </button>
+                </div>
+            </div>
+            <button onclick="shareReferralLink()" class="share-btn">
+                <span>↗</span>
+                <span>Pataje</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="transactions-section">
+        <h3 class="section-title">📜 Istwa Tranzaksyon</h3>
+        
+        {% if transactions %}
+        <div class="transactions-list">
+            {% for tx in transactions %}
+            <div class="transaction-item">
+                <div class="tx-icon">
+                    {% if tx.transaction_type == 'credit' or tx.transaction_type == 'reward' %}
+                    <span class="tx-icon-in">⬇️</span>
+                    {% elif tx.transaction_type == 'debit' or tx.transaction_type == 'purchase' %}
+                    <span class="tx-icon-out">⬆️</span>
+                    {% elif tx.transaction_type == 'sale' %}
+                    <span class="tx-icon-sale">💰</span>
+                    {% else %}
+                    <span class="tx-icon-neutral">↔️</span>
+                    {% endif %}
+                </div>
+                <div class="tx-info">
+                    <div class="tx-type">
+                        {% if tx.transaction_type == 'reward' %}Rekonpans
+                        {% elif tx.transaction_type == 'purchase' %}Achte
+                        {% elif tx.transaction_type == 'sale' %}Vant
+                        {% elif tx.transaction_type == 'transfer_in' %}Resevwa
+                        {% elif tx.transaction_type == 'transfer_out' %}Voye
+                        {% else %}{{ tx.transaction_type }}
+                        {% endif %}
+                    </div>
+                    <div class="tx-desc">{{ tx.description[:50] }}</div>
+                    <div class="tx-date">{{ tx.created_at[:10] if tx.created_at is string else tx.created_at.strftime('%d %b %Y') }}</div>
+                </div>
+                <div class="tx-amount {% if tx.transaction_type in ['credit', 'reward', 'sale', 'transfer_in'] %}tx-amount-in{% else %}tx-amount-out{% endif %}">
+                    {% if tx.transaction_type in ['credit', 'reward', 'sale', 'transfer_in'] %}+{% else %}-{% endif %}{{ tx.amount }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p class="empty-text">Pa gen tranzaksyon ankò</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.gkach-wallet-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: 100px;
+}
+
+/* Balance Card */
+.balance-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    margin-bottom: 24px;
+}
+
+.balance-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.balance-icon {
+    font-size: 24px;
+}
+
+.balance-label {
+    font-size: 14px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.balance-amount {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.balance-subtitle {
+    font-size: 18px;
+    opacity: 0.8;
+    margin-bottom: 24px;
+}
+
+.balance-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.balance-btn {
+    flex: 1;
+    max-width: 150px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.balance-btn-primary {
+    background: white;
+    color: #667eea;
+}
+
+.balance-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
+.balance-btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+}
+
+.balance-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Section Title */
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 16px 0;
+}
+
+/* Earnings Dashboard */
+.earnings-dashboard {
+    margin-bottom: 24px;
+}
+
+.earnings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.earning-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.earning-icon {
+    font-size: 32px;
+}
+
+.earning-info {
+    flex: 1;
+}
+
+.earning-label {
+    font-size: 12px;
+    color: #65676b;
+    margin-bottom: 4px;
+}
+
+.earning-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* Referral Section */
+.referral-section {
+    margin-bottom: 24px;
+}
+
+.referral-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.referral-desc {
+    font-size: 14px;
+    color: #65676b;
+    margin: 0 0 12px 0;
+}
+
+.referral-link-box {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.referral-input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e4e6eb;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
+.copy-btn {
+    background: #667eea;
+    border: none;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.copy-btn:hover {
+    background: #5a6fd8;
+    transform: scale(1.05);
+}
+
+.share-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* Transactions */
+.transactions-section {
+    margin-bottom: 24px;
+}
+
+.transactions-list {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.tx-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.tx-icon-in {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.tx-icon-out {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.tx-icon-sale {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.tx-icon-neutral {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.tx-info {
+    flex: 1;
+}
+
+.tx-type {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.tx-desc {
+    font-size: 12px;
+    color: #65676b;
+    margin-bottom: 2px;
+}
+
+.tx-date {
+    font-size: 11px;
+    color: #999;
+}
+
+.tx-amount {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.tx-amount-in {
+    color: #2e7d32;
+}
+
+.tx-amount-out {
+    color: #c62828;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-text {
+    color: #65676b;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .gkach-wallet-page {
+        padding: 12px;
+    }
+    
+    .balance-card {
+        padding: 24px 16px;
+    }
+    
+    .balance-amount {
+        font-size: 48px;
+    }
+    
+    .earnings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// Copy referral link
+function copyReferralLink() {
+    const input = document.getElementById('referralLink');
+    input.select();
+    document.execCommand('copy');
+    
+    const icon = document.getElementById('copyIcon');
+    icon.textContent = '✅';
+    
+    setTimeout(() => {
+        icon.textContent = '📋';
+    }, 2000);
+}
+
+// Share referral link
+function shareReferralLink() {
+    const link = document.getElementById('referralLink').value;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Jwenn Gkach sou Glory2YahPub!',
+            text: 'Klike sou lyen sa a pou ede m jwenn Gkach!',
+            url: link
+        }).catch(() => {});
+    } else {
+        copyReferralLink();
+        alert('Lyen kopye! Pataje l ak zanmi ou yo.');
+    }
+}
+
+// Load earnings summary
+fetch('/api/gkach/summary')
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('totalClicks').textContent = data.total_clicks || 0;
+            document.getElementById('rewardEarnings').textContent = data.reward_earnings || 0;
+            document.getElementById('salesEarnings').textContent = data.sales_earnings || 0;
+            document.getElementById('referralEarnings').textContent = data.referral_earnings || 0;
+        }
+    })
+    .catch(() => {});
+</script>
+{% endblock %}

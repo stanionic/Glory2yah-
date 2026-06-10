@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retounen
+    </a>
+    
+    <div class="send-group-message">
+        <h2><i class="fas fa-paper-plane"></i> Voye Mesaj Group</h2>
+        
+        <div class="party-info">
+            <p><strong>Fèt:</strong> {{ party.name }}</p>
+            <p><strong>Dat:</strong> {{ party.date.strftime('%d/%m/%Y') }}</p>
+            {% if party.location %}
+            <p><strong>Lye:</strong> {{ party.location }}</p>
+            {% endif %}
+            <p><strong>Total Patisipan:</strong> {{ participants|length }}</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('party.send_group_message', party_id=party.party_id) }}">
+            <div class="form-group">
+                <label for="message">Mesaj pou patisipan yo</label>
+                <textarea id="message" name="message" class="form-control" rows="5" 
+                    placeholder="Ekri mesaj ou a... (Opsyonèl)"></textarea>
+                <small class="form-text text-muted">
+                    Si ou pa ekri anyen, yon mesaj default pral voye ak detay fèt la.
+                </small>
+            </div>
+            
+            <div class="participants-preview">
+                <h4>Patisipan yo pral resevwa mesaj:</h4>
+                <ul class="participants-list">
+                    {% for participant in participants %}
+                    <li>
+                        <i class="fas fa-user"></i> {{ participant.name }}
+                        <span class="whatsapp-number">{{ participant.whatsapp }}</span>
+                        {% if participant.food_choice %}
+                        <span class="choice-badge"><i class="fas fa-utensils"></i> {{ participant.food_choice }}</span>
+                        {% endif %}
+                        {% if participant.drink_choice %}
+                        <span class="choice-badge"><i class="fas fa-glass-cheers"></i> {{ participant.drink_choice }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                <i class="fas fa-paper-plane"></i> Voye Mesaj
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .send-group-message {
+        max-width: 700px;
+        margin: 20px auto;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .send-group-message h2 {
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .party-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .party-info p {
+        margin: 5px 0;
+        color: #555;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+    }
+    
+    .form-text {
+        display: block;
+        margin-top: 5px;
+        color: #777;
+        font-size: 0.875rem;
+    }
+    
+    .participants-preview {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .participants-preview h4 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1.1rem;
+    }
+    
+    .participants-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .participants-list li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .participants-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .whatsapp-number {
+        color: #25D366;
+        font-size: 0.9rem;
+    }
+    
+    .choice-badge {
+        background: #007bff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-block {
+        width: 100%;
+    }
+    
+    .btn-lg {
+        padding: 15px 30px;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

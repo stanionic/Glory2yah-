@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}MANDEMMAPBAW - Chat{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Left Sidebar -->
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-sliders-h"></i> Chwazi Mòd
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action active" data-mode="chat">
+                        <i class="fas fa-comments"></i> 💬 Pale ak IA
+                    </a>
+                    <a href="#image-section" class="list-group-item list-group-item-action" data-mode="image">
+                        <i class="fas fa-image"></i> 🖼️ Kreye Imaj
+                    </a>
+                    <a href="#video-section" class="list-group-item list-group-item-action" data-mode="video">
+                        <i class="fas fa-video"></i> 🎬 Kreye Video
+                    </a>
+                    <a href="#code-section" class="list-group-item list-group-item-action" data-mode="code">
+                        <i class="fas fa-code"></i> 💻 Jenere Kòd
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-history"></i> Istwa Konvèsasyon
+            </div>
+            <div class="card-body">
+                <div id="history-list" class="small">
+                    <!-- History will be loaded here -->
+                </div>
+                <button class="btn btn-sm btn-outline-danger mt-2 w-100" onclick="clearHistory()">
+                    <i class="fas fa-trash"></i> Efase Istwa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-robot"></i> MANDEMMAPBAW Chat
+                <span class="float-end" id="current-mode">💬 Mode Chat</span>
+            </div>
+            
+            <div class="card-body chat-container">
+                <!-- Chat messages will appear here -->
+                <div id="chat-messages" class="chat-messages">
+                    <div class="message bot">
+                        <div class="message-content">
+                            <strong>MANDEMMAPBAW:</strong> Bonjou! Mwen se asistan AI ou a. 
+                            Mwen ka ede w ak: diskisyon, kreye imaj, kreye videyo, ak jenere kòd.
+                            Kisa mwen ka fè pou w jodia?
+                        </div>
+                        <div class="message-time">Jodi a</div>
+                    </div>
+                </div>
+                
+                <!-- Loading Indicator -->
+                <div id="loading" class="loading-indicator" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chaje...</span>
+                    </div>
+                    <span class="ms-2">MANDEMMAPBAW ap panse...</span>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="chat-input mt-3">
+                    <div class="input-group">
+                        <textarea
+                            id="prompt-input"
+                            class="form-control"
+                            rows="2"
+                            placeholder="Ekri sa ou vle mande IA a... (Ou mèt ekri an Kreyòl oswa Fransè)"
+                            onkeypress="handleKeyPress(event)"></textarea>
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i> Voye
+                        </button>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <label class="web-search-toggle">
+                            <input type="checkbox" id="webSearchToggle">
+                            <span>🌐 Rechèch entènèt</span>
+                        </label>
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb"></i> Konsèy: Poze kesyon klè pou pi bon repons
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Generation Section -->
+        <section id="image-section" class="mt-5">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-image"></i> 🖼️ Kreye Imaj
+                </div>
+                <div class="card-body">
+                    <p>Mande m kreye yon imaj pou w! Dekri sa ou vle wè nan imaj la.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="image-prompt" class="form-label">
+                                    <i class="fas fa-edit"></i> Dekri imaj ou vle a:
+                                </label>
+                                <textarea 
+                                    id="image-prompt" 
+                                    class="form-control" 
+                                    rows="3"
+                                    placeholder="Egzanp: 'Yon bèl plaj nan Okay ak gwo pye kokoye, solèy kouche...'"></textarea>
+                            </div>
+                            <button class="btn btn-warning" onclick="generateImage()">
+                                <i class="fas fa-magic"></i> Jenere Imaj
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="image-result" class="text-center">
+                                <!-- Generated image will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Video Generation Section -->
+        <section id="video-section" class="mt-5">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-video"></i> 🎬 Kreye Video
+                </div>
+                <div class="card-body">
+                    <p>Mande m kreye yon ti videyo animasyon pou w!</p>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="video-prompt" class="form-label">
+                                    <i class="fas fa-film"></i> Dekri videyo ou vle a:
+                                </label>
+                                <textarea 
+                                    id="video-prompt" 
+                                    class="form-control" 
+                                    rows="3"
+                                    placeholder="Egzanp: 'Yon animasyon yon flè k ap fleri ak koulè wouj ak jòn...'"></textarea>
+                            </div>
+                            <button class="btn btn-danger" onclick="generateVideo()">
+                                <i class="fas fa-play-circle"></i> Jenere Video
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="video-result" class="text-center">
+                                <!-- Generated video will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Generation Section -->
+        <section id="code-section" class="mt-5 mb-5">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-code"></i> 💻 Jenere Kòd
+                </div>
+                <div class="card-body">
+                    <p>Mande m ekri kòd pou w! Python, JavaScript, HTML, CSS, elatriye.</p>
+                    
+                    <div class="mb-3">
+                        <label for="code-prompt" class="form-label">
+                            <i class="fas fa-terminal"></i> Dekri kòd ou vle a:
+                        </label>
+                        <textarea 
+                            id="code-prompt" 
+                            class="form-control" 
+                            rows="3"
+                            placeholder="Egzanp: 'Ekri yon fonksyon Python ki kalkule faktoriyel yon nonb...'"></textarea>
+                    </div>
+                    <button class="btn btn-success" onclick="generateCode()">
+                        <i class="fas fa-laptop-code"></i> Jenere Kòd
+                    </button>
+                    
+                    <div id="code-result" class="mt-3">
+                        <!-- Generated code will appear here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set current mode
+    let currentMode = 'chat';
+    
+    function updateMode(mode) {
+        currentMode = mode;
+        const modeNames = {
+            'chat': '💬 Mode Chat',
+            'image': '🖼️ Mode Imaj',
+            'video': '🎬 Mode Video',
+            'code': '💻 Mode Kòd'
+        };
+        document.getElementById('current-mode').textContent = modeNames[mode] || modeNames.chat;
+    }
+    
+    // Event listeners for mode selection
+    document.querySelectorAll('[data-mode]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const mode = this.getAttribute('data-mode');
+            updateMode(mode);
+            
+            // Update active state
+            document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update input placeholder
+            const placeholders = {
+                'chat': 'Ekri sa ou vle mande IA a...',
+                'image': 'Dekri imaj ou vle kreye a...',
+                'video': 'Dekri videyo ou vle kreye a...',
+                'code': 'Dekri kòd ou vle jenere a...'
+            };
+            document.getElementById('prompt-input').placeholder = placeholders[mode] + ' (Ou mèt ekri an Kreyòl oswa Fransè)';
+        });
+    });
+</script>
+{% endblock %}

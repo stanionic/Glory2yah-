@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Plateforme d'Inscription Étudiante{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <h1>Bienvenue sur la Plateforme d'Inscription</h1>
+        <p>Inscrivez-vous à nos cours de qualité avec paiement sécurisé via GCash</p>
+        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Commencer l'Inscription
+        </a>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h4>Cours de Qualité</h4>
+                <p>Découvrez notre sélection de cours adaptés à vos besoins</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h4>Paiement GCash</h4>
+                <p>Paiement sécurisé et rapide via GCash</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h4>Validation Rapide</h4>
+                <p>Traitement rapide de votre inscription</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4 text-white">Nos Cours Disponibles</h2>
+        </div>
+        {% for course in courses %}
+        <div class="col-md-4 mb-4">
+            <div class="card course-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ course.name }}</h5>
+                    <p class="card-text">{{ course.description[:100] }}...</p>
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ course.duration }}
+                        </small>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="h5 text-primary mb-0">{{ course.fee }} HTG</span>
+                        <a href="{{ url_for('register') }}" class="btn btn-primary">
+                            S'inscrire
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

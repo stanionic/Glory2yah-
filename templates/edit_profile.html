@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="edit-profile-container">
+        <h2>✏️ Modifye Pwofil</h2>
+        <p class="subtitle">Mete ajou enfòmasyon pwofil ou</p>
+
+        <form method="POST" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data" class="edit-profile-form">
+            <div class="current-photo">
+                {% if user.profile_photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Current Photo">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="profile_photo">📷 Foto Pwofil</label>
+                <input type="file" id="profile_photo" name="profile_photo" accept="image/*">
+                <small class="form-text">Fòma aksepte: JPG, PNG, GIF (max 5MB)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="name">📝 Non Konplè</label>
+                <input type="text" id="name" name="name" value="{{ user.name or '' }}" placeholder="Non ou konplè">
+            </div>
+
+            <div class="form-group">
+                <label for="bio">📋 Biyografi</label>
+                <textarea id="bio" name="bio" rows="4" placeholder="Yon ti deskripsyon sou ou...">{{ user.bio or '' }}</textarea>
+                <small class="form-text">Maksimòm 500 karaktè</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Anrejistre Chanje yo
+                </button>
+                <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Anile
+                </a>
+            </div>
+        </form>
+
+        <div class="profile-info-section">
+            <h3>📱 Enfòmasyon Kont</h3>
+            <div class="info-item">
+                <span class="info-label">Pseudo:</span>
+                <span class="info-value">{{ user.pseudo }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">WhatsApp:</span>
+                <span class="info-value">{{ user.whatsapp }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Manm depi:</span>
+                <span class="info-value">{{ user.created_at.strftime('%d %B %Y') if user.created_at else 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Dènye mizajou:</span>
+                <span class="info-value">{{ user.updated_at.strftime('%d %B %Y') if user.updated_at else 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.edit-profile-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.edit-profile-container h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.current-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    font-size: 80px;
+    color: white;
+}
+
+.edit-profile-form .form-group {
+    margin-bottom: 25px;
+}
+
+.edit-profile-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.edit-profile-form input[type="text"],
+.edit-profile-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.edit-profile-form input[type="file"] {
+    padding: 10px;
+    border: 2px dashed #e0e0e0;
+    border-radius: 8px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.edit-profile-form input:focus,
+.edit-profile-form textarea:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.form-actions .btn {
+    flex: 1;
+    padding: 14px;
+    font-size: 16px;
+}
+
+.profile-info-section {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.profile-info-section h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.info-value {
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .edit-profile-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+// Preview uploaded image
+document.getElementById('profile_photo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const currentPhoto = document.querySelector('.current-photo');
+            currentPhoto.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>🎉 Kreye yon nouvo fèt</h1>
+    
+    <div class="form-container">
+        <form method="POST" enctype="multipart/form-data" class="party-form">
+            <div class="form-group">
+                <label for="name">Non Fèt <span class="required">*</span></label>
+                <input type="text" id="name" name="name" required placeholder="Egzanp: Fète Anatò">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Deskripsyon</label>
+                <textarea id="description" name="description" rows="4" placeholder="Decri fèt la..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="date">Dat <span class="required">*</span></label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Lokalizasyon</label>
+                <input type="text" id="location" name="location" placeholder="Egzanp: Pòtoprens">
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Pri (Gkach)</label>
+                <input type="number" id="price" name="price" value="0" min="0" placeholder="0 = Gratis">
+                <small>Mete 0 si fèt la gratis</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="photo">Foto</label>
+                <input type="file" id="photo" name="photo" accept="image/*">
+                <small>Chwazi yon foto pou fèt la (opsyonèl)</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Kreye Fèt
+                </button>
+                <a href="{{ url_for('party.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retounen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .party-form {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    
+    .required {
+        color: #ff6b6b;
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group input[type="number"],
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #ff6b6b;
+        box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    }
+    
+    .form-group small {
+        display: block;
+        color: #666;
+        margin-top: 5px;
+        font-size: 14px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #ff6b6b, #ffa500);
+        color: white;
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+</style>
+{% endblock %}

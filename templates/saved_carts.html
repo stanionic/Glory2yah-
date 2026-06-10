@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .saved-carts-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 40px;
+        color: #333;
+    }
+
+    .header h1 {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        color: #667eea;
+    }
+
+    .header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .carts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .cart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border-left: 4px solid #667eea;
+    }
+
+    .cart-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+    }
+
+    .cart-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+
+    .cart-card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+
+    .cart-card-date {
+        font-size: 0.85rem;
+        color: #999;
+        margin-top: 5px;
+    }
+
+    .cart-badge {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .cart-info {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .info-label {
+        color: #666;
+        font-weight: 500;
+    }
+
+    .info-value {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .price-highlight {
+        font-size: 1.3rem;
+        color: #667eea;
+        font-weight: 700;
+    }
+
+    .cart-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-restore {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-restore:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-delete {
+        background: #f0f0f0;
+        color: #e74c3c;
+        border: 1px solid #e74c3c;
+    }
+
+    .btn-delete:hover {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #ddd;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        color: #666;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #999;
+        margin-bottom: 20px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 30px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border-left: 4px solid #10b981;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid #ef4444;
+    }
+
+    @media (max-width: 768px) {
+        .carts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="saved-carts-container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-bookmark"></i> Panier Sove</h1>
+        <p>Jere panier sove w yo</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
+                    <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Saved Carts Grid -->
+    {% if saved_carts %}
+    <div class="carts-grid">
+        {% for cart in saved_carts %}
+        <div class="cart-card">
+            <div class="cart-card-header">
+                <div>
+                    <h3 class="cart-card-title">{{ cart.cart_name }}</h3>
+                    <p class="cart-card-date">
+                        <i class="fas fa-calendar"></i>
+                        {{ cart.created_at.strftime('%d %b %Y') }}
+                    </p>
+                </div>
+                <span class="cart-badge">{{ cart.item_count }} atik</span>
+            </div>
+
+            <div class="cart-info">
+                <div class="info-row">
+                    <span class="info-label">Atik:</span>
+                    <span class="info-value">{{ cart.item_count }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pri Total:</span>
+                    <span class="price-highlight">{{ cart.total_price }} Gkach</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Estati:</span>
+                    <span class="info-value">
+                        {% if cart.status == 'active' %}
+                            <span style="color: #10b981;">Aktif</span>
+                        {% elif cart.status == 'purchased' %}
+                            <span style="color: #667eea;">Achte</span>
+                        {% else %}
+                            <span style="color: #999;">Achive</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="cart-actions">
+                <a href="{{ url_for('restore_cart', cart_id=cart.cart_id) }}" class="btn btn-restore">
+                    <i class="fas fa-redo"></i> Restore
+                </a>
+                <button class="btn btn-delete" onclick="deleteCart('{{ cart.cart_id }}', '{{ cart.cart_name }}')">
+                    <i class="fas fa-trash"></i> Efase
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>Pa gen panier sove</h3>
+        <p>Ou pa gen panier sove ankò. Sove panier w la pou aksese li pi ta.</p>
+        <a href="{{ url_for('checkout_modern') }}" class="btn-primary">
+            <i class="fas fa-shopping-cart"></i> Ale Achte
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteCart(cartId, cartName) {
+    if (!confirm(`Ou sire ou vle efase panier "${cartName}"?`)) {
+        return;
+    }
+
+    fetch(`{{ url_for('delete_saved_cart', cart_id='') }}${cartId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Panier efase avèk siksè!');
+            location.reload();
+        } else {
+            alert('Erè: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erè nan efasman panier');
+    });
+}
+</script>
+
+{% endblock %}

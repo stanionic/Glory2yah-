@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retounen
+    </a>
+    
+    <div class="group-message-results">
+        <h2><i class="fas fa-check-circle"></i> Rezilta Mesaj Group</h2>
+        
+        <div class="party-info">
+            <p><strong>Fèt:</strong> {{ party.name }}</p>
+            <p><strong>Total Mesaj Voye:</strong> {{ results|length }}</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="results-summary">
+            <p class="success-text">
+                <i class="fas fa-info-circle"></i>
+                Mesaj yo pwèpare avèk siksè! Klik sou bouton WhatsApp la pou ouvri chat ak Chak patisipan.
+            </p>
+        </div>
+        
+        <div class="participants-messages">
+            {% for result in results %}
+            <div class="participant-message-card">
+                <div class="participant-header">
+                    <i class="fas fa-user"></i>
+                    <span class="participant-name">{{ result.name }}</span>
+                </div>
+                
+                <div class="participant-details">
+                    <span class="whatsapp">{{ result.whatsapp }}</span>
+                    {% if result.food_choice %}
+                    <span class="choice-badge food"><i class="fas fa-utensils"></i> {{ result.food_choice }}</span>
+                    {% endif %}
+                    {% if result.drink_choice %}
+                    <span class="choice-badge drink"><i class="fas fa-glass-cheers"></i> {{ result.drink_choice }}</span>
+                    {% endif %}
+                </div>
+                
+                {% if result.whatsapp_link %}
+                <a href="{{ result.whatsapp_link }}" target="_blank" class="btn btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> Voye Mesaj
+                </a>
+                {% else %}
+                <span class="error-text">Erè nan jenere lyen</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Retounen nan Fèt
+            </a>
+            <a href="{{ url_for('party.send_group_message', party_id=party.party_id) }}" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> Voye Lòt Mesaj
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .group-message-results {
+        max-width: 700px;
+        margin: 20px auto;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .group-message-results h2 {
+        color: #28a745;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .party-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .party-info p {
+        margin: 5px 0;
+        color: #555;
+    }
+    
+    .results-summary {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .success-text {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .participants-messages {
+        display: grid;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .participant-message-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .participant-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .participant-name {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+    
+    .participant-details {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .whatsapp {
+        color: #25D366;
+        font-weight: 500;
+    }
+    
+    .choice-badge {
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        color: white;
+    }
+    
+    .choice-badge.food {
+        background: #fd7e14;
+    }
+    
+    .choice-badge.drink {
+        background: #20c997;
+    }
+    
+    .btn-whatsapp {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #25D366;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.3s;
+    }
+    
+    .btn-whatsapp:hover {
+        background: #128C7E;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .error-text {
+        color: #dc3545;
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+</style>
+{% endblock %}

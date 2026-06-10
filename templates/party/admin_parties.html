@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>🎉 Jere Fètnenyen</h1>
+    
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="fas fa-home"></i> Akèy
+    </a>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="admin-section">
+        <h2>Kreyé Nouvo Fètnenyen</h2>
+        
+        <form method="POST" enctype="multipart/form-data" class="party-form">
+            <input type="hidden" name="action" value="create">
+            
+            <div class="form-group">
+                <label for="name">Non Fètnenyen *</label>
+                <input type="text" id="name" name="name" required class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Deskripsyon</label>
+                <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="date">Dat *</label>
+                <input type="date" id="date" name="date" required class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Kote</label>
+                <input type="text" id="location" name="location" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Pri (Gkach)</label>
+                <input type="number" id="price" name="price" value="0" min="0" class="form-control">
+                <small> mete 0 pou gratis</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="photo">Imaj</label>
+                <input type="file" id="photo" name="photo" accept="image/*" class="form-control">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Kreye Fètnenyen
+            </button>
+        </form>
+    </div>
+    
+    <div class="admin-section">
+        <h2>Fètnenyen ki Egziste</h2>
+        
+        {% if parties %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Non</th>
+                        <th>Dat</th>
+                        <th>Kote</th>
+                        <th>Pri</th>
+                        <th> Aksyon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for party in parties %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('party.admin_party_detail', party_id=party.party_id) }}">
+                                {{ party.name }}
+                            </a>
+                        </td>
+                        <td>{{ party.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ party.location or '-' }}</td>
+                        <td>
+                            {% if party.price > 0 %}
+                                {{ party.price }} Gkach
+                            {% else %}
+                                Gratis
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="party_id" value="{{ party.party_id }}">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Ou sicher ou vle efase fètnenyen sa a?')">
+                                    <i class="fas fa-trash"></i> Efase
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-state">Pa gen fètnenyen kreye.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .admin-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .admin-section h2 {
+        color: #333;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ff6b6b;
+        padding-bottom: 10px;
+    }
+    
+    .party-form {
+        max-width: 500px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    .form-group small {
+        color: #666;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+    }
+    
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .admin-table th, .admin-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .admin-table th {
+        background: #f8f9fa;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    .admin-table a {
+        color: #ff6b6b;
+        text-decoration: none;
+    }
+    
+    .admin-table a:hover {
+        text-decoration: underline;
+    }
+    
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.875rem;
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c82333;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #888;
+    }
+</style>
+{% endblock %}

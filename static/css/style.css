@@ -1,0 +1,1190 @@
+:root {
+    --royal-blue: #002366;
+    --golden: #FFD700;
+    --white: #FFFFFF;
+    --light-blue: #4a6fc7;
+    --dark-blue: #001a4d;
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    line-height: 1.6;
+    color: #1a202c;
+    background: linear-gradient(to bottom, #f7fafc 0%, #edf2f7 100%);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+header {
+    background: linear-gradient(135deg, var(--royal-blue) 0%, var(--dark-blue) 100%);
+    color: var(--white);
+    padding: 1rem 0;
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-image {
+    height: 50px;
+    width: auto;
+}
+
+.logo-text {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--golden);
+    margin: 0;
+}
+
+nav a {
+    color: var(--white);
+    text-decoration: none;
+    margin-left: 2rem;
+    font-weight: 500;
+    font-size: 1.1rem;
+    position: relative;
+    transition: var(--transition);
+    padding: 0.5rem 0;
+}
+
+nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--golden);
+    transition: width 0.3s ease;
+}
+
+nav a:hover {
+    color: var(--golden);
+    transform: translateY(-2px);
+}
+
+nav a:hover::after {
+    width: 100%;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-gold {
+    background: var(--gradient-gold);
+    color: var(--royal-blue);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.btn-gold:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+}
+
+.btn-blue {
+    background: linear-gradient(135deg, var(--royal-blue) 0%, var(--light-blue) 100%);
+    color: var(--white);
+    box-shadow: 0 4px 15px rgba(0, 35, 102, 0.3);
+}
+
+.btn-blue:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 35, 102, 0.4);
+}
+
+.btn-whatsapp {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.hero {
+    background: linear-gradient(135deg, var(--royal-blue) 0%, var(--light-blue) 50%, #667eea 100%);
+    color: var(--white);
+    padding: 4rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.hero h2 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    font-weight: 800;
+    text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
+    animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.features {
+    padding: 4rem 0;
+    background: transparent;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.feature {
+    text-align: center;
+    padding: 2.5rem;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.feature:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--royal-blue);
+}
+
+.feature h3 {
+    color: var(--royal-blue);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.ad-form, .payment-form {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: var(--royal-blue);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: var(--transition);
+    background: #f7fafc;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--royal-blue);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1);
+    transform: translateY(-2px);
+}
+
+.form-group textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+.upload-box:hover {
+    border-color: var(--royal-blue);
+}
+
+.upload-box input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.image-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.upload-box {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    border: 2px dashed #cbd5e0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7fafc;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.upload-box:hover {
+    border-color: var(--royal-blue);
+    background: #edf2f7;
+    transform: scale(1.02);
+}
+
+.upload-box span {
+    color: #666;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.admin-section {
+    margin: 3rem 0;
+    padding: 2rem;
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Layout for admin dashboard */
+.admin-dashboard {
+    display: flex;
+    gap: 10px;
+}
+
+.ads-section {
+    flex: 3; /* 75% */
+}
+
+.other-widgets {
+    flex: 1; /* 25% */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.batches-section {
+    flex: 3; /* 75% within other-widgets */
+}
+
+.gkach-section {
+    flex: 1; /* 25% within other-widgets */
+}
+
+.admin-section h3 {
+    color: var(--royal-blue);
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--golden);
+    padding-bottom: 0.5rem;
+}
+
+.batches-grid, .ads-list {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.batch-card, .ad-card {
+    padding: 1.5rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.ad-images {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ad-images img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.ad-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.ad-actions form {
+    display: inline;
+}
+
+.batch-carousel {
+    padding: 2rem 0;
+    background: #f8f9fa;
+}
+
+.carousel-container {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.carousel {
+    display: flex;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.carousel-slide {
+    min-width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--white);
+}
+
+.carousel-slide img {
+    width: 50%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.ad-details {
+    padding: 2rem;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.ad-details h4 {
+    color: var(--royal-blue);
+    margin-bottom: 0.5rem;
+}
+
+.ad-details p {
+    margin-bottom: 0.5rem;
+}
+
+.ad-details .ad-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ad-details .ad-info h4,
+.ad-details .ad-info p {
+    margin: 0;
+}
+
+.carousel-prev, .carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--royal-blue);
+    color: var(--white);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+.carousel-prev {
+    left: -20px;
+}
+
+.carousel-next {
+    right: -20px;
+}
+
+.carousel-prev:hover, .carousel-next:hover {
+    background: var(--dark-blue);
+}
+
+/* Facebook-style Ad Cards */
+.whatsapp-ad-card {
+    min-width: 250px;
+    max-width: 500px;
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    margin-bottom: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.whatsapp-ad-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-5px);
+}
+
+/* Facebook-style Ad Header */
+.ad-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #e4e6eb;
+}
+
+.ad-header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--royal-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.ad-header-info {
+    flex: 1;
+}
+
+.ad-header-info h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #050505;
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+}
+
+.ad-header-info p {
+    font-size: 13px;
+    color: #65676b;
+    margin: 0;
+}
+
+/* Facebook-style Ad Image */
+.ad-image {
+    position: relative;
+    width: 100%;
+    background: #f0f2f5;
+}
+
+.ad-image img {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Facebook-style Ad Text/Description */
+.ad-text {
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.ad-text h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #050505;
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+}
+
+.ad-text p {
+    font-size: 14px;
+    color: #050505;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+}
+
+.ad-price {
+    font-size: 24px;
+    font-weight: 800;
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 8px 0;
+}
+
+.ad-meta {
+    font-size: 13px;
+    color: #65676b;
+    margin-top: 4px;
+}
+
+/* Facebook-style Ad Actions */
+.ad-actions {
+    padding: 8px 16px 12px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #e4e6eb;
+}
+
+.ad-actions .btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ad-actions .btn-primary {
+    background: #1877f2;
+    color: white;
+}
+
+.ad-actions .btn-primary:hover {
+    background: #166fe5;
+}
+
+.ad-actions .btn-success {
+    background: #42b72a;
+    color: white;
+}
+
+.ad-actions .btn-success:hover {
+    background: #36a420;
+}
+
+.ad-actions .btn-whatsapp {
+    background: #25D366;
+    color: white;
+}
+
+.ad-actions .btn-whatsapp:hover {
+    background: #128C7E;
+}
+
+/* Facebook-style Sponsored Label */
+.sponsored-label {
+    font-size: 12px;
+    color: #65676b;
+    font-weight: 400;
+}
+
+/* Ad Grid Layout (Facebook Feed Style) */
+.ads-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 0;
+}
+
+.flash {
+    padding: 1rem 1.5rem;
+    margin: 1rem 0;
+    border-radius: 12px;
+    font-weight: 600;
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.flash.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flash.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.flash.info {
+    background: #cce7ff;
+    color: var(--royal-blue);
+    border: 1px solid #b3d9ff;
+}
+
+.alert {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.alert-info {
+    background: #cce7ff;
+    color: var(--royal-blue);
+    border: 2px solid var(--royal-blue);
+}
+
+.success-page {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.success-message h2 {
+    color: var(--royal-blue);
+    margin-bottom: 1rem;
+}
+
+.success-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+footer {
+    background: linear-gradient(135deg, var(--dark-blue) 0%, var(--royal-blue) 100%);
+    color: var(--white);
+    text-align: center;
+    padding: 3rem 0;
+    margin-top: 0px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+}
+
+footer a {
+    color: var(--golden);
+    text-decoration: none;
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-images img {
+    display: block;
+    margin: 0 auto 10px;
+}
+
+.modal-description {
+    text-align: center;
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    nav a {
+        margin: 0 0.5rem;
+        font-size: 1rem;
+    }
+
+    .logo-container {
+        gap: 8px;
+    }
+
+    .logo-image {
+        height: 40px;
+    }
+
+    .logo-text {
+        font-size: 1.5rem;
+    }
+
+    .hero h2 {
+        font-size: 2rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .feature {
+        padding: 1.5rem;
+    }
+
+    .ad-form, .payment-form {
+        margin: 1rem auto;
+        padding: 1rem;
+        width: 95%;
+    }
+
+    .image-upload-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .upload-box {
+        height: 100px;
+    }
+
+    .admin-dashboard {
+        flex-direction: column;
+    }
+
+    .ads-section, .other-widgets, .batches-section, .gkach-section {
+        flex: none;
+        width: 100%;
+    }
+
+    .batch-carousel {
+        padding: 1rem 0;
+    }
+
+    .carousel-slide {
+        flex-direction: column;
+    }
+
+    .carousel-slide img {
+        width: 100%;
+        height: 200px;
+    }
+
+    .ad-details {
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .whatsapp-ad-card {
+        min-width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .ad-actions {
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .ad-actions .btn {
+        flex: 1;
+        min-width: auto;
+    }
+
+    .success-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .success-actions .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+        padding: 15px;
+    }
+
+    .modal-images {
+        flex-direction: column;
+    }
+
+    footer .container {
+        text-align: center;
+    }
+
+    footer p {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        background-color: #f0f2f5;
+    }
+
+    .container {
+        padding: 0;
+    }
+
+    .hero {
+        padding: 1.5rem 0;
+    }
+
+    .hero h2 {
+        font-size: 1.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .hero p {
+        font-size: 0.9rem;
+        padding: 0 0.5rem;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .ad-card, .batch-card {
+        padding: 1rem;
+    }
+
+    .carousel-prev, .carousel-next {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+
+    .carousel-prev {
+        left: 5px;
+    }
+
+    .carousel-next {
+        right: 5px;
+    }
+
+    /* Facebook-style Mobile Ad Cards */
+    .whatsapp-ad-card {
+        min-width: 100%;
+        max-width: 100%;
+        margin: 0 0 8px 0;
+        border-radius: 0;
+        box-shadow: none;
+        border-bottom: 8px solid #f0f2f5;
+    }
+
+    .whatsapp-ad-card:hover {
+        box-shadow: none;
+    }
+
+    /* Mobile Ad Header */
+    .ad-header {
+        padding: 12px;
+    }
+
+    .ad-header-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .ad-header-info h4 {
+        font-size: 14px;
+    }
+
+    .ad-header-info p {
+        font-size: 12px;
+    }
+
+    /* Mobile Ad Image */
+    .ad-image img {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        object-fit: cover;
+    }
+
+    /* Mobile Ad Text */
+    .ad-text {
+        padding: 12px;
+    }
+
+    .ad-text h4 {
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .ad-text p {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .ad-price {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .ad-meta {
+        font-size: 12px;
+    }
+
+    /* Mobile Ad Actions - Keep buttons horizontal */
+    .ad-actions {
+        padding: 8px 12px 12px;
+        gap: 6px;
+        flex-wrap: nowrap !important;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .ad-actions .btn {
+        flex: 0 0 auto;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        min-width: 40px;
+    }
+
+    .ad-actions p {
+        flex: 1;
+        margin: 0;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Mobile Ads Grid */
+    .ads-grid {
+        padding: 0;
+        gap: 0;
+        max-width: 100%;
+    }
+
+    .btn-icon {
+        padding: 6px;
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    nav a {
+        font-size: 1rem;
+        margin: 0 0.3rem;
+    }
+
+    .logo-image {
+        height: 40px;
+    }
+
+    /* Ensure full-width on mobile */
+    .features {
+        padding: 1rem 0;
+        background: #f0f2f5;
+    }
+}
+
+/* Extra small devices (iPhone SE, etc.) */
+@media (max-width: 375px) {
+    .ad-header-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .ad-header-info h4 {
+        font-size: 13px;
+    }
+
+    .ad-text h4 {
+        font-size: 14px;
+    }
+
+    .ad-text p {
+        font-size: 12px;
+    }
+
+    .ad-price {
+        font-size: 16px;
+    }
+
+    .ad-actions {
+        padding: 6px 10px 10px;
+        gap: 4px;
+    }
+
+    .ad-actions .btn {
+        padding: 7px 8px;
+        font-size: 12px;
+        min-width: 36px;
+    }
+
+    .ad-actions p {
+        font-size: 11px;
+    }
+}

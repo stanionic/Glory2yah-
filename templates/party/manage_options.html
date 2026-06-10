@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('party.index') }}">Fet yo</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('party.party_detail', party_id=party.party_id) }}">{{ party.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Jere Manje & Bwason</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">Jere Manje & Bwason - {{ party.name }}</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="row">
+                <!-- Food Options -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">🥗 Manje</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Add Food -->
+                            <form method="POST" class="mb-3">
+                                <input type="hidden" name="action" value="add_food">
+                                <div class="input-group">
+                                    <input type="text" name="food_name" class="form-control" placeholder="Add new food option..." required>
+                                    <button type="submit" class="btn btn-success">+ Ajoute</button>
+                                </div>
+                            </form>
+                            
+                            <!-- Food List -->
+                            <ul class="list-group">
+                                {% for food in food_options %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ food }}</span>
+                                    <div>
+                                        <!-- Update Button -->
+                                        <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editFoodModal{{ loop.index }}">
+                                            ✏️
+                                        </button>
+                                        <!-- Delete Form -->
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="action" value="remove_food">
+                                            <input type="hidden" name="food_name" value="{{ food }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
+                                        </form>
+                                    </div>
+                                    
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade" id="editFoodModal{{ loop.index }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Modifye Manje</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="POST">
+                                                    <input type="hidden" name="action" value="update_food">
+                                                    <input type="hidden" name="old_name" value="{{ food }}">
+                                                    <div class="modal-body">
+                                                        <input type="text" name="new_name" class="form-control" value="{{ food }}" required>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fèmen</button>
+                                                        <button type="submit" class="btn btn-primary">Sauve</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% else %}
+                                <li class="list-group-item text-muted">Pa gen manje ajoute</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Drink Options -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">🍹 Bwason</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Add Drink -->
+                            <form method="POST" class="mb-3">
+                                <input type="hidden" name="action" value="add_drink">
+                                <div class="input-group">
+                                    <input type="text" name="drink_name" class="form-control" placeholder="Add new drink option..." required>
+                                    <button type="submit" class="btn btn-primary">+ Ajoute</button>
+                                </div>
+                            </form>
+                            
+                            <!-- Drink List -->
+                            <ul class="list-group">
+                                {% for drink in drink_options %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ drink }}</span>
+                                    <div>
+                                        <!-- Update Button -->
+                                        <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editDrinkModal{{ loop.index }}">
+                                            ✏️
+                                        </button>
+                                        <!-- Delete Form -->
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="action" value="remove_drink">
+                                            <input type="hidden" name="drink_name" value="{{ drink }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
+                                        </form>
+                                    </div>
+                                    
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade" id="editDrinkModal{{ loop.index }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Modifye Bwason</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="POST">
+                                                    <input type="hidden" name="action" value="update_drink">
+                                                    <input type="hidden" name="old_name" value="{{ drink }}">
+                                                    <div class="modal-body">
+                                                        <input type="text" name="new_name" class="form-control" value="{{ drink }}" required>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fèmen</button>
+                                                        <button type="submit" class="btn btn-primary">Sauve</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% else %}
+                                <li class="list-group-item text-muted">Pa gen bwason ajoute</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-secondary">← Tounen nan fèt</a>
+                
+                <!-- Send Group Message Button -->
+                <a href="{{ url_for('party.send_group_message', party_id=party.party_id) }}" class="btn btn-success">
+                    <i class="fas fa-paper-plane"></i> Voye Mesaj Group
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

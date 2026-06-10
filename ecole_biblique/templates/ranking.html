@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    /* Correction pour l'affichage avec la navbar globale */
+    header .container {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    nav a {
+        color: white !important;
+    }
+    nav a:hover {
+        color: #FFD700 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4"><i class="fas fa-trophy text-warning"></i> Palmarès - Ecole Biblique MEGD-Haiti</h2>
+
+    <div class="row">
+        <!-- Classement par Cours -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0"><i class="fas fa-list-ol"></i> Klasman pa Kou</h3>
+                </div>
+                <div class="card-body">
+                    <select id="course-select" class="form-select mb-3">
+                        <option value="">Chwazi yon Kou</option>
+                        {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <div id="loading-spinner" class="text-center my-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Chaje...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Ap chaje rezilta yo...</p>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="course-ranking-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 15%">Ranje</th>
+                                    <th>Etidyan</th>
+                                    <th class="text-end">Mwayèn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JS -->
+                                <tr id="empty-course-msg">
+                                    <td colspan="3" class="text-center text-muted">Chwazi yon kou pou wè klasman an</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classement Général -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h3 class="h5 mb-0"><i class="fas fa-medal"></i> Klasman Jeneral</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 15%">Ranje</th>
+                                    <th>Etidyan</th>
+                                    <th class="text-end">Mwayèn Jeneral</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if overall_ranking %}
+                                    {% for student, avg in overall_ranking %}
+                                        <tr class="{% if loop.index == 1 %}table-warning fw-bold{% elif loop.index == 2 %}table-secondary fw-bold{% elif loop.index == 3 %}table-danger fw-bold{% endif %}">
+                                            <td class="text-center font-monospace">
+                                                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                                            </td>
+                                            <td>{{ student.full_name }}</td>
+                                            <td class="text-end">{{ "%.2f"|format(avg) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">Pa gen done disponib</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('course-select').addEventListener('change', function() {
+    const courseId = this.value;
+    const tbody = document.querySelector('#course-ranking-table tbody');
+    const spinner = document.getElementById('loading-spinner');
+    
+    if (courseId) {
+        // Show spinner, clear table
+        spinner.style.display = 'block';
+        tbody.innerHTML = '';
+        
+        fetch(`/ecole_biblique/api/grades/${courseId}`)
+            .then(response => response.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Pa gen nòt pou kou sa a</td></tr>';
+                    return;
+                }
+
+                data.sort((a, b) => (b.average || 0) - (a.average || 0));
+                
+                data.forEach((grade, index) => {
+                    let rankDisplay = index + 1;
+                    let rowClass = '';
+                    
+                    if (index === 0) {
+                        rankDisplay = '🥇';
+                        rowClass = 'table-warning fw-bold';
+                    } else if (index === 1) {
+                        rankDisplay = '🥈';
+                        rowClass = 'table-secondary fw-bold';
+                    } else if (index === 2) {
+                        rankDisplay = '🥉';
+                        rowClass = 'table-danger fw-bold'; // Using danger for bronze-ish look
+                    }
+
+                    const row = `<tr class="${rowClass}">
+                        <td class="text-center font-monospace">${rankDisplay}</td>
+                        <td>${grade.student}</td>
+                        <td class="text-end">${grade.average ? grade.average.toFixed(2) : 'N/A'}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(err => {
+                spinner.style.display = 'none';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Erè pandan chajman done yo</td></tr>';
+                console.error(err);
+            });
+    } else {
+        tbody.innerHTML = '<tr id="empty-course-msg"><td colspan="3" class="text-center text-muted">Chwazi yon kou pou wè klasman an</td></tr>';
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

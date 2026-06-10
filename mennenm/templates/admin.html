@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>🛠️ Admin Dashboard</h3>
+
+{% for d in drivers %}
+<div style="border:1px solid #ccc;padding:10px;margin:10px;">
+    <b>{{ d.name }}</b> — {{ d.phone }}
+
+    <form method="POST" style="display:inline;">
+        <input type="hidden" name="driver_id" value="{{ d.id }}">
+        {% if d.active %}
+            <input type="hidden" name="action" value="deactivate">
+            <button><i class="fa fa-ban"></i></button>
+        {% else %}
+            <input type="hidden" name="action" value="activate">
+            <button><i class="fa fa-check"></i></button>
+        {% endif %}
+    </form>
+</div>
+{% endfor %}
+
+{% endblock %}

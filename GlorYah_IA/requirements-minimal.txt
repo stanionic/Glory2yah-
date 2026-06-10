@@ -1,0 +1,15 @@
+# MANDEMMAPBAW - Minimal Requirements (without AI models)
+# Use this for testing the Flask app without AI functionality
+
+# Core Framework
+Flask==3.0.0
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+
+# Image Processing (for video generator - no ML)
+Pillow==10.0.0
+opencv-python==4.8.1.78
+numpy==1.24.3
+
+# Utilities
+python-dotenv==1.0.0

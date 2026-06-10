@@ -1,0 +1,93 @@
+# 📋 MANIFESTE - Dòk GlorYah
+
+## Structure complète du projet
+
+```
+dok_gloryah/
+│
+├── 📄 README.md              Documentation principale
+├── 📄 QUICKSTART.md          Guide de démarrage rapide
+├── 📄 TECHNICAL.md           Documentation technique
+├── 📄 LICENSE                Licence MIT + disclaimers médicaux
+├── 📄 requirements.txt       Dépendances Python
+├── 📄 .gitignore            Fichiers à ignorer (Git)
+├── 📄 .env.example          Configuration exemple
+│
+├── 🐍 app.py                 Application Flask principale
+├── 🐍 start.py               Script de lancement
+├── 🐍 test_app.py            Tests automatiques
+│
+├── 📁 templates/             Templates HTML
+│   └── index.html           Interface utilisateur
+│
+├── 📁 static/                Fichiers statiques
+│   └── style.css            Feuille de style CSS
+│
+└── 📁 ai/                    Module IA
+    ├── __init__.py          Initialisation du module
+    └── model.py             Moteur IA (DokGlorYahAI)
+```
+
+## 📦 Fichiers essentiels
+
+### Core (obligatoires)
+- ✅ app.py
+- ✅ templates/index.html
+- ✅ static/style.css
+- ✅ ai/model.py
+- ✅ requirements.txt
+
+### Documentation
+- ✅ README.md
+- ✅ QUICKSTART.md
+- ✅ TECHNICAL.md
+- ✅ LICENSE
+
+### Utilitaires
+- ✅ start.py (script de lancement)
+- ✅ test_app.py (tests automatiques)
+- ✅ .gitignore (pour Git)
+- ✅ .env.example (configuration)
+
+## 📊 Statistiques
+
+- **Fichiers total** : 14
+- **Lignes de code Python** : ~500
+- **Lignes de HTML** : ~200
+- **Lignes de CSS** : ~445
+- **Taille totale** : ~100 KB
+- **Dépendances** : 2 (Flask, Werkzeug)
+
+## 🚀 Pour démarrer
+
+```bash
+# Méthode 1 : Script de lancement
+python start.py
+
+# Méthode 2 : Direct
+python app.py
+
+# Méthode 3 : Tests d'abord
+python test_app.py && python app.py
+```
+
+## 📝 Checklist d'installation
+
+- [ ] Python 3.7+ installé
+- [ ] Dépendances installées (`pip install -r requirements.txt`)
+- [ ] Tous les fichiers présents
+- [ ] Tests passent (`python test_app.py`)
+- [ ] Application démarre (`python app.py`)
+- [ ] Accessible sur http://localhost:5000
+
+## 🎯 Version
+
+- **Version** : 1.0
+- **Date** : Janvier 2026
+- **Statut** : Production ready
+- **Compatibilité** : Python 3.7+
+
+---
+
+**Dòk GlorYah - Asistan Sante Entelijan**  
+Fèt ak kè pou Ayiti 🇭🇹

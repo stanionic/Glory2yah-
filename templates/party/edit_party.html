@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retounen
+    </a>
+    
+    <div class="edit-party-form">
+        <h2><i class="fas fa-edit"></i> Modifye Fè: {{ party.name }}</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="name">Non fè *</label>
+                <input type="text" id="name" name="name" required class="form-control" value="{{ party.name }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Deskripsyon</label>
+                <textarea id="description" name="description" class="form-control" rows="4">{{ party.description or '' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="date">Dat *</label>
+                <input type="date" id="date" name="date" required class="form-control" value="{{ party.date.strftime('%Y-%m-%d') }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Lokalizasyon</label>
+                <input type="text" id="location" name="location" class="form-control" value="{{ party.location or '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Pri (Gkach)</label>
+                <input type="number" id="price" name="price" class="form-control" value="{{ party.price }}" min="0">
+                <small class="text-muted">Mete 0 pou gratis</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="photo">Foto</label>
+                {% if party.photo %}
+                <div class="current-photo">
+                    <img src="{{ url_for('static', filename='uploads/' + party.photo) }}" alt="Current photo" class="img-thumbnail" style="max-width: 200px;">
+                    <p class="text-muted">Foto aktyèl</p>
+                </div>
+                {% endif %}
+                <input type="file" id="photo" name="photo" class="form-control" accept="image/*">
+                <small class="text-muted">Telechaje nouvo foto pou chanje</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Anregistre
+                </button>
+                <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-secondary">
+                    Anile
+                </a>
+            </div>
+        </form>
+        
+        <hr>
+        
+        <div class="delete-section">
+            <h3><i class="fas fa-trash"></i> Efase Fè</h3>
+            <p class="text-danger">Atansyon: Lè w efase fè a, tout moun ki enskri yo pral efase tou.</p>
+            <form method="POST" action="{{ url_for('party.delete_party', party_id=party.party_id) }}" onsubmit="return confirm('Èske w sikè vle efase fè sa a? Sa pral efase tout patisipan tou.');">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Efase Fè a
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .edit-party-form {
+        max-width: 600px;
+        margin: 20px auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .edit-party-form h2 {
+        margin-bottom: 20px;
+        color: #333;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: bold;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .delete-section {
+        margin-top: 30px;
+        padding: 20px;
+        background: #fff5f5;
+        border-radius: 5px;
+        border: 1px solid #ffcccc;
+    }
+    
+    .delete-section h3 {
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+    
+    .current-photo {
+        margin-bottom: 10px;
+    }
+    
+    .current-photo img {
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}

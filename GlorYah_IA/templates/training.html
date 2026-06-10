@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANDEMMAPBAW - Antrene AI a</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .training-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .training-section h2 {
+            color: #667eea;
+            margin-top: 0;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: #e7f3ff;
+            border-color: #667eea;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Retounen nan paj prensipal</a>
+        
+        <div class="header">
+            <h1>🎓 Antrene MANDEMMAPBAW</h1>
+            <p>Ede amelyore AI a! Soumèt egzanp pou antrene sistèm nan.</p>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="statImages">0</div>
+                <div class="stat-label">📷 Imaj</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statVideos">0</div>
+                <div class="stat-label">🎬 Videyo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statConversations">0</div>
+                <div class="stat-label">💬 Konvèsasyon</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statCode">0</div>
+                <div class="stat-label">💻 Kòd</div>
+            </div>
+        </div>
+        
+        <!-- Conversation Training (Most Important) -->
+        <div class="training-section">
+            <h2>💬 Soumèt Konvèsasyon</h2>
+            <p>Soumèt egzanp konvèsasyon pou ede AI a aprann!</p>
+            
+            <div class="form-group">
+                <label>Mesaj Itilizatè:</label>
+                <textarea id="userMessage" placeholder="Egzanp: Kijan pou m kreye yon sit wèb?"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Repons Atandi:</label>
+                <textarea id="expectedResponse" placeholder="Repons detaye an Kreyòl oswa Franse..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Kategori:</label>
+                <select id="conversationCategory">
+                    <option value="general">Jeneral</option>
+                    <option value="greeting">Salitasyon</option>
+                    <option value="help">Demann Èd</option>
+                    <option value="technical">Teknik</option>
+                    <option value="programming">Pwogramasyon</option>
+                    <option value="haiti">Ayiti/Kilti</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Lang:</label>
+                <select id="conversationLanguage">
+                    <option value="kreyol">Kreyòl</option>
+                    <option value="french">Franse</option>
+                    <option value="mixed">Melanje</option>
+                </select>
+            </div>
+            
+            <button class="submit-btn" onclick="submitConversation()">💬 Soumèt Konvèsasyon</button>
+            <div class="success-message" id="convSuccess"></div>
+            <div class="error-message" id="convError"></div>
+        </div>
+        
+        <!-- Code Training -->
+        <div class="training-section">
+            <h2>💻 Soumèt Kòd</h2>
+            <p>Pataje egzanp kòd pou amelyore jenerasyon kòd!</p>
+            
+            <div class="form-group">
+                <label>Demann/Prompt:</label>
+                <textarea id="codePrompt" placeholder="Egzanp: Kreye yon fonksyon Python pou adisyone 2 nonb"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Kòd:</label>
+                <textarea id="codeContent" placeholder="def add(a, b):
+    return a + b"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Langaj:</label>
+                <select id="codeLanguage">
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="java">Java</option>
+                    <option value="sql">SQL</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Deskripsyon (opsyonèl):</label>
+                <input type="text" id="codeDescription" placeholder="Fonksyon senp pou adisyone">
+            </div>
+            
+            <button class="submit-btn" onclick="submitCode()">🔧 Soumèt Kòd</button>
+            <div class="success-message" id="codeSuccess"></div>
+            <div class="error-message" id="codeError"></div>
+        </div>
+        
+        <div class="training-section">
+            <p style="text-align: center; color: #666;">
+                <strong>📌 Nòt:</strong> Tout egzanp ou soumèt yo pral revize anvan yo itilize pou antrene AI a.<br>
+                Mèsi pou kontribisyon ou! ❤️
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/training/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('statImages').textContent = data.stats.total_images || 0;
+                    document.getElementById('statVideos').textContent = data.stats.total_videos || 0;
+                    document.getElementById('statConversations').textContent = data.stats.total_conversations || 0;
+                    document.getElementById('statCode').textContent = data.stats.total_code || 0;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // Submit conversation
+        async function submitConversation() {
+            const userMessage = document.getElementById('userMessage').value.trim();
+            const expectedResponse = document.getElementById('expectedResponse').value.trim();
+            const category = document.getElementById('conversationCategory').value;
+            const language = document.getElementById('conversationLanguage').value;
+            
+            if (!userMessage || !expectedResponse) {
+                showError('convError', 'Tanpri ranpli mesaj ak repons');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/training/submit-conversation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_message: userMessage,
+                        expected_response: expectedResponse,
+                        category: category,
+                        language: language
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('convSuccess', 'Konvèsasyon soumèt avèk siksè! Mèsi! 🎉');
+                    document.getElementById('userMessage').value = '';
+                    document.getElementById('expectedResponse').value = '';
+                    loadStats();
+                } else {
+                    showError('convError', data.error || 'Erè nan soumèt konvèsasyon');
+                }
+            } catch (error) {
+                showError('convError', 'Erè nan koneksyon');
+            }
+        }
+        
+        // Submit code
+        async function submitCode() {
+            const prompt = document.getElementById('codePrompt').value.trim();
+            const code = document.getElementById('codeContent').value.trim();
+            const language = document.getElementById('codeLanguage').value;
+            const description = document.getElementById('codeDescription').value.trim();
+            
+            if (!prompt || !code) {
+                showError('codeError', 'Tanpri ranpli prompt ak kòd la');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/training/submit-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        code: code,
+                        language: language,
+                        description: description
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('codeSuccess', 'Kòd soumèt avèk siksè! Mèsi! 🎉');
+                    document.getElementById('codePrompt').value = '';
+                    document.getElementById('codeContent').value = '';
+                    document.getElementById('codeDescription').value = '';
+                    loadStats();
+                } else {
+                    showError('codeError', data.error || 'Erè nan soumèt kòd');
+                }
+            } catch (error) {
+                showError('codeError', 'Erè nan koneksyon');
+            }
+        }
+        
+        function showSuccess(id, message) {
+            const el = document.getElementById(id);
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+        
+        function showError(id, message) {
+            const el = document.getElementById(id);
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+        
+        // Load stats on page load
+        loadStats();
+    </script>
+</body>
+</html>

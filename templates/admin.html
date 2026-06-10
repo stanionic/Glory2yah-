@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Panno Administratè Glory2yahPub</h2>
+    
+    <!-- Facebook Connection Test -->
+    <div class="facebook-section">
+        <a href="{{ url_for('test_facebook_connection') }}" class="btn btn-blue">
+            <i class="fab fa-facebook"></i> Teste Koneksyon Facebook
+        </a>
+        <a href="{{ url_for('show_facebook_batch_results') }}" class="btn btn-gold">
+            <i class="fas fa-chart-bar"></i> Wè Dènye Rezilta Facebook
+        </a>
+    </div>
+
+    <!-- Video Demo Section -->
+    <div class="video-demo-section">
+        <h3>📹 Videyo Demo Glory2YahPub</h3>
+        <div class="video-actions">
+            <a href="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" download class="btn btn-gold">
+                <i class="fas fa-download"></i> Telechaje Videyo Demo
+            </a>
+            <button onclick="shareToFacebook()" class="btn btn-blue">
+                <i class="fab fa-facebook"></i> Pataje sou Facebook
+            </button>
+            <button onclick="shareToWhatsApp()" class="btn btn-green">
+                <i class="fab fa-whatsapp"></i> Pataje sou WhatsApp
+            </button>
+        </div>
+        <div class="video-preview">
+            <video controls width="320" height="240">
+                <source src="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+
+    <div class="admin-dashboard">
+        <div class="ads-section">
+            <div class="admin-section">
+                <h3>Revizyon Piblisite</h3>
+
+                <div class="ads-list">
+                    {% for ad in ads %}
+                    <div class="ad-card">
+                        <div class="ad-images">
+                            {% for image in ad.images.split(',') %}
+                            <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Piblisite Imaj">
+                            {% endfor %}
+                        </div>
+
+                        <div class="ad-info">
+                            <p><strong>WhatsApp:</strong> {{ ad.user_whatsapp }}</p>
+                            <p><strong>Deskripsyon:</strong> {{ ad.description }}</p>
+                            <p><strong>Estati:</strong> {{ ad.admin_status }}</p>
+                            <p><strong>Pèman:</strong> {{ ad.payment_status }}</p>
+
+                            {% if ad.payment_proof %}
+                            <p><strong>Prèv Pèman:</strong>
+                                <a href="{{ url_for('static', filename='uploads/' + ad.payment_proof) }}" target="_blank">
+                                    Wè Prèv
+                                </a>
+                            </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="ad-actions">
+                            <form method="POST" action="{{ url_for('update_ad_status') }}">
+                                <input type="hidden" name="ad_id" value="{{ ad.ad_id }}">
+                                <select name="status" required>
+                                    <option value="under_review" {% if ad.admin_status == 'under_review' %}selected{% endif %}>An Revizyon</option>
+                                    <option value="approved" {% if ad.admin_status == 'approved' %}selected{% endif %}>Apwouve</option>
+                                    <option value="rejected" {% if ad.admin_status == 'rejected' %}selected{% endif %}>Rejte</option>
+                                </select>
+                                <select name="payment_status" required>
+                                    <option value="pending" {% if ad.payment_status == 'pending' %}selected{% endif %}>Pèman an Atann</option>
+                                    <option value="verified" {% if ad.payment_status == 'verified' %}selected{% endif %}>Pèman Verifye</option>
+                                    <option value="rejected" {% if ad.payment_status == 'rejected' %}selected{% endif %}>Pèman Rejte</option>
+                                </select>
+                                <button type="submit" class="btn btn-blue">Mete Ajou</button>
+                            </form>
+
+                            <form method="POST" action="{{ url_for('delete_ad', ad_id=ad.ad_id) }}"
+                                  onsubmit="return confirm('Èske w sèten w vle efase piblisite sa?')">
+                                <button type="submit" class="btn btn-danger">Efase</button>
+                            </form>
+
+                            {% if ad.admin_status == 'approved' %}
+                            <a href="{{ url_for('download_csv', ad_id=ad.ad_id) }}" class="btn btn-gold" target="_blank">
+                                📄 Telechaje CSV
+                            </a>
+                            <form method="POST" action="{{ url_for('publish_ad_to_facebook', ad_id=ad.ad_id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-blue" title="Pibliye sou Facebook">
+                                    <i class="fab fa-facebook"></i> Pibliye Facebook
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <a href="https://wa.me/{{ ad.user_whatsapp }}?text=Ey%20Admin..." class="btn btn-whatsapp" target="_blank">
+                                📱 Ey Admin...
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="other-widgets">
+            <div class="batches-section">
+                <div class="admin-section">
+                    <h3>Jesyon Gwoup</h3>
+                    <form method="POST" action="{{ url_for('create_batch') }}">
+                        <button type="submit" class="btn btn-gold">Kreye Nouvo Gwoup (5 Piblisite)</button>
+                    </form>
+
+                    <div class="batches-grid">
+                        {% for batch in batches %}
+                        <div class="batch-card">
+                            <h4>{{ batch.batch_id }}</h4>
+                            <p>Piblisite: {{ batch.ads.count(',') + 1 }}/5</p>
+                            <p>Pataj: {{ batch.share_count }}</p>
+                            <p>Rekonpans: {{ batch.click_rewards }} klike</p>
+                            <div class="batch-actions">
+                                <a href="{{ url_for('view_batch', batch_id=batch.batch_id) }}" class="btn btn-blue">Wè Gwoup</a>
+                                <a href="{{ url_for('edit_batch', batch_id=batch.batch_id) }}" class="btn btn-green">Modifye Gwoup</a>
+                                <button onclick="copyBatchLink('{{ batch.batch_id }}')" class="btn btn-gold">Kopi Lyen</button>
+                                <form method="POST" action="{{ url_for('publish_batch_to_facebook', batch_id=batch.batch_id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-blue" title="Pibliye gwoup sou Facebook">
+                                        <i class="fab fa-facebook"></i> Pibliye Facebook
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('delete_batch', batch_id=batch.batch_id) }}"
+                                      onsubmit="return confirm('Èske w sèten w vle efase gwoup sa?')">
+                                    <button type="submit" class="btn btn-danger">Efase</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="gkach-section">
+                <div class="admin-section">
+                    <h3>Jesyon Gkach</h3>
+
+                    <div class="rate-setting">
+                        <form method="POST" action="{{ url_for('manage_gkach') }}">
+                            <input type="hidden" name="action" value="set_rate">
+                            <label for="currency">Lajan:</label>
+                            <select name="currency" id="currency" required>
+                                <option value="HTG">HTG (Gourde)</option>
+                                <option value="USD">USD (Dollar)</option>
+                            </select>
+                            <label for="rate">Taux pou 1 Gkach:</label>
+                            <input type="number" name="rate" id="rate" step="0.01" min="0.01" placeholder="Egzamp: 50.00" required>
+                            <button type="submit" class="btn btn-gold">Mete Ajou Taux</button>
+                        </form>
+                    </div>
+
+                    <h4>Itilizatè ak Balans Gkach</h4>
+
+                    {% for user in users_gkach %}
+                    <div class="user-gkach-card">
+                        <div class="user-header">
+                            <h5>{{ user.user_whatsapp }}</h5>
+                            <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;" onsubmit="return confirm('Èske ou sèten ou vle efase itilizatè sa a?')">
+                                <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                <input type="hidden" name="action" value="delete_user">
+                                <button type="submit" class="btn btn-delete">Efase Itilizatè</button>
+                            </form>
+                        </div>
+                        <p><strong>Balans Gkach:</strong> {{ user.gkach_balance }}</p>
+
+                        {% if user.gkach_requests %}
+                            {% set requests = user.gkach_requests | fromjson %}
+                            {% for req in requests %}
+                                {% if req.status == 'pending' %}
+                                <div class="pending-request">
+                                    <p><strong>Demann Pandan:</strong> {{ req.amount }} Gkach</p>
+                                    <p><strong>Dat:</strong> {{ req.requested_at }}</p>
+                                    {% if req.document %}
+                                    <p><strong>Dokiman:</strong> <a href="{{ url_for('static', filename='uploads/' + req.document) }}" target="_blank">Wè Dokiman</a></p>
+                                    <div class="request-actions">
+                                        <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
+                                            <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                            <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                            <input type="hidden" name="action" value="approve_request">
+                                            <button type="submit" class="btn btn-success">Apwouve</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
+                                            <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                            <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                            <input type="hidden" name="action" value="reject_request">
+                                            <button type="submit" class="btn btn-danger">Rejte</button>
+                                        </form>
+                                    </div>
+                                    {% else %}
+                                    <p style="color: red;">Pa gen dokiman apwobasyon. Apwobasyon pa disponib.</p>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        <div class="balance-actions">
+                            <div class="edit-balance">
+                                <form method="POST" action="{{ url_for('manage_gkach') }}">
+                                    <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                    <input type="hidden" name="action" value="edit_balance">
+                                    <input type="number" name="amount" placeholder="Nouvo balans" min="0" required>
+                                    <button type="submit" class="btn btn-edit">Modifye Balans</button>
+                                </form>
+                            </div>
+                            <div class="add-balance">
+                                <form method="POST" action="{{ url_for('manage_gkach') }}">
+                                    <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                    <input type="hidden" name="action" value="add_balance">
+                                    <input type="number" name="amount" placeholder="Kantite Gkach" min="1" required>
+                                    <button type="submit" class="btn btn-blue">Ajoute Balans</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if not users_gkach %}
+                    <p>Pa gen itilizatè Gkach pou montre.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.facebook-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.facebook-section .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.video-demo-section {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.video-demo-section h3 {
+    color: #000;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.video-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.video-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.video-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.video-preview {
+    display: flex;
+    justify-content: center;
+}
+
+.video-preview video {
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .facebook-section {
+        flex-direction: column;
+    }
+
+    .facebook-section .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .video-actions {
+        flex-direction: column;
+    }
+
+    .video-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+function copyBatchLink(batchId) {
+    const batchUrl = `${window.location.origin}/batch/${batchId}`;
+    navigator.clipboard.writeText(batchUrl).then(() => {
+        alert('Lyen gwoup kopye nan clipboard!');
+    }).catch(err => {
+        console.error('Erè nan kopye lyen:', err);
+        alert('Erè nan kopye lyen.');
+    });
+}
+
+function shareToFacebook() {
+    const videoUrl = `${window.location.origin}/static/glory2yahpub_demo.mp4`;
+    const message = encodeURIComponent('📹 Dekouvri Glory2YahPub - Platfòm Piblisite #1 nan Ayiti! Vande ak achte ak Gkach (Lajan Virtual). Telechaje aplikasyon an kounye a!\n\n#Glory2YahPub #Ayiti #Biznis');
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}&quote=${message}`;
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+}
+
+function shareToWhatsApp() {
+    const videoUrl = `${window.location.origin}/static/glory2yahpub_demo.mp4`;
+    const message = `📹 Dekouvri Glory2YahPub - Platfòm Piblisite #1 nan Ayiti!\n\nVande ak achte ak Gkach (Lajan Virtual).\nTelechaje aplikasyon an kounye a!\n\nVideyo Demo: ${videoUrl}\n\n#Glory2YahPub #Ayiti #Biznis`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+</script>
+{% endblock %}

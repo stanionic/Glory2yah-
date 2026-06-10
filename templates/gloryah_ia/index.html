@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>GlorYah IA - Asistan Entelijan</title>
+<style>
+    .gloryah-ia-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .gloryah-ia-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        animation: headerGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes headerGlow {
+        0%, 100% {
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        50% {
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+    }
+
+    .gloryah-ia-header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .gloryah-ia-header h1 i {
+        animation: robotFloat 2s ease-in-out infinite;
+    }
+
+    @keyframes robotFloat {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+    }
+
+    .gloryah-ia-header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+    }
+
+    .chat-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+        animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-messages {
+        height: 400px;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .message {
+        margin-bottom: 15px;
+        padding: 12px 18px;
+        border-radius: 20px;
+        max-width: 80%;
+        animation: messageSlide 0.3s ease-out;
+        transition: all 0.3s ease;
+    }
+
+    @keyframes messageSlide {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .message:hover {
+        transform: scale(1.02);
+    }
+
+    .message.user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+    }
+
+    .message.ai {
+        background: white;
+        color: #333;
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .message.ai::before {
+        content: '🤖';
+        margin-right: 8px;
+        font-size: 1.2em;
+    }
+
+    .chat-input-container {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+    }
+
+    .chat-input {
+        flex: 1;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 30px;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        outline: none;
+    }
+
+    .chat-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .send-btn {
+        padding: 15px 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .send-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .send-btn:active {
+        transform: scale(0.95);
+    }
+
+    .send-btn i {
+        transition: transform 0.3s ease;
+    }
+
+    .send-btn:hover i {
+        transform: translateX(3px);
+    }
+
+    .typing-indicator {
+        display: none;
+        padding: 15px 20px;
+        color: #666;
+        font-style: italic;
+    }
+
+    .typing-indicator.active {
+        display: block;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 0.5;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .feature-card i {
+        font-size: 2.5em;
+        color: #667eea;
+        margin-bottom: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover i {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .feature-card h3 {
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .feature-card p {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .gloryah-ia-header h1 {
+            font-size: 1.8em;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            height: 300px;
+        }
+
+        .message {
+            max-width: 90%;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Scrollbar Styling */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 4px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #764ba2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gloryah-ia-container">
+    <div class="gloryah-ia-header">
+        <h1>
+            <i class="fas fa-robot"></i>
+            GlorYah IA
+        </h1>
+        <p>Asistan Entelijan ou - Pale avè m, mwen la pou ede w!</p>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+                Bonjou! Mwen se GlorYah IA, asistan entelijan ou. Kijan mwen ka ede w jodi a?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            GlorYah IA ap ekri...
+        </div>
+
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ekri mesaj ou a isit la..." maxlength="500">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+                Voye
+            </button>
+        </div>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <i class="fas fa-brain"></i>
+            <h3>Entelijans</h3>
+            <p>Mwen konprann kesyon ou yo epi mwen bay repons ki adapte</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-bolt"></i>
+            <h3>Rapid</h3>
+            <p>Repons san rete, disponib 24/7 pou ou</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-shield-alt"></i>
+            <h3>An Sekirite</h3>
+            <p>Enfòmasyon ou yo pwoteje epi konfidansyèl</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-heart"></i>
+            <h3>Amikal</h3>
+            <p>Yon eksperyans chita pale kòm ak yon zanmi</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Allow sending message with Enter key
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        addMessage(message, 'user');
+        chatInput.value = '';
+
+        // Show typing indicator
+        typingIndicator.classList.add('active');
+
+        // Simulate AI response (replace with actual API call)
+        setTimeout(() => {
+            typingIndicator.classList.remove('active');
+            
+            // Simple response logic (replace with actual AI integration)
+            let response = generateResponse(message);
+            addMessage(response, 'ai');
+        }, 1500);
+    }
+
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+        messageDiv.textContent = text;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function generateResponse(message) {
+        const lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.includes('bonjou') || lowerMessage.includes('salut')) {
+            return 'Bonjou! Kijan mwen ka ede w jodi a?';
+        } else if (lowerMessage.includes('kijan') || lowerMessage.includes('koman')) {
+            return 'Mwen byen, mèsi! E ou menm? Kisa ou vle konnen sou Glory2YahPub?';
+        } else if (lowerMessage.includes('gkach') || lowerMessage.includes('lajan')) {
+            return 'Gkach se monnen virtuel nou an. Ou ka achte Gkach pou fè piblisite oubyen achte pwodwi sou platfòm nan. Ou vle konnen kijan pou achte Gkach?';
+        } else if (lowerMessage.includes('piblisite') || lowerMessage.includes('ad')) {
+            return 'Ou ka soumèt piblisite ou sou platfòm nan. Sèlman 3 imaj ak yon deskripsyon, epi administratè a pral revize l. Ou vle konnen plis?';
+        } else if (lowerMessage.includes('mèsi') || lowerMessage.includes('mesi')) {
+            return 'Pa gen pwoblèm! Mwen la pou ede w. Gen lòt kesyon?';
+        } else {
+            return 'Mwen konprann. Pou plis enfòmasyon sou sèvis nou yo, ou ka kontakte administratè a nan +50942882076 oubyen vizite paj Admin la.';
+        }
+    }
+
+    // Focus input on page load
+    window.addEventListener('load', () => {
+        chatInput.focus();
+    });
+</script>
+{% endblock %}

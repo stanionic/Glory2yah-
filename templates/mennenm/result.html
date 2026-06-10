@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="mennenm-result">
+        <h2>🚕 Chofè Ki Pi Pre W</h2>
+        
+        {% if driver %}
+        <div class="driver-card">
+            <div class="driver-photo">
+                {% if driver.photo %}
+                <img src="{{ url_for('static', filename='uploads/' + driver.photo) }}" alt="{{ driver.name }}">
+                {% else %}
+                <div class="no-photo">👤</div>
+                {% endif %}
+            </div>
+            
+            <div class="driver-info">
+                <h3>{{ driver.name }}</h3>
+                <p class="phone"><i class="fas fa-phone"></i> {{ driver.phone }}</p>
+                <p class="status {% if driver.active %}active{% else %}inactive{% endif %}">
+                    {% if driver.active %}✅ Disponib{% else %}❌ Pa disponib{% endif %}
+                </p>
+            </div>
+            
+            <div class="driver-actions">
+                <a href="https://wa.me/{{ driver.phone.replace('+', '') }}?text={{ 'Bonjou, mwen jwenn ou nan Mennen M. Mwen nan adrès sa a: ' + address + '. Èske ou disponib pou vini pran mwen?' | urlencode }}" 
+                   class="btn btn-success btn-block" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Kontakte Chofè a
+                </a>
+            </div>
+        </div>
+        
+        <div class="location-info">
+            <h4>📍 Detay Lokasyon</h4>
+            <p><strong>Adrès ou:</strong> {{ address }}</p>
+            <p><strong>Koòdone:</strong> {{ "%.4f"|format(client_lat) }}, {{ "%.4f"|format(client_lon) }}</p>
+        </div>
+        {% else %}
+        <div class="no-driver">
+            <p>❌ Pa gen chofè disponib kounye a.</p>
+            <a href="{{ url_for('mennenm_index') }}" class="btn btn-primary">Eseye Ankò</a>
+        </div>
+        {% endif %}
+        
+        <div class="back-link">
+            <a href="{{ url_for('mennenm_index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retounen
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.mennenm-result {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.mennenm-result h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+.driver-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.driver-photo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #28a745;
+}
+
+.driver-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-photo {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    background: #f0f0f0;
+}
+
+.driver-info h3 {
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.driver-info .phone {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.driver-info .status {
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.driver-info .status.active {
+    color: #28a745;
+}
+
+.driver-info .status.inactive {
+    color: #dc3545;
+}
+
+.driver-actions {
+    margin-top: 1.5rem;
+}
+
+.location-info {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.location-info h4 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.location-info p {
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.no-driver {
+    text-align: center;
+    padding: 3rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.no-driver p {
+    font-size: 1.2rem;
+    color: #dc3545;
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    text-align: center;
+}
+</style>
+{% endblock %}

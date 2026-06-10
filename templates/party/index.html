@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>🎉 Fèt yo</h1>
+        <div class="header-buttons">
+            <a href="{{ url_for('party.reconnect') }}" class="btn btn-secondary">
+                <i class="fas fa-key"></i> Konekte
+            </a>
+            <a href="{{ url_for('party.create_party') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Kreye Fèt
+            </a>
+        </div>
+    </div>
+    
+    {% if parties %}
+        <div class="parties-grid">
+            {% for party in parties %}
+            <div class="party-card">
+                {% if party.photo %}
+                <img src="{{ url_for('static', filename='uploads/' + party.photo) }}" alt="{{ party.name }}" class="party-photo">
+                {% else %}
+                <div class="party-photo-placeholder">
+                    <i class="fas fa-birthday-cake"></i>
+                </div>
+                {% endif %}
+                
+                <div class="party-info">
+                    <h2>{{ party.name }}</h2>
+                    <p class="party-date"><i class="fas fa-calendar"></i> {{ party.date.strftime('%d/%m/%Y') }}</p>
+                    {% if party.location %}
+                    <p class="party-location"><i class="fas fa-map-marker-alt"></i> {{ party.location }}</p>
+                    {% endif %}
+                    {% if party.description %}
+                    <p class="party-description">{{ party.description[:100] }}...</p>
+                    {% endif %}
+                    <p class="party-price">
+                        {% if party.price > 0 %}
+                            <i class="fas fa-coins"></i> {{ party.price }} Gkach
+                        {% else %}
+                            <span class="free">Gratis</span>
+                        {% endif %}
+                    </p>
+                    <div class="party-actions">
+                        <a href="{{ url_for('party.party_detail', party_id=party.party_id) }}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Wè Detay
+                        </a>
+                        <button class="btn btn-share" onclick="shareParty('{{ party.party_id }}', '{{ party.name }}')">
+                            <i class="fas fa-share-alt"></i> Pataje
+                        </button>
+                    </div>
+                    <!-- Owner actions (hidden by default, shown via JS) -->
+                    <div class="owner-actions" id="owner-actions-{{ party.party_id }}" style="display: none;">
+                        <a href="{{ url_for('party.edit_party', party_id=party.party_id) }}" class="btn btn-owner">
+                            <i class="fas fa-edit"></i> Modifye
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-birthday-cake"></i>
+            <p>Pa gen fètnenyen pou kounye a.</p>
+            <p>Tornen pita!</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .parties-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .party-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .party-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .party-photo {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .party-photo-placeholder {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #ff6b6b, #ffa500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .party-photo-placeholder i {
+        font-size: 64px;
+        color: white;
+    }
+    
+    .party-info {
+        padding: 15px;
+    }
+    
+    .party-info h2 {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .party-date, .party-location {
+        color: #666;
+        margin: 5px 0;
+    }
+    
+    .party-description {
+        color: #888;
+        font-size: 0.9rem;
+        margin: 10px 0;
+    }
+    
+    .party-price {
+        font-weight: bold;
+        color: #ff6b6b;
+        font-size: 1.1rem;
+    }
+    
+    .party-price .free {
+        color: #28a745;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #ffa500;
+        margin-bottom: 20px;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+    }
+    
+    .header-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #ff6b6b, #ffa500);
+        color: white;
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    }
+    
+    .party-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .btn-share {
+        background: #25D366;
+        color: white;
+        border: none;
+    }
+    
+    .btn-share:hover {
+        background: #20BD5A;
+    }
+    
+    .btn-owner {
+        background: #007bff;
+        color: white;
+        margin-top: 10px;
+    }
+    
+    .btn-owner:hover {
+        background: #0056b3;
+    }
+</style>
+
+<script>
+function shareParty(partyId, partyName) {
+    var partyUrl = window.location.origin + '/party/' + partyId;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: partyName,
+            text: 'Vini patisipe nan fè: ' + partyName,
+            url: partyUrl
+        }).catch(function(err) { console.log('Error sharing:', err); });
+    } else {
+        navigator.clipboard.writeText(partyUrl).then(function() {
+            alert('Lyen fèt la kopye! Ou ka li tape l nan men ou yo.');
+        }).catch(function(err) {
+            prompt('Kopye lyen fè a:', partyUrl);
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var partyCards = document.querySelectorAll('[id^="owner-actions-"]');
+    partyCards.forEach(function(card) {
+        var partyId = card.id.replace('owner-actions-', '');
+        fetch('/party/api/' + partyId + '/is_owner')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.is_owner) {
+                    card.style.display = 'block';
+                }
+            })
+            .catch(function(error) { console.error('Error checking ownership:', error); });
+    });
+});
+</script>
+{% endblock %}

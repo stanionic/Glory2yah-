@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Bank - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🏦 Admin Bank</h1>
+            <p class="lead">Jere sistèm prè ak envestisman</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">⏳ Prè An Atant</h5>
+                    <h3 class="mb-0">{{ pending_loans }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">✅ Prè Aktif</h5>
+                    <h3 class="mb-0">{{ active_loans }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">📈 Envestisman Aktif</h5>
+                    <h3 class="mb-0">{{ total_investments }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Loan Applications -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Dènye Demann Prè</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Dat</th>
+                                    <th>Itilizatè</th>
+                                    <th>Pwodwi</th>
+                                    <th>Kantite</th>
+                                    <th>Rezon</th>
+                                    <th>Status</th>
+                                    <th>Aksyon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in recent_loans %}
+                                <tr>
+                                    <td>{{ loan.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ loan.user.pseudo or loan.user.whatsapp }}</td>
+                                    <td>{{ loan.product.name }}</td>
+                                    <td>{{ loan.amount }} Gkach</td>
+                                    <td>{{ loan.purpose[:50] }}...</td>
+                                    <td>
+                                        {% if loan.status == 'pending' %}
+                                        <span class="badge bg-warning">An atant</span>
+                                        {% elif loan.status == 'active' %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% elif loan.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejte</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if loan.status == 'pending' %}
+                                        <form method="POST" action="{{ url_for('admin_approve_loan', loan_id=loan.loan_id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-success btn-sm">Apwouve</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin_reject_loan', loan_id=loan.loan_id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-danger btn-sm">Rejte</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Pa gen demann prè resan.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">← Retounen nan Admin</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

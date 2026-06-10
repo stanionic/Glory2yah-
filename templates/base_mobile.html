@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e40af">
+    <title>{% block title %}Glory2YahPub{% endblock %}</title>
+    
+    <!-- Preload logo -->
+    <link rel="preload" href="{{ url_for('static', filename='images/logo.png') }}" as="image">
+    
+    <style>
+        /* ========================================
+           MODERN MOBILE-FIRST CSS SYSTEM
+           Facebook + TikTok + AliExpress Hybrid
+        ======================================== */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            /* Logo Colors - Royal Blue + Gold */
+            --primary: #1e40af;
+            --primary-dark: #1e3a8a;
+            --primary-light: #3b82f6;
+            --accent: #daa520;
+            --accent-light: #ffc700;
+            
+            /* Neutrals */
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --text: #1a1a1a;
+            --text-secondary: #65676b;
+            --border: #e4e6eb;
+            
+            /* Semantic */
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            /* Radius */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            
+            /* Z-index */
+            --z-nav: 1000;
+            --z-modal: 2000;
+            --z-toast: 3000;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            overflow-x: hidden;
+            padding-bottom: 70px; /* Space for bottom nav */
+        }
+        
+        /* ========================================
+           HEADER - Auto-hiding on scroll
+        ======================================== */
+        .app-header {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: var(--space-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: var(--z-nav);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .app-header.hidden {
+            transform: translateY(-100%);
+        }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-decoration: none;
+        }
+        
+        .header-logo img {
+            height: 32px;
+            width: auto;
+        }
+        
+        .header-logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+        
+        .header-icon-btn {
+            position: relative;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .header-icon-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        /* ========================================
+           BOTTOM NAVIGATION - Mobile App Style
+        ======================================== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: var(--space-sm) 0;
+            z-index: var(--z-nav);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: var(--space-sm);
+            text-decoration: none;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            transition: transform 0.2s;
+        }
+        
+        .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Create button special style */
+        .nav-item.create-btn {
+            position: relative;
+            top: -10px;
+        }
+        
+        .nav-item.create-btn .nav-icon {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* ========================================
+           MAIN CONTENT AREA
+        ======================================== */
+        .main-content {
+            min-height: calc(100vh - 140px);
+            padding-bottom: var(--space-lg);
+        }
+        
+        /* ========================================
+           FLASH MESSAGES - Modern Toast Style
+        ======================================== */
+        .flash-messages {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: var(--z-toast);
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .flash-message {
+            background: var(--surface);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .flash-message.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .flash-message.error {
+            border-left: 4px solid var(--error);
+        }
+        
+        .flash-message.info {
+            border-left: 4px solid var(--primary);
+        }
+        
+        .flash-icon {
+            font-size: 24px;
+        }
+        
+        .flash-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .flash-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* ========================================
+           LOADING STATES
+        ======================================== */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* ========================================
+           UTILITY CLASSES
+        ======================================== */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 var(--space-md);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        /* ========================================
+           RESPONSIVE
+        ======================================== */
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 0;
+            }
+            
+            .bottom-nav {
+                display: none;
+            }
+            
+            .app-header {
+                position: relative;
+            }
+            
+            .main-content {
+                padding-bottom: var(--space-xl);
+            }
+        }
+        
+        /* ========================================
+           SMOOTH SCROLLING
+        ======================================== */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* ========================================
+           CUSTOM BLOCKS
+        ======================================== */
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header" id="appHeader">
+        <a href="{{ url_for('index') }}" class="header-logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Glory2YahPub">
+            <span class="header-logo-text">Glory2YahPub</span>
+        </a>
+        
+        <div class="header-actions">
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('view_cart') }}" class="header-icon-btn">
+                <span>🛒</span>
+                <span class="badge" id="cartBadge">0</span>
+            </a>
+            <a href="{{ url_for('gkach_wallet') }}" class="header-icon-btn">
+                <span>🪙</span>
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-accent" style="padding: 8px 16px; font-size: 12px;">
+                Konekte
+            </a>
+            {% endif %}
+        </div>
+    </header>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages" id="flashMessages">
+            {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+                <span class="flash-icon">
+                    {% if category == 'success' %}✅
+                    {% elif category == 'error' %}❌
+                    {% else %}ℹ️{% endif %}
+                </span>
+                <span class="flash-text">{{ message }}</span>
+                <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Akèy</span>
+        </a>
+        
+        <a href="{{ url_for('marketplace') }}" class="nav-item {% if request.endpoint == 'marketplace' %}active{% endif %}">
+            <span class="nav-icon">🏪</span>
+            <span class="nav-label">Mache</span>
+        </a>
+        
+        <a href="{{ url_for('submit_ad') }}" class="nav-item create-btn">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">Kreye</span>
+        </a>
+        
+        <a href="#" class="nav-item">
+            <span class="nav-icon">🔔</span>
+            <span class="nav-label">Notif</span>
+        </a>
+        
+        <a href="{% if session.get('user_id') %}{{ url_for('gkach_wallet') }}{% else %}{{ url_for('login') }}{% endif %}" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Pwofil</span>
+        </a>
+    </nav>
+    
+    <!-- JavaScript -->
+    <script>
+        // Auto-hide header on scroll (TikTok style)
+        let lastScroll = 0;
+        const header = document.getElementById('appHeader');
+        
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            if (currentScroll > lastScroll && currentScroll > 100) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+            
+            lastScroll = currentScroll;
+        });
+        
+        // Auto-dismiss flash messages
+        setTimeout(() => {
+            const flashMessages = document.getElementById('flashMessages');
+            if (flashMessages) {
+                flashMessages.style.animation = 'slideDown 0.3s ease reverse';
+                setTimeout(() => flashMessages.remove(), 300);
+            }
+        }, 5000);
+        
+        // Update cart badge
+        function updateCartBadge() {
+            fetch('/api/cart/count')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('cartBadge');
+                    if (badge && data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'block';
+                    }
+                })
+                .catch(() => {});
+        }
+        
+        // Call on page load
+        if (document.getElementById('cartBadge')) {
+            updateCartBadge();
+        }
+        
+        {% block extra_js %}{% endblock %}
+    </script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="tchat-header">
+        <h2>💬 Tchat Ave M</h2>
+        <p class="subtitle">Kominike ak administratè a dirèkteman</p>
+    </div>
+
+    <div class="tchat-container">
+        <div class="admin-info">
+            <div class="admin-avatar">👨‍💼</div>
+            <div class="admin-details">
+                <h3>Administratè Glory2YahPub</h3>
+                <p>Disponib pou ede ou</p>
+            </div>
+        </div>
+
+        <div class="contact-options">
+            <h4>Chwazi yon mwayen pou kontakte nou:</h4>
+            
+            <a href="https://wa.me/50942882076?text={{ 'Bonjou, mwen gen yon kesyon sou Glory2YahPub.' | urlencode }}" 
+               class="contact-btn whatsapp" target="_blank">
+                <i class="fab fa-whatsapp"></i>
+                <span>Kontakte pa WhatsApp</span>
+            </a>
+
+            <div class="or-divider">- OU BYEN -</div>
+
+            <div class="message-form">
+                <h4>Voye yon mesaj dirèkteman:</h4>
+                <form id="messageForm">
+                    <div class="form-group">
+                        <input type="text" id="name" name="name" placeholder="Non ou" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="phone" name="phone" placeholder="Nimewo WhatsApp ou" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" name="message" rows="4" placeholder="Ekri mesaj ou a isit la..." required class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-paper-plane"></i> Voye Mesaj
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="faq-section">
+            <h4>Kesyon ki poze souvan:</h4>
+            <div class="faq-item">
+                <details>
+                    <summary>Kijan mwen ka achte Gkach?</summary>
+                    <p>Al nan paj "Achte GKach" epi suiv enstriksyon yo. Ou ka peye atravè Moncash oswa Natcash.</p>
+                </details>
+            </div>
+            <div class="faq-item">
+                <details>
+                    <summary>Kijan mwen ka fè yon piblisite?</summary>
+                    <p>Klike sou "Fè Piblisite W" nan meni an, ranpli fòm lan ak upload 3 imaj oubyen yon videyo.</p>
+                </details>
+            </div>
+            <div class="faq-item">
+                <details>
+                    <summary>Kijan mwen ka jwenn yon chofè taksi?</summary>
+                    <p>Itilize bouton "Mennen M" nan meni an pou jwenn yon chofè pre ou.</p>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tchat-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.tchat-header h2 {
+    color: #333;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.tchat-header .subtitle {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.tchat-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.admin-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.admin-avatar {
+    font-size: 3rem;
+}
+
+.admin-details h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.admin-details p {
+    margin: 0.25rem 0 0;
+    color: #28a745;
+    font-size: 0.9rem;
+}
+
+.contact-options {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.contact-options h4 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.contact-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.contact-btn.whatsapp {
+    background: #25d366;
+    color: white;
+}
+
+.contact-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.or-divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.message-form {
+    margin-top: 1.5rem;
+}
+
+.message-form h4 {
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+}
+
+.faq-section {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.faq-section h4 {
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.faq-item {
+    margin-bottom: 1rem;
+}
+
+.faq-item details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.faq-item summary {
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+}
+
+.faq-item p {
+    margin: 0.75rem 0 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Success message styling */
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+</style>
+
+<script>
+document.getElementById('messageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('name').value;
+    const phone = document.getElementById('phone').value;
+    const message = document.getElementById('message').value;
+    
+    // Create WhatsApp message
+    const fullMessage = `Nouvo mesaj sou Glory2YahPub:\n\nNon: ${name}\nNimewo: ${phone}\n\nMesaj:\n${message}`;
+    const whatsappUrl = `https://wa.me/50942882076?text=${encodeURIComponent(fullMessage)}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
+    
+    // Show success message
+    const form = document.getElementById('messageForm');
+    form.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> Mesaj ou a pare pou voye! WhatsApp ap ouvri kounye a.</div>';
+});
+</script>
+{% endblock %}

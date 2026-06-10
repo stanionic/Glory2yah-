@@ -1,0 +1,23 @@
+# MANDEMMAPBAW - Basic Requirements (NO AI, NO TORCH)
+# Use this to test the Flask backend without any AI functionality
+
+# Core Framework ONLY
+Flask==3.0.0
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+Werkzeug==3.0.1
+
+# For video generator (simple animations, no ML)
+Pillow==10.0.0
+numpy==1.24.3
+opencv-python==4.8.1.78
+
+# Configuration
+python-dotenv==1.0.0
+
+# Production server
+gunicorn==21.2.0
+
+# Web Search functionality
+requests==2.31.0
+beautifulsoup4==4.12.2

@@ -1,0 +1,67 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block eb_content %}
+<h2>Admin Dashboard</h2>
+
+<h3>Users</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>WhatsApp</th>
+            <th>Role</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.whatsapp }}</td>
+                <td>{{ user.role }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Courses</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Teacher</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for course in courses %}
+            <tr>
+                <td>{{ course.id }}</td>
+                <td>{{ course.name }}</td>
+                <td>{{ course.teacher.full_name }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Students</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>WhatsApp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+            <tr>
+                <td>{{ student.id }}</td>
+                <td>{{ student.full_name }}</td>
+                <td>{{ student.whatsapp }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

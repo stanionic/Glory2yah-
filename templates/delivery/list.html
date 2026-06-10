@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Livrezon mwen yo - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-8">Livrezon mwen yo</h1>
+
+    {% if deliveries %}
+    <div class="space-y-4">
+        {% for delivery in deliveries %}
+        <a href="{{ url_for('delivery.view', delivery_id=delivery.delivery_id) }}" class="block bg-white rounded-2xl p-4 shadow-sm border border-gray-100 tap-scale">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID: {{ delivery.delivery_id[:8] }}</span>
+                    <h3 class="font-bold text-sm mt-1">
+                        {% if delivery.buyer_whatsapp == current_user.whatsapp %}
+                            Acha nan men {{ delivery.seller_whatsapp }}
+                        {% else %}
+                            Vant bay {{ delivery.buyer_whatsapp }}
+                        {% endif %}
+                    </h3>
+                </div>
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase
+                    {% if delivery.status == 'completed' %}bg-green-100 text-green-600
+                    {% elif delivery.status == 'negotiating' %}bg-yellow-100 text-yellow-600
+                    {% elif delivery.status == 'awaiting_delivery' %}bg-blue-100 text-blue-600
+                    {% else %}bg-gray-100 text-gray-600{% endif %}">
+                    {{ delivery.status }}
+                </span>
+            </div>
+            
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar text-gray-300 text-xs"></i>
+                    <span class="text-xs text-gray-500">{{ delivery.created_at }}</span>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-400 font-medium">Total</p>
+                    <p class="font-bold text-primary">{{ delivery.total_price + delivery.delivery_cost }} Gkach</p>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-3xl p-12 text-center border border-gray-100">
+        <div class="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200 text-3xl">
+            <i class="fas fa-truck"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Pa gen livrezon</h3>
+        <p class="text-gray-400 text-sm">Ou pa gen okenn livrezon ki ankou kounye a.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

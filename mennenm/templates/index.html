@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>📍 Où veux-tu aller ?</h3>
+
+<form method="POST">
+    <input type="text" name="address" placeholder="Entre ta destination" required style="width:100%;padding:10px;">
+    <br><br>
+    <button>
+        <i class="fa fa-search"></i>
+    </button>
+</form>
+
+<br>
+<a href="/register">
+    <button><i class="fa fa-user-plus"></i></button>
+</a>
+
+{% endblock %}

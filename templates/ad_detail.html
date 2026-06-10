@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.product-detail-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.product-gallery {
+    position: sticky;
+    top: 20px;
+}
+
+.main-image {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.thumbnail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+.thumbnail {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.thumbnail:hover, .thumbnail.active {
+    border-color: #e82e04;
+}
+
+.product-info h1 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.product-price {
+    font-size: 32px;
+    color: #e82e04;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.product-description {
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.btn-primary {
+    flex: 1;
+    padding: 15px;
+    background: #e82e04;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: #d62603;
+}
+
+.btn-secondary {
+    flex: 1;
+    padding: 15px;
+    background: #25d366;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-secondary:hover {
+    background: #128c7e;
+}
+
+.share-section {
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.share-section h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.share-link-box {
+    display: flex;
+    gap: 10px;
+}
+
+.share-link-box input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.share-link-box button {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.related-products {
+    margin-top: 60px;
+}
+
+.related-products h2 {
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.related-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.related-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.related-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.related-card-info {
+    padding: 15px;
+}
+
+.related-card-info h4 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.related-card-info .price {
+    color: #e82e04;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .product-gallery {
+        position: static;
+    }
+}
+</style>
+
+<div class="product-detail-container">
+    <div class="product-grid">
+        <div class="product-gallery">
+            {% if ad.media_type == 'video' %}
+                <video id="mainVideo" class="main-image" controls>
+                    <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
+                </video>
+            {% else %}
+                <img id="mainImage" class="main-image" src="{{ url_for('static', filename='uploads/' + images[0]) }}" alt="{{ ad.title }}">
+                <div class="thumbnail-grid">
+                    {% for img in images %}
+                    <img class="thumbnail {% if loop.first %}active{% endif %}" 
+                         src="{{ url_for('static', filename='uploads/' + img) }}" 
+                         onclick="changeImage('{{ url_for('static', filename='uploads/' + img) }}', this)">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="product-info">
+            <h1>{{ ad.title }}</h1>
+            <div class="product-price">{{ ad.price_gkach }} Gkach</div>
+            <div class="product-description">{{ ad.description }}</div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="addToCart('{{ ad.ad_id }}')">
+                    <i class="fas fa-shopping-cart"></i> Ajoute nan Panier
+                </button>
+                <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + ad.title) | urlencode }}" 
+                   class="btn-secondary" target="_blank">
+                    <i class="fab fa-whatsapp"></i> Kontakte Vandè
+                </a>
+            </div>
+
+            {% if current_user %}
+            <div class="share-section">
+                <h3><i class="fas fa-share-alt"></i> Pataje & Jwenn Rekonpans</h3>
+                <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                    Pataje lyen sa a. Chak 100 klik → 10 Gkach. Chak vant → 2% komisyon!
+                </p>
+                <div class="share-link-box">
+                    <input type="text" id="referralLink" readonly>
+                    <button onclick="copyReferralLink()"><i class="fas fa-copy"></i> Kopye</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if related_ads %}
+    <div class="related-products">
+        <h2>Pwodwi Similè</h2>
+        <div class="related-grid">
+            {% for rel_ad in related_ads %}
+            <div class="related-card" onclick="location.href='{{ url_for('ad_detail', ad_id=rel_ad.ad_id) }}'">
+                {% if rel_ad.images %}
+                <img src="{{ url_for('static', filename='uploads/' + rel_ad.images.split(',')[0]) }}" alt="{{ rel_ad.title }}">
+                {% endif %}
+                <div class="related-card-info">
+                    <h4>{{ rel_ad.title }}</h4>
+                    <div class="price">{{ rel_ad.price_gkach }} Gkach</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function changeImage(src, thumb) {
+    document.getElementById('mainImage').src = src;
+    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+    thumb.classList.add('active');
+}
+
+function addToCart(adId) {
+    {% if current_user %}
+        window.location.href = '{{ url_for("shopping_cart", ad_id="") }}' + adId;
+    {% else %}
+        alert('Konekte pou ajoute nan panier');
+        window.location.href = '{{ url_for("login") }}';
+    {% endif %}
+}
+
+{% if current_user %}
+fetch('{{ url_for("get_referral_link", ad_id=ad.ad_id) }}')
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('referralLink').value = data.link;
+        }
+    });
+
+function copyReferralLink() {
+    const input = document.getElementById('referralLink');
+    input.select();
+    document.execCommand('copy');
+    alert('Lyen kopye! Pataje l pou jwenn rekonpans.');
+}
+{% endif %}
+</script>
+
+{% endblock %}

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#002366">
+    <title>{% block title %}Glory2YahPub{% endblock %}</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="/static/images/logo.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/g2y-app.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="g2y-body">
+
+    <!-- ═══ TOP HEADER ═══ -->
+    <header class="g2y-header" id="appHeader">
+        <div class="g2y-header-inner">
+            <a href="/" class="g2y-logo">
+                <img src="/static/images/logo.png" alt="Glory2YahPub" class="g2y-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <span class="g2y-logo-fallback" style="display:none">G2Y</span>
+            </a>
+
+            <!-- Search bar (center) -->
+            <div class="g2y-search-wrap">
+                <form action="/search" method="GET" class="g2y-search-form">
+                    <span class="g2y-search-icon">🔍</span>
+                    <input type="text" name="q" placeholder="Chèche..." class="g2y-search-input" value="{{ request.args.get('q','') }}">
+                </form>
+            </div>
+
+            <!-- Header right actions -->
+            <div class="g2y-header-actions">
+                {% if current_user and current_user.is_authenticated %}
+                    <a href="/gkach/wallet" class="g2y-gkach-badge" title="Balans Gkach">
+                        <span class="g2y-coin">🪙</span>
+                        <span class="g2y-gkach-val" id="headerGkach">...</span>
+                    </a>
+                    <a href="/cart/" class="g2y-icon-btn" title="Panyen">
+                        <span>🛒</span>
+                        {% if cart_count and cart_count > 0 %}
+                        <span class="g2y-badge">{{ cart_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="/auth/profile" class="g2y-avatar-btn">
+                        {% if current_user.profile_photo %}
+                        <img src="/static/uploads/{{ current_user.profile_photo }}" alt="Pwofil" class="g2y-avatar-sm">
+                        {% else %}
+                        <span class="g2y-avatar-initials">{{ (current_user.pseudo or current_user.name or 'U')[0].upper() }}</span>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <a href="/auth/login" class="g2y-btn-outline-sm">Konekte</a>
+                    <a href="/auth/register" class="g2y-btn-primary-sm">Enskri</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══ FLASH MESSAGES ═══ -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="g2y-toasts" id="toastContainer">
+            {% for category, message in messages %}
+            <div class="g2y-toast g2y-toast-{{ category }}">
+                <span>{% if category == 'success' %}✅{% elif category == 'error' %}❌{% else %}ℹ️{% endif %}</span>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="g2y-main" id="mainContent">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ═══ MODERN STICKY BOTTOM NAV (TikTok/Facebook style) ═══ -->
+    <nav class="modern-bottom-nav" id="bottomNav">
+        <a href="{{ url_for('main.index') }}" class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}" data-label="Akèy">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Akèy</span>
+        </a>
+        <a href="{{ url_for('marketplace.index') }}" class="nav-item {% if 'marketplace' in request.endpoint %}active{% endif %}" data-label="Mache">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-label">Mache</span>
+        </a>
+        <button class="nav-item nav-services" onclick="toggleServicesMenu()" data-label="Sèvis">
+            <span class="nav-icon">🚀</span>
+            <span class="nav-label">Sèvis</span>
+        </button>
+        <a href="{{ url_for('cart.index') }}" class="nav-item {% if 'cart' in request.endpoint %}active{% endif %}" data-label="Panyen">
+            <span class="nav-icon">🛍️</span>
+            <span class="nav-label">Panyen</span>
+            {% if cart_count and cart_count > 0 %}
+            <span class="notification-badge" id="cartBadge">{{ cart_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('auth.profile') }}" class="nav-item {% if 'auth' in request.endpoint or 'gkach' in request.endpoint %}active{% endif %}" data-label="Pwofil">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Pwofil</span>
+        </a>
+    </nav>
+
+    <!-- ═══ SERVICES POPUP MENU ═══ -->
+    <div class="services-popup" id="servicesPopup" style="display:none">
+        <div class="services-overlay" onclick="toggleServicesMenu()"></div>
+        <div class="services-panel">
+            <div class="services-header">
+                <h3>🚀 Sèvis yo</h3>
+                <button class="services-close" onclick="toggleServicesMenu()">✕</button>
+            </div>
+            <div class="services-grid">
+                <a href="/fet" class="service-item">
+                    <span class="service-icon">🎉</span>
+                    <span class="service-name">Fèt</span>
+                    <span class="service-desc">Kreye envitasyon</span>
+                </a>
+                <a href="/konferans" class="service-item">
+                    <span class="service-icon">📹</span>
+                    <span class="service-name">Konferans</span>
+                    <span class="service-desc">Reyinyon videyo</span>
+                </a>
+                <a href="/ecole_biblique" class="service-item">
+                    <span class="service-icon">🎓</span>
+                    <span class="service-name">Lekòl Biblik</span>
+                    <span class="service-desc">Etidye Bib</span>
+                </a>
+                <a href="/student_registration_platform" class="service-item">
+                    <span class="service-icon">📚</span>
+                    <span class="service-name">Enskripsyon</span>
+                    <span class="service-desc">Enskri lekòl</span>
+                </a>
+                <a href="/dok" class="service-item">
+                    <span class="service-icon">🏥</span>
+                    <span class="service-name">Dòk GlorYah</span>
+                    <span class="service-desc">Konsèy sante</span>
+                </a>
+                <a href="/GlorYah_IA" class="service-item">
+                    <span class="service-icon">🤖</span>
+                    <span class="service-name">GlorYah IA</span>
+                    <span class="service-desc">Zouti AI</span>
+                </a>
+                <a href="/mennenm" class="service-item">
+                    <span class="service-icon">🚗</span>
+                    <span class="service-name">Mennenm</span>
+                    <span class="service-desc">Jwenn chofè</span>
+                </a>
+                <a href="/admin" class="service-item">
+                    <span class="service-icon">⚙️</span>
+                    <span class="service-name">Admin</span>
+                    <span class="service-desc">Jesyon</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ STORY FULLSCREEN MODAL ═══ -->
+    <div class="g2y-story-modal" id="storyModal" style="display:none">
+        <div class="g2y-story-overlay" onclick="closeStory()"></div>
+        <div class="g2y-story-viewer">
+            <div class="g2y-story-progress" id="storyProgress"></div>
+            <button class="g2y-story-close" onclick="closeStory()">✕</button>
+            <div class="g2y-story-content" id="storyContent"></div>
+            <div class="g2y-story-info" id="storyInfo"></div>
+            <button class="g2y-story-prev" onclick="prevStory()">‹</button>
+            <button class="g2y-story-next" onclick="nextStory()">›</button>
+        </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+    <script src="/static/js/g2y-app.js"></script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+    // Auto-dismiss toasts
+    setTimeout(() => {
+        document.querySelectorAll('.g2y-toast').forEach(t => {
+            t.style.animation = 'toastOut 0.4s ease forwards';
+            setTimeout(() => t.remove(), 400);
+        });
+    }, 4000);
+
+    // Load Gkach balance in header
+    {% if current_user and current_user.is_authenticated %}
+    fetch('/api/gkach/balance').then(r => r.json()).then(d => {
+        const el = document.getElementById('headerGkach');
+        if (el && d.balance !== undefined) el.textContent = d.balance;
+    }).catch(() => {});
+    {% endif %}
+
+    // Hide header on scroll down, show on scroll up (TikTok style)
+    let lastScroll = 0;
+    const header = document.getElementById('appHeader');
+    window.addEventListener('scroll', () => {
+        const current = window.scrollY;
+        if (current > lastScroll && current > 80) {
+            header.classList.add('g2y-header-hidden');
+        } else {
+            header.classList.remove('g2y-header-hidden');
+        }
+        lastScroll = current;
+    }, { passive: true });
+    </script>
+
+<!-- ═══ MODERN BOTTOM NAVIGATION STYLES ═══ -->
+<style>
+/* Modern Bottom Navigation */
+.modern-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #65676b;
+    transition: all 0.3s ease;
+    padding: 4px 8px;
+    border-radius: 12px;
+    min-width: 50px;
+    position: relative;
+    flex: 1;
+}
+
+.nav-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #667eea;
+    border-radius: 50%;
+}
+
+.nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+    transition: all 0.3s ease;
+}
+
+.nav-item.active .nav-icon {
+    transform: scale(1.1);
+}
+
+.nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1;
+}
+
+.nav-services {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    border-radius: 16px;
+    padding: 8px 12px;
+    margin: 0 4px;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    transform: scale(1.05);
+    border: none;
+    cursor: pointer;
+}
+
+.nav-services:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.nav-services .nav-icon {
+    font-size: 22px;
+    margin-bottom: 3px;
+}
+
+.nav-services .nav-label {
+    font-weight: 700;
+    font-size: 11px;
+}
+
+/* Services Popup */
+.services-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.services-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.services-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.services-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.services-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.services-close {
+    background: #f0f2f5;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    color: #65676b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.services-close:hover {
+    background: #e4e6eb;
+    transform: rotate(90deg);
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.service-item {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 16px;
+    padding: 16px 12px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.service-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.service-item:active {
+    transform: translateY(-2px);
+}
+
+.service-icon {
+    font-size: 36px;
+}
+
+.service-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.service-desc {
+    font-size: 11px;
+    color: #65676b;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .services-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+    
+    .service-item {
+        padding: 12px 8px;
+    }
+    
+    .service-icon {
+        font-size: 32px;
+    }
+    
+    .service-name {
+        font-size: 12px;
+    }
+    
+    .service-desc {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .services-panel {
+        padding: 16px;
+    }
+    
+    .services-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    
+    .service-item {
+        padding: 10px 6px;
+        border-radius: 12px;
+    }
+    
+    .service-icon {
+        font-size: 28px;
+    }
+    
+    .service-name {
+        font-size: 11px;
+    }
+    
+    .service-desc {
+        font-size: 9px;
+    }
+}
+
+/* Notification Badge */
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 8px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.2;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+    animation: pulse 2s infinite;
+}
+
+.notification-badge:empty {
+    display: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Active tab animations */
+.nav-item.active {
+    animation: tabActivate 0.4s ease;
+}
+
+@keyframes tabActivate {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Touch feedback */
+.nav-item:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+.nav-create:active {
+    transform: scale(0.95);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .nav-icon {
+        font-size: 18px;
+    }
+    
+    .nav-label {
+        font-size: 9px;
+    }
+    
+    .nav-create {
+        padding: 6px 10px;
+        margin: 0 2px;
+    }
+    
+    .nav-create .nav-icon {
+        font-size: 20px;
+    }
+    
+    .nav-create .nav-label {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .nav-label {
+        display: none;
+    }
+    
+    .nav-item {
+        min-width: 40px;
+        padding: 8px 4px;
+    }
+    
+    .nav-icon {
+        font-size: 20px;
+        margin-bottom: 0;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .modern-bottom-nav {
+        background: rgba(28, 28, 30, 0.95);
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-item {
+        color: #989b9e;
+    }
+    
+    .nav-item:hover {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+    }
+    
+    .nav-item.active {
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.25);
+    }
+}
+
+/* Haptic feedback simulation */
+.nav-item {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth transitions for better UX */
+.nav-item {
+    will-change: transform, background, color;
+}
+
+/* Loading state for nav items */
+.nav-item.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.nav-item.loading .nav-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<!-- ═══ NOTIFICATION SYSTEM ═══ -->
+<script>
+// Update cart count
+function updateCartCount() {
+    fetch('/api/cart/count')
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('cartBadge');
+            if (badge && data.count > 0) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.style.display = 'block';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(() => {});
+}
+
+// Update cart count on load and when items are added
+document.addEventListener('DOMContentLoaded', () => {
+    updateCartCount();
+});
+
+// Listen for cart updates
+window.addEventListener('cartUpdated', () => {
+    updateCartCount();
+});
+
+// Add haptic feedback for mobile
+if ('vibrate' in navigator) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            navigator.vibrate(10);
+        });
+    });
+}
+
+// Smooth scroll behavior for navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        const href = item.getAttribute('href');
+        if (href.includes('#')) {
+            e.preventDefault();
+            const targetId = href.split('#')[1];
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Update active state
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+            }
+        }
+    });
+});
+
+// Hide/show bottom nav on scroll (like TikTok)
+let lastScrollNav = 0;
+const bottomNav = document.getElementById('bottomNav');
+
+window.addEventListener('scroll', () => {
+    const currentScroll = window.scrollY;
+    
+    if (currentScroll > lastScrollNav && currentScroll > 100) {
+        // Scrolling down
+        bottomNav.style.transform = 'translateY(100%)';
+    } else {
+        // Scrolling up
+        bottomNav.style.transform = 'translateY(0)';
+    }
+    
+    lastScrollNav = currentScroll;
+}, { passive: true });
+
+// Add smooth transition for bottom nav
+bottomNav.style.transition = 'transform 0.3s ease';
+
+// Toggle services menu
+function toggleServicesMenu() {
+    const popup = document.getElementById('servicesPopup');
+    if (popup.style.display === 'none' || !popup.style.display) {
+        popup.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+            navigator.vibrate(10);
+        }
+    } else {
+        popup.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Close services menu on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const popup = document.getElementById('servicesPopup');
+        if (popup && popup.style.display !== 'none') {
+            toggleServicesMenu();
+        }
+    }
+});
+</script>
+
+</body>
+</html>

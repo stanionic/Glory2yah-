@@ -1,0 +1,754 @@
+
+ming  drecor<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room.room_name }} - Konferans</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Light theme for Konferans room */
+        body {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+        }
+
+        /* Correction pour l'affichage avec la navbar globale */
+        header .container {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            background-color: #ffffff !important;
+        }
+        nav a {
+            color: #007bff !important;
+            text-decoration: none !important;
+        }
+        nav a:hover {
+            color: #0056b3 !important;
+        }
+
+        .card {
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        .card-header {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+
+        #videoContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .video-wrapper {
+            position: relative;
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            color: #212529;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+            border: 1px solid #dee2e6;
+        }
+
+        #chatContainer {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #ffffff;
+        }
+        .chat-message {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .chat-message.own {
+            background: #e3f2fd;
+            color: #1565c0;
+            text-align: right;
+        }
+        .chat-message.other {
+            background: #f8f9fa;
+            color: #212529;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3 !important;
+            border-color: #0056b3 !important;
+        }
+        .btn-secondary {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+            color: white !important;
+        }
+        .btn-danger {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+        .btn-info {
+            background-color: #17a2b8 !important;
+            border-color: #17a2b8 !important;
+            color: white !important;
+        }
+        .btn-warning {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+
+        .recording-indicator {
+            color: #dc3545;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .alert {
+            background-color: #d1ecf1 !important;
+            color: #0c5460 !important;
+            border-color: #bee5eb !important;
+        }
+
+        .list-group-item {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border: 1px solid #dee2e6 !important;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="logo-container" title="Glory2Yah">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Glory2Yah" class="logo-image">
+            </a>
+            <nav>
+                <a href="{{ url_for('index') }}" title="Akèy"><i class="fas fa-home"></i></a>
+                <a href="{{ url_for('achte') }}" title="Achte"><i class="fas fa-shopping-cart"></i></a>
+                <a href="{{ url_for('achte_gkach') }}" title="Achte GKach"><i class="fas fa-dollar-sign"></i></a>
+                <a href="{{ url_for('submit_ad') }}" title="Fè Piblisite W"><i class="fas fa-bullhorn"></i></a>
+                <a href="{{ url_for('konferans.index') }}" title="Konferans"><i class="fas fa-video"></i></a>
+                <a href="{{ url_for('ecole_biblique.ranking') }}" title="🏫 Palmarès"><i class="fas fa-graduation-cap"></i></a>
+                <a href="{{ url_for('admin') }}" title="Administratè"><i class="fas fa-user-shield"></i></a>
+            </nav>
+        </div>
+    </header>
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div id="roomNameContainer">
+                        <h3 id="roomNameDisplay">{{ room.room_name }}</h3>
+                        {% if is_owner %}
+                        <button id="editRoomNameBtn" class="btn btn-sm btn-outline-primary ms-2" title="Modifye non sal">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div id="recordingStatus" style="display: none;">
+                        <span class="recording-indicator"><i class="fas fa-circle"></i> Anrejistreman ap mache</span>
+                    </div>
+                </div>
+
+                <div id="videoContainer">
+                    <!-- Videos will be added here dynamically -->
+                </div>
+
+                <div class="controls justify-content-center">
+                    <div class="btn-group me-2" title="Chanje Kalite Videyo">
+                        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-cog"></i> <span class="d-none d-md-inline">Kalite</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="changeQuality('low')"><i class="fas fa-signal text-warning"></i> Eko (360p)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeQuality('hd')"><i class="fas fa-tv text-primary"></i> HD (720p)</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="changeQuality('uhd')"><i class="fas fa-film text-success"></i> UHD (1080p)</a></li>
+                        </ul>
+                    </div>
+                    <button id="toggleVideo" class="btn btn-primary" title="Aktive/Dezaktive Kamera">
+                        <i class="fas fa-video"></i> Video
+                    </button>
+                    <button id="toggleAudio" class="btn btn-primary" title="Aktive/Dezaktive Mikwo">
+                        <i class="fas fa-microphone"></i> Odio
+                    </button>
+                    {% if is_owner %}
+                    <button id="startRecording" class="btn btn-danger" title="Kòmanse anrejistreman">
+                        <i class="fas fa-circle"></i> <span class="d-none d-md-inline">Anrejistre</span>
+                    </button>
+                    <button id="stopRecording" class="btn btn-secondary" style="display: none;" title="Sispann anrejistreman">
+                        <i class="fas fa-stop"></i> <span class="d-none d-md-inline">Sispann</span>
+                    </button>
+                    <button id="shareScreen" class="btn btn-info" title="Pataje ekran">
+                        <i class="fas fa-desktop"></i> <span class="d-none d-md-inline">Pataje</span>
+                    </button>
+                    {% endif %}
+                    <button id="leaveRoom" class="btn btn-danger ms-auto" title="Kite sal la">
+                        <i class="fas fa-sign-out-alt"></i> <span class="d-none d-md-inline">Kite</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-comments"></i> Chat</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chatContainer">
+                            <!-- Chat messages will appear here -->
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="chatInput" class="form-control" placeholder="Tape mesaj ou...">
+                            <button id="sendChat" class="btn btn-primary" title="Voye mesaj">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-users"></i> Patisipan yo</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul id="participantsList" class="list-group">
+                            <!-- Participants will be listed here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
+    <script>
+        const roomId = '{{ room.room_id }}';
+        const userName = '{{ user_name }}';
+        const isOwner = {{ is_owner|tojson }};
+        const socket = io();
+
+        const videoContainer = document.getElementById('videoContainer');
+        const chatContainer = document.getElementById('chatContainer');
+        const participantsList = document.getElementById('participantsList');
+        
+        let localStream;
+        const peers = {}; // sid -> SimplePeer instance
+
+        const qualityProfiles = {
+            low: {
+                video: { width: { ideal: 320, max: 480 }, height: { ideal: 240, max: 360 }, frameRate: { ideal: 15, max: 15 }, facingMode: "user" },
+                label: '<i class="fas fa-signal"></i> Mode Économique activé (Faible débit)',
+                class: 'alert-info'
+            },
+            hd: {
+                video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: "user" },
+                label: '<i class="fas fa-tv"></i> Mode HD (720p)',
+                class: 'alert-primary'
+            },
+            uhd: {
+                video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 }, facingMode: "user" },
+                label: '<i class="fas fa-film"></i> Mode UHD (1080p)',
+                class: 'alert-success'
+            }
+        };
+
+        // Initialize User Media with Low Bandwidth Constraints
+        const constraints = {
+            video: qualityProfiles.low.video,
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        };
+
+        let currentQuality = 'low';
+
+        async function changeQuality(level) {
+            if (currentQuality === level) return;
+            
+            try {
+                const profile = qualityProfiles[level];
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: profile.video,
+                    audio: true
+                });
+
+                const oldVideoTrack = localStream.getVideoTracks()[0];
+                const newVideoTrack = newStream.getVideoTracks()[0];
+
+                // Replace track for all existing peers
+                for (let peerId in peers) {
+                    const p = peers[peerId].peer;
+                    p.replaceTrack(oldVideoTrack, newVideoTrack, localStream);
+                }
+
+                // Update local stream
+                localStream.removeTrack(oldVideoTrack);
+                localStream.addTrack(newVideoTrack);
+                oldVideoTrack.stop(); // Stop old camera
+
+                // Update local video preview
+                const localVideoWrapper = document.getElementById('video-local');
+                if (localVideoWrapper) {
+                    const video = localVideoWrapper.querySelector('video');
+                    if (video) video.srcObject = localStream;
+                }
+
+                // Update Status Indicator
+                const statusDiv = document.getElementById('qualityStatus');
+                if (statusDiv) {
+                    statusDiv.className = `alert ${profile.class} py-1 px-2 mt-2`;
+                    statusDiv.innerHTML = profile.label;
+                }
+
+                currentQuality = level;
+                console.log(`Switched to ${level} quality`);
+
+            } catch (err) {
+                console.error("Error switching quality:", err);
+                alert("Erè: Kamera pa sipòte kalite sa a oubyen li pa aksesib.");
+            }
+        }
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                localStream = stream;
+                addVideoStream('local', stream, userName + " (Ou)");
+                
+                // Add "Low Data Mode" indicator
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'qualityStatus';
+                statusDiv.className = 'alert alert-info py-1 px-2 mt-2';
+                statusDiv.style.fontSize = '0.8rem';
+                statusDiv.innerHTML = '<i class="fas fa-signal"></i> Mode Économique activé (Faible débit)';
+                document.querySelector('.col-md-9').insertBefore(statusDiv, document.getElementById('videoContainer'));
+
+                // Emit join event AFTER getting media
+                socket.emit('join', { room_id: roomId, user_name: userName });
+            })
+            .catch(err => {
+                console.error("Error accessing media:", err);
+                alert("Erè: Pa ka jwenn aksè ak kamera/mikwofòn. Tanpri verifye pèmisyon yo.");
+            });
+
+        // --- Socket Events ---
+
+        socket.on('all_users', (users) => {
+            console.log('Received existing users:', users);
+            users.forEach(user => {
+                createPeer(user.sid, socket.id, true);
+            });
+        });
+
+        socket.on('user_joined_signal', (payload) => {
+            console.log('Received signal from:', payload.caller_id);
+            const item = peers[payload.caller_id];
+            
+            if (item) {
+                item.peer.signal(payload.signal);
+            } else {
+                // New incoming connection
+                const p = createPeer(payload.caller_id, socket.id, false);
+                p.signal(payload.signal);
+            }
+        });
+
+        socket.on('user_joined', (data) => {
+            console.log('New user joined:', data);
+            addChatMessage('System', `${data.user_name} rantre nan sal la`);
+            // We don't create peer here; we wait for them to signal us (since they receive 'all_users' and initiate)
+            // OR we can initiate. But Mesh convention: new user initiates to all existing.
+            // So we just update UI.
+            updateParticipantsList(data.participants);
+        });
+
+        socket.on('user_left', (data) => {
+            console.log('User left:', data);
+            if (peers[data.sid]) {
+                peers[data.sid].peer.destroy();
+                delete peers[data.sid];
+            }
+            removeVideoStream(data.sid);
+            updateParticipantsList(data.participants);
+            addChatMessage('System', `${data.user_name} kite sal la`);
+        });
+
+        socket.on('chat_message', (data) => {
+            addChatMessage(data.user_name, data.message, data.user_name === userName);
+        });
+
+        socket.on('room_name_changed', (data) => {
+            document.getElementById('roomNameDisplay').textContent = data.room_name;
+        });
+
+        // --- WebRTC Helper Functions ---
+
+        function createPeer(userToSignal, callerID, initiator) {
+            const peer = new SimplePeer({
+                initiator: initiator,
+                trickle: true,
+                stream: localStream,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
+            });
+
+            peer.on('signal', signal => {
+                socket.emit('sending_signal', {
+                    user_to_signal: userToSignal,
+                    caller_id: callerID,
+                    signal: signal,
+                    room_id: roomId
+                });
+            });
+
+            peer.on('stream', stream => {
+                console.log('Received stream from:', userToSignal);
+                addVideoStream(userToSignal, stream, "Patisipan"); // We need a way to get name, but for now generic
+            });
+            
+            peer.on('error', err => {
+                 console.error('Peer error:', err);
+            });
+
+            peers[userToSignal] = { peer: peer, userName: "Unknown" }; // Store peer
+            return peer;
+        }
+
+        // --- UI Functions ---
+
+        function addVideoStream(id, stream, name) {
+            if (document.getElementById(`video-${id}`)) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'video-wrapper';
+            wrapper.id = `video-${id}`;
+
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.playsInline = true;
+            if (id === 'local') video.muted = true;
+
+            const label = document.createElement('div');
+            label.className = 'video-label';
+            label.innerText = name;
+
+            wrapper.appendChild(video);
+            wrapper.appendChild(label);
+            videoContainer.appendChild(wrapper);
+        }
+
+        function removeVideoStream(id) {
+            const el = document.getElementById(`video-${id}`);
+            if (el) el.remove();
+        }
+
+        function updateParticipantsList(participants) {
+            participantsList.innerHTML = '';
+            participants.forEach(p => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.innerText = p;
+                participantsList.appendChild(li);
+            });
+        }
+
+        function addChatMessage(sender, msg, isOwn = false) {
+            const div = document.createElement('div');
+            div.className = `chat-message ${isOwn ? 'own' : 'other'}`;
+            div.innerHTML = `<strong>${sender}:</strong> ${msg}`;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // --- Event Listeners ---
+        
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendChat');
+
+        function sendChat() {
+            const msg = chatInput.value.trim();
+            if(msg) {
+                socket.emit('chat_message', { room_id: roomId, user_name: userName, message: msg });
+                chatInput.value = '';
+            }
+        }
+
+        sendBtn.addEventListener('click', sendChat);
+        chatInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendChat(); });
+
+        document.getElementById('toggleVideo').addEventListener('click', () => {
+            const track = localStream.getVideoTracks()[0];
+            track.enabled = !track.enabled;
+        });
+
+        document.getElementById('toggleAudio').addEventListener('click', () => {
+            const track = localStream.getAudioTracks()[0];
+            track.enabled = !track.enabled;
+        });
+
+        document.getElementById('leaveRoom').addEventListener('click', () => {
+            window.location.href = '/konferans/';
+        });
+
+        // Room Name Editing Logic
+        if (isOwner) {
+            const editRoomNameBtn = document.getElementById('editRoomNameBtn');
+            const roomNameContainer = document.getElementById('roomNameContainer');
+            const roomNameDisplay = document.getElementById('roomNameDisplay');
+
+            editRoomNameBtn.addEventListener('click', () => {
+                const currentName = roomNameDisplay.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentName;
+                input.className = 'form-control d-inline-block me-2';
+                input.style.width = '300px';
+                input.maxLength = 100;
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'btn btn-sm btn-success me-1';
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+                saveBtn.title = 'Sove';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn btn-sm btn-secondary';
+                cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+                cancelBtn.title = 'Anile';
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'd-inline-block';
+                buttonContainer.appendChild(saveBtn);
+                buttonContainer.appendChild(cancelBtn);
+
+                roomNameContainer.innerHTML = '';
+                roomNameContainer.appendChild(input);
+                roomNameContainer.appendChild(buttonContainer);
+
+                input.focus();
+                input.select();
+
+                const finishEditing = () => {
+                    roomNameContainer.innerHTML = '';
+                    const display = document.createElement('h3');
+                    display.id = 'roomNameDisplay';
+                    display.textContent = currentName;
+                    roomNameContainer.appendChild(display);
+                    roomNameContainer.appendChild(editRoomNameBtn);
+                };
+
+                saveBtn.addEventListener('click', () => {
+                    const newName = input.value.trim();
+                    if (newName && newName !== currentName && newName.length <= 100) {
+                        fetch('/konferans/update_room_name', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                room_id: roomId,
+                                room_name: newName
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                roomNameDisplay.textContent = newName;
+                                socket.emit('room_name_updated', { room_id: roomId, room_name: newName });
+                                finishEditing();
+                            } else {
+                                alert('Erè: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error updating room name:', error);
+                            alert('Erè nan modifye non sal la');
+                        });
+                    } else {
+                        finishEditing();
+                    }
+                });
+
+                cancelBtn.addEventListener('click', finishEditing);
+
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        saveBtn.click();
+                    } else if (e.key === 'Escape') {
+                        cancelBtn.click();
+                    }
+                });
+            });
+        }
+
+        // Screen Share Logic
+        let screenStream = null;
+        let originalVideoTrack = null;
+        let isScreenSharing = false;
+
+        const shareScreenBtn = document.getElementById('shareScreen');
+        if (shareScreenBtn) {
+            shareScreenBtn.addEventListener('click', toggleScreenShare);
+        }
+
+        async function toggleScreenShare() {
+            if (isScreenSharing) {
+                stopScreenShare();
+            } else {
+                startScreenShare();
+            }
+        }
+
+        async function startScreenShare() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                alert("Erè: Navigatè ou a pa sipòte pataje ekran (oswa ou pa sou HTTPS).");
+                return;
+            }
+
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { cursor: "always" }, 
+                    audio: false 
+                });
+                
+                const screenTrack = screenStream.getVideoTracks()[0];
+                
+                // Ensure we have a video track to replace
+                const videoTracks = localStream.getVideoTracks();
+                if (videoTracks.length === 0) {
+                     alert("Erè: Pa gen videyo aktif pou ranplase. Tanpri aktive kamera ou anvan.");
+                     screenTrack.stop();
+                     return;
+                }
+                originalVideoTrack = videoTracks[0];
+                
+                // Replace track for all existing peers
+                for (let peerId in peers) {
+                    try {
+                        const p = peers[peerId].peer;
+                        // replaceTrack(oldTrack, newTrack, stream)
+                        p.replaceTrack(originalVideoTrack, screenTrack, localStream);
+                    } catch (e) {
+                        console.error(`Failed to replace track for peer ${peerId}:`, e);
+                    }
+                }
+
+                // Update local stream to use screen track (so new peers see screen)
+                localStream.removeTrack(originalVideoTrack);
+                localStream.addTrack(screenTrack);
+
+                // Update local video preview
+                const localVideoWrapper = document.getElementById('video-local');
+                if (localVideoWrapper) {
+                    const video = localVideoWrapper.querySelector('video');
+                    if (video) video.srcObject = screenStream;
+                }
+
+                // Update UI
+                shareScreenBtn.innerHTML = '<i class="fas fa-stop-circle"></i> <span class="d-none d-md-inline">Sispann</span>';
+                shareScreenBtn.classList.remove('btn-info');
+                shareScreenBtn.classList.add('btn-warning');
+                isScreenSharing = true;
+
+                // Handle system stop (e.g. browser "Stop sharing" button)
+                screenTrack.onended = () => {
+                    if (isScreenSharing) stopScreenShare();
+                };
+
+                socket.emit('start_screen_share', { room_id: roomId });
+
+            } catch (err) {
+                console.error("Error starting screen share:", err);
+                if (err.name === 'NotAllowedError') {
+                    // User cancelled, do nothing specific
+                } else {
+                    alert(`Erè pandan pataje ekran an: ${err.message || err.name}`);
+                }
+            }
+        }
+
+        function stopScreenShare() {
+            if (!screenStream) return;
+            
+            const screenTrack = screenStream.getVideoTracks()[0];
+
+            // Stop screen stream tracks
+            screenTrack.stop();
+
+            // Revert tracks for peers
+            for (let peerId in peers) {
+                const p = peers[peerId].peer;
+                p.replaceTrack(screenTrack, originalVideoTrack, localStream);
+            }
+
+            // Revert local stream
+            localStream.removeTrack(screenTrack);
+            localStream.addTrack(originalVideoTrack);
+
+            // Revert local video preview
+            const localVideoWrapper = document.getElementById('video-local');
+            if (localVideoWrapper) {
+                const video = localVideoWrapper.querySelector('video');
+                if (video) video.srcObject = localStream;
+            }
+
+            screenStream = null;
+            isScreenSharing = false;
+
+            // Update UI
+            shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> <span class="d-none d-md-inline">Pataje</span>';
+            shareScreenBtn.classList.remove('btn-warning');
+            shareScreenBtn.classList.add('btn-info');
+
+            socket.emit('stop_screen_share', { room_id: roomId });
+        }
+
+    </script>
+</body>
+</html>

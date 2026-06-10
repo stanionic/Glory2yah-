@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}MANDEMMAPBAW - Administrasyon{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <i class="fas fa-cog"></i> Panèl Administrasyon MANDEMMAPBAW
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Statistics -->
+                    <h4><i class="fas fa-chart-bar"></i> Estatistik</h4>
+                    <div class="admin-stats" id="admin-stats">
+                        <div class="stat-card">
+                            <div class="number" id="total-chats">0</div>
+                            <div class="label">Konvèsasyon Total</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number" id="total-images">0</div>
+                            <div class="label">Imaj Jenere</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number" id="total-videos">0</div>
+                            <div class="label">Video Jenere</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number" id="recent-chats">0</div>
+                            <div class="label">Konvèsasyon Jodi a</div>
+                        </div>
+                    </div>
+                    
+                    <!-- History Management -->
+                    <h4 class="mt-5"><i class="fas fa-history"></i> Jesyon Istwa</h4>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-danger text-white">
+                                    <i class="fas fa-trash"></i> Efase Istwa
+                                </div>
+                                <div class="card-body">
+                                    <p>Chwazi kalite istwa ou vle efase:</p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-danger" onclick="deleteHistory('chat')">
+                                            <i class="fas fa-comments"></i> Efase Tout Konvèsasyon
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="deleteHistory('images')">
+                                            <i class="fas fa-image"></i> Efase Tout Imaj
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="deleteHistory('videos')">
+                                            <i class="fas fa-video"></i> Efase Tout Video
+                                        </button>
+                                        <button class="btn btn-danger" onclick="deleteHistory('all')">
+                                            <i class="fas fa-bomb"></i> EFASE TOUT ISTWA
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <i class="fas fa-database"></i> Enfòmasyon Sistèm
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <strong><i class="fas fa-folder"></i> Kapasite Imaj:</strong>
+                                        <div class="progress mt-1">
+                                            <div id="image-storage-bar" class="progress-bar bg-warning" 
+                                                 role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><i class="fas fa-film"></i> Kapasite Video:</strong>
+                                        <div class="progress mt-1">
+                                            <div id="video-storage-bar" class="progress-bar bg-danger" 
+                                                 role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><i class="fas fa-database"></i> Gwosè Baz Done:</strong>
+                                        <span id="db-size">0 KB</span>
+                                    </div>
+                                    <button class="btn btn-info" onclick="refreshStats()">
+                                        <i class="fas fa-sync-alt"></i> Rafrechi Estatistik
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <h4 class="mt-5"><i class="fas fa-list"></i> Aktivite Resan</h4>
+                    <div class="mt-3">
+                        <ul class="nav nav-tabs" id="historyTabs">
+                            <li class="nav-item">
+                                <button class="nav-link active" onclick="loadRecentHistory('chat')">
+                                    Konvèsasyon
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" onclick="loadRecentHistory('image')">
+                                    Imaj
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" onclick="loadRecentHistory('video')">
+                                    Video
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="card mt-0">
+                            <div class="card-body">
+                                <div id="recent-history">
+                                    <!-- History will be loaded here -->
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-history fa-2x"></i>
+                                        <p class="mt-2">Chwazi yon kategori pou wè aktivite resan</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonksyon pou chaje estatistik
+    async function loadStats() {
+        try {
+            const response = await fetch('/admin/stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('total-chats').textContent = data.stats.total_chats;
+                document.getElementById('total-images').textContent = data.stats.total_images;
+                document.getElementById('total-videos').textContent = data.stats.total_videos;
+                document.getElementById('recent-chats').textContent = data.stats.recent_chats;
+            }
+        } catch (error) {
+            console.error('Erè chajman estatistik:', error);
+        }
+    }
+    
+    // Fonksyon pou rafrechi estatistik
+    function refreshStats() {
+        loadStats();
+        showAlert('Estatistik rafrechi!', 'success');
+    }
+    
+    // Fonksyon pou efase istwa
+    async function deleteHistory(mode) {
+        const messages = {
+            'all': 'Èske ou sèten ou vle efase TOUT ISTWA a? Aksyon sa a pa ka ranvèse.',
+            'chat': 'Èske ou sèten ou vle efase tout konvèsasyon yo?',
+            'images': 'Èske ou sèten ou vle efase tout imaj jenere yo?',
+            'videos': 'Èske ou sèten ou vle efase tout videyo jenere yo?'
+        };
+        
+        if (!confirm(messages[mode])) return;
+        
+        try {
+            const response = await fetch('/admin/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ mode: mode })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showAlert(`Istwa ${mode} efase avèk siksè!`, 'success');
+                loadStats();
+                loadRecentHistory('chat');
+            } else {
+                showAlert(`Erè: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            showAlert(`Erè: ${error.message}`, 'danger');
+        }
+    }
+    
+    // Fonksyon pou chaje istwa resan
+    async function loadRecentHistory(type) {
+        try {
+            const response = await fetch(`/history?mode=${type}`);
+            const data = await response.json();
+            
+            const container = document.getElementById('recent-history');
+            
+            if (data.success && data.history.length > 0) {
+                let html = '<div class="file-list">';
+                
+                data.history.slice(0, 10).forEach(item => {
+                    html += `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="fw-bold">${item.prompt.substring(0, 100)}</div>
+                                <small class="text-muted">${item.timestamp}</small>
+                            </div>
+                            ${type === 'image' || type === 'video' ? 
+                                `<div class="file-actions">
+                                    <button class="btn btn-sm btn-success" onclick="downloadFile('${type}', '${item.filename}')">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>` : ''
+                            }
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x"></i>
+                        <p class="mt-2">Pa gen aktivite pou kategori sa a</p>
+                    </div>
+                `;
+            }
+            
+            // Update active tab
+            document.querySelectorAll('#historyTabs .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+        } catch (error) {
+            console.error('Erè chajman istwa resan:', error);
+        }
+    }
+    
+    // Fonksyon pou montre alèt
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.querySelector('.card-body').prepend(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+    
+    // Fonksyon pou telechaje fichye
+    function downloadFile(type, filename) {
+        window.open(`/download/${type}/${filename}`, '_blank');
+    }
+    
+    // Chaje estatistik lè paj la chaje
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStats();
+        
+        // Setup tabs
+        document.querySelectorAll('#historyTabs .nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const type = this.textContent.trim().toLowerCase();
+                if (type === 'konvèsasyon') loadRecentHistory('chat');
+                else if (type === 'imaj') loadRecentHistory('image');
+                else if (type === 'video') loadRecentHistory('video');
+            });
+        });
+    });
+</script>
+{% endblock %}

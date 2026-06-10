@@ -1,0 +1,27 @@
+{% extends "base_mobile.html" %}
+
+{% block content %}
+<!-- Marketplace Grid (2-column on mobile) -->
+<div class="marketplace-grid">
+    {% for ad in ads %}
+    <div class="product-card" onclick="window.location.href='{{ url_for('ad_detail', ad_id=ad.ad_id) }}'">
+        {% set first_image = ad.images.split(',')[0] if ad.images else '' %}
+        <img data-src="{{ url_for('static', filename='uploads/' + first_image) }}" 
+             alt="{{ ad.title }}" 
+             class="product-image">
+        
+        <div class="product-info">
+            <div class="product-title">{{ ad.title }}</div>
+            <div class="product-price">{{ ad.price_gkach }} Gkach</div>
+            <div class="product-rating">
+                {% if ad.average_rating %}
+                ★ {{ ad.average_rating|round(1) }} ({{ ad.rating_count }})
+                {% else %}
+                ★ Nouvo
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

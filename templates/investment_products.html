@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Envestisman - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">📈 Envestisman</h1>
+            <p class="lead">Fè lajan ou travay pou ou</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">{{ product.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ product.description or 'Pa gen deskripsyon' }}</p>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-success fs-6">{{ product.interest_rate }}% pa ane</span>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">Min: {{ product.min_amount }} Gkach</li>
+                        <li class="list-group-item">Max: {{ product.max_amount or 'Enlimit' }} Gkach</li>
+                        <li class="list-group-item">Dire: {{ product.duration_days }} jou</li>
+                        <li class="list-group-item">Penalite Retrè: {{ product.early_withdrawal_penalty }}%</li>
+                    </ul>
+
+                    <form method="POST" action="{{ url_for('invest', product_id=product.id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">Kantite Envestisman (Gkach)</label>
+                            <input type="number" class="form-control" name="amount" 
+                                   min="{{ product.min_amount }}" 
+                                   max="{{ product.max_amount or 999999999 }}" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="auto_renew{{ product.id }}" name="auto_renew">
+                            <label class="form-check-label" for="auto_renew{{ product.id }}">Renouvle otomatikman</label>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Envesti Kounye a</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">Pa gen pwodwi envestisman disponib kounye a.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('bank_dashboard') }}" class="btn btn-secondary">← Retounen nan Bank</a>
+            <a href="{{ url_for('my_investments') }}" class="btn btn-outline-success ms-2">Gade Envestisman Mwen Yo</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

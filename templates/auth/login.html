@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Konekte - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+            Konekte sou kont ou
+        </h2>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form class="space-y-6" action="{{ url_for('auth.login') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div>
+                <label for="identifier" class="block text-sm font-medium leading-6 text-gray-900">WhatsApp oswa Pseudo</label>
+                <div class="mt-2">
+                    <input id="identifier" name="identifier" type="text" required 
+                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between">
+                    <label for="password" class="block text-sm font-medium leading-6 text-gray-900">Modpas</label>
+                    <div class="text-sm">
+                        <a href="#" class="font-semibold text-primary hover:text-primary/80">Oubliye modpas?</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <input id="password" name="password" type="password" required 
+                           placeholder="6 chif oswa modpas alfanimerik"
+                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
+                </div>
+                <div class="mt-2">
+                    <p class="text-xs text-gray-500">
+                        💡 <strong>Modpas ka:</strong> 123456 oswa pass123
+                    </p>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="flex w-full justify-center rounded-xl bg-primary px-3 py-3 text-sm font-semibold leading-6 text-white shadow-lg shadow-primary/20 hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary tap-scale">
+                    Konekte
+                </button>
+            </div>
+        </form>
+
+        <p class="mt-10 text-center text-sm text-gray-500">
+            Ou pa gen kont?
+            <a href="{{ url_for('auth.register') }}" class="font-semibold leading-6 text-primary hover:text-primary/80">Kreye yon kont gratis</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

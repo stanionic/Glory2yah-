@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Bank - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🏦 Bank Glory2YahPub</h1>
+            <p class="lead">Jere prè ak envestisman ou yo</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">💰 Balans Gkach</h5>
+                    <h3 class="mb-0">{{ gkach_balance }} Gkach</h3>
+                    <a href="{{ url_for('achte_gkach') }}" class="btn btn-light btn-sm mt-2">Achte Gkach</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">📋 Dèt Prè</h5>
+                    <h3 class="mb-0">{{ total_loan_due }} Gkach</h3>
+                    <a href="{{ url_for('loan_list') }}" class="btn btn-dark btn-sm mt-2">Gere Prè</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">📈 Envestisman</h5>
+                    <h3 class="mb-0">{{ total_invested }} Gkach</h3>
+                    <a href="{{ url_for('investment_products') }}" class="btn btn-light btn-sm mt-2">Envesti</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Loans -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📋 Prè Aktif</h5>
+                    <a href="{{ url_for('loan_list') }}" class="btn btn-primary btn-sm">Nouvo Prè</a>
+                </div>
+                <div class="card-body">
+                    {% if active_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Pwodwi</th>
+                                    <th>Kantite</th>
+                                    <th>Enterè</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Dat Echèans</th>
+                                    <th>Aksyon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in active_loans %}
+                                <tr>
+                                    <td>{{ loan.loan_id[:8] }}...</td>
+                                    <td>{{ loan.product.name }}</td>
+                                    <td>{{ loan.amount }} Gkach</td>
+                                    <td>{{ loan.interest_amount }} Gkach</td>
+                                    <td>{{ loan.total_due }} Gkach</td>
+                                    <td>
+                                        {% if loan.status == 'pending' %}
+                                        <span class="badge bg-warning">An atant</span>
+                                        {% elif loan.status == 'active' %}
+                                        <span class="badge bg-success">Aktif</span>
+                                        {% elif loan.status == 'completed' %}
+                                        <span class="badge bg-info">Konplè</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ loan.due_date.strftime('%d/%m/%Y') if loan.due_date else 'N/A' }}</td>
+                                    <td>
+                                        {% if loan.status == 'active' %}
+                                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#repayModal{{ loan.id }}">Rembouse</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Ou pa gen prè aktif. <a href="{{ url_for('loan_list') }}">Fè yon demann prè</a></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Investments -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📈 Envestisman Aktif</h5>
+                    <a href="{{ url_for('investment_products') }}" class="btn btn-success btn-sm">Nouvo Envestisman</a>
+                </div>
+                <div class="card-body">
+                    {% if active_investments %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Pwodwi</th>
+                                    <th>Kantite</th>
+                                    <th>Retou Atann</th>
+                                    <th>Dat Matirite</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inv in active_investments %}
+                                <tr>
+                                    <td>{{ inv.investment_id[:8] }}...</td>
+                                    <td>{{ inv.product.name }}</td>
+                                    <td>{{ inv.amount }} Gkach</td>
+                                    <td>{{ inv.expected_return }} Gkach</td>
+                                    <td>{{ inv.matures_at.strftime('%d/%m/%Y') }}</td>
+                                    <td><span class="badge bg-success">Aktif</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Ou pa gen envestisman aktif. <a href="{{ url_for('investment_products') }}">Kòmanse envesti</a></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Repayment Modals -->
+{% for loan in active_loans %}
+{% if loan.status == 'active' %}
+<div class="modal fade" id="repayModal{{ loan.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rembouse Prè</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('loan_repay', loan_id=loan.loan_id) }}">
+                <div class="modal-body">
+                    <p>Prè: {{ loan.product.name }}</p>
+                    <p>Total dwe: {{ loan.total_due }} Gkach</p>
+                    <p>Deja peye: {{ loan.repayments|sum(attribute='amount') }} Gkach</p>
+                    <p>Res ki rete: {{ loan.total_due - (loan.repayments|sum(attribute='amount')) }} Gkach</p>
+                    <div class="mb-3">
+                        <label for="amount{{ loan.id }}" class="form-label">Kantite pou peye</label>
+                        <input type="number" class="form-control" id="amount{{ loan.id }}" name="amount" min="1" max="{{ loan.total_due - (loan.repayments|sum(attribute='amount')) }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anile</button>
+                    <button type="submit" class="btn btn-success">Konfime Peyman</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

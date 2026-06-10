@@ -1,0 +1,31 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block eb_content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Koneksyon</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Non Konplè</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="whatsapp" class="form-label">Nimewo WhatsApp</label>
+                        <input type="text" class="form-control" id="whatsapp" name="whatsapp" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Modpas</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Konekte</button>
+                </form>
+                <p class="mt-3">Ou pa gen kont? <a href="{{ url_for('ecole_biblique.register') }}">Enskri isit</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

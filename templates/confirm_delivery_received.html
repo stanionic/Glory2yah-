@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfime Resepsyon Livrezon - Glory2yahPub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Glory2yahPub</h1>
+            <p>Konfime Resepsyon Livrezon</p>
+        </header>
+
+        <main>
+            <div class="form-container">
+                <h2>📦 Konfime Ou Resevwa Livrezon An</h2>
+
+                <div class="success-message">
+                    <p>✅ Acha ou a konfime! Ou te depanse {{ total_price }} Gkach.</p>
+                    <p>Lè ou resevwa livrezon an, tanpri klike sou bouton anba a pou konfime resepsyon.</p>
+                </div>
+
+                <h3>📋 Detay Livrezon</h3>
+                <div class="delivery-details">
+                    <div class="detail-item">
+                        <strong>Vandè:</strong> {{ delivery.seller_whatsapp }}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Adrès Livrezon:</strong> {{ delivery.delivery_address }}
+                    </div>
+                    <div class="detail-item">
+                        <strong>ID Livrezon:</strong> {{ delivery.delivery_id }}
+                    </div>
+                    <div class="detail-item">
+                        <strong>Estati:</strong> <span class="status-badge awaiting">Ap Tann Livrezon</span>
+                    </div>
+                </div>
+
+                <h3>🛒 Atik yo</h3>
+                <div class="cart-items">
+                    {% for item in cart_items %}
+                    <div class="cart-item">
+                        <div class="item-info">
+                            <h4>{{ item.ad.title }}</h4>
+                            <p>Kantite: {{ item.quantity }}</p>
+                            <p>Pri Inite: {{ item.price }} Gkach</p>
+                            <p><strong>Sou-total: {{ item.subtotal }} Gkach</strong></p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="price-summary">
+                    <div class="summary-row">
+                        <span>Pri Pwodwi:</span>
+                        <span>{{ delivery.total_price }} Gkach</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Pri Livrezon:</span>
+                        <span>{{ delivery.delivery_cost }} Gkach</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span><strong>TOTAL:</strong></span>
+                        <span><strong>{{ total_price }} Gkach</strong></span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('confirm_delivery_received', delivery_id=delivery.delivery_id) }}">
+                    <div class="info-box">
+                        <h3>⚠️ Enpòtan</h3>
+                        <ul>
+                            <li>Tanpri verifye ke ou resevwa tout atik yo</li>
+                            <li>Asire w ke tout bagay nan bon kondisyon</li>
+                            <li>Lè ou klike "Konfime Resepsyon", vandè a pral resevwa peman an</li>
+                            <li>Ou pral resevwa yon resi PDF pa WhatsApp</li>
+                        </ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">✅ Konfime Mwen Resevwa Livrezon An</button>
+                </form>
+
+                <div class="action-buttons">
+                    <a href="{{ url_for('achte') }}" class="btn btn-secondary">🏠 Retounen Lakay</a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Glory2yahPub. Tout dwa rezève.</p>
+        </footer>
+    </div>
+
+    <style>
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status-badge.awaiting {
+            background-color: #f39c12;
+            color: white;
+        }
+        .cart-items {
+            margin: 20px 0;
+        }
+        .cart-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .item-info h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .item-info p {
+            margin: 5px 0;
+        }
+        .price-summary {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+        .summary-row.total {
+            border-top: 2px solid #2c3e50;
+            margin-top: 10px;
+            padding-top: 10px;
+            font-size: 1.2em;
+            color: #27ae60;
+        }
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+    </style>
+</body>
+</html>

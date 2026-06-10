@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-view-user-container">
+        <div class="admin-header">
+            <h2>👤 Detay Itilizatè</h2>
+            <p class="subtitle">Wè tout enfòmasyon sou itilizatè sa a</p>
+        </div>
+
+        <div class="user-profile-card">
+            <div class="user-avatar-section">
+                {% if user.profile_photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Profile Photo">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+                <h3>{{ user.pseudo }}</h3>
+                <span class="status-badge {% if user.is_active %}active{% else %}inactive{% endif %}">
+                    {% if user.is_active %}✅ Aktif{% else %}⛔ Dezaktive{% endif %}
+                </span>
+            </div>
+
+            <div class="user-details-section">
+                <div class="detail-group">
+                    <h4>📋 Enfòmasyon Pwofil</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">ID:</span>
+                        <span class="detail-value">{{ user.id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Non Konplè:</span>
+                        <span class="detail-value">{{ user.name or 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">WhatsApp:</span>
+                        <span class="detail-value">{{ user.whatsapp }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value">{{ user.email or 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Biyografi:</span>
+                        <span class="detail-value">{{ user.bio or 'N/A' }}</span>
+                    </div>
+                </div>
+
+                <div class="detail-group">
+                    <h4>💰 Enfòmasyon Gkach</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Balans Gkach:</span>
+                        <span class="detail-value highlight">{{ gkach_balance }} Gkach</span>
+                    </div>
+                </div>
+
+                <div class="detail-group">
+                    <h4>📅 Enfòmasyon Kont</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Kreye:</span>
+                        <span class="detail-value">{{ user.created_at.strftime('%d %B %Y à %H:%M') if user.created_at else 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Dènye Mizajou:</span>
+                        <span class="detail-value">{{ user.updated_at.strftime('%d %B %Y à %H:%M') if user.updated_at else 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Pwovizyon:</span>
+                        <span class="detail-value">{{ user.auth_provider or 'whatsapp' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if user_ads %}
+        <div class="user-ads-section">
+            <h4>📢 Piblisite Itilizatè a</h4>
+            <div class="ads-grid">
+                {% for ad in user_ads %}
+                <div class="ad-card">
+                    <div class="ad-images">
+                        {% if ad.images %}
+                            {% set images = ad.images.split(',') %}
+                            <img src="{{ url_for('static', filename='uploads/' + images[0]) }}" alt="{{ ad.title }}">
+                        {% else %}
+                            <div class="no-image">Pa gen imaj</div>
+                        {% endif %}
+                    </div>
+                    <div class="ad-info">
+                        <h5>{{ ad.title }}</h5>
+                        <p class="ad-price">{{ ad.price_gkach }} Gkach</p>
+                        <span class="ad-status {{ ad.admin_status }}">{{ ad.admin_status }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="admin-actions">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retounen nan Lis Itilizatè
+            </a>
+            <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Modifye Itilizatè
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-view-user-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.admin-header h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.user-profile-card {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.user-avatar-section {
+    text-align: center;
+}
+
+.user-avatar-section img,
+.avatar-placeholder {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.avatar-placeholder i {
+    font-size: 100px;
+    color: white;
+}
+
+.user-avatar-section h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.user-details-section {
+    display: grid;
+    gap: 30px;
+}
+
+.detail-group h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.detail-value {
+    color: #333;
+    text-align: right;
+}
+
+.detail-value.highlight {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.user-ads-section {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.user-ads-section h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+.ads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.ad-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ad-images {
+    height: 150px;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ad-images img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-image {
+    color: #666;
+    font-size: 14px;
+}
+
+.ad-info {
+    padding: 15px;
+}
+
+.ad-info h5 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.ad-price {
+    color: #28a745;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+}
+
+.ad-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    text-transform: capitalize;
+}
+
+.ad-status.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.ad-status.pending,
+.ad-status.under_review {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.ad-status.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #f0f0f0;
+}
+
+@media (max-width: 768px) {
+    .admin-view-user-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .user-profile-card {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .user-avatar-section img,
+    .avatar-placeholder {
+        width: 150px;
+        height: 150px;
+    }
+
+    .detail-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .detail-value {
+        text-align: left;
+    }
+
+    .admin-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
