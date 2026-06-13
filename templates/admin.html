@@ -45,9 +45,11 @@
                     {% for ad in ads %}
                     <div class="ad-card">
                         <div class="ad-images">
+                            {% if ad.images %}
                             {% for image in ad.images.split(',') %}
                             <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Piblisite Imaj">
                             {% endfor %}
+                            {% endif %}
                         </div>
 
                         <div class="ad-info">
@@ -119,7 +121,7 @@
                         {% for batch in batches %}
                         <div class="batch-card">
                             <h4>{{ batch.batch_id }}</h4>
-                            <p>Piblisite: {{ batch.ads.count(',') + 1 }}/5</p>
+                            <p>Piblisite: {{ batch.batch_ads.count() }}/5</p>
                             <p>Pataj: {{ batch.share_count }}</p>
                             <p>Rekonpans: {{ batch.click_rewards }} klike</p>
                             <div class="batch-actions">
