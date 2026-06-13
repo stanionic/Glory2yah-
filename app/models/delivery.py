@@ -11,6 +11,9 @@ class Delivery(BaseModel):
     
     __tablename__ = 'deliveries'
     
+    # Override the id from BaseModel - we use delivery_id as primary key
+    id = db.Column(db.Integer)  # Not primary key
+    
     delivery_id = db.Column(db.String(36), primary_key=True)
     ad_id = db.Column(db.String(36), db.ForeignKey('ads.ad_id'), nullable=True)
     buyer_whatsapp = db.Column(db.String(20), nullable=False, index=True)
