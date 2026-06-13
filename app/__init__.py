@@ -103,7 +103,15 @@ def create_app(config_name=None):
     register_error_handlers(app)
     register_template_filters(app)
     
+    # Import all models first to resolve relationships
     with app.app_context():
+        from app.models.user import User
+        from app.models.user_gkach import UserGkach
+        from app.models.ad import Ad
+        from app.models.delivery import Delivery
+        from app.models.batch import Batch
+        from app.models.batch_ad import BatchAd
+        from app.models.gkach_transaction import GkachTransaction
         db.create_all()
     
     app.logger.info(f'Glory2YahPub started in {config_name} mode')

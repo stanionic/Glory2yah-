@@ -127,7 +127,8 @@ def admin_required(f):
     """Decorator to require admin access"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'admin' not in session:
+        from flask_login import current_user
+        if not current_user.is_authenticated or not current_user.is_admin:
             abort(403, description="Admin access required")
         return f(*args, **kwargs)
     return decorated_function
