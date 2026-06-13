@@ -20,13 +20,21 @@ admin_bp = Blueprint('admin', __name__)
 @admin_required
 def dashboard():
     """Admin dashboard"""
+    from app.models.ad import Ad
+    from app.models.batch import Batch
+    from app.models.user_gkach import UserGkach
+    
     stats = AdService.get_stats()
-    recent_ads = AdService.get_approved_ads(page=1, per_page=10)
+    ads = Ad.query.all()  # Get all ads for review
+    batches = Batch.query.all()
+    users_gkach = UserGkach.query.all()
     
     return render_template(
-        'admin/dashboard.html',
+        'admin.html',
         stats=stats,
-        recent_ads=recent_ads,
+        ads=ads,
+        batches=batches,
+        users_gkach=users_gkach,
         current_user=current_user
     )
 
@@ -40,7 +48,7 @@ def manage_ads():
     ads = AdService.get_approved_ads(page=page, per_page=20)
     
     return render_template(
-        'admin/ads.html',
+        'admin.html',
         ads=ads,
         current_user=current_user
     )
@@ -60,7 +68,7 @@ def ad_detail(ad_id):
         return redirect(url_for('admin.manage_ads'))
     
     return render_template(
-        'admin/ad_detail.html',
+        'ad_detail.html',
         ad=ad,
         current_user=current_user
     )
@@ -101,7 +109,7 @@ def reject_ad(ad_id):
 def manage_gkach():
     """Manage user Gkach balances and requests"""
     # Logic to fetch Gkach requests and user balances
-    return render_template('admin/gkach.html')
+    return render_template('admin_manage_gkach.html')
 
 
 @admin_bp.route('/batches/create', methods=['POST'])
