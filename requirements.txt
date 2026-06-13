@@ -19,3 +19,5 @@ gunicorn==21.2.0
 psycopg2-binary==2.9.9
 phonenumbers==8.13.44
 bleach==6.0.0
+Pillow==10.0.0
+imageio==2.31.0
