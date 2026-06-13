@@ -4,6 +4,7 @@ Homepage and core pages
 """
 import os
 import random
+import re
 from flask import Blueprint, render_template, request, jsonify, current_app, flash
 from app.services.ad_service import AdService
 from app.services.redis_service import RedisService
