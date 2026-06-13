@@ -2,7 +2,7 @@
 Marketplace Routes Blueprint
 AliExpress-style product browsing
 """
-from flask import Blueprint, render_template, request, jsonify, current_app, flash
+from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
 from app.services.ad_service import AdService
 from flask_login import current_user
 from app.utils.validators import validate_pagination, sanitize_text, ValidationError
