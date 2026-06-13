@@ -8,11 +8,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Import the application factory
-from app import create_app, socketio
-
-# Create the Flask application
-app = create_app()
+# Import the pre-created app and socketio from app module
+from app import app, socketio
 
 if __name__ == '__main__':
     print("\n" + "="*60)

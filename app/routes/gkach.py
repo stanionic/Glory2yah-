@@ -4,7 +4,7 @@ Virtual currency management and requests
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from app.services.gkach_service import GkachService
+from app.services.gkach_service import GkachService, UserGkach
 from app.utils.validators import ValidationError
 
 
@@ -29,13 +29,12 @@ def wallet():
 @gkach_bp.route('/request', methods=['GET', 'POST'])
 @login_required
 def request_gkach():
-    """Request Gkach (recharge)"""
+    """Request Gkach (recharge)"""    
+    from app.utils.validators import validate_amount, ValidationError
+
     if request.method == 'POST':
         try:
-            amount = int(request.form.get('amount', 0))
-            if amount <= 0:
-                raise ValidationError("Kantite dwe pi gran pase 0")
-                
+            amount = validate_amount(request.form.get('amount'), min_amount=1)
             # Logic for Gkach request (will be stored in JSON field for now)
             # In Phase 5 we will implement a more robust reward/purchase system
             flash('Demann ou an voye bay administratè a!', 'success')
@@ -51,13 +50,14 @@ def request_gkach():
 @gkach_bp.route('/transfer', methods=['GET', 'POST'])
 @login_required
 def transfer():
-    """Transfer Gkach to another user"""
+    """Transfer Gkach to another user"""    
+    from app.utils.validators import validate_whatsapp, validate_amount, sanitize_text, ValidationError
+
     if request.method == 'POST':
         try:
-            to_whatsapp = request.form.get('whatsapp', '').strip()
-            amount = int(request.form.get('amount', 0))
-            description = request.form.get('description', '').strip()
-            
+            to_whatsapp = validate_whatsapp(request.form.get('whatsapp'))
+            amount = validate_amount(request.form.get('amount'), min_amount=1)
+            description = sanitize_text(request.form.get('description'))
             GkachService.transfer(
                 current_user.whatsapp,
                 to_whatsapp,

@@ -4,7 +4,7 @@ Delivery tracking and negotiation
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from app.services.delivery_service import DeliveryService
+from app.services.delivery_service import DeliveryService, Delivery
 from app.utils.validators import ValidationError
 
 
@@ -61,15 +61,17 @@ def view(delivery_id):
 @delivery_bp.route('/set-cost/<delivery_id>', methods=['POST'])
 @login_required
 def set_cost(delivery_id):
-    """Seller sets the delivery cost"""
+    """Seller sets the delivery cost"""    
+    from app.utils.validators import validate_amount, ValidationError
+
     try:
         delivery = DeliveryService.get_delivery(delivery_id)
         
         if current_user.whatsapp != delivery.seller_whatsapp:
             flash('Se sèlman vandè a ki ka mete pri livrezon an.', 'error')
             return redirect(url_for('delivery.view', delivery_id=delivery_id))
-            
-        cost = int(request.form.get('cost', 0))
+        
+        cost = validate_amount(request.form.get('cost'), min_amount=0) # Delivery cost can be 0
         DeliveryService.set_delivery_cost(delivery_id, cost)
         
         flash('Pri livrezon mete ajou!', 'success')
@@ -118,9 +120,11 @@ def complete(delivery_id):
 @delivery_bp.route('/message/<delivery_id>', methods=['POST'])
 @login_required
 def message(delivery_id):
-    """Add message to delivery chat"""
+    """Add message to delivery chat"""    
+    from app.utils.validators import sanitize_text, ValidationError
+
     try:
-        msg_text = request.form.get('message', '').strip()
+        msg_text = sanitize_text(request.form.get('message', ''))
         if msg_text:
             DeliveryService.add_message(delivery_id, current_user.whatsapp, msg_text)
             return jsonify({'success': True})

@@ -45,12 +45,19 @@ def create_app(config_name=None):
     # Initialize Redis with fallback mechanism
     global redis_client
     try:
-        redis_client = Redis.from_url(app.config['REDIS_URL'], decode_responses=True)
+        redis_url = app.config.get('REDIS_URL')
+        if not redis_url or 'localhost' in redis_url:
+            raise ConnectionError("No external Redis URL provided")
+            
+        redis_client = Redis.from_url(redis_url, decode_responses=True)
         redis_client.ping()
         app.logger.info('Redis connected successfully')
     except Exception as e:
         app.logger.error(f'Redis unavailable: {e}. Running in database-only mode.')
         redis_client = None
+        # Fallback cache and limiter configs if Redis is down
+        app.config['CACHE_TYPE'] = 'simple'
+        app.config['RATELIMIT_STORAGE_URL'] = 'memory://'
     
     db.init_app(app)
     migrate.init_app(app, db)

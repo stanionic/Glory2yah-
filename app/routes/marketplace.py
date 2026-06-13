@@ -2,9 +2,10 @@
 Marketplace Routes Blueprint
 AliExpress-style product browsing
 """
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, flash
 from app.services.ad_service import AdService
 from flask_login import current_user
+from app.utils.validators import validate_pagination, sanitize_text, ValidationError
 
 marketplace_bp = Blueprint('marketplace', __name__, url_prefix='/mache')
 
@@ -13,11 +14,21 @@ marketplace_bp = Blueprint('marketplace', __name__, url_prefix='/mache')
 def index():
     """Marketplace homepage - AliExpress style grid"""
     try:
-        page = int(request.args.get('page', 1))
-        per_page = 20
-        category = request.args.get('category', 'all')
-        sort_by = request.args.get('sort', 'recent')  # recent, price_low, price_high, popular
+        # Validate pagination parameters
+        page, per_page = validate_pagination(
+            request.args.get('page'),
+            request.args.get('per_page'),
+            max_per_page=current_app.config['MAX_ITEMS_PER_PAGE']
+        )
         
+        # Sanitize and validate category and sort_by
+        category = sanitize_text(request.args.get('category', 'all'))
+        sort_by = sanitize_text(request.args.get('sort', 'recent'))
+        
+        allowed_sorts = ['recent', 'price_low', 'price_high', 'popular']
+        if sort_by not in allowed_sorts:
+            sort_by = 'recent' # Default to recent if invalid
+
         # Get approved ads for marketplace
         ads = AdService.get_approved_ads(page=page, per_page=per_page)
         
@@ -41,6 +52,9 @@ def index():
             page=page,
             current_user=current_user
         )
+    except ValidationError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('marketplace.index'))
     except Exception as e:
         current_app.logger.error(f"Error in marketplace: {e}")
         return render_template(
@@ -56,9 +70,14 @@ def index():
 @marketplace_bp.route('/api/products')
 def api_products():
     """API endpoint for marketplace products (infinite scroll)"""
+    from app.utils.validators import validate_pagination, sanitize_text, ValidationError
     try:
-        page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 20))
+        page, per_page = validate_pagination(
+            request.args.get('page'),
+            request.args.get('per_page'),
+            max_per_page=current_app.config['MAX_ITEMS_PER_PAGE']
+        )
+        
         category = request.args.get('category', 'all')
         
         ads = AdService.get_approved_ads(page=page, per_page=per_page)
@@ -72,6 +91,8 @@ def api_products():
             'page': page,
             'has_more': len(ads) == per_page
         })
+    except ValidationError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         current_app.logger.error(f"Error in marketplace API: {e}")
         return jsonify({'success': False, 'products': []}), 500
@@ -80,12 +101,17 @@ def api_products():
 @marketplace_bp.route('/search')
 def search():
     """Search products in marketplace"""
+    from app.utils.validators import validate_pagination, sanitize_text, ValidationError
     try:
-        query = request.args.get('q', '').strip()
-        page = int(request.args.get('page', 1))
-        per_page = 20
-        
+        query = sanitize_text(request.args.get('q', ''))
+        page, per_page = validate_pagination(
+            request.args.get('page'),
+            request.args.get('per_page'),
+            max_per_page=current_app.config['MAX_ITEMS_PER_PAGE']
+        )
+
         if not query:
+            flash('Tanpri antre yon mo pou chèche.', 'info')
             return redirect(url_for('marketplace.index'))
         
         # Search using AdService
@@ -98,6 +124,9 @@ def search():
             page=page,
             current_user=current_user
         )
+    except ValidationError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('marketplace.index'))
     except Exception as e:
         current_app.logger.error(f"Error in marketplace search: {e}")
         return render_template(

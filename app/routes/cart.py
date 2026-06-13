@@ -4,7 +4,7 @@ Shopping cart management
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from app.services.cart_service import CartService
+from app.services.cart_service import CartService, CartItem
 from app.utils.validators import ValidationError
 
 
@@ -29,7 +29,9 @@ def index():
 @cart_bp.route('/add/<product_id>', methods=['POST'])
 @login_required
 def add(product_id):
-    """Add product to cart"""
+    """Add product to cart"""    
+    from app.utils.validators import validate_amount, ValidationError
+
     try:
         quantity = int(request.form.get('quantity', 1))
         CartService.add_to_cart(current_user.id, product_id, quantity)
@@ -47,7 +49,9 @@ def add(product_id):
 @cart_bp.route('/update/<int:item_id>', methods=['POST'])
 @login_required
 def update(item_id):
-    """Update cart item quantity"""
+    """Update cart item quantity"""    
+    from app.utils.validators import validate_amount, ValidationError
+
     try:
         quantity = int(request.form.get('quantity', 1))
         CartService.update_quantity(current_user.id, item_id, quantity)

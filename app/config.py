@@ -10,7 +10,7 @@ class Config:
     """Base configuration"""
     
     # App
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-CHANGE-IN-PRODUCTION'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     APP_NAME = 'Glory2YahPub'
     
     # Database
@@ -84,6 +84,10 @@ class Config:
     # Sentry (Error Tracking)
     SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
 
+    def __init__(self):
+        # Global validation: Ensure REDIS_URL is not pointing to localhost in non-dev envs only if provided
+        pass
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""
@@ -97,6 +101,12 @@ class DevelopmentConfig(Config):
     
     # Disable HTTPS requirements
     SESSION_COOKIE_SECURE = False
+    
+    # Fallback to simple cache and filesystem session when Redis not available
+    CACHE_TYPE = 'simple'
+    SESSION_TYPE = 'filesystem'
+    SESSION_FILE_DIR = '.flask_session'
+    RATELIMIT_STORAGE_URL = 'memory://'
 
 
 class TestingConfig(Config):
@@ -124,7 +134,7 @@ class StagingConfig(Config):
     
     # PostgreSQL for staging
     SQLALCHEMY_DATABASE_URI = os.environ.get('STAGING_DATABASE_URL') or \
-        'postgresql://user:pass@localhost/glory2yahpub_staging'
+        None
 
 
 class ProductionConfig(Config):
@@ -132,23 +142,31 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     
-    # PostgreSQL for production
-    database_url = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_URI')
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = database_url or 'postgresql://user:pass@localhost/glory2yahpub'
-    
+    # Production-only Overrides
+    REDIS_URL = os.environ.get('REDIS_URL')
+    CACHE_REDIS_URL = os.environ.get('REDIS_URL')
+    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL')
+    CELERY_BROKER_URL = os.environ.get('REDIS_URL')
+    CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
+
     # Strict security
     SESSION_COOKIE_SECURE = True
     
     # Production logging
     LOG_LEVEL = 'WARNING'
-    
+
     def __init__(self):
+        # Enforce PostgreSQL and Secret Key in Production
         super().__init__()
-        # Validate SECRET_KEY only when actually using production config
-        if not os.environ.get('SECRET_KEY'):
-            raise ValueError("Must set SECRET_KEY environment variable in production!")
+        db_url = os.environ.get('DATABASE_URL')
+        if db_url and db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        self.SQLALCHEMY_DATABASE_URI = db_url
+        
+        if not self.SECRET_KEY:
+            raise ValueError("CRITICAL: SECRET_KEY must be set in production environment!")
+        if not self.SQLALCHEMY_DATABASE_URI or 'sqlite' in self.SQLALCHEMY_DATABASE_URI.lower():
+            raise ValueError("CRITICAL: DATABASE_URL must be a PostgreSQL connection string in production!")
 
 
 # Configuration dictionary

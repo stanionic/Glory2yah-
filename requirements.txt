@@ -17,3 +17,4 @@ WTForms==3.0.1
 email-validator==2.0.0
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
+phonenumbers==8.13.44

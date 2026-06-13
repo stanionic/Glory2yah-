@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app import create_app, db
 from app.models.ad import Ad
 from app.models.batch import Batch
+from app.models.batch_ad import BatchAd
 
 app = create_app()
 
@@ -33,6 +34,7 @@ with app.app_context():
     existing_batches = Batch.query.count()
     if existing_batches > 0:
         print(f"\nDeleting {existing_batches} existing batches...")
+        BatchAd.query.delete()  # Clean up junction table first
         Batch.query.delete()
         db.session.commit()
     
@@ -49,19 +51,19 @@ with app.app_context():
         
         # Create batch
         batch_id = str(uuid.uuid4())
-        ad_ids = ','.join([ad.ad_id for ad in batch_ads])
         
         new_batch = Batch(
             batch_id=batch_id,
-            ads=ad_ids,
             created_at=datetime.utcnow()
         )
+        db.session.add(new_batch)
         
-        # Update ads with batch_id
-        for ad in batch_ads:
+        # Create junction entries with ordering and update ad references
+        for idx, ad in enumerate(batch_ads):
+            junction = BatchAd(batch_id=batch_id, ad_id=ad.ad_id, position=idx)
+            db.session.add(junction)
             ad.batch_id = batch_id
         
-        db.session.add(new_batch)
         batches_created += 1
         
         print(f"  Batch {batches_created}: {len(batch_ads)} ads")
@@ -74,7 +76,7 @@ with app.app_context():
     latest_batch = Batch.query.order_by(Batch.created_at.desc()).first()
     if latest_batch:
         print(f"\nLatest batch ID: {latest_batch.batch_id}")
-        print(f"Ads in latest batch: {len(latest_batch.ads.split(','))}")
+        print(f"Ads in latest batch: {latest_batch.batch_ads.count()}")
         print(f"\nThis batch will be displayed on the home page!")
     
     print("\n" + "=" * 60)

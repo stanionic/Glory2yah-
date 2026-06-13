@@ -30,9 +30,14 @@ def generate_composite_image(ads, output_path, assets_folder='static/uploads'):
     draw = ImageDraw.Draw(canvas)
     
     # Load font (fallback to default if not found)
+    # On Linux/Render, fonts are usually in /usr/share/fonts/truetype/dejavu/
+    linux_font = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    font_path = linux_font if os.path.exists(linux_font) else "arial.ttf"
+    
     try:
-        # Try to load a standard font
-        font_path = "arial.ttf" 
+        if not os.path.exists(font_path) and font_path == "arial.ttf":
+             # If on Windows/Local and font exists, this works; if not, raises IOError
+             font = ImageFont.truetype("arial.ttf", 20)
         font = ImageFont.truetype(font_path, 20)
         caption_font = ImageFont.truetype(font_path, 16)
         price_font = ImageFont.truetype(font_path, 18)

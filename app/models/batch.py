@@ -11,7 +11,10 @@ class Batch(BaseModel):
     __tablename__ = 'batches'
     
     batch_id = db.Column(db.String(36), unique=True, nullable=False, index=True)
-    ads = db.Column(db.Text, nullable=False)  # Comma-separated ad IDs
+    
+    # Relationship to ads via junction table
+    # This replaces the comma-separated 'ads' string for better normalization (Audit #6a)
+    batch_ads = db.relationship('BatchAd', backref='batch', lazy='dynamic', cascade='all, delete-orphan')
     
     # Metadata
     open_graph_data = db.Column(db.Text)
@@ -25,7 +28,7 @@ class Batch(BaseModel):
         """Convert to dictionary"""
         return {
             'batch_id': self.batch_id,
-            'ads': self.ads.split(',') if self.ads else [],
+            'ads': [ba.ad_id for ba in sorted(self.batch_ads, key=lambda x: x.position)],
             'share_count': self.share_count,
             'click_rewards': self.click_rewards,
             'created_at': self.created_at.isoformat() if self.created_at else None,
