@@ -167,6 +167,13 @@ class ProductionConfig(Config):
             raise ValueError("CRITICAL: SECRET_KEY must be set in production environment!")
         if not self.SQLALCHEMY_DATABASE_URI or 'sqlite' in self.SQLALCHEMY_DATABASE_URI.lower():
             raise ValueError("CRITICAL: DATABASE_URL must be a PostgreSQL connection string in production!")
+        
+        # Fallback if no Redis
+        if not self.REDIS_URL:
+            self.CACHE_TYPE = 'simple'
+            self.SESSION_TYPE = 'filesystem'
+            self.SESSION_FILE_DIR = '.flask_session'
+            self.RATELIMIT_STORAGE_URL = 'memory://'
 
 
 # Configuration dictionary

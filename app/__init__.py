@@ -112,6 +112,9 @@ def create_app(config_name=None):
         from app.models.batch import Batch
         from app.models.batch_ad import BatchAd
         from app.models.gkach_transaction import GkachTransaction
+        from app.models.cart import CartItem
+        from app.models.message import Message
+        from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
         db.create_all()
     
     app.logger.info(f'Glory2YahPub started in {config_name} mode')
