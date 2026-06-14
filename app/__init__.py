@@ -39,7 +39,22 @@ def create_app(config_name=None):
     
     from app.config import get_config
     app.config.from_object(get_config(config_name))
-    
+
+    # Ensure SECRET_KEY exists before CSRF token generation / CSRFProtect init.
+    # Never hardcode secrets. On production/staging we fail fast with a clear error.
+    secret_key = app.config.get("SECRET_KEY")
+    if not secret_key:
+        # Allow local development to boot without CSRF to avoid hard crashes.
+        # CSRF must remain enabled in non-local environments.
+        if str(config_name).lower() in ("development", "local", "dev"):
+            app.logger.warning("SECRET_KEY is not set. Disabling CSRF locally for development safety.")
+            app.config["WTF_CSRF_ENABLED"] = False
+        else:
+            raise RuntimeError(
+                "SECRET_KEY is required for CSRF protection but was not found. "
+                "Set the 'SECRET_KEY' environment variable on Render."
+            )
+
     setup_logging(app)
     
     # Initialize Redis with fallback mechanism
