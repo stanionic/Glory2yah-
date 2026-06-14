@@ -18,6 +18,8 @@ class RedisService:
     
     def cache_get(self, key):
         """Get cached value"""
+        if not self.redis:
+            return None
         try:
             value = self.redis.get(key)
             if value:
@@ -29,6 +31,8 @@ class RedisService:
     
     def cache_set(self, key, value, timeout=300):
         """Set cached value with timeout (default 5 minutes)"""
+        if not self.redis:
+            return False
         try:
             self.redis.setex(key, timeout, json.dumps(value))
             return True
@@ -38,6 +42,8 @@ class RedisService:
     
     def cache_delete(self, key):
         """Delete cached value"""
+        if not self.redis:
+            return False
         try:
             self.redis.delete(key)
             return True
@@ -47,6 +53,8 @@ class RedisService:
     
     def cache_clear_pattern(self, pattern):
         """Clear all keys matching pattern"""
+        if not self.redis:
+            return False
         try:
             keys = self.redis.keys(pattern)
             if keys:
@@ -60,16 +68,22 @@ class RedisService:
     
     def get_gkach_balance(self, whatsapp):
         """Get cached Gkach balance"""
+        if not self.redis:
+            return None
         key = f"gkach:balance:{whatsapp}"
         return self.cache_get(key)
     
     def set_gkach_balance(self, whatsapp, balance, timeout=300):
         """Cache Gkach balance"""
+        if not self.redis:
+            return False
         key = f"gkach:balance:{whatsapp}"
         return self.cache_set(key, balance, timeout)
     
     def invalidate_gkach_balance(self, whatsapp):
         """Invalidate Gkach balance cache"""
+        if not self.redis:
+            return False
         key = f"gkach:balance:{whatsapp}"
         return self.cache_delete(key)
     
@@ -77,16 +91,22 @@ class RedisService:
     
     def get_approved_ads(self):
         """Get cached approved ads"""
+        if not self.redis:
+            return None
         key = "ads:approved"
         return self.cache_get(key)
     
     def set_approved_ads(self, ads_data, timeout=600):
         """Cache approved ads (10 minutes)"""
+        if not self.redis:
+            return False
         key = "ads:approved"
         return self.cache_set(key, ads_data, timeout)
     
     def invalidate_approved_ads(self):
         """Invalidate approved ads cache"""
+        if not self.redis:
+            return False
         key = "ads:approved"
         return self.cache_delete(key)
     
@@ -97,13 +117,15 @@ class RedisService:
         Check rate limit using sliding window
         Returns: (allowed: bool, remaining: int)
         """
+        if not self.redis:
+            return True, limit
         try:
             current = self.redis.incr(key)
             if current == 1:
                 self.redis.expire(key, window)
             
             if current > limit:
-                return False, 0
+                return False, limit
             
             return True, limit - current
         except Exception as e:
@@ -114,6 +136,8 @@ class RedisService:
     
     def increment_counter(self, key, amount=1):
         """Increment counter"""
+        if not self.redis:
+            return None
         try:
             return self.redis.incr(key, amount)
         except Exception as e:
@@ -122,6 +146,8 @@ class RedisService:
     
     def get_counter(self, key):
         """Get counter value"""
+        if not self.redis:
+            return 0
         try:
             value = self.redis.get(key)
             return int(value) if value else 0
@@ -133,6 +159,8 @@ class RedisService:
     
     def set_session(self, session_id, data, timeout=86400):
         """Store session data (24 hours default)"""
+        if not self.redis:
+            return False
         key = f"session:{session_id}"
         try:
             self.redis.setex(key, timeout, pickle.dumps(data))
@@ -143,6 +171,8 @@ class RedisService:
     
     def get_session(self, session_id):
         """Get session data"""
+        if not self.redis:
+            return None
         key = f"session:{session_id}"
         try:
             data = self.redis.get(key)
@@ -153,6 +183,8 @@ class RedisService:
     
     def delete_session(self, session_id):
         """Delete session"""
+        if not self.redis:
+            return False
         key = f"session:{session_id}"
         return self.cache_delete(key)
     
@@ -160,6 +192,8 @@ class RedisService:
     
     def publish(self, channel, message):
         """Publish message to channel"""
+        if not self.redis:
+            return False
         try:
             self.redis.publish(channel, json.dumps(message))
             return True
@@ -169,6 +203,8 @@ class RedisService:
     
     def subscribe(self, channel):
         """Subscribe to channel"""
+        if not self.redis:
+            return None
         try:
             pubsub = self.redis.pubsub()
             pubsub.subscribe(channel)
@@ -181,6 +217,8 @@ class RedisService:
     
     def add_to_leaderboard(self, leaderboard_key, member, score):
         """Add member to sorted set leaderboard"""
+        if not self.redis:
+            return False
         try:
             self.redis.zadd(leaderboard_key, {member: score})
             return True
@@ -190,6 +228,8 @@ class RedisService:
     
     def get_leaderboard(self, leaderboard_key, start=0, end=-1, reverse=True):
         """Get leaderboard rankings"""
+        if not self.redis:
+            return []
         try:
             if reverse:
                 return self.redis.zrevrange(leaderboard_key, start, end, withscores=True)
@@ -202,6 +242,8 @@ class RedisService:
     
     def ping(self):
         """Check Redis connection"""
+        if not self.redis:
+            return False
         try:
             return self.redis.ping()
         except Exception as e:
