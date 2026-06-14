@@ -100,10 +100,10 @@
         {% endif %}
 
         <div class="admin-actions">
-            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+            <a href="{{ url_for('admin.manage_users') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Retounen nan Lis Itilizatè
             </a>
-            <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" class="btn btn-warning">
+            <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Modifye Itilizatè
             </a>
         </div>

@@ -59,20 +59,20 @@
                         </td>
                         <td>{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</td>
                         <td class="actions">
-                            <a href="{{ url_for('admin_view_user', user_id=user.id) }}" class="btn btn-sm btn-info" title="Wè detay">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ url_for('admin_edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning" title="Modifye">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% if user.id != session.get('user_id') %}
-                            <form method="POST" action="{{ url_for('admin_delete_user', user_id=user.id) }}" class="delete-form" onsubmit="return confirmDelete()">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Efase">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                            {% endif %}
-                        </td>
+                    <a href="{{ url_for('admin.admin_view_user', user_id=user.id) }}" class="btn btn-sm btn-info" title="Wè detay">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning" title="Modifye">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% if user.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('admin.admin_delete_user', user_id=user.id) }}" class="delete-form" onsubmit="return confirmDelete()">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Efase">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
                     </tr>
                     {% else %}
                     <tr>
@@ -84,7 +84,7 @@
         </div>
 
         <div class="admin-actions">
-            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Retounen nan Admin
             </a>
         </div>

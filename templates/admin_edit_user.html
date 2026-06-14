@@ -86,10 +86,10 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Anrejistre Chanje yo
                 </button>
-                <a href="{{ url_for('admin_view_user', user_id=user.id) }}" class="btn btn-secondary">
+                <a href="{{ url_for('admin.admin_view_user', user_id=user.id) }}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Anile
                 </a>
-                <a href="{{ url_for('admin_users') }}" class="btn btn-info">
+                <a href="{{ url_for('admin.manage_users') }}" class="btn btn-info">
                     <i class="fas fa-arrow-left"></i> Retounen nan Lis
                 </a>
             </div>

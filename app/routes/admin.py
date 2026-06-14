@@ -63,11 +63,16 @@ def admin_view_user(user_id):
     user = User.query.get_or_404(user_id)
     user_gkach = UserGkach.query.filter_by(user_id=user.id).first()
     transactions = GkachTransaction.query.filter_by(user_whatsapp=user.whatsapp).all()
+    user_ads = Ad.query.filter_by(user_whatsapp=user.whatsapp).all()
+    gkach_balance = user_gkach.gkach_balance if user_gkach else 0
+    
     return render_template(
         'admin_view_user.html',
         user=user,
         user_gkach=user_gkach,
         transactions=transactions,
+        user_ads=user_ads,
+        gkach_balance=gkach_balance,
         current_user=current_user
     )
 
