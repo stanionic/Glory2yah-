@@ -26,6 +26,7 @@
     </div>
 
     <form method="POST" class="gkach-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="whatsapp">Numéro WhatsApp:</label>
             <input type="text" id="whatsapp" name="whatsapp" placeholder="+50912345678" required>
