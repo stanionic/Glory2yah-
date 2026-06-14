@@ -40,6 +40,6 @@ def format_htg(amount):
         amount (float): Amount in HTG
         
     Returns:
-        str: Formatted HTG string (e.g., "115.00 HTG")
+        str: Formatted HTG string (e.g., "120.00 HTG")
     """
     return f"{amount:.2f} HTG"
