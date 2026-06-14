@@ -156,9 +156,16 @@ def checkout():
 @cart_bp.route('/api/count')
 @login_required
 def api_count():
-    """API endpoint for cart count"""
+    """API endpoint for cart count (preferred internal path)"""
     try:
         totals = CartService.calculate_totals(current_user.id)
         return jsonify({'count': totals.get('count', 0)})
-    except Exception as e:
+    except Exception:
         return jsonify({'count': 0})
+
+# Frontend/backward-compat alias: expected path is /api/cart/count
+@cart_bp.route('/api/cart/count')
+@login_required
+def api_cart_count():
+    """API endpoint for cart count (compat alias for older frontend calls)"""
+    return api_count()
