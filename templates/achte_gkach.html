@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/gkach_rate')
         .then(response => response.json())
         .then(data => {
-            const rate = data.rate || 50; // Default to 50 HTG if no rate set
+            const rate = data.rate || 1.2; // Default to 1.2 HTG if no rate set
 
             amountInput.addEventListener('input', function() {
                 const amount = parseInt(this.value);
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error fetching rate:', error);
             // Fallback to default rate
-            const rate = 50;
+            const rate = 1.2;
             amountInput.addEventListener('input', function() {
                 const amount = parseInt(this.value);
                 if (amount > 0) {

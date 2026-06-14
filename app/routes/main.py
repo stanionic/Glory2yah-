@@ -385,8 +385,9 @@ def upload_gkach_approval(request_id):
 @main_bp.route('/api/gkach_rate')
 def api_gkach_rate():
     """Get current Gkach exchange rate"""
-    # Default rate: 1 GKach = 50 HTG
-    return jsonify({'rate': 50})
+    from flask import current_app
+    rate = current_app.config.get('GKACH_TO_HTG_RATE', 1.2)
+    return jsonify({'rate': rate})
 
 
 @main_bp.route('/ad/<ad_id>')
