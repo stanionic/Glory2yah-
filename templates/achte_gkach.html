@@ -1,6 +1,32 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 14px;
+    border: 2px dashed #e0e0e0;
+    border-radius: 12px;
+    font-size: 16px;
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.form-group input[type="file"]:hover {
+    border-color: #10b981;
+    background: #ecfdf5;
+}
+
+.next-step-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fffbeb;
+    border-radius: 8px;
+    color: #92400e;
+}
+</style>
+
 <div class="container">
     <h2>Achte GKach - Demann pou achte Gkach</h2>
 
@@ -25,7 +51,7 @@
         </div>
     </div>
 
-    <form method="POST" class="gkach-form">
+    <form method="POST" enctype="multipart/form-data" class="gkach-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="whatsapp">Numéro WhatsApp:</label>
@@ -43,17 +69,23 @@
         </div>
 
         <div class="form-group">
+            <label for="document">Dokiman Apwobasyon (Prèv Pèman) *</label>
+            <input type="file" id="document" name="document" accept="image/*,.pdf" required>
+            <small>Format pèmèt: JPG, PNG, GIF, PDF</small>
+        </div>
+        
+        <div class="form-group">
             <div class="terms-checkbox">
                 <input type="checkbox" id="accept_terms" name="accept_terms" required>
                 <label for="accept_terms">Mwen li epi mwen aksepte <a href="#" onclick="showTermsModal()">Kondisyon ak Règleman</a> pou achte ak itilizasyon Gkach</label>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Soumèt Demann</button>
+        <button type="submit" class="btn btn-green">Soumèt Demann</button>
     </form>
 
     <div class="next-step-info">
-        <p><strong>Pwochen Etap:</strong> Aprè soumisyon demann ou a, ou pral redirije pou telechaje prèv pèman ou a (dokiman apwobasyon).</p>
+        <p><strong>Pwochen Etap:</strong> Aprè soumisyon demann ou a, administratè a pral kontakte w sou WhatsApp pou verifye prèv pèman an!</p>
     </div>
 
     <div class="gkach-benefits">

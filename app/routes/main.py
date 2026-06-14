@@ -270,6 +270,16 @@ def achte_gkach():
                 flash('Veuillez fournir un numéro WhatsApp et un montant valides', 'danger')
                 return redirect(url_for('main.achte_gkach'))
             
+            # Check for file upload
+            if 'document' not in request.files:
+                flash('Veuillez télécharger un document de preuve de paiement.', 'danger')
+                return redirect(url_for('main.achte_gkach'))
+            
+            file = request.files['document']
+            if file.filename == '':
+                flash('Veuillez télécharger un document de preuve de paiement.', 'danger')
+                return redirect(url_for('main.achte_gkach'))
+            
             # Get or create user gkach account
             account = UserGkach.query.filter_by(user_whatsapp=whatsapp).first()
             if not account:
@@ -282,6 +292,12 @@ def achte_gkach():
                 db.session.add(account)
                 db.session.commit()
             
+            # Save uploaded file
+            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+            filename = f'gkach_req_{uuid.uuid4().hex}.{ext}'
+            upload_path = os.path.join('static', 'uploads', filename)
+            file.save(upload_path)
+            
             # Save request
             import json
             if not account.gkach_requests or account.gkach_requests == '[]':
@@ -293,6 +309,7 @@ def achte_gkach():
                 'request_id': str(uuid.uuid4()),
                 'amount': amount,
                 'status': 'pending',
+                'document': filename,
                 'requested_at': datetime.now().strftime('%d/%m/%Y %H:%M')
             }
             requests_list.append(new_request)
@@ -300,10 +317,10 @@ def achte_gkach():
             account.gkach_requests = json.dumps(requests_list)
             db.session.commit()
             
-            flash('Demann ou a voye avèk siksè! Administratè a pral kontakte w sou WhatsApp.', 'success')
+            flash('Demann ou a voye avèk siksè ak dokiman prèv! Administratè a pral kontakte w sou WhatsApp.', 'success')
             
-            # Redirect to payment upload page
-            return redirect(url_for('main.upload_gkach_approval', request_id=new_request['request_id']))
+            # Redirect to home or success page
+            return redirect(url_for('main.index'))
             
         except Exception as e:
             db.session.rollback()
