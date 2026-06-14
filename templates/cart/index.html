@@ -415,6 +415,11 @@
 </style>
 
 <script>
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
 // Update quantity
 function updateQuantity(itemId, change) {
     const qtyEl = document.getElementById(`qty-${itemId}`);
@@ -427,7 +432,8 @@ function updateQuantity(itemId, change) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCsrfToken()
         },
         body: `quantity=${newQty}`
     })
@@ -450,7 +456,8 @@ function removeItem(itemId) {
     fetch(`/cart/remove/${itemId}`, {
         method: 'POST',
         headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCsrfToken()
         }
     })
     .then(r => r.json())

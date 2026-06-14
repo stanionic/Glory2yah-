@@ -208,14 +208,21 @@
                     <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
                 </video>
             {% else %}
-                <img id="mainImage" class="main-image" src="{{ url_for('static', filename='uploads/' + images[0]) }}" alt="{{ ad.title }}">
-                <div class="thumbnail-grid">
-                    {% for img in images %}
-                    <img class="thumbnail {% if loop.first %}active{% endif %}" 
-                         src="{{ url_for('static', filename='uploads/' + img) }}" 
-                         onclick="changeImage('{{ url_for('static', filename='uploads/' + img) }}', this)">
-                    {% endfor %}
-                </div>
+                {% set images = ad.images if ad.images else [] %}
+                {% if images %}
+                    <img id="mainImage" class="main-image" src="{{ url_for('static', filename='uploads/' + images[0]) }}" alt="{{ ad.title }}">
+                    {% if images|length > 1 %}
+                    <div class="thumbnail-grid">
+                        {% for img in images %}
+                        <img class="thumbnail {% if loop.first %}active{% endif %}" 
+                             src="{{ url_for('static', filename='uploads/' + img) }}" 
+                             onclick="changeImage('{{ url_for('static', filename='uploads/' + img) }}', this)">
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div style="width:100%;height:500px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;font-size:64px;">📦</div>
+                {% endif %}
             {% endif %}
         </div>
 
@@ -234,65 +241,40 @@
                 </a>
             </div>
 
-            {% if current_user %}
+            {% if current_user and current_user.is_authenticated %}
             <div class="share-section">
                 <h3><i class="fas fa-share-alt"></i> Pataje & Jwenn Rekonpans</h3>
                 <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
-                    Pataje lyen sa a. Chak 100 klik → 10 Gkach. Chak vant → 2% komisyon!
+                    Pataje lyen sa a. Chak 100 klik → 10 Gkach.
                 </p>
                 <div class="share-link-box">
-                    <input type="text" id="referralLink" readonly>
+                    <input type="text" id="referralLink" value="{{ request.base_url }}" readonly>
                     <button onclick="copyReferralLink()"><i class="fas fa-copy"></i> Kopye</button>
                 </div>
             </div>
             {% endif %}
         </div>
     </div>
-
-    {% if related_ads %}
-    <div class="related-products">
-        <h2>Pwodwi Similè</h2>
-        <div class="related-grid">
-            {% for rel_ad in related_ads %}
-            <div class="related-card" onclick="location.href='{{ url_for('ad_detail', ad_id=rel_ad.ad_id) }}'">
-                {% if rel_ad.images %}
-                <img src="{{ url_for('static', filename='uploads/' + rel_ad.images.split(',')[0]) }}" alt="{{ rel_ad.title }}">
-                {% endif %}
-                <div class="related-card-info">
-                    <h4>{{ rel_ad.title }}</h4>
-                    <div class="price">{{ rel_ad.price_gkach }} Gkach</div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 <script>
 function changeImage(src, thumb) {
-    document.getElementById('mainImage').src = src;
-    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-    thumb.classList.add('active');
+    const mainImg = document.getElementById('mainImage');
+    if (mainImg) {
+        mainImg.src = src;
+        document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+    }
 }
 
 function addToCart(adId) {
-    {% if current_user %}
-        window.location.href = '{{ url_for("shopping_cart", ad_id="") }}' + adId;
+    {% if current_user and current_user.is_authenticated %}
+        window.location.href = '/cart/add/' + adId;
     {% else %}
         alert('Konekte pou ajoute nan panier');
-        window.location.href = '{{ url_for("login") }}';
+        window.location.href = '{{ url_for("auth.login") }}';
     {% endif %}
 }
-
-{% if current_user %}
-fetch('{{ url_for("get_referral_link", ad_id=ad.ad_id) }}')
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('referralLink').value = data.link;
-        }
-    });
 
 function copyReferralLink() {
     const input = document.getElementById('referralLink');
@@ -300,7 +282,6 @@ function copyReferralLink() {
     document.execCommand('copy');
     alert('Lyen kopye! Pataje l pou jwenn rekonpans.');
 }
-{% endif %}
 </script>
 
 {% endblock %}

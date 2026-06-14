@@ -215,12 +215,17 @@ def register_template_filters(app):
             # Map old endpoints to new blueprint endpoints
             endpoint_map = {
                 'index': 'main.index',
+                'submit_ad': 'main.submit_ad',
                 'reels': 'main.reels',
                 'health': 'main.health',
                 'login': 'auth.login',
                 'register': 'auth.register',
                 'logout': 'auth.logout',
                 'profile': 'auth.profile',
+                'edit_profile': 'auth.edit_profile',
+                'my_ads': 'auth.my_ads',
+                'edit_ad': 'auth.edit_ad',
+                'delete_ad': 'auth.delete_ad',
             }
             
             # Try mapped endpoint first

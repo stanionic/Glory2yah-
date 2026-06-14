@@ -31,20 +31,59 @@ def wallet():
 def request_gkach():
     """Request Gkach (recharge)"""    
     from app.utils.validators import validate_amount, ValidationError
+    from app import db
+    from datetime import datetime
+    import uuid
+    import os
+
+    account = GkachService.get_or_create_account(current_user.whatsapp)
 
     if request.method == 'POST':
         try:
             amount = validate_amount(request.form.get('amount'), min_amount=1)
-            # Logic for Gkach request (will be stored in JSON field for now)
-            # In Phase 5 we will implement a more robust reward/purchase system
+            currency = request.form.get('currency', 'HTG')
+            payment_method = request.form.get('payment_method', 'moncash')
+            
+            document_filename = None
+            if 'document' in request.files:
+                file = request.files['document']
+                if file and file.filename:
+                    # Save file
+                    ext = file.filename.rsplit('.', 1)[1].lower()
+                    document_filename = f"gkach_req_{uuid.uuid4().hex}.{ext}"
+                    file.save(os.path.join('static/uploads', document_filename))
+            
+            # Save request
+            if not account.gkach_requests or account.gkach_requests == '[]':
+                requests_list = []
+            else:
+                import json
+                requests_list = json.loads(account.gkach_requests)
+            
+            new_request = {
+                'request_id': str(uuid.uuid4()),
+                'amount': amount,
+                'currency': currency,
+                'payment_method': payment_method,
+                'document': document_filename,
+                'status': 'pending',
+                'requested_at': datetime.now().strftime('%d/%m/%Y %H:%M')
+            }
+            requests_list.append(new_request)
+            
+            import json
+            account.gkach_requests = json.dumps(requests_list)
+            db.session.commit()
+            
             flash('Demann ou an voye bay administratè a!', 'success')
             return redirect(url_for('gkach.wallet'))
         except ValidationError as e:
             flash(str(e), 'error')
         except Exception as e:
+            db.session.rollback()
             flash('Erè nan demann Gkach.', 'error')
             
-    return render_template('gkach/request.html')
+    return render_template('gkach/request.html', account=account)
 
 
 @gkach_bp.route('/transfer', methods=['GET', 'POST'])
@@ -53,11 +92,14 @@ def transfer():
     """Transfer Gkach to another user"""    
     from app.utils.validators import validate_whatsapp, validate_amount, sanitize_text, ValidationError
 
+    balance = GkachService.get_balance(current_user.whatsapp)
+    transactions = GkachService.get_transactions(current_user.whatsapp, limit=20)
+
     if request.method == 'POST':
         try:
-            to_whatsapp = validate_whatsapp(request.form.get('whatsapp'))
+            to_whatsapp = validate_whatsapp(request.form.get('recipient'))
             amount = validate_amount(request.form.get('amount'), min_amount=1)
-            description = sanitize_text(request.form.get('description'))
+            description = sanitize_text(request.form.get('note', ''))
             GkachService.transfer(
                 current_user.whatsapp,
                 to_whatsapp,
@@ -72,7 +114,7 @@ def transfer():
         except Exception as e:
             flash('Erè nan transfè Gkach.', 'error')
             
-    return render_template('gkach/transfer.html')
+    return render_template('gkach/transfer.html', balance=balance, transactions=transactions)
 
 
 @gkach_bp.route('/api/summary')

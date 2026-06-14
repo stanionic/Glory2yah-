@@ -184,13 +184,79 @@ def reject_ad(ad_id):
         return jsonify({'success': False, 'message': str(e)}), 400
 
 
-@admin_bp.route('/gkach/manage')
+@admin_bp.route('/gkach/manage', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_gkach():
     """Manage user Gkach balances and requests"""
-    # Logic to fetch Gkach requests and user balances
-    return render_template('admin_manage_gkach.html')
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'set_rate':
+            # TODO: Implement exchange rate setting
+            flash('Fonksyon rate ap vini byento!', 'info')
+        elif action in ['approve_request', 'reject_request']:
+            import json
+            user_whatsapp = request.form.get('whatsapp')
+            request_id = request.form.get('request_id')
+            
+            account = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
+            if account and account.gkach_requests:
+                requests_list = json.loads(account.gkach_requests)
+                for req in requests_list:
+                    if req['request_id'] == request_id:
+                        if action == 'approve_request':
+                            req['status'] = 'approved'
+                            GkachService.add_balance(user_whatsapp, req['amount'], f"Demann apwouve: {req['amount']} Gkach")
+                        else:
+                            req['status'] = 'rejected'
+                        break
+                account.gkach_requests = json.dumps(requests_list)
+                db.session.commit()
+                flash('Demann traite avèk siksè!', 'success')
+        elif action == 'edit_balance':
+            user_whatsapp = request.form.get('whatsapp')
+            new_balance = int(request.form.get('amount', 0))
+            account = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
+            if account:
+                old_balance = account.gkach_balance
+                account.gkach_balance = new_balance
+                
+                from app.models.gkach_transaction import GkachTransaction
+                tx = GkachTransaction(
+                    transaction_id=str(uuid.uuid4()),
+                    user_whatsapp=user_whatsapp,
+                    transaction_type='admin_edit',
+                    amount=new_balance - old_balance,
+                    old_balance=old_balance,
+                    new_balance=new_balance,
+                    description=f'Admin edit balance from {old_balance} to {new_balance}',
+                    status='completed'
+                )
+                db.session.add(tx)
+                
+                from app.services.redis_service import RedisService
+                from app import redis_client
+                RedisService(redis_client).invalidate_gkach_balance(user_whatsapp)
+                
+                db.session.commit()
+                flash('Balans modifye avèk siksè!', 'success')
+        elif action == 'add_balance':
+            user_whatsapp = request.form.get('whatsapp')
+            add_amount = int(request.form.get('amount', 0))
+            if add_amount > 0:
+                GkachService.add_balance(user_whatsapp, add_amount, f'Admin added balance: {add_amount} Gkach', 'admin_credit')
+                flash('Balans ajoute avèk siksè!', 'success')
+        elif action == 'delete_user':
+            user_whatsapp = request.form.get('whatsapp')
+            UserGkach.query.filter_by(user_whatsapp=user_whatsapp).delete()
+            db.session.commit()
+            flash('Kont Gkach efase avèk siksè!', 'success')
+        
+        return redirect(url_for('admin.manage_gkach'))
+    
+    users_gkach = UserGkach.query.all()
+    return render_template('admin_manage_gkach.html', users_gkach=users_gkach)
 
 
 @admin_bp.route('/batches/create', methods=['POST'])

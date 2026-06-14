@@ -101,13 +101,24 @@
 <!-- ═══ GADE MONDYAL LIVE TV SECTION ═══ -->
 <section class="gade-mondyal-section">
     <div class="gade-mondyal-container">
-        <button class="gade-mondyal-btn" onclick="window.open('https://famelack.com/tv/ht/9dYnjnGkh6Gk0r', '_blank')" title="Gade Mondyal - Transmisyon Dirèk">
+        <button id="gade-mondyal-btn" class="gade-mondyal-btn" title="Gade Mondyal - Transmisyon Dirèk">
             <span class="soccer-icon">⚽</span>
             <span class="btn-text">GADE MONDYAL</span>
             <span class="live-badge">LIVE</span>
         </button>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('gade-mondyal-btn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            window.open('https://famelack.com/tv/ht/9dYnjnGkh6Gk0r', '_blank');
+        });
+    }
+});
+</script>
 
 <!-- ═══ KREYE PIBLISITE SECTION ═══ -->
 <section class="kreye-piblisite-hero">
@@ -178,6 +189,7 @@
                                         ✏️ Modifye
                                     </a>
                                     <form method="POST" action="{{ url_for('auth.delete_ad', ad_id=post_id) }}" style="width: 100%;" onsubmit="return confirm('Ou sèten ou vle efase piblisite sa a?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="menu-item delete-item">
                                             🗑️ Efase
                                         </button>
@@ -1296,7 +1308,7 @@
 .gade-mondyal-section {
     background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #c44569 100%);
     padding: 16px 0;
-    margin: 12px 0;
+    margin: 8px 0 12px 0;
     box-shadow: 0 8px 24px rgba(255, 107, 107, 0.3);
     position: relative;
     overflow: hidden;
@@ -1618,7 +1630,15 @@ let postsDone = false;
 
 async function likePost(postId, btn) {
     try {
-        const response = await fetch(`/api/ads/${postId}/like`, { method: 'POST' });
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        const response = await fetch(`/api/ads/${postId}/like`, { 
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -1641,7 +1661,15 @@ async function likePost(postId, btn) {
 
 async function sharePost(postId) {
     try {
-        await fetch(`/api/ads/${postId}/share`, { method: 'POST' });
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        await fetch(`/api/ads/${postId}/share`, { 
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        });
         
         const url = `${window.location.origin}/ad/${postId}`;
         if (navigator.share) {

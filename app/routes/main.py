@@ -250,6 +250,237 @@ def create_post():
         return jsonify({'success': False, 'message': 'Erè pandan kreyasyon post'}), 500
 
 
+@main_bp.route('/achte_gkach', methods=['GET', 'POST'])
+def achte_gkach():
+    """Page to request Gkach purchase"""
+    if request.method == 'POST':
+        from app import db
+        from app.models.user_gkach import UserGkach
+        from flask_login import current_user
+        import uuid
+        from datetime import datetime
+        import os
+        
+        try:
+            whatsapp = request.form.get('whatsapp', current_user.whatsapp if current_user.is_authenticated else '')
+            amount = request.form.get('amount', 0)
+            amount = int(amount) if amount else 0
+            
+            if not whatsapp or amount <= 0:
+                flash('Veuillez fournir un numéro WhatsApp et un montant valides', 'danger')
+                return redirect(url_for('main.achte_gkach'))
+            
+            # Get or create user gkach account
+            account = UserGkach.query.filter_by(user_whatsapp=whatsapp).first()
+            if not account:
+                account = UserGkach(
+                    user_whatsapp=whatsapp,
+                    user_id=current_user.id if current_user.is_authenticated else None,
+                    gkach_balance=0,
+                    gkach_requests='[]'
+                )
+                db.session.add(account)
+                db.session.commit()
+            
+            # Save request
+            import json
+            if not account.gkach_requests or account.gkach_requests == '[]':
+                requests_list = []
+            else:
+                requests_list = json.loads(account.gkach_requests)
+            
+            new_request = {
+                'request_id': str(uuid.uuid4()),
+                'amount': amount,
+                'status': 'pending',
+                'requested_at': datetime.now().strftime('%d/%m/%Y %H:%M')
+            }
+            requests_list.append(new_request)
+            
+            account.gkach_requests = json.dumps(requests_list)
+            db.session.commit()
+            
+            flash('Demann ou a voye avèk siksè! Administratè a pral kontakte w sou WhatsApp.', 'success')
+            
+            # Redirect to payment upload page
+            return redirect(url_for('main.upload_gkach_approval', request_id=new_request['request_id']))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error in achte_gkach: {e}")
+            flash('Erè pandan soumisyon demann ou a.', 'danger')
+    
+    return render_template('achte_gkach.html')
+
+
+@main_bp.route('/upload_gkach_approval/<request_id>', methods=['GET', 'POST'])
+def upload_gkach_approval(request_id):
+    """Upload payment proof for Gkach request"""
+    from app.models.user_gkach import UserGkach
+    from app import db
+    import os
+    import uuid
+    
+    if request.method == 'POST':
+        try:
+            # Find account with this request
+            accounts = UserGkach.query.all()
+            import json
+            found_account = None
+            target_request = None
+            
+            for account in accounts:
+                if not account.gkach_requests or account.gkach_requests == '[]':
+                    continue
+                requests_list = json.loads(account.gkach_requests)
+                for req in requests_list:
+                    if req.get('request_id') == request_id:
+                        found_account = account
+                        target_request = req
+                        break
+                if found_account:
+                    break
+            
+            if not found_account or not target_request:
+                flash('Demann sa a pa jwenn.', 'danger')
+                return redirect(url_for('main.achte_gkach'))
+            
+            # Save uploaded file
+            if 'document' not in request.files:
+                flash('Veuillez sélectionner un fichier.', 'danger')
+                return redirect(request.url)
+            
+            file = request.files['document']
+            if file.filename == '':
+                flash('Veuillez sélectionner un fichier.', 'danger')
+                return redirect(request.url)
+            
+            if file:
+                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+                filename = f'gkach_req_{uuid.uuid4().hex}.{ext}'
+                upload_path = os.path.join('static', 'uploads', filename)
+                file.save(upload_path)
+                
+                # Update request with document
+                requests_list = json.loads(found_account.gkach_requests)
+                for i, req in enumerate(requests_list):
+                    if req.get('request_id') == request_id:
+                        requests_list[i]['document'] = filename
+                        break
+                
+                found_account.gkach_requests = json.dumps(requests_list)
+                db.session.commit()
+                
+                flash('Prèv pèman an telechaje avèk siksè!', 'success')
+                return redirect(url_for('main.index'))
+        
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error uploading gkach proof: {e}")
+            flash('Erè pandan telechajman prèv pèman an.', 'danger')
+    
+    return render_template('upload_gkach_approval.html', request_id=request_id)
+
+
+@main_bp.route('/api/gkach_rate')
+def api_gkach_rate():
+    """Get current Gkach exchange rate"""
+    # Default rate: 1 GKach = 50 HTG
+    return jsonify({'rate': 50})
+
+
+@main_bp.route('/ad/<ad_id>')
+def view_ad(ad_id):
+    """View individual ad details (public route)"""
+    try:
+        ad = AdService.get_ad(ad_id)
+        AdService.increment_views(ad_id)
+        return render_template(
+            'ad_detail.html',
+            ad=ad,
+            current_user=current_user
+        )
+    except Exception as e:
+        flash(f'Piblisite pa jwenn: {str(e)}', 'error')
+        return render_template('index.html', posts=[], marketplace_ads=[], current_user=current_user)
+
+
+@main_bp.route('/submit_ad', methods=['GET', 'POST'])
+def submit_ad():
+    """Submit a new ad/post"""
+    from flask_login import login_required, current_user
+    from app.services.ad_service import AdService
+    from app.utils.validators import validate_whatsapp, sanitize_text, ValidationError
+    import os
+    import uuid
+    from flask import flash, redirect, url_for
+    
+    if request.method == 'POST':
+        try:
+            if not current_user.is_authenticated:
+                flash('Ou dwe konekte pou soumèt yon piblisite!', 'error')
+                return redirect(url_for('auth.login'))
+                
+            whatsapp = current_user.whatsapp
+            media_type = request.form.get('media_type', 'images')
+            ad_type = request.form.get('ad_type', 'publish')
+            title = sanitize_text(request.form.get('title', ''))
+            description = sanitize_text(request.form.get('description', ''))
+            price_gkach = int(request.form.get('price_gkach', 0))
+            
+            # Handle file uploads
+            images = []
+            if media_type == 'images':
+                for i in range(1, 4):
+                    file_key = f'image_{i}'
+                    if file_key in request.files:
+                        file = request.files[file_key]
+                        if file and file.filename:
+                            # Save file
+                            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+                            filename = f'{uuid.uuid4().hex}.{ext}'
+                            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                            file.save(upload_path)
+                            images.append(filename)
+                
+            elif media_type == 'video':
+                if 'video' in request.files:
+                    file = request.files['video']
+                    if file and file.filename:
+                        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
+                        filename = f'{uuid.uuid4().hex}.{ext}'
+                        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                        file.save(upload_path)
+                        video = filename
+                    else:
+                        video = None
+            else:
+                video = None
+            
+            # Create the ad
+            ad = AdService.create_ad(
+                user_whatsapp=whatsapp,
+                title=title,
+                description=description,
+                media_type=media_type,
+                images=','.join(images) if images else None,
+                video=video,
+                ad_type=ad_type,
+                price_gkach=price_gkach
+            )
+            
+            flash('Piblisite soumèt avèk siksè! Li ap revize pa admin yo.', 'success')
+            return redirect(url_for('auth.my_ads'))
+            
+        except ValidationError as e:
+            flash(str(e), 'error')
+        except Exception as e:
+            current_app.logger.error(f"Error submitting ad: {e}")
+            flash('Erè pandan soumèt piblisite a.', 'error')
+    
+    return render_template('submit_ad.html')
+
+
 @main_bp.route('/api/posts/preview-url', methods=['POST'])
 def preview_url():
     """Preview URL metadata for auto-display"""
