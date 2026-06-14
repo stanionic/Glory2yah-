@@ -225,15 +225,19 @@ def register_template_filters(app):
 
 def setup_logging(app):
     """Setup application logging"""
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
-    
-    log_level = getattr(logging, app.config['LOG_LEVEL'])
-    file_handler = logging.FileHandler('logs/glory2yahpub.log')
-    file_handler.setLevel(log_level)
-    
-    app.logger.addHandler(file_handler)
-    app.logger.setLevel(log_level)
+    try:
+        if not os.path.exists('logs'):
+            os.makedirs('logs', exist_ok=True)
+        
+        log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO'))
+        file_handler = logging.FileHandler('logs/glory2yahpub.log')
+        file_handler.setLevel(log_level)
+        
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(log_level)
+    except Exception as e:
+        # If file logging fails, just use stdout
+        pass
 
 
 # Gunicorn entrypoint compatibility:
