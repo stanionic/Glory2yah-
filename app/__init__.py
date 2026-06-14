@@ -44,16 +44,21 @@ def create_app(config_name=None):
     # Never hardcode secrets. On production/staging we fail fast with a clear error.
     secret_key = app.config.get("SECRET_KEY")
     if not secret_key:
-        # Allow local development to boot without CSRF to avoid hard crashes.
+        # Allow local development to boot with a generated SECRET_KEY and keep CSRF enabled.
         # CSRF must remain enabled in non-local environments.
         if str(config_name).lower() in ("development", "local", "dev"):
-            app.logger.warning("SECRET_KEY is not set. Disabling CSRF locally for development safety.")
-            app.config["WTF_CSRF_ENABLED"] = False
+            import secrets
+            secret_key = secrets.token_hex(32)
+            app.config["SECRET_KEY"] = secret_key
+            app.secret_key = secret_key
+            app.logger.warning("SECRET_KEY not set. Generated temporary SECRET_KEY for development (CSRF remains enabled).")
         else:
             raise RuntimeError(
                 "SECRET_KEY is required for CSRF protection but was not found. "
                 "Set the 'SECRET_KEY' environment variable on Render."
             )
+    else:
+        app.secret_key = secret_key
 
     setup_logging(app)
     

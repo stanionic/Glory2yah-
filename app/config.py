@@ -89,6 +89,8 @@ class Config:
         pass
 
 
+import secrets
+
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
@@ -107,6 +109,12 @@ class DevelopmentConfig(Config):
     SESSION_TYPE = 'filesystem'
     SESSION_FILE_DIR = '.flask_session'
     RATELIMIT_STORAGE_URL = 'memory://'
+    
+    # Development-only: Generate a secure fallback SECRET_KEY if not set
+    def __init__(self):
+        super().__init__()
+        if not self.SECRET_KEY:
+            self.SECRET_KEY = secrets.token_hex(32)
 
 
 class TestingConfig(Config):
