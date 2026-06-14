@@ -2,13 +2,16 @@
 Admin Routes Blueprint
 Management of ads, users, batches, and transactions
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 from app import db
 import uuid
 from datetime import datetime
 from app.services.ad_service import AdService, Ad
 from app.services.gkach_service import GkachService
+from app.models.user import User
+from app.models.user_gkach import UserGkach
+from app.models.gkach_transaction import GkachTransaction
 from app.utils.security import admin_required
 
 
@@ -37,6 +40,79 @@ def dashboard():
         users_gkach=users_gkach,
         current_user=current_user
     )
+
+
+@admin_bp.route('/users')
+@login_required
+@admin_required
+def manage_users():
+    """Manage all users"""
+    users = User.query.all()
+    return render_template(
+        'admin_users.html',
+        users=users,
+        current_user=current_user
+    )
+
+
+@admin_bp.route('/users/<int:user_id>')
+@login_required
+@admin_required
+def admin_view_user(user_id):
+    """View individual user details"""
+    user = User.query.get_or_404(user_id)
+    user_gkach = UserGkach.query.filter_by(user_id=user.id).first()
+    transactions = GkachTransaction.query.filter_by(user_whatsapp=user.whatsapp).all()
+    return render_template(
+        'admin_view_user.html',
+        user=user,
+        user_gkach=user_gkach,
+        transactions=transactions,
+        current_user=current_user
+    )
+
+
+@admin_bp.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_edit_user(user_id):
+    """Edit user details"""
+    user = User.query.get_or_404(user_id)
+    
+    if request.method == 'POST':
+        user.pseudo = request.form.get('pseudo', user.pseudo)
+        user.name = request.form.get('name', user.name)
+        user.whatsapp = request.form.get('whatsapp', user.whatsapp)
+        user.bio = request.form.get('bio', user.bio)
+        user.is_active = request.form.get('is_active') == 'on'
+        user.is_admin = request.form.get('is_admin') == 'on'
+        
+        db.session.commit()
+        flash('Itilizatè modifye avèk siksè!', 'success')
+        return redirect(url_for('admin.admin_view_user', user_id=user.id))
+    
+    return render_template(
+        'admin_edit_user.html',
+        user=user,
+        current_user=current_user
+    )
+
+
+@admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    """Delete a user"""
+    if user_id == current_user.id:
+        flash('Ou pa ka efase tèt ou menm!', 'error')
+        return redirect(url_for('admin.manage_users'))
+    
+    user = User.query.get_or_404(user_id)
+    UserGkach.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    flash('Itilizatè efase avèk siksè!', 'success')
+    return redirect(url_for('admin.manage_users'))
 
 
 @admin_bp.route('/ads')

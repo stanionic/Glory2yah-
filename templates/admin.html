@@ -4,6 +4,16 @@
 <div class="container">
     <h2>Panno Administratè Glory2yahPub</h2>
     
+    <!-- Quick Links -->
+    <div class="quick-links">
+        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary">
+            <i class="fas fa-users"></i> Jere Itilizatè yo
+        </a>
+        <a href="{{ url_for('admin.manage_gkach') }}" class="btn btn-primary">
+            <i class="fas fa-coins"></i> Jere Gkach
+        </a>
+    </div>
+    
     <!-- Facebook Connection Test -->
     <div class="facebook-section">
         <a href="{{ url_for('test_facebook_connection') }}" class="btn btn-blue">
@@ -238,6 +248,19 @@
 </div>
 
 <style>
+.quick-links {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.quick-links .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
 .admin-dashboard {
     padding: 1rem;
 }
