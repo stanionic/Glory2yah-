@@ -238,6 +238,10 @@
 </div>
 
 <style>
+.admin-dashboard {
+    padding: 1rem;
+}
+
 .facebook-section {
     background: #f8f9fa;
     padding: 1.5rem;
@@ -303,9 +307,182 @@
 .video-preview video {
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 400px;
+}
+
+.admin-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.admin-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.ads-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.ad-card {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.ad-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.ad-images img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.ad-info {
+    padding: 1rem;
+}
+
+.ad-info p {
+    margin: 0.5rem 0;
+    color: #555;
+}
+
+.ad-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    padding-top: 0;
+}
+
+.ad-actions form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.ad-actions select,
+.ad-actions input {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    flex: 1;
+    min-width: 120px;
+}
+
+.batches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.batch-card {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.batch-card h4 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.batch-card p {
+    margin: 0.5rem 0;
+    color: #555;
+}
+
+.batch-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.user-gkach-card {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.user-header h5 {
+    font-size: 1.25rem;
+    color: #333;
+    margin: 0;
+}
+
+.balance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.balance-actions .edit-balance,
+.balance-actions .add-balance {
+    display: flex;
+    flex: 1;
+    min-width: 200px;
+}
+
+.balance-actions form {
+    display: flex;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.balance-actions input {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.pending-request {
+    background: #fff3cd;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem 0;
+}
+
+.request-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 0.5rem;
+    }
+    
     .facebook-section {
         flex-direction: column;
     }
@@ -322,6 +499,34 @@
     .video-actions .btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .ad-images {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+    
+    .ad-actions form {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .ad-actions select,
+    .ad-actions input {
+        width: 100%;
+    }
+    
+    .user-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .balance-actions {
+        flex-direction: column;
+    }
+    
+    .request-actions {
+        flex-direction: column;
     }
 }
 </style>
