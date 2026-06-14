@@ -72,6 +72,8 @@ class Config:
     GKACH_REWARD_AMOUNT = 100
     GKACH_CLICKS_REQUIRED = 100
     AUTO_SLIDE_INTERVAL = 2000  # milliseconds
+    # Gkach Exchange Rate: 100 Gkach = 115 Gourdes
+    GKACH_TO_HTG_RATE = 1.15  # 1 Gkach = 1.15 HTG
     
     # Pagination
     ITEMS_PER_PAGE = 20

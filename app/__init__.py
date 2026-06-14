@@ -199,6 +199,41 @@ def register_template_filters(app):
     """Register custom Jinja2 filters"""
     import json
     from flask import url_for as flask_url_for
+    from app.utils.currency import gkach_to_htg, htg_to_gkach, format_htg
+    
+    @app.template_filter('gkach_to_htg')
+    def gkach_to_htg_filter(value):
+        """Convert Gkach to HTG"""
+        try:
+            return gkach_to_htg(int(value))
+        except:
+            return 0.0
+    
+    @app.template_filter('htg_to_gkach')
+    def htg_to_gkach_filter(value):
+        """Convert HTG to Gkach"""
+        try:
+            return htg_to_gkach(float(value))
+        except:
+            return 0
+    
+    @app.template_filter('format_htg')
+    def format_htg_filter(value):
+        """Format HTG amount for display"""
+        try:
+            return format_htg(float(value))
+        except:
+            return "0.00 HTG"
+    
+    @app.context_processor
+    def inject_currency_functions():
+        """Inject currency functions into templates"""
+        return dict(
+            gkach_to_htg=gkach_to_htg,
+            htg_to_gkach=htg_to_gkach,
+            format_htg=format_htg,
+            GKACH_TO_HTG_RATE=app.config.get('GKACH_TO_HTG_RATE', 1.15)
+        )
     
     @app.template_filter('fromjson')
     def fromjson_filter(value):

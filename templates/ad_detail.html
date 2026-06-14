@@ -59,6 +59,13 @@
     font-size: 32px;
     color: #e82e04;
     font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.product-price-htg {
+    font-size: 18px;
+    color: #666;
+    font-weight: 600;
     margin-bottom: 20px;
 }
 
@@ -229,6 +236,7 @@
         <div class="product-info">
             <h1>{{ ad.title }}</h1>
             <div class="product-price">{{ ad.price_gkach }} Gkach</div>
+            <div class="product-price-htg">{{ ad.price_gkach|gkach_to_htg|format_htg }}</div>
             <div class="product-description">{{ ad.description }}</div>
 
             <div class="action-buttons">

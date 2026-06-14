@@ -193,6 +193,13 @@
         color: var(--text-secondary);
     }
     
+    .product-price-htg {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-sm);
+    }
+    
     .product-stats {
         display: flex;
         align-items: center;
@@ -381,6 +388,7 @@
                     <span class="product-currency">Gkach</span>
                 </div>
             </div>
+            <div class="product-price-htg">{{ (product.price_gkach or 0)|gkach_to_htg|format_htg }}</div>
             
             <div class="product-stats">
                 <span class="product-stat">

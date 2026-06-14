@@ -11,6 +11,7 @@
         </div>
         <div class="balance-amount">{{ balance }}</div>
         <div class="balance-subtitle">Gkach</div>
+        <div class="balance-htg">{{ balance|gkach_to_htg|format_htg }}</div>
         
         <div class="balance-actions">
             <a href="/achte_gkach" class="balance-btn balance-btn-primary">
@@ -178,6 +179,13 @@
 .balance-subtitle {
     font-size: 18px;
     opacity: 0.8;
+    margin-bottom: 8px;
+}
+
+.balance-htg {
+    font-size: 20px;
+    opacity: 0.9;
+    font-weight: 600;
     margin-bottom: 24px;
 }
 

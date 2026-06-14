@@ -26,7 +26,10 @@
                 
                 <div class="form-group">
                     <label for="amount">Kantite Gkach</label>
-                    <input type="number" id="amount" name="amount" min="10" step="1" required placeholder="Minimòm 10 Gkach">
+                    <input type="number" id="amount" name="amount" min="10" step="1" required placeholder="Minimòm 10 Gkach" oninput="updateHtgPreview()">
+                    <div class="htg-preview" id="htgPreview">
+                        <strong>Ekivalan HTG:</strong> <span id="htgAmount">0.00 HTG</span>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -191,6 +194,15 @@
     margin-top: 4px;
 }
 
+.htg-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    color: #0369a1;
+    font-size: 14px;
+}
+
 .gkach-action-btn {
     width: 100%;
     padding: 14px;
@@ -261,4 +273,16 @@
     padding: 20px;
 }
 </style>
+
+<script>
+const GKACH_TO_HTG_RATE = {{ GKACH_TO_HTG_RATE }};
+
+function updateHtgPreview() {
+    const amountInput = document.getElementById('amount');
+    const htgAmountSpan = document.getElementById('htgAmount');
+    const amount = parseFloat(amountInput.value) || 0;
+    const htg = amount * GKACH_TO_HTG_RATE;
+    htgAmountSpan.textContent = htg.toFixed(2) + ' HTG';
+}
+</script>
 {% endblock %}
