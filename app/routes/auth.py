@@ -246,3 +246,117 @@ def change_password():
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         return jsonify({'success': False, 'message': 'Erè nan chanjman modpas'}), 500
+
+
+@auth_bp.route('/profile/delete', methods=['POST'])
+@login_required
+@limiter.limit("1 per hour")
+def delete_account():
+    """Delete current user's account (self-delete)"""
+    try:
+        # Get password confirmation
+        password = request.form.get('password', '').strip()
+        
+        if not password:
+            flash('Tanpri antre modpas ou pou konfime.', 'error')
+            return redirect(url_for('auth.profile'))
+        
+        if not current_user.check_password(password):
+            flash('Modpas envalid. Kont ou pa efase.', 'error')
+            return redirect(url_for('auth.profile'))
+        
+        # Logout first
+        logout_user()
+        session.clear()
+        
+        # Delete user's data
+        from app.models.user_gkach import UserGkach
+        from app.models.ad import Ad
+        from app.models.gkach_transaction import GkachTransaction
+        from app.models.cart import CartItem
+        
+        # Delete related records
+        UserGkach.query.filter_by(user_whatsapp=current_user.whatsapp).delete()
+        Ad.query.filter_by(user_whatsapp=current_user.whatsapp).delete()
+        GkachTransaction.query.filter_by(user_whatsapp=current_user.whatsapp).delete()
+        CartItem.query.filter_by(user_id=current_user.id).delete()
+        
+        # Delete user
+        db.session.delete(current_user)
+        db.session.commit()
+        
+        flash('Kont ou efase avèk siksè!', 'success')
+        return redirect(url_for('main.index'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Erè nan efase kont. Eseye ankò.', 'error')
+        return redirect(url_for('auth.profile'))
+
+
+@auth_bp.route('/ads')
+@login_required
+def my_ads():
+    """View all ads belonging to the current user"""
+    from app.services.ad_service import AdService
+    ads = AdService.get_user_ads(current_user.whatsapp)
+    return render_template('auth/my_ads.html', ads=ads)
+
+
+@auth_bp.route('/ads/<ad_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_ad(ad_id):
+    """Edit an existing ad (only owner)"""
+    from app.services.ad_service import AdService
+    from app.models.ad import Ad
+    from app.utils.validators import sanitize_text, ValidationError
+    
+    ad = Ad.query.filter_by(ad_id=ad_id, user_whatsapp=current_user.whatsapp).first()
+    if not ad:
+        flash('Piblisite pa jwenn oswa ou pa gen dwa modifye li.', 'error')
+        return redirect(url_for('auth.my_ads'))
+    
+    if request.method == 'POST':
+        try:
+            title = sanitize_text(request.form.get('title', ''))
+            description = sanitize_text(request.form.get('description', ''))
+            price_gkach = request.form.get('price_gkach', None)
+            if price_gkach:
+                price_gkach = int(price_gkach)
+            
+            AdService.update_ad(
+                ad_id=ad_id,
+                user_whatsapp=current_user.whatsapp,
+                title=title,
+                description=description,
+                price_gkach=price_gkach
+            )
+            
+            flash('Piblisite modifye avèk siksè!', 'success')
+            return redirect(url_for('auth.my_ads'))
+            
+        except ValidationError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('auth.edit_ad', ad_id=ad_id))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erè nan modifye piblisite.', 'error')
+            return redirect(url_for('auth.edit_ad', ad_id=ad_id))
+    
+    return render_template('auth/edit_ad.html', ad=ad.to_dict())
+
+
+@auth_bp.route('/ads/<ad_id>/delete', methods=['POST'])
+@login_required
+def delete_ad(ad_id):
+    """Delete an ad (only owner)"""
+    from app.services.ad_service import AdService
+    from app.utils.validators import ValidationError
+    
+    try:
+        AdService.delete_ad(ad_id=ad_id, user_whatsapp=current_user.whatsapp)
+        flash('Piblisite efase avèk siksè!', 'success')
+    except ValidationError as e:
+        flash(str(e), 'error')
+    
+    return redirect(url_for('auth.my_ads'))

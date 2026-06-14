@@ -148,11 +148,44 @@ class AdService:
         return ad
     
     @staticmethod
-    def delete_ad(ad_id):
-        """Delete ad"""
-        ad = Ad.query.filter_by(ad_id=ad_id).first()
+    def update_ad(ad_id, user_whatsapp, title=None, description=None, 
+                 price_gkach=None, images=None, video=None):
+        """Update an existing ad (only owner can do this)"""
+        ad = Ad.query.filter_by(ad_id=ad_id, user_whatsapp=user_whatsapp).first()
         if not ad:
-            raise ValidationError("Piblisite pa jwenn")
+            raise ValidationError("Piblisite pa jwenn oswa ou pa gen dwa modifye li")
+        
+        if title is not None and len(title) >= 3:
+            ad.title = title
+        if description is not None and len(description) >= 10:
+            ad.description = description
+        if price_gkach is not None and ad.ad_type == 'sell':
+            price_gkach = validate_amount(price_gkach, min_amount=1)
+            ad.price_gkach = price_gkach
+        if images is not None:
+            ad.images = images
+        if video is not None:
+            ad.video = video
+        
+        db.session.commit()
+        
+        # Invalidate cache
+        redis_service = RedisService(redis_client)
+        redis_service.invalidate_approved_ads()
+        redis_service.cache_delete(f"ad:{ad_id}")
+        
+        return ad
+    
+    @staticmethod
+    def delete_ad(ad_id, user_whatsapp=None):
+        """Delete ad (only owner or admin can do this)"""
+        query = Ad.query.filter_by(ad_id=ad_id)
+        if user_whatsapp:
+            query = query.filter_by(user_whatsapp=user_whatsapp)
+        
+        ad = query.first()
+        if not ad:
+            raise ValidationError("Piblisite pa jwenn oswa ou pa gen dwa efase li")
         
         db.session.delete(ad)
         db.session.commit()
