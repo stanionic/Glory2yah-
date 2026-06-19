@@ -92,7 +92,6 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per hour")
-@csrf.exempt
 def login():
     """User login"""
     if current_user.is_authenticated:
@@ -116,6 +115,12 @@ def login():
                 )
             ).first()
             
+            # For debugging: let's try to find user with flexible matching
+            if not user:
+                user = User.query.filter(User.pseudo.ilike(f'%{identifier}%')).first()
+            if not user:
+                user = User.query.filter(User.whatsapp.ilike(f'%{identifier}%')).first()
+            
             if not user or not user.check_password(password):
                 flash('Identifikasyon envalid.', 'error')
                 return redirect(url_for('auth.login'))
@@ -131,9 +136,6 @@ def login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             
-            # Note: Flask's built-in session object doesn't support regenerate().
-            # Removing this to avoid login failures/redirect loops.
-            
             flash(f'Byenveni, {user.pseudo}!', 'success')
             
             # Redirect to next page or home
@@ -143,7 +145,8 @@ def login():
             return redirect(url_for('main.index'))
             
         except Exception as e:
-            flash('Erè nan koneksyon. Eseye ankò.', 'error')
+            db.session.rollback()
+            flash(f'Erè nan koneksyon: {str(e)}', 'error')
             return redirect(url_for('auth.login'))
     
     return render_template('auth/login.html')

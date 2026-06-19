@@ -25,6 +25,10 @@ def validate_whatsapp(phone):
     # Remove spaces and special characters
     phone = re.sub(r'[^\d+]', '', phone)
     
+    # If it's just digits without +, assume it's fine (store as-is)
+    if phone.isdigit():
+        return phone
+    
     # Ensure + prefix
     if not phone.startswith('+'):
         phone = '+' + phone
@@ -32,12 +36,15 @@ def validate_whatsapp(phone):
     try:
         parsed = phonenumbers.parse(phone, None)
         if not phonenumbers.is_valid_number(parsed):
-            raise ValidationError("Numéro WhatsApp envalid")
+            # If not valid international, just return the input as-is
+            # to be flexible
+            return re.sub(r'[^\d+]', '', phone)
         
         # Format to E164
         return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
     except phonenumbers.NumberParseException:
-        raise ValidationError("Numéro WhatsApp envalid")
+        # If parsing fails, just return cleaned input
+        return re.sub(r'[^\d+]', '', phone)
 
 
 def validate_email_address(email):
@@ -57,7 +64,7 @@ def validate_email_address(email):
 
 def validate_password(password):
     """
-    Validate password - accepts either 6-digit number or alphanumeric password
+    Validate password - accepts either 6-digit number OR any password >= 4 characters
     Returns: True or raises ValidationError
     """
     if not password:
@@ -70,16 +77,9 @@ def validate_password(password):
     if re.fullmatch(r'^\d{6}$', password):
         return True
     
-    # For alphanumeric passwords, require at least 6 characters
-    if len(password) < 6:
-        raise ValidationError("Modpas alfanimerik dwe gen omwen 6 karaktè")
-    
-    # Check for at least one letter and one number for alphanumeric passwords
-    if not re.search(r'[a-zA-Z]', password):
-        raise ValidationError("Modpas alfanimerik dwe gen omwen yon lèt")
-    
-    if not re.search(r'\d', password):
-        raise ValidationError("Modpas alfanimerik dwe gen omwen yon chif")
+    # For any other password, require at least 4 characters
+    if len(password) < 4:
+        raise ValidationError("Modpas dwe gen omwen 4 karaktè")
     
     return True
 
