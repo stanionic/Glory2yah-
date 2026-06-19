@@ -586,6 +586,7 @@ def preview_url():
     from app.utils.validators import validate_url, ValidationError, sanitize_text
     import requests
     from bs4 import BeautifulSoup
+    import re
     
     try:
         data = request.get_json()
@@ -594,7 +595,27 @@ def preview_url():
         # Validate and sanitize URL
         url = validate_url(url)
         
-        # Fetch URL content
+        # Check for YouTube URLs
+        youtube_regex = r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+        youtube_match = re.search(youtube_regex, url)
+        
+        if youtube_match:
+            video_id = youtube_match.group(1)
+            return jsonify({
+                'success': True,
+                'metadata': {
+                    'title': 'YouTube Video',
+                    'description': '',
+                    'image': f'https://img.youtube.com/vi/{video_id}/maxresdefault.jpg',
+                    'site_name': 'YouTube',
+                    'url': url,
+                    'type': 'youtube',
+                    'video_id': video_id,
+                    'embed_url': f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1'
+                }
+            })
+        
+        # Fetch URL content for non-YouTube URLs
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
@@ -610,7 +631,8 @@ def preview_url():
             'description': '',
             'image': '',
             'site_name': '',
-            'url': url
+            'url': url,
+            'type': 'link'
         }
         
         # Try to get Open Graph tags first

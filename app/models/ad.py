@@ -91,6 +91,22 @@ class Ad(BaseModel):
     
     def to_dict(self):
         """Convert to dictionary"""
+        import re
+        url = self.description.strip() if self.media_type == 'url' else None
+        video_id = None
+        embed_url = None
+        if url:
+            youtube_regex = r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+            youtube_match = re.search(youtube_regex, url)
+            if youtube_match:
+                video_id = youtube_match.group(1)
+                embed_url = f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1'
+            else:
+                vimeo_regex = r'(?:vimeo\.com\/)([0-9]+)'
+                vimeo_match = re.search(vimeo_regex, url)
+                if vimeo_match:
+                    video_id = vimeo_match.group(1)
+                    embed_url = f'https://player.vimeo.com/video/{video_id}?autoplay=1&muted=1'
         return {
             'id': self.id,
             'ad_id': self.ad_id,
@@ -100,6 +116,8 @@ class Ad(BaseModel):
             'media_type': self.media_type,
             'images': self.get_images_list(),
             'video': self.video,
+            'video_id': video_id,
+            'embed_url': embed_url,
             'ad_type': self.ad_type,
             'price_gkach': self.price_gkach,
             'admin_status': self.admin_status,

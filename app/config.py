@@ -32,9 +32,7 @@ class Config:
     CACHE_DEFAULT_TIMEOUT = 300
     
     # Session
-    SESSION_TYPE = 'redis'
-    SESSION_REDIS = None  # Will be set in __init__
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False  # For development only
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
@@ -106,10 +104,8 @@ class DevelopmentConfig(Config):
     # Disable HTTPS requirements
     SESSION_COOKIE_SECURE = False
     
-    # Fallback to simple cache and filesystem session when Redis not available
+    # Fallback to simple cache when Redis not available
     CACHE_TYPE = 'simple'
-    SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '.flask_session'
     RATELIMIT_STORAGE_URL = 'memory://'
     
     # Development-only: Generate a secure fallback SECRET_KEY if not set

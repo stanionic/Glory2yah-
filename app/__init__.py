@@ -95,6 +95,25 @@ def create_app(config_name=None):
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Ou dwe konekte pou aksede paj sa a.'
     
+    # Custom template filter to get video embed URL
+    @app.template_filter('get_embed_url')
+    def get_embed_url(url):
+        import re
+        if not url:
+            return None
+        url = url.strip()
+        youtube_regex = r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+        youtube_match = re.search(youtube_regex, url)
+        if youtube_match:
+            video_id = youtube_match.group(1)
+            return f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1'
+        vimeo_regex = r'(?:vimeo\.com\/)([0-9]+)'
+        vimeo_match = re.search(vimeo_regex, url)
+        if vimeo_match:
+            video_id = vimeo_match.group(1)
+            return f'https://player.vimeo.com/video/{video_id}?autoplay=1&muted=1'
+        return None
+    
     @login_manager.user_loader
     def load_user(user_id):
         from app.models.user import User
@@ -141,6 +160,43 @@ def create_app(config_name=None):
         from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
         from app.models.admin_settings import AdminSettings # Import AdminSettings
         db.create_all()
+        
+        # Create test user for easy testing
+        try:
+            test_user = User.query.filter_by(whatsapp='+50912345678').first()
+            if not test_user:
+                # Check if pseudo 'testuser' exists, if yes, use a different one
+                pseudo = 'testuser'
+                count = 1
+                while User.query.filter_by(pseudo=pseudo).first():
+                    pseudo = f'testuser{count}'
+                    count += 1
+                
+                test_user = User(
+                    whatsapp='+50912345678',
+                    pseudo=pseudo,
+                    name='Test User',
+                    auth_provider='whatsapp',
+                    is_active=True
+                )
+                test_user.set_password('123456')
+                db.session.add(test_user)
+                db.session.commit()
+                
+                # Create GKACH account for test user if not exists
+                test_gkach = UserGkach.query.filter_by(user_whatsapp=test_user.whatsapp).first()
+                if not test_gkach:
+                    test_gkach = UserGkach(
+                        user_id=test_user.id,
+                        user_whatsapp=test_user.whatsapp,
+                        gkach_balance=1000
+                    )
+                    db.session.add(test_gkach)
+                    db.session.commit()
+                app.logger.info("Test user created: +50912345678 / 123456")
+        except Exception as e:
+            app.logger.warning(f"Could not create test user: {e}")
+            db.session.rollback()
     
     app.logger.info(f'Glory2YahPub started in {config_name} mode')
     

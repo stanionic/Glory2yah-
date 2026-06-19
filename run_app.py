@@ -14,10 +14,10 @@ os.environ['FLASK_ENV'] = 'development'
 app = create_app()
 
 if __name__ == '__main__':
-    print("🎉 Glory2YahPub - Blueprint Architecture")
-    print("🚀 Starting on http://127.0.0.1:8080")
-    print("✅ All blueprints loaded!")
-    print("📱 Modern UI: Facebook + TikTok + AliExpress Style")
-    print("📊 2-Column Layout: POSTS (left) + ADS Carousel (right)")
-    print("⏱️  Auto-slide carousel every 1 second")
+    print("Glory2YahPub - Blueprint Architecture")
+    print("Starting on http://127.0.0.1:8080")
+    print("All blueprints loaded!")
+    print("Modern UI: Facebook + TikTok + AliExpress Style")
+    print("2-Column Layout: POSTS (left) + ADS Carousel (right)")
+    print("Auto-slide carousel every 1 second")
     app.run(host='0.0.0.0', port=8080, debug=True)
