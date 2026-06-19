@@ -169,7 +169,7 @@ def contact():
 
 @main_bp.route('/api/stories')
 def api_stories():
-    """API endpoint for stories - loads random images from uploads folder"""
+    """API endpoint for stories - loads random images from uploads folder, all owned by StanD"""
     try:
         upload_dir = os.path.join(current_app.root_path, '..', 'static', 'uploads')
         
@@ -186,8 +186,11 @@ def api_stories():
         for i, filename in enumerate(story_files):
             stories.append({
                 'id': i,
-                'name': f'Story {i+1}',
-                'image': f'/static/uploads/{filename}'
+                'name': 'StanD',  # All stories belong to StanD
+                'title': 'Piblisite StanD',
+                'desc': 'Gade piblisite sa a!',
+                'price': 0,
+                'img': f'/static/uploads/{filename}'
             })
         
         return jsonify({

@@ -1518,16 +1518,20 @@ document.addEventListener('click', (e) => {
 </script>
 <script>
 // ═══ STORIES LOADER (RECTANGULAR GRID) ═══
+// Global stories data variable for story viewer
+let STORIES_DATA = [];
+
 async function loadStories() {
     try {
         const response = await fetch('/api/stories');
         const data = await response.json();
         
         if (data.success && data.stories.length > 0) {
+            STORIES_DATA = data.stories;  // Set global variable for story viewer
             const container = document.getElementById('storiesGrid');
             container.innerHTML = data.stories.map((story, i) => `
                 <div class="story-card" onclick="openStory(${i})">
-                    <img class="story-img" src="${story.image}" alt="${story.name}" onerror="this.src='/static/images/logo.png'">
+                    <img class="story-img" src="${story.img}" alt="${story.name}" onerror="this.src='/static/images/logo.png'">
                     <div class="story-info">
                         <span class="story-name">${story.name}</span>
                     </div>
