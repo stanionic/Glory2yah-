@@ -81,6 +81,23 @@
     display: none !important;
 }
 
+/* Auto-rotate support */
+@media screen and (orientation: portrait) {
+    .gadematch-video-container,
+    .gadematch-play-container {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+@media screen and (orientation: landscape) {
+    .gadematch-video-container,
+    .gadematch-play-container {
+        width: 100%;
+        height: 100%;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .gadematch-play-button {
@@ -154,8 +171,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoPlayerContainer = document.getElementById('videoPlayerContainer');
     const gadematchIframe = document.getElementById('gadematchIframe');
 
+    // Auto-rotate: request landscape orientation when entering fullscreen
+    async function requestFullScreenAndRotate(elem) {
+        try {
+            // First try to lock orientation to landscape if supported
+            if (screen.orientation && screen.orientation.lock) {
+                try {
+                    await screen.orientation.lock('landscape');
+                } catch (e) {
+                    console.log('Orientation lock not supported or failed:', e);
+                }
+            }
+            
+            // Then request fullscreen
+            if (elem.requestFullscreen) {
+                await elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                await elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                await elem.msRequestFullscreen();
+            }
+        } catch (e) {
+            console.log('Fullscreen request failed:', e);
+        }
+    }
+
     if (playStreamButton) {
-        playStreamButton.addEventListener('click', function() {
+        playStreamButton.addEventListener('click', async function() {
             // Load the stream
             gadematchIframe.src = 'https://famelack.com/tv/ht/9dYnjnGkh6Gk0r?autoplay=1';
             
@@ -163,15 +205,41 @@ document.addEventListener('DOMContentLoaded', function() {
             playStreamButtonContainer.classList.add('hidden');
             videoPlayerContainer.style.display = 'block';
             
-            // Try to enter full screen
-            const elem = videoPlayerContainer;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) { /* Safari */
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) { /* IE11 */
-                elem.msRequestFullscreen();
+            // Try to enter full screen and auto-rotate
+            await requestFullScreenAndRotate(videoPlayerContainer);
+        });
+    }
+
+    // Listen for fullscreen changes
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    function handleFullscreenChange() {
+        if (!document.fullscreenElement && 
+            !document.webkitFullscreenElement && 
+            !document.mozFullScreenElement && 
+            !document.msFullscreenElement) {
+            // Exit fullscreen - unlock orientation
+            if (screen.orientation && screen.orientation.unlock) {
+                try {
+                    screen.orientation.unlock();
+                } catch (e) {
+                    console.log('Orientation unlock failed:', e);
+                }
             }
+        }
+    }
+
+    // Listen for orientation changes
+    if (screen.orientation && screen.orientation.addEventListener) {
+        screen.orientation.addEventListener('change', function() {
+            console.log('Orientation changed:', screen.orientation.type);
+        });
+    } else if (window.addEventListener) {
+        window.addEventListener('orientationchange', function() {
+            console.log('Orientation changed:', window.orientation);
         });
     }
 });
