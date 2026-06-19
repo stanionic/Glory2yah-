@@ -222,7 +222,7 @@
             <div class="form-group">
                 <div class="form-row">
                     <label for="password" class="form-label">Modpas</label>
-                    <a href="#" class="forgot-link">Oubliye modpas?</a>
+                    <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Oubliye modpas?</a>
                 </div>
                 <input id="password" name="password" type="password" required 
                        class="form-input"

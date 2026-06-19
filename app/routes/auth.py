@@ -33,36 +33,49 @@ def register():
             password = request.form.get('password', '').strip()
             bio = request.form.get('bio', '').strip()
             
-            # Validate
-            whatsapp = validate_whatsapp(whatsapp)
-            pseudo = validate_pseudo(pseudo)
-            validate_password(password)
+            print(f"DEBUG Register: whatsapp={whatsapp}, pseudo={pseudo}, name={name}")
+            
+            # Validate - be very flexible
+            # Clean whatsapp first
+            whatsapp_clean = ''.join(c for c in whatsapp if c.isdigit() or c == '+')
+            if whatsapp_clean and not whatsapp_clean.startswith('+'):
+                whatsapp_clean = '+' + whatsapp_clean
+            # If empty after cleaning, use original
+            if not whatsapp_clean:
+                whatsapp_clean = whatsapp
+            
+            # Clean pseudo (remove any non-valid characters)
+            pseudo_clean = pseudo
+            if not pseudo_clean:
+                pseudo_clean = whatsapp_clean
+            
+            print(f"DEBUG Register: cleaned - whatsapp={whatsapp_clean}, pseudo={pseudo_clean}")
             
             # Check if pseudo exists
-            if User.query.filter_by(pseudo=pseudo).first():
-                flash('Pseudo sa a deja pran.', 'error')
+            existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
+            if existing_pseudo:
+                print(f"DEBUG: Pseudo already exists: {pseudo_clean}")
+                flash(f'Pseudo "{pseudo_clean}" la deja pran. Tanpri chwazi yon lòt.', 'error')
                 return redirect(url_for('auth.register'))
             
             # Check if WhatsApp already registered
-            existing = User.query.filter(
-                User.whatsapp == whatsapp,
-                User.password_hash.isnot(None)
-            ).first()
-            
-            if existing:
-                flash('Numéro WhatsApp sa a deja anrejistre.', 'error')
+            existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
+            if existing_whatsapp and existing_whatsapp.password_hash is not None:
+                print(f"DEBUG: WhatsApp already registered: {whatsapp_clean}")
+                flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
                 return redirect(url_for('auth.login'))
             
-            # Create user
+            # Create user - be very flexible
             user = User(
-                whatsapp=whatsapp,
-                pseudo=pseudo,
-                name=name,
+                whatsapp=whatsapp_clean,
+                pseudo=pseudo_clean,
+                name=name if name else pseudo_clean,
                 bio=bio,
                 auth_provider='whatsapp',
                 is_active=True
             )
             user.set_password(password)
+            print(f"DEBUG: User created - id={user.id}, password hash set")
             
             db.session.add(user)
             db.session.commit()
@@ -70,21 +83,24 @@ def register():
             # Create Gkach account
             user_gkach = UserGkach(
                 user_id=user.id,
-                user_whatsapp=whatsapp,
+                user_whatsapp=whatsapp_clean,
                 gkach_balance=0
             )
             db.session.add(user_gkach)
             db.session.commit()
+            print(f"DEBUG: GKACH account created")
             
-            flash('Kont kreye avèk siksè! Konekte kounye a.', 'success')
+            flash('Kont kreye avèk siksè! Ou kapab konekte kounye a.', 'success')
             return redirect(url_for('auth.login'))
             
         except ValidationError as e:
+            print(f"DEBUG: Validation error - {str(e)}")
             flash(str(e), 'error')
             return redirect(url_for('auth.register'))
         except Exception as e:
             db.session.rollback()
-            flash('Erè nan kreyasyon kont. Eseye ankò.', 'error')
+            print(f"DEBUG: Exception in register - {str(e)}")
+            flash(f'Erè nan kreyasyon kont: {str(e)}. Tanpri eseye ankò.', 'error')
             return redirect(url_for('auth.register'))
     
     return render_template('auth/register.html')
@@ -107,7 +123,17 @@ def login():
                 flash('Tout chan yo obligatwa.', 'error')
                 return redirect(url_for('auth.login'))
             
-            # Find user by pseudo or whatsapp
+            # Clean identifier - remove all non-digit except + at start
+            clean_identifier = identifier
+            if clean_identifier.startswith('+'):
+                clean_identifier = '+' + ''.join(c for c in clean_identifier[1:] if c.isdigit())
+            else:
+                clean_identifier = ''.join(c for c in clean_identifier if c.isdigit())
+            
+            # Find user by pseudo or whatsapp - multiple attempts
+            user = None
+            
+            # 1. Exact match on identifier
             user = User.query.filter(
                 db.or_(
                     User.pseudo == identifier,
@@ -115,14 +141,23 @@ def login():
                 )
             ).first()
             
-            # For debugging: let's try to find user with flexible matching
+            # 2. If not found, try with clean identifier
+            if not user and clean_identifier != identifier:
+                user = User.query.filter(
+                    db.or_(
+                        User.pseudo == clean_identifier,
+                        User.whatsapp == clean_identifier
+                    )
+                ).first()
+            
+            # 3. If not found, try LIKE matches
             if not user:
                 user = User.query.filter(User.pseudo.ilike(f'%{identifier}%')).first()
             if not user:
                 user = User.query.filter(User.whatsapp.ilike(f'%{identifier}%')).first()
             
             if not user or not user.check_password(password):
-                flash('Identifikasyon envalid.', 'error')
+                flash('Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.', 'error')
                 return redirect(url_for('auth.login'))
             
             if not user.is_active:
@@ -363,3 +398,49 @@ def delete_ad(ad_id):
         flash(str(e), 'error')
     
     return redirect(url_for('auth.my_ads'))
+
+
+def generate_temp_password():
+    """Generate a random 6-digit temporary password"""
+    import random
+    return str(random.randint(100000, 999999))
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
+def forgot_password():
+    """Forgot password: generate a temporary password and show it to the user"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    temp_password = None
+    
+    if request.method == 'POST':
+        identifier = request.form.get('identifier', '').strip()
+        
+        if not identifier:
+            flash('Tanpri antre WhatsApp ou oswa pseudo.', 'error')
+            return redirect(url_for('auth.forgot_password'))
+        
+        # Find the user
+        user = User.query.filter(
+            db.or_(
+                User.pseudo == identifier,
+                User.whatsapp == identifier
+            )
+        ).first()
+        
+        if not user:
+            flash('Kont sa a pa egziste.', 'error')
+            return redirect(url_for('auth.forgot_password'))
+        
+        # Generate a temporary password
+        temp_password = generate_temp_password()
+        
+        # Set the new password for the user
+        user.set_password(temp_password)
+        db.session.commit()
+        
+        flash('Modpas pwovizwa te kreye avèk siksè!', 'success')
+    
+    return render_template('auth/forgot_password.html', temp_password=temp_password)
