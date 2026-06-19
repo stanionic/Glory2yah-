@@ -12,6 +12,7 @@ from app.services.gkach_service import GkachService
 from app.models.user import User
 from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
+from app.models.admin_settings import AdminSettings # Import AdminSettings
 from app.utils.security import admin_required
 
 
@@ -32,12 +33,16 @@ def dashboard():
     batches = Batch.query.all()
     users_gkach = UserGkach.query.all()
     
+    # Fetch all admin settings
+    admin_settings = AdminSettings.get_all_settings()
+    
     return render_template(
         'admin.html',
         stats=stats,
         ads=ads,
         batches=batches,
         users_gkach=users_gkach,
+        admin_settings=admin_settings,
         current_user=current_user
     )
 
@@ -292,3 +297,32 @@ def create_batch():
         flash(f'Erè nan kreyasyon pakèt: {str(e)}', 'error')
 
     return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/api/popup_settings', methods=['GET'])
+def get_popup_settings_api():
+    settings = AdminSettings.get_all_settings()
+    # Convert boolean strings back to actual booleans
+    settings['enable_account_reminder'] = settings.get('enable_account_reminder') == 'True'
+    settings['enable_gkach_notice'] = settings.get('enable_gkach_notice') == 'True'
+    settings['popup_interval_minutes'] = int(settings.get('popup_interval_minutes', 10))
+    settings['gkach_required_amount'] = int(settings.get('gkach_required_amount', 1000))
+    settings['gkach_target_date'] = settings.get('gkach_target_date', '2026-06-20')
+    
+    return jsonify(settings)
+
+
+@admin_bp.route('/popup_settings', methods=['POST'])
+@login_required
+@admin_required
+def popup_settings():
+    if request.method == 'POST':
+        AdminSettings.set_setting('enable_account_reminder', request.form.get('enable_account_reminder') == 'on')
+        AdminSettings.set_setting('enable_gkach_notice', request.form.get('enable_gkach_notice') == 'on')
+        AdminSettings.set_setting('popup_interval_minutes', request.form.get('popup_interval_minutes', type=int))
+        AdminSettings.set_setting('gkach_target_date', request.form.get('gkach_target_date'))
+        AdminSettings.set_setting('gkach_required_amount', request.form.get('gkach_required_amount', type=int))
+        flash('Paramèt popup yo mete ajou avèk siksè!', 'success')
+    return redirect(url_for('admin.dashboard'))
+
+

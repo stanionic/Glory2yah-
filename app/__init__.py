@@ -104,17 +104,21 @@ def create_app(config_name=None):
     def inject_global_data():
         from flask_login import current_user
         from app.services.cart_service import CartService
+        from app.services.gkach_service import GkachService # Import GkachService
         
         data = {
             'is_logged_in': current_user.is_authenticated,
-            'cart_count': 0
+            'cart_count': 0,
+            'gkach_balance': 0 # Default to 0
         }
         
         if current_user.is_authenticated:
             try:
                 cart_totals = CartService.calculate_totals(current_user.id)
                 data['cart_count'] = cart_totals['count']
-            except:
+                data['gkach_balance'] = GkachService.get_balance(current_user.whatsapp) # Get Gkach balance
+            except Exception as e:
+                app.logger.error(f"Error injecting global data: {e}")
                 pass
                 
         return data
@@ -135,6 +139,7 @@ def create_app(config_name=None):
         from app.models.cart import CartItem
         from app.models.message import Message
         from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
+        from app.models.admin_settings import AdminSettings # Import AdminSettings
         db.create_all()
     
     app.logger.info(f'Glory2YahPub started in {config_name} mode')

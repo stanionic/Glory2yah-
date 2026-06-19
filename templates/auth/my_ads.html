@@ -3,13 +3,13 @@
 {% block title %}Piblisite m yo - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <div class="flex items-center justify-between mb-6">
+<div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold">Piblisite m yo</h1>
-            <p class="text-sm text-gray-500">Jere tout piblisite ou isit la</p>
+            <h1 class="text-2xl font-bold text-gray-900">Piblisite m yo</h1>
+            <p class="text-sm text-gray-500 mt-1">Jere tout piblisite ou isit la</p>
         </div>
-        <a href="{{ url_for('auth.profile') }}" class="text-sm text-gray-500 hover:text-gray-700">
+        <a href="{{ url_for('auth.profile') }}" class="mt-4 sm:mt-0 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200">
             ← Retounen nan pwofil
         </a>
     </div>
@@ -17,15 +17,15 @@
     {% if ads %}
     <div class="grid gap-4">
         {% for ad in ads %}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div class="flex items-start gap-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row items-start gap-4">
                 {% if ad.image_url %}
-                <div class="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                <div class="w-full h-48 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
                     <img src="{{ ad.image_url }}" class="w-full h-full object-cover">
                 </div>
-                {% elif ad.images %}
+                {% elif ad.images and ad.images|length > 0 %}
                 <div class="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                    <img src="/static/uploads/{{ ad.images.split(',')[0] }}" class="w-full h-full object-cover">
+                    <img src="/static/uploads/{{ ad.images[0] }}" class="w-full h-full object-cover">
                 </div>
                 {% else %}
                 <div class="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
@@ -52,13 +52,13 @@
                                 {{ ad.admin_status }}
                             </span>
                         </div>
-                        <div class="flex gap-2">
-                            <a href="{{ url_for('auth.edit_ad', ad_id=ad.ad_id) }}" class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition">
+                        <div class="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+                            <a href="{{ url_for('auth.edit_ad', ad_id=ad.ad_id) }}" class="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition text-center">
                                 <i class="fas fa-edit mr-2"></i>Modifye
                             </a>
                             <form method="POST" action="{{ url_for('auth.delete_ad', ad_id=ad.ad_id) }}" onsubmit="return confirm('Ou sèten ou vle efase piblisite sa a?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 text-sm font-bold text-red-600 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition text-center">
                                     <i class="fas fa-trash mr-2"></i>Efase
                                 </button>
                             </form>
@@ -70,13 +70,13 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="bg-white rounded-2xl p-12 text-center border border-gray-100 border-dashed">
+    <div class="bg-white rounded-2xl p-8 sm:p-12 text-center border border-gray-100 border-dashed">
         <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-2xl">
             <i class="fas fa-images"></i>
         </div>
-        <h3 class="text-gray-900 font-bold mb-1">Pa gen piblisite ankò</h3>
+        <h3 class="text-gray-900 font-bold mb-1 text-xl">Pa gen piblisite ankò</h3>
         <p class="text-gray-400 text-sm mb-6">Kòmanse vann sou Glory2YahPub kounye a!</p>
-        <a href="#" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20">
+        <a href="#" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors duration-200">
             <i class="fas fa-plus"></i>
             Kreye premye piblisite w
         </a>

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}GADE MATCH - Live Sports{% endblock %}
+
+{% block content %}
+<style>
+.gadematch-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: black;
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+}
+
+.gadematch-video-container {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: black;
+    display: none;
+}
+
+.gadematch-video-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.gadematch-play-container {
+    flex-grow: 1;
+    background-color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+}
+
+.gadematch-play-button {
+    padding: 30px 50px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+    max-width: 100%;
+}
+
+.gadematch-play-button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.gadematch-play-button:active {
+    transform: scale(0.98);
+}
+
+.gadematch-play-button svg {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .gadematch-play-button {
+        padding: 25px 40px;
+        font-size: 22px;
+        gap: 12px;
+    }
+    
+    .gadematch-play-button svg {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .gadematch-play-button {
+        padding: 20px 30px;
+        font-size: 18px;
+        gap: 10px;
+        flex-direction: column;
+    }
+    
+    .gadematch-play-button svg {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media (max-height: 600px) {
+    .gadematch-play-button {
+        padding: 15px 25px;
+        font-size: 16px;
+        gap: 8px;
+    }
+    
+    .gadematch-play-button svg {
+        width: 40px;
+        height: 40px;
+    }
+}
+</style>
+
+<div class="gadematch-container">
+    <!-- Video Player Section - FULL SCREEN -->
+    <div id="videoPlayerContainer" class="gadematch-video-container">
+        <iframe
+            id="gadematchIframe"
+            src=""
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowfullscreen
+            webkitallowfullscreen
+            mozallowfullscreen
+        ></iframe>
+    </div>
+
+    <div id="playStreamButtonContainer" class="gadematch-play-container">
+        <button id="playStreamButton" class="gadematch-play-button">
+            <svg fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            <span>PLAY</span>
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const playStreamButton = document.getElementById('playStreamButton');
+    const playStreamButtonContainer = document.getElementById('playStreamButtonContainer');
+    const videoPlayerContainer = document.getElementById('videoPlayerContainer');
+    const gadematchIframe = document.getElementById('gadematchIframe');
+
+    if (playStreamButton) {
+        playStreamButton.addEventListener('click', function() {
+            // Load the stream
+            gadematchIframe.src = 'https://famelack.com/tv/ht/9dYnjnGkh6Gk0r?autoplay=1';
+            
+            // Hide play button
+            playStreamButtonContainer.classList.add('hidden');
+            videoPlayerContainer.style.display = 'block';
+            
+            // Try to enter full screen
+            const elem = videoPlayerContainer;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

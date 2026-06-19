@@ -98,12 +98,12 @@
     </div>
 </section>
 
-<!-- ═══ GADE MONDYAL LIVE TV SECTION ═══ -->
+<!-- ═══ GADE MATCH LIVE TV SECTION ═══ -->
 <section class="gade-mondyal-section">
     <div class="gade-mondyal-container">
-        <button id="gade-mondyal-btn" class="gade-mondyal-btn" title="Gade Mondyal - Transmisyon Dirèk">
+        <button id="gade-mondyal-btn" class="gade-mondyal-btn" title="GADE MATCH - Transmisyon Dirèk" data-is-authenticated="{{ is_logged_in }}" data-gkach-balance="{{ gkach_balance }}">
             <span class="soccer-icon">⚽</span>
-            <span class="btn-text">GADE MONDYAL</span>
+            <span class="btn-text">GADE MATCH</span>
             <span class="live-badge">LIVE</span>
         </button>
     </div>
@@ -111,10 +111,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const btn = document.getElementById('gade-mondyal-btn');
-    if (btn) {
-        btn.addEventListener('click', function() {
-            window.open('https://famelack.com/tv/ht/9dYnjnGkh6Gk0r', '_blank');
+    const gadeMondyalBtn = document.getElementById('gade-mondyal-btn');
+    if (gadeMondyalBtn) {
+        gadeMondyalBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            window.location.href = '{{ url_for("main.tv") }}';
         });
     }
 });

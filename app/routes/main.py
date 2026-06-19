@@ -5,12 +5,14 @@ Homepage and core pages
 import os
 import random
 import re
-from flask import Blueprint, render_template, request, jsonify, current_app, flash
+from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
 from app.services.ad_service import AdService
 from app.services.redis_service import RedisService
 from app import redis_client
-from flask_login import current_user
-
+from flask_login import current_user, login_required
+from app.models.admin_settings import AdminSettings
+from app.services.gkach_service import GkachService
+from datetime import datetime
 main_bp = Blueprint('main', __name__)
 
 
@@ -40,6 +42,58 @@ def index():
             marketplace_ads=[],
             current_user=current_user
         )
+
+
+@main_bp.route('/tv')
+@login_required
+def tv():
+    # Fetch admin settings for popup configuration
+    admin_settings = AdminSettings.get_all_settings()
+    enable_gkach_notice = admin_settings.get('enable_gkach_notice') == 'True'
+    gkach_required_amount = int(admin_settings.get('gkach_required_amount', 1000))
+    gkach_target_date_str = admin_settings.get('gkach_target_date', '2026-06-20')
+    gkach_target_date = datetime.strptime(gkach_target_date_str, '%Y-%m-%d') if gkach_target_date_str else datetime(2026, 6, 20)
+
+    current_time = datetime.now()
+
+    # The previous server-side check for authentication is now implicitly handled by @login_required
+    # However, we still need to pass is_logged_in for client-side JS
+
+    # If Gkach notice is enabled and conditions are met
+    if enable_gkach_notice and current_time < gkach_target_date and current_user.get_gkach_balance() < gkach_required_amount:
+        flash(f'Aksè a GADE MATCH mande {gkach_required_amount} GKACH anvan {gkach_target_date.strftime("%d %b %Y")}. Tanpri achte GKACH.', 'error')
+        return redirect(url_for('main.index')) # Redirect to index to show GKACH popup
+
+    return render_template('tv.html', 
+                           is_logged_in=current_user.is_authenticated,
+                           gkach_balance=current_user.get_gkach_balance(),
+                           admin_settings=admin_settings)
+
+
+@main_bp.route('/gadematch')
+@login_required
+def gadematch():
+    # Fetch admin settings for popup configuration
+    admin_settings = AdminSettings.get_all_settings()
+    enable_gkach_notice = admin_settings.get('enable_gkach_notice') == 'True'
+    gkach_required_amount = int(admin_settings.get('gkach_required_amount', 1000))
+    gkach_target_date_str = admin_settings.get('gkach_target_date', '2026-06-20')
+    gkach_target_date = datetime.strptime(gkach_target_date_str, '%Y-%m-%d') if gkach_target_date_str else datetime(2026, 6, 20)
+
+    current_time = datetime.now()
+
+    # The previous server-side check for authentication is now implicitly handled by @login_required
+    # However, we still need to pass is_logged_in for client-side JS
+
+    # If Gkach notice is enabled and conditions are met
+    if enable_gkach_notice and current_time < gkach_target_date and current_user.get_gkach_balance() < gkach_required_amount:
+        flash(f'Aksè a GADE MATCH mande {gkach_required_amount} GKACH anvan {gkach_target_date.strftime("%d %b %Y")}. Tanpri achte GKACH.', 'error')
+        return redirect(url_for('main.index')) # Redirect to index to show GKACH popup
+
+    return render_template('tv.html', 
+                           is_logged_in=current_user.is_authenticated,
+                           gkach_balance=current_user.get_gkach_balance(),
+                           admin_settings=admin_settings)
 
 
 @main_bp.route('/health')

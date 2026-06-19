@@ -7,7 +7,7 @@
     <div class="admin-section">
         <h3>Jesyon Taux Echanj Gkach</h3>
         <div class="rate-setting">
-            <form method="POST" action="{{ url_for('manage_gkach') }}">
+            <form method="POST" action="{{ url_for('admin.manage_gkach') }}">
                 <input type="hidden" name="action" value="set_rate">
                 <label for="currency">Lajan:</label>
                 <select name="currency" id="currency" required>
@@ -26,7 +26,7 @@
         <div class="user-gkach-card">
             <div class="user-header">
                 <h4>{{ user.user_whatsapp }}</h4>
-                <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;" onsubmit="return confirm('Èske ou sèten ou vle efase itilizatè sa a?')">
+                <form method="POST" action="{{ url_for('admin.manage_gkach') }}" style="display: inline;" onsubmit="return confirm('Èske ou sèten ou vle efase itilizatè sa a?')">
                     <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                     <input type="hidden" name="action" value="delete_user">
                     <button type="submit" class="btn btn-delete">Efase Itilizatè</button>
@@ -42,15 +42,26 @@
                         <p><strong>Demann Pandan:</strong> {{ req.amount }} Gkach</p>
                         <p><strong>Dat:</strong> {{ req.requested_at }}</p>
                         {% if req.document %}
-                        <p><strong>Dokiman:</strong> <a href="{{ url_for('static', filename='uploads/' + req.document) }}" target="_blank">Wè Dokiman</a></p>
+                        <p><strong>Dokiman:</strong></p>
+                        {% set document_path = url_for('static', filename='uploads/' + req.document) %}
+                        {% set file_extension = req.document.split('.')[-1] %}
+                        {% if file_extension in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <img src="{{ document_path }}" alt="Dokiman Apwobasyon" style="max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px;">
+                        {% elif file_extension == 'pdf' %}
+                            <iframe src="{{ document_path }}" width="100%" height="500px" style="border: none; border-radius: 8px; margin-top: 10px;"></iframe>
+                        {% else %}
+                            <a href="{{ document_path }}" target="_blank">Wè Dokiman</a>
+                        {% endif %}
                         <div class="request-actions">
-                            <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
+                            <form method="POST" action="{{ url_for('admin.manage_gkach') }}" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                                 <input type="hidden" name="request_id" value="{{ req.request_id }}">
                                 <input type="hidden" name="action" value="approve_request">
                                 <button type="submit" class="btn btn-success">Apwouve</button>
                             </form>
-                            <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
+                            <form method="POST" action="{{ url_for('admin.manage_gkach') }}" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                                 <input type="hidden" name="request_id" value="{{ req.request_id }}">
                                 <input type="hidden" name="action" value="reject_request">
@@ -67,7 +78,7 @@
 
             <div class="balance-actions">
                 <div class="edit-balance">
-                    <form method="POST" action="{{ url_for('manage_gkach') }}">
+                    <form method="POST" action="{{ url_for('admin.manage_gkach') }}">
                         <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                         <input type="hidden" name="action" value="edit_balance">
                         <input type="number" name="amount" placeholder="Nouvo balans" min="0" required>
@@ -75,7 +86,7 @@
                     </form>
                 </div>
                 <div class="add-balance">
-                    <form method="POST" action="{{ url_for('manage_gkach') }}">
+                    <form method="POST" action="{{ url_for('admin.manage_gkach') }}">
                         <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                         <input type="hidden" name="action" value="add_balance">
                         <input type="number" name="amount" placeholder="Kantite Gkach" min="1" required>
@@ -93,184 +104,317 @@
 </div>
 
 <style>
-.user-gkach-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+    body {
+        background-color: #f4f7f6; /* Light gray background */
+        font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Modern font stack */
+    }
 
-.user-gkach-card h4 {
-    margin-top: 0;
-    color: #333;
-}
+    .container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+        background: #ffffff; /* White background for the main container */
+        border-radius: 12px; /* More rounded corners */
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); /* Softer, more pronounced shadow */
+    }
 
-.pending-request {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 4px;
-    padding: 15px;
-    margin: 10px 0;
-}
+    h2 {
+        text-align: center;
+        color: #2c3e50; /* Darker, more professional heading color */
+        margin-bottom: 30px;
+        font-weight: 700; /* Bolder heading */
+        font-size: 2em;
+    }
 
-.request-actions {
-    margin-top: 10px;
-}
+    .admin-section {
+        margin-top: 30px;
+    }
 
-.request-actions form {
-    display: inline-block;
-    margin-right: 10px;
-}
+    .admin-section h3 {
+        color: #34495e; /* Slightly lighter heading for sections */
+        margin-bottom: 20px;
+        font-size: 1.5em;
+        border-bottom: 2px solid #ecf0f1; /* Subtle separator */
+        padding-bottom: 10px;
+    }
 
-.add-balance {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-}
+    /* Rate Setting Form */
+    .rate-setting {
+        background: #eef1f4; /* Light background for the rate setting */
+        border: 1px solid #dce0e6;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-end;
+    }
 
-.add-balance form {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+    .rate-setting label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 5px;
+        display: block;
+    }
 
-.add-balance input[type="number"] {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 120px;
-}
+    .rate-setting select,
+    .rate-setting input[type="number"] {
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        min-width: 150px;
+        font-size: 1em;
+        transition: border-color 0.3s;
+    }
 
-.btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    text-decoration: none;
-    display: inline-block;
-}
+    .rate-setting select:focus,
+    .rate-setting input[type="number"]:focus {
+        border-color: #3498db; /* Highlight on focus */
+        outline: none;
+    }
 
-.btn-success {
-    background-color: #28a745;
-    color: white;
-}
+    .rate-setting .form-group-item {
+        flex: 1;
+        min-width: 150px;
+    }
 
-.btn-success:hover {
-    background-color: #218838;
-}
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px; /* More rounded buttons */
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: 600;
+        transition: all 0.3s ease; /* Smooth transitions */
+        text-decoration: none; /* Ensure no underline for links styled as buttons */
+        display: inline-block;
+        text-align: center;
+    }
 
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
+    .btn-gold {
+        background: linear-gradient(to right, #f39c12, #f1c40f); /* Golden gradient */
+        color: #ffffff; /* White text for contrast */
+        box-shadow: 0 4px 10px rgba(241, 196, 15, 0.3);
+    }
 
-.btn-danger:hover {
-    background-color: #c82333;
-}
+    .btn-gold:hover {
+        opacity: 0.9; /* Slight fade on hover */
+        transform: translateY(-2px); /* Lift effect */
+        box-shadow: 0 6px 15px rgba(241, 196, 15, 0.4);
+    }
 
-.btn-blue {
-    background-color: #007bff;
-    color: white;
-}
+    /* User Gkach Card */
+    .user-gkach-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        position: relative;
+    }
 
-.btn-blue:hover {
-    background-color: #0056b3;
-}
+    .user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px dashed #ecf0f1;
+        padding-bottom: 10px;
+    }
 
-.rate-setting {
-    margin-bottom: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
+    .user-header h4 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.3em;
+    }
 
-.rate-setting form {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
+    .btn-delete {
+        background-color: #e74c3c; /* Red for delete */
+        color: white;
+        padding: 8px 15px;
+        font-size: 0.9em;
+        border-radius: 5px;
+    }
 
-.rate-setting label {
-    font-weight: bold;
-    margin-right: 5px;
-}
+    .btn-delete:hover {
+        background-color: #c0392b;
+        transform: translateY(-1px);
+    }
 
-.rate-setting select,
-.rate-setting input[type="number"] {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    min-width: 120px;
-}
+    .user-gkach-card p {
+        margin-bottom: 8px;
+        color: #34495e;
+        line-height: 1.6;
+    }
 
-.btn-gold {
-    background-color: #ffd700;
-    color: #333;
-}
+    .user-gkach-card strong {
+        color: #2c3e50;
+    }
 
-.btn-gold:hover {
-    background-color: #ffed4e;
-}
+    /* Pending Request */
+    .pending-request {
+        background: #fff8e1; /* Light yellow for pending */
+        border: 1px solid #ffe082;
+        border-radius: 8px;
+        padding: 18px;
+        margin: 15px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
 
-.user-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
+    .pending-request p {
+        margin-bottom: 5px;
+    }
 
-.user-header h4 {
-    margin: 0;
-}
+    .pending-request img,
+    .pending-request iframe {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+        margin-top: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-.btn-delete {
-    background-color: #dc3545;
-    color: white;
-    padding: 6px 12px;
-    font-size: 12px;
-}
+    .pending-request iframe {
+        height: 400px; /* Adjust height for embedded PDFs */
+    }
 
-.btn-delete:hover {
-    background-color: #c82333;
-}
+    .request-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px; /* Space between buttons */
+    }
 
-.balance-actions {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-}
+    .btn-success {
+        background-color: #27ae60; /* Green for approve */
+        color: white;
+    }
 
-.edit-balance form,
-.add-balance form {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+    .btn-success:hover {
+        background-color: #229954;
+        transform: translateY(-1px);
+    }
 
-.edit-balance input[type="number"],
-.add-balance input[type="number"] {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 120px;
-}
+    .btn-danger {
+        background-color: #e74c3c; /* Red for reject */
+        color: white;
+    }
 
-.btn-edit {
-    background-color: #ffc107;
-    color: #333;
-}
+    .btn-danger:hover {
+        background-color: #c0392b;
+        transform: translateY(-1px);
+    }
 
-.btn-edit:hover {
-    background-color: #e0a800;
-}
+    /* Balance Actions */
+    .balance-actions {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #ecf0f1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: flex-start; /* Align items to the start */
+    }
+
+    .edit-balance,
+    .add-balance {
+        flex: 1;
+        min-width: 280px; /* Ensure forms don't get too small */
+    }
+
+    .edit-balance form,
+    .add-balance form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .edit-balance input[type="number"],
+    .add-balance input[type="number"] {
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        width: 140px;
+        font-size: 1em;
+    }
+
+    .btn-edit {
+        background-color: #3498db; /* Blue for edit */
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background-color: #2980b9;
+        transform: translateY(-1px);
+    }
+
+    .btn-blue {
+        background-color: #3498db; /* Blue for add balance */
+        color: white;
+    }
+
+    .btn-blue:hover {
+        background-color: #2980b9;
+        transform: translateY(-1px);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .container {
+            margin: 20px;
+            padding: 15px;
+        }
+
+        .rate-setting {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .rate-setting select,
+        .rate-setting input[type="number"],
+        .rate-setting .btn {
+            width: 100%;
+        }
+
+        .user-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .user-header h4 {
+            margin-bottom: 10px;
+        }
+
+        .balance-actions {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .edit-balance form,
+        .add-balance form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .edit-balance input[type="number"],
+        .add-balance input[type="number"],
+        .edit-balance .btn,
+        .add-balance .btn {
+            width: 100%;
+        }
+    }
+
+    /* No Gkach Users message */
+    .container > p {
+        text-align: center;
+        color: #7f8c8d;
+        font-size: 1.1em;
+        margin-top: 30px;
+        padding: 20px;
+        background: #ecf0f1;
+        border-radius: 8px;
+    }
 </style>
 {% endblock %}
