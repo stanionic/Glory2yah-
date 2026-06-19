@@ -3,53 +3,224 @@
 {% block title %}Kreye Kont - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="min-h-[80vh] flex flex-col justify-center px-6 py-12 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Kreye kont ou gratis
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-500">
-            Antre detay ou yo pou kòmanse vann ak achte
-        </p>
-    </div>
+<style>
+.register-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
 
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form class="space-y-4" action="{{ url_for('auth.register') }}" method="POST">
+.register-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 30px;
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.register-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.register-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+}
+
+.register-subtitle {
+    font-size: 15px;
+    color: #65676b;
+    margin: 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 16px 18px;
+    font-size: 15px;
+    border: 2px solid #e4e6eb;
+    border-radius: 16px;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+    color: #a0a3a8;
+}
+
+.register-button {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    margin-top: 24px;
+}
+
+.register-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+}
+
+.register-button:active {
+    transform: translateY(0);
+}
+
+.login-prompt {
+    text-align: center;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #f0f2f5;
+}
+
+.login-prompt-text {
+    font-size: 14px;
+    color: #65676b;
+    margin: 0;
+}
+
+.login-link {
+    font-weight: 700;
+    color: #667eea;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.login-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.password-hint {
+    margin-top: 12px;
+    padding: 14px;
+    background: #fff8e1;
+    border-radius: 12px;
+    border-left: 4px solid #ffc107;
+}
+
+.password-hint-text {
+    font-size: 13px;
+    color: #856404;
+    margin: 0;
+    line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+    .register-card {
+        padding: 32px 24px;
+        border-radius: 24px;
+    }
+    
+    .register-title {
+        font-size: 24px;
+    }
+    
+    .form-input {
+        padding: 14px 16px;
+    }
+}
+</style>
+
+<div class="register-page">
+    <div class="register-card">
+        <div class="register-header">
+            <div class="register-logo">🏠</div>
+            <h1 class="register-title">Kreye kont ou gratis</h1>
+            <p class="register-subtitle">Antre detay ou yo pou kòmanse vann ak achte</p>
+        </div>
+
+        <form action="{{ url_for('auth.register') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
-            <div>
-                <label for="name" class="block text-sm font-medium text-gray-900">Non konplè</label>
-                <div class="mt-1">
-                    <input id="name" name="name" type="text" required 
-                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
-                </div>
+            <div class="form-group">
+                <label for="name" class="form-label">Non konplè</label>
+                <input id="name" name="name" type="text" required 
+                       class="form-input"
+                       placeholder="Antre non ou konplè">
             </div>
 
-            <div>
-                <label for="pseudo" class="block text-sm font-medium text-gray-900">Pseudo (Username)</label>
-                <div class="mt-1">
-                    <input id="pseudo" name="pseudo" type="text" required 
-                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
-                </div>
+            <div class="form-group">
+                <label for="pseudo" class="form-label">Pseudo (Username)</label>
+                <input id="pseudo" name="pseudo" type="text" required 
+                       class="form-input"
+                       placeholder="Chwazi yon pseudo">
             </div>
 
-            <div>
-                <label for="whatsapp" class="block text-sm font-medium text-gray-900">Nimewo WhatsApp</label>
-                <div class="mt-1">
-                    <input id="whatsapp" name="whatsapp" type="tel" placeholder="+509..." required 
-                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
-                </div>
+            <div class="form-group">
+                <label for="whatsapp" class="form-label">Nimewo WhatsApp</label>
+                <input id="whatsapp" name="whatsapp" type="tel" placeholder="+509..." required 
+                       class="form-input">
             </div>
 
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-900">Modpas</label>
-                <div class="mt-1">
-                    <input id="password" name="password" type="password" required 
-                           placeholder="Chwazi modpas ou..."
-                           class="block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm">
-                </div>
-                <div class="mt-2">
-                    <p class="text-xs text-gray-500">
+            <div class="form-group">
+                <label for="password" class="form-label">Modpas</label>
+                <input id="password" name="password" type="password" required 
+                       class="form-input"
+                       placeholder="Chwazi modpas ou...">
+                <div class="password-hint">
+                    <p class="password-hint-text">
                         💡 <strong>De (2) opsyon modpas:</strong><br>
                         • 6 chif sèlman (ex: 123456)<br>
                         • Alfanimerik: lèt ak chif (ex: pass123)
@@ -57,18 +228,17 @@
                 </div>
             </div>
 
-            <div class="pt-4">
-                <button type="submit" 
-                        class="flex w-full justify-center rounded-xl bg-primary px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 tap-scale">
-                    Enskri kounye a
-                </button>
-            </div>
+            <button type="submit" class="register-button">
+                Enskri kounye a
+            </button>
         </form>
 
-        <p class="mt-8 text-center text-sm text-gray-500">
-            Ou gen kont deja?
-            <a href="{{ url_for('auth.login') }}" class="font-semibold text-primary hover:text-primary/80">Konekte isit la</a>
-        </p>
+        <div class="login-prompt">
+            <p class="login-prompt-text">
+                Ou gen kont deja?
+                <a href="{{ url_for('auth.login') }}" class="login-link">Konekte isit la</a>
+            </p>
+        </div>
     </div>
 </div>
 {% endblock %}
