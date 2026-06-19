@@ -319,15 +319,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Listen for orientation changes
+    function handleOrientationChange() {
+        const isLandscape = window.innerWidth > window.innerHeight || 
+                           (window.orientation !== undefined && (window.orientation === 90 || window.orientation === -90)) ||
+                           (screen.orientation && screen.orientation.type && screen.orientation.type.includes('landscape'));
+        
+        if (isLandscape && !document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            // If in landscape and not in fullscreen, try to enter fullscreen
+            const elem = document.documentElement || document.body;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
+            }
+        }
+    }
+
     if (screen.orientation && screen.orientation.addEventListener) {
         screen.orientation.addEventListener('change', function() {
             console.log('Orientation changed:', screen.orientation.type);
+            handleOrientationChange();
         });
     } else if (window.addEventListener) {
         window.addEventListener('orientationchange', function() {
             console.log('Orientation changed:', window.orientation);
+            handleOrientationChange();
         });
     }
+
+    // Also listen for resize events to capture orientation changes
+    window.addEventListener('resize', function() {
+        handleOrientationChange();
+    });
 
     // Start timer immediately if page is loaded (in case user refreshes)
     if (!isLoggedIn) {
