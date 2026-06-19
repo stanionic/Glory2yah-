@@ -4,34 +4,68 @@
 
 {% block content %}
 <style>
+/* Hide header, bottom nav, and main content restrictions on GADE MATCH page */
+.g2y-header,
+.modern-bottom-nav,
+#bottomNav {
+    display: none !important;
+}
+
+.g2y-main {
+    padding: 0 !important;
+    margin: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1 !important;
+}
+
+.g2y-body {
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
 .gadematch-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: black;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-color: black !important;
     display: flex;
     flex-direction: column;
-    z-index: 9999;
+    z-index: 999999 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
 
 .gadematch-video-container {
     flex-grow: 1;
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
     position: relative;
-    background-color: black;
+    background-color: black !important;
     display: none;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
 
 .gadematch-video-container iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    position: absolute;
-    top: 0;
-    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .gadematch-play-container {
@@ -146,19 +180,19 @@
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%);
+        background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 100%);
         color: white;
-        padding: 10px 16px;
-        border-radius: 12px;
-        font-size: 14px;
-        font-weight: bold;
+        padding: 14px 22px;
+        border-radius: 16px;
+        font-size: 18px;
+        font-weight: 800;
         z-index: 10000;
         display: none;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        backdrop-filter: blur(12px);
+        border: 2px solid rgba(255,255,255,0.3);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.5);
     ">
-        <span id="timerText">Tan ki rete: 45 min</span>
+        <span id="timerText">TAN KI RETE POU W' HT GKACH: 45 min</span>
     </div>
     
     <!-- Video Player Section - FULL SCREEN -->
@@ -269,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update timer text
         const minutes = Math.floor(remaining / 60);
         const seconds = Math.floor(remaining % 60);
-        timerText.textContent = `Tan ki rete: ${minutes}m ${seconds}s`;
+        timerText.textContent = `TAN KI RETE POU W' HT GKACH: ${minutes}m ${seconds}s`;
         
         // Change color when time is running low (5 minutes left)
         if (remaining < 300) {
@@ -324,16 +358,20 @@ document.addEventListener('DOMContentLoaded', function() {
                            (window.orientation !== undefined && (window.orientation === 90 || window.orientation === -90)) ||
                            (screen.orientation && screen.orientation.type && screen.orientation.type.includes('landscape'));
         
-        if (isLandscape && !document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
-            // If in landscape and not in fullscreen, try to enter fullscreen
-            const elem = document.documentElement || document.body;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
-            } else if (elem.msRequestFullscreen) {
-                elem.msRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
-            }
+        // Only auto-enter fullscreen ONLY if iframe src is set and playing
+        const isStreamLoaded = gadematchIframe && gadematchIframe.src && gadematchIframe.src !== '';
+        
+        if (isLandscape && isStreamLoaded && !document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            setTimeout(() => {
+                const elem = videoPlayerContainer || document.documentElement || document.body;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
+                }
+            }, 300);
         }
     }
 
