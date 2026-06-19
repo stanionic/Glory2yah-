@@ -1305,12 +1305,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-/* ═══ GADE MONDYAL BUTTON STYLES ═══ */
+/* ═══ GADE MATCH BUTTON STYLES ═══ */
 .gade-mondyal-section {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #c44569 100%);
-    padding: 16px 0;
+    background: linear-gradient(135deg, #10b981 0%, #059669 25%, #047857 50%, #065f46 75%, #064e3b 100%);
+    padding: 20px 0;
     margin: 8px 0 12px 0;
-    box-shadow: 0 8px 24px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
     position: relative;
     overflow: hidden;
 }
@@ -1322,8 +1322,10 @@ document.addEventListener('DOMContentLoaded', function() {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 30%),
+        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 35%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
     animation: shimmer 3s ease-in-out infinite;
 }
 
@@ -1343,85 +1345,123 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 16px 24px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    gap: 16px;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.4);
     color: white;
-    font-size: 18px;
-    font-weight: 700;
-    border-radius: 30px;
+    font-size: 22px;
+    font-weight: 800;
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
     position: relative;
     z-index: 1;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    letter-spacing: 2px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.2);
 }
 
 .gade-mondyal-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.15) 100%);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 16px 48px rgba(0, 0, 0, 0.3),
+        inset 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
 .gade-mondyal-btn:active {
-    transform: translateY(0);
+    transform: translateY(-2px) scale(0.98);
 }
 
 .soccer-icon {
-    font-size: 28px;
-    animation: bounce 1s ease-in-out infinite;
+    font-size: 36px;
+    animation: bounce 0.8s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-6px) rotate(-5deg); }
+    50% { transform: translateY(-2px) rotate(0deg); }
+    75% { transform: translateY(-6px) rotate(5deg); }
 }
 
 .gade-mondyal-btn .btn-text {
     flex: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .live-badge {
-    background: rgba(255, 255, 255, 0.3);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    animation: pulse 1.5s ease-in-out infinite;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    animation: pulse 1s ease-in-out infinite;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.live-badge::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.2) 0%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    animation: shine 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+    }
+    50% { 
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.7);
+    }
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .gade-mondyal-btn {
-        padding: 14px 20px;
-        font-size: 16px;
-        gap: 10px;
+        padding: 16px 24px;
+        font-size: 18px;
+        gap: 12px;
     }
     
     .soccer-icon {
-        font-size: 24px;
+        font-size: 28px;
     }
     
     .live-badge {
-        padding: 4px 10px;
-        font-size: 11px;
+        padding: 6px 12px;
+        font-size: 12px;
     }
 }
 
 @media (max-width: 480px) {
     .gade-mondyal-section {
-        padding: 12px 0;
+        padding: 14px 0;
         margin: 8px 0;
     }
     
@@ -1430,18 +1470,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     .gade-mondyal-btn {
-        padding: 12px 16px;
-        font-size: 14px;
-        gap: 8px;
+        padding: 14px 20px;
+        font-size: 16px;
+        gap: 10px;
     }
     
     .soccer-icon {
-        font-size: 20px;
+        font-size: 26px;
     }
     
     .live-badge {
-        padding: 3px 8px;
-        font-size: 10px;
+        padding: 5px 10px;
+        font-size: 11px;
     }
 }
 </style>
