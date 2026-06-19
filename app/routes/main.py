@@ -45,8 +45,16 @@ def index():
 
 
 @main_bp.route('/tv')
-@login_required
 def tv():
+    # Check if user has a session start time
+    from flask import session
+    if 'gadematch_start' not in session:
+        session['gadematch_start'] = datetime.now().isoformat()
+    
+    # Calculate time elapsed
+    start_time = datetime.fromisoformat(session['gadematch_start'])
+    elapsed = (datetime.now() - start_time).total_seconds() / 60  # in minutes
+    
     # Fetch admin settings for popup configuration
     admin_settings = AdminSettings.get_all_settings()
     enable_gkach_notice = admin_settings.get('enable_gkach_notice') == 'True'
@@ -56,23 +64,35 @@ def tv():
 
     current_time = datetime.now()
 
-    # The previous server-side check for authentication is now implicitly handled by @login_required
-    # However, we still need to pass is_logged_in for client-side JS
-
+    # Check if user is logged in
+    if not current_user.is_authenticated:
+        # If not logged in and time is up (over 45 minutes)
+        if elapsed > 45:
+            flash('Ou dwe konekte pou kontinye gade GADE MATCH!', 'error')
+            return redirect(url_for('auth.login'))
+    
     # If Gkach notice is enabled and conditions are met
-    if enable_gkach_notice and current_time < gkach_target_date and current_user.get_gkach_balance() < gkach_required_amount:
+    if current_user.is_authenticated and enable_gkach_notice and current_time < gkach_target_date and current_user.get_gkach_balance() < gkach_required_amount:
         flash(f'Aksè a GADE MATCH mande {gkach_required_amount} GKACH anvan {gkach_target_date.strftime("%d %b %Y")}. Tanpri achte GKACH.', 'error')
-        return redirect(url_for('main.index')) # Redirect to index to show GKACH popup
+        return redirect(url_for('main.index'))  # Redirect to index to show GKACH popup
 
     return render_template('tv.html', 
                            is_logged_in=current_user.is_authenticated,
-                           gkach_balance=current_user.get_gkach_balance(),
+                           gkach_balance=current_user.get_gkach_balance() if current_user.is_authenticated else 0,
                            admin_settings=admin_settings)
 
 
 @main_bp.route('/gadematch')
-@login_required
 def gadematch():
+    # Check if user has a session start time
+    from flask import session
+    if 'gadematch_start' not in session:
+        session['gadematch_start'] = datetime.now().isoformat()
+    
+    # Calculate time elapsed
+    start_time = datetime.fromisoformat(session['gadematch_start'])
+    elapsed = (datetime.now() - start_time).total_seconds() / 60  # in minutes
+    
     # Fetch admin settings for popup configuration
     admin_settings = AdminSettings.get_all_settings()
     enable_gkach_notice = admin_settings.get('enable_gkach_notice') == 'True'
@@ -82,17 +102,21 @@ def gadematch():
 
     current_time = datetime.now()
 
-    # The previous server-side check for authentication is now implicitly handled by @login_required
-    # However, we still need to pass is_logged_in for client-side JS
-
+    # Check if user is logged in
+    if not current_user.is_authenticated:
+        # If not logged in and time is up (over 45 minutes)
+        if elapsed > 45:
+            flash('Ou dwe konekte pou kontinye gade GADE MATCH!', 'error')
+            return redirect(url_for('auth.login'))
+    
     # If Gkach notice is enabled and conditions are met
-    if enable_gkach_notice and current_time < gkach_target_date and current_user.get_gkach_balance() < gkach_required_amount:
+    if current_user.is_authenticated and enable_gkach_notice and current_time < gkach_target_date and current_user.get_gkach_balance() < gkach_required_amount:
         flash(f'Aksè a GADE MATCH mande {gkach_required_amount} GKACH anvan {gkach_target_date.strftime("%d %b %Y")}. Tanpri achte GKACH.', 'error')
-        return redirect(url_for('main.index')) # Redirect to index to show GKACH popup
+        return redirect(url_for('main.index'))  # Redirect to index to show GKACH popup
 
     return render_template('tv.html', 
                            is_logged_in=current_user.is_authenticated,
-                           gkach_balance=current_user.get_gkach_balance(),
+                           gkach_balance=current_user.get_gkach_balance() if current_user.is_authenticated else 0,
                            admin_settings=admin_settings)
 
 

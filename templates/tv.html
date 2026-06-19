@@ -141,6 +141,26 @@
 </style>
 
 <div class="gadematch-container">
+    <!-- Timer Display -->
+    <div id="timerDisplay" class="gadematch-timer" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%);
+        color: white;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 10000;
+        display: none;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    ">
+        <span id="timerText">Tan ki rete: 45 min</span>
+    </div>
+    
     <!-- Video Player Section - FULL SCREEN -->
     <div id="videoPlayerContainer" class="gadematch-video-container">
         <iframe
@@ -170,6 +190,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const playStreamButtonContainer = document.getElementById('playStreamButtonContainer');
     const videoPlayerContainer = document.getElementById('videoPlayerContainer');
     const gadematchIframe = document.getElementById('gadematchIframe');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerText = document.getElementById('timerText');
+
+    // Timer variables
+    let startTime = null;
+    let timerInterval = null;
+    const MAX_TIME = 45 * 60; // 45 minutes in seconds
+
+    // Check if user is logged in (from template variable)
+    const isLoggedIn = {{ is_logged_in | tojson }};
 
     // Auto-rotate: request landscape orientation when entering fullscreen
     async function requestFullScreenAndRotate(elem) {
@@ -196,6 +226,59 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Timer functions
+    function startTimer() {
+        // Only show timer if user is not logged in
+        if (isLoggedIn) return;
+        
+        // Get or set start time in localStorage
+        let stored = localStorage.getItem('gadematch_start');
+        if (!stored) {
+            stored = Date.now();
+            localStorage.setItem('gadematch_start', stored);
+        }
+        startTime = parseInt(stored);
+        
+        // Show timer display
+        timerDisplay.style.display = 'block';
+        
+        // Update timer immediately and then every second
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+        if (!startTime) return;
+        
+        const elapsed = (Date.now() - startTime) / 1000; // in seconds
+        const remaining = MAX_TIME - elapsed;
+        
+        if (remaining <= 0) {
+            // Time's up - redirect to login
+            clearInterval(timerInterval);
+            timerText.textContent = 'Tan fini!';
+            timerDisplay.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            
+            // Show message and redirect after 3 seconds
+            setTimeout(() => {
+                window.location.href = '/auth/login?next=/gadematch';
+            }, 3000);
+            return;
+        }
+        
+        // Update timer text
+        const minutes = Math.floor(remaining / 60);
+        const seconds = Math.floor(remaining % 60);
+        timerText.textContent = `Tan ki rete: ${minutes}m ${seconds}s`;
+        
+        // Change color when time is running low (5 minutes left)
+        if (remaining < 300) {
+            timerDisplay.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        } else if (remaining < 600) {
+            timerDisplay.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+        }
+    }
+
     if (playStreamButton) {
         playStreamButton.addEventListener('click', async function() {
             // Load the stream
@@ -204,6 +287,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide play button
             playStreamButtonContainer.classList.add('hidden');
             videoPlayerContainer.style.display = 'block';
+            
+            // Start timer
+            startTimer();
             
             // Try to enter full screen and auto-rotate
             await requestFullScreenAndRotate(videoPlayerContainer);
@@ -241,6 +327,11 @@ document.addEventListener('DOMContentLoaded', function() {
         window.addEventListener('orientationchange', function() {
             console.log('Orientation changed:', window.orientation);
         });
+    }
+
+    // Start timer immediately if page is loaded (in case user refreshes)
+    if (!isLoggedIn) {
+        startTimer();
     }
 });
 </script>
