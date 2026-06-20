@@ -90,6 +90,7 @@ class Config:
 
 
 import secrets
+import os
 
 class DevelopmentConfig(Config):
     """Development configuration"""
@@ -108,11 +109,19 @@ class DevelopmentConfig(Config):
     CACHE_TYPE = 'simple'
     RATELIMIT_STORAGE_URL = 'memory://'
     
-    # Development-only: Generate a secure fallback SECRET_KEY if not set
+    # Development-only: Persist SECRET_KEY to a file for consistent sessions
     def __init__(self):
         super().__init__()
         if not self.SECRET_KEY:
-            self.SECRET_KEY = secrets.token_hex(32)
+            # Try to load from a persistent file
+            secret_key_file = '.flask_secret_key'
+            if os.path.exists(secret_key_file):
+                with open(secret_key_file, 'r') as f:
+                    self.SECRET_KEY = f.read().strip()
+            else:
+                self.SECRET_KEY = secrets.token_hex(32)
+                with open(secret_key_file, 'w') as f:
+                    f.write(self.SECRET_KEY)
 
 
 class TestingConfig(Config):

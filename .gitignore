@@ -28,6 +28,7 @@ Thumbs.db
 
 # Environment variables
 .env
+.flask_secret_key
 
 # Logs
 *.log

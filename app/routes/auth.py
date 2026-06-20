@@ -167,6 +167,10 @@ def login():
             # Login user
             login_user(user, remember=remember)
             
+            # Make session permanent
+            from flask import session
+            session.permanent = True
+            
             # Update last login
             user.last_login = datetime.utcnow()
             db.session.commit()

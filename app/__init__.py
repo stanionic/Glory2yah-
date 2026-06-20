@@ -40,25 +40,27 @@ def create_app(config_name=None):
     from app.config import get_config
     app.config.from_object(get_config(config_name))
 
-    # Ensure SECRET_KEY exists before CSRF token generation / CSRFProtect init.
-    # Never hardcode secrets. On production/staging we fail fast with a clear error.
+    # Setup secret key from config - don't regenerate it!
     secret_key = app.config.get("SECRET_KEY")
     if not secret_key:
-        # Allow local development to boot with a generated SECRET_KEY and keep CSRF enabled.
-        # CSRF must remain enabled in non-local environments.
         if str(config_name).lower() in ("development", "local", "dev"):
+            # Config should handle this, but just in case
             import secrets
-            secret_key = secrets.token_hex(32)
+            secret_key_file = '.flask_secret_key'
+            if os.path.exists(secret_key_file):
+                with open(secret_key_file, 'r') as f:
+                    secret_key = f.read().strip()
+            else:
+                secret_key = secrets.token_hex(32)
+                with open(secret_key_file, 'w') as f:
+                    f.write(secret_key)
             app.config["SECRET_KEY"] = secret_key
-            app.secret_key = secret_key
-            app.logger.warning("SECRET_KEY not set. Generated temporary SECRET_KEY for development (CSRF remains enabled).")
         else:
             raise RuntimeError(
                 "SECRET_KEY is required for CSRF protection but was not found. "
-                "Set the 'SECRET_KEY' environment variable on Render."
+                "Set the 'SECRET_KEY' environment variable."
             )
-    else:
-        app.secret_key = secret_key
+    app.secret_key = secret_key
 
     setup_logging(app)
     
