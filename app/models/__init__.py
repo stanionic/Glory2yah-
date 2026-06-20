@@ -12,6 +12,7 @@ from app.models.delivery import Delivery
 from app.models.batch import Batch
 from app.models.message import Message
 from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
+from app.models.story import Story
 
 __all__ = [
     'BaseModel',
@@ -26,5 +27,6 @@ __all__ = [
     'AdLike',
     'AdStar',
     'AdComment',
-    'AdRating'
+    'AdRating',
+    'Story'
 ]

@@ -169,33 +169,15 @@ def contact():
 
 @main_bp.route('/api/stories')
 def api_stories():
-    """API endpoint for stories - loads random images from uploads folder, all owned by StanD"""
+    """API endpoint for stories"""
     try:
-        upload_dir = os.path.join(current_app.root_path, '..', 'static', 'uploads')
-        
-        # Get all image files excluding payment and gkach proofs
-        all_files = [f for f in os.listdir(upload_dir) 
-                     if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')) 
-                     and not f.startswith('payment_') 
-                     and not f.startswith('gkach_')]
-        
-        # Select random 10 images for stories
-        story_files = random.sample(all_files, min(10, len(all_files)))
-        
-        stories = []
-        for i, filename in enumerate(story_files):
-            stories.append({
-                'id': i,
-                'name': 'StanD',  # All stories belong to StanD
-                'title': 'Piblisite StanD',
-                'desc': 'Gade piblisite sa a!',
-                'price': 0,
-                'img': f'/static/uploads/{filename}'
-            })
+        from app.models.story import Story
+        stories = Story.query.filter_by(admin_status='approved').order_by(Story.created_at.desc()).all()
+        stories_dict = [story.to_dict() for story in stories]
         
         return jsonify({
             'success': True,
-            'stories': stories
+            'stories': stories_dict
         })
     except Exception as e:
         current_app.logger.error(f"Error loading stories: {str(e)}")

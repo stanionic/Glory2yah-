@@ -400,6 +400,78 @@ def delete_ad(ad_id):
     return redirect(url_for('auth.my_ads'))
 
 
+@auth_bp.route('/stories')
+@login_required
+def my_stories():
+    """View all stories belonging to the current user"""
+    from app.models.story import Story
+    stories = Story.query.filter_by(user_whatsapp=current_user.whatsapp).order_by(Story.created_at.desc()).all()
+    return render_template('auth/my_stories.html', stories=stories)
+
+
+@auth_bp.route('/stories/<story_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_story(story_id):
+    """Edit an existing story (only owner)"""
+    from app.models.story import Story
+    from app.utils.validators import sanitize_text, ValidationError
+    
+    story = Story.query.filter_by(story_id=story_id, user_whatsapp=current_user.whatsapp).first()
+    if not story:
+        flash('Istwa pa jwenn oswa ou pa gen dwa modifye li.', 'error')
+        return redirect(url_for('auth.my_stories'))
+    
+    if request.method == 'POST':
+        try:
+            title = sanitize_text(request.form.get('title', ''))
+            description = sanitize_text(request.form.get('description', ''))
+            price_gkach = request.form.get('price_gkach', None)
+            if price_gkach:
+                price_gkach = int(price_gkach)
+            
+            story.title = title
+            story.description = description
+            story.price_gkach = price_gkach
+            
+            db.session.commit()
+            
+            flash('Istwa modifye avèk siksè!', 'success')
+            return redirect(url_for('auth.my_stories'))
+            
+        except ValidationError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('auth.edit_story', story_id=story_id))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erè nan modifye istwa.', 'error')
+            return redirect(url_for('auth.edit_story', story_id=story_id))
+    
+    return render_template('auth/edit_story.html', story=story.to_dict())
+
+
+@auth_bp.route('/stories/<story_id>/delete', methods=['POST'])
+@login_required
+def delete_story(story_id):
+    """Delete a story (only owner)"""
+    from app.models.story import Story
+    
+    try:
+        story = Story.query.filter_by(story_id=story_id, user_whatsapp=current_user.whatsapp).first()
+        if not story:
+            flash('Istwa pa jwenn oswa ou pa gen dwa efase li.', 'error')
+            return redirect(url_for('auth.my_stories'))
+        
+        db.session.delete(story)
+        db.session.commit()
+        
+        flash('Istwa efase avèk siksè!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erè nan efase istwa.', 'error')
+    
+    return redirect(url_for('auth.my_stories'))
+
+
 def generate_temp_password():
     """Generate a random 6-digit temporary password"""
     import random

@@ -131,6 +131,41 @@ def main():
         if created_count > 0:
             db.session.commit()
         
+        # 5. CREATE STORIES FROM IMAGES TOO
+        from app.models.story import Story
+        story_count = 0
+        for idx, img_file in enumerate(image_files[:10]):  # Create up to 10 stories
+            existing_story = Story.query.filter_by(media=img_file, user_whatsapp=user_whatsapp).first()
+            if existing_story:
+                continue
+                
+            template = random.choice(ad_templates)
+            price = random.randint(template["price_min"], template["price_max"])
+            days_ago = random.randint(0, 7)
+            created_at = datetime.now() - timedelta(days=days_ago)
+            
+            story = Story(
+                story_id=str(uuid.uuid4()),
+                user_whatsapp=user.whatsapp,
+                title=template["title"],
+                description=template["desc"],
+                media_type="image",
+                media=img_file,
+                price_gkach=price,
+                admin_status="approved",
+                view_count=random.randint(5, 100),
+                like_count=random.randint(2, 50),
+                share_count=random.randint(0, 10),
+                created_at=created_at
+            )
+            
+            db.session.add(story)
+            story_count += 1
+        
+        if story_count > 0:
+            db.session.commit()
+            print(f"Created {story_count} stories for {user_name}")
+        
         print("\nComplete! Here's your user info:")
         print(f"Name: {user_name}")
         print(f"Pseudo: {user_pseudo}")
@@ -139,6 +174,7 @@ def main():
         print(f"Gkach Balance: {user_gkach.gkach_balance} GKACH")
         print(f"Total ads created: {created_count}")
         print(f"Total ads assigned: {updated_count}")
+        print(f"Total stories created: {story_count}")
 
 
 if __name__ == "__main__":
