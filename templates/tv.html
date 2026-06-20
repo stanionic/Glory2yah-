@@ -2,7 +2,8 @@
 
 {% block title %}GADE MATCH - Live Sports{% endblock %}
 
-{% block content %}
+{% block extra_css %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
 /* Hide header, bottom nav, and main content restrictions on GADE MATCH page */
 .g2y-header,
@@ -26,6 +27,7 @@
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
+    touch-action: none;
 }
 
 .gadematch-container {
@@ -41,6 +43,8 @@
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+    width: 100vw;
+    height: 100vh;
 }
 
 .gadematch-video-container {
@@ -94,6 +98,7 @@
     transition: all 0.2s ease;
     box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
     max-width: 100%;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .gadematch-play-button:hover {
@@ -113,6 +118,29 @@
 
 .hidden {
     display: none !important;
+}
+
+/* Fullscreen button */
+.gadematch-fullscreen-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 100%);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 1000000;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.gadematch-fullscreen-btn:active {
+    transform: scale(0.95);
 }
 
 /* Auto-rotate support */
@@ -173,7 +201,9 @@
     }
 }
 </style>
+{% endblock %}
 
+{% block content %}
 <div class="gadematch-container">
     <!-- Timer Display -->
     <div id="timerDisplay" class="gadematch-timer" style="
@@ -205,6 +235,7 @@
             allowfullscreen
             webkitallowfullscreen
             mozallowfullscreen
+            playsinline
         ></iframe>
     </div>
 
@@ -216,6 +247,9 @@
             <span>PLAY</span>
         </button>
     </div>
+
+    <!-- Fullscreen Toggle Button -->
+    <button id="fullscreenBtn" class="gadematch-fullscreen-btn" title="Fullscreen">⛶</button>
 </div>
 
 <script>
@@ -226,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const gadematchIframe = document.getElementById('gadematchIframe');
     const timerDisplay = document.getElementById('timerDisplay');
     const timerText = document.getElementById('timerText');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
 
     // Timer variables
     let startTime = null;
@@ -235,28 +270,74 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if user is logged in (from template variable)
     const isLoggedIn = {{ is_logged_in | tojson }};
 
-    // Auto-rotate: request landscape orientation when entering fullscreen
-    async function requestFullScreenAndRotate(elem) {
+    // Get the appropriate fullscreen element
+    function getFullscreenElement() {
+        return document.fullscreenElement || 
+               document.webkitFullscreenElement || 
+               document.mozFullScreenElement || 
+               document.msFullscreenElement;
+    }
+
+    // Request fullscreen with better mobile support
+    async function requestFullScreen(elem) {
         try {
-            // First try to lock orientation to landscape if supported
-            if (screen.orientation && screen.orientation.lock) {
-                try {
-                    await screen.orientation.lock('landscape');
-                } catch (e) {
-                    console.log('Orientation lock not supported or failed:', e);
-                }
+            if (!elem) {
+                elem = document.documentElement;
             }
-            
-            // Then request fullscreen
+
+            // Try all fullscreen methods
             if (elem.requestFullscreen) {
                 await elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) { /* Safari */
+            } else if (elem.webkitRequestFullscreen) {
                 await elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) { /* IE11 */
+            } else if (elem.mozRequestFullScreen) {
+                await elem.mozRequestFullScreen();
+            } else if (elem.msRequestFullscreen) {
                 await elem.msRequestFullscreen();
             }
         } catch (e) {
             console.log('Fullscreen request failed:', e);
+            // If container fails, try document element
+            if (elem !== document.documentElement) {
+                requestFullScreen(document.documentElement);
+            }
+        }
+    }
+
+    // Exit fullscreen
+    async function exitFullScreen() {
+        try {
+            if (document.exitFullscreen) {
+                await document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                await document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                await document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                await document.msExitFullscreen();
+            }
+        } catch (e) {
+            console.log('Exit fullscreen failed:', e);
+        }
+    }
+
+    // Toggle fullscreen
+    async function toggleFullScreen() {
+        if (getFullscreenElement()) {
+            await exitFullScreen();
+        } else {
+            await requestFullScreen(videoPlayerContainer || document.documentElement);
+        }
+    }
+
+    // Update fullscreen button text/icon
+    function updateFullscreenButton() {
+        if (fullscreenBtn) {
+            if (getFullscreenElement()) {
+                fullscreenBtn.textContent = '⛶';
+            } else {
+                fullscreenBtn.textContent = '⛶';
+            }
         }
     }
 
@@ -314,87 +395,61 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (playStreamButton) {
-        playStreamButton.addEventListener('click', async function() {
+        playStreamButton.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             // Load the stream
             gadematchIframe.src = 'https://famelack.com/tv/ht/9dYnjnGkh6Gk0r?autoplay=1';
             
             // Hide play button
             playStreamButtonContainer.classList.add('hidden');
-            videoPlayerContainer.style.display = 'block';
+            videoPlayerContainer.style.display = 'flex';
+            fullscreenBtn.style.display = 'block';
             
             // Start timer
             startTimer();
             
-            // Try to enter full screen and auto-rotate
-            await requestFullScreenAndRotate(videoPlayerContainer);
+            // Try to enter full screen
+            setTimeout(() => {
+                requestFullScreen(videoPlayerContainer || document.documentElement);
+            }, 100);
+        });
+    }
+
+    // Fullscreen button listener
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFullScreen();
         });
     }
 
     // Listen for fullscreen changes
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-    function handleFullscreenChange() {
-        if (!document.fullscreenElement && 
-            !document.webkitFullscreenElement && 
-            !document.mozFullScreenElement && 
-            !document.msFullscreenElement) {
-            // Exit fullscreen - unlock orientation
-            if (screen.orientation && screen.orientation.unlock) {
-                try {
-                    screen.orientation.unlock();
-                } catch (e) {
-                    console.log('Orientation unlock failed:', e);
-                }
-            }
-        }
-    }
-
-    // Listen for orientation changes
-    function handleOrientationChange() {
-        const isLandscape = window.innerWidth > window.innerHeight || 
-                           (window.orientation !== undefined && (window.orientation === 90 || window.orientation === -90)) ||
-                           (screen.orientation && screen.orientation.type && screen.orientation.type.includes('landscape'));
-        
-        // Only auto-enter fullscreen ONLY if iframe src is set and playing
-        const isStreamLoaded = gadematchIframe && gadematchIframe.src && gadematchIframe.src !== '';
-        
-        if (isLandscape && isStreamLoaded && !document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
-            setTimeout(() => {
-                const elem = videoPlayerContainer || document.documentElement || document.body;
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
-                } else if (elem.webkitRequestFullscreen) {
-                    elem.webkitRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
-                } else if (elem.msRequestFullscreen) {
-                    elem.msRequestFullscreen().catch(e => console.log('Fullscreen on rotate failed:', e));
-                }
-            }, 300);
-        }
-    }
-
-    if (screen.orientation && screen.orientation.addEventListener) {
-        screen.orientation.addEventListener('change', function() {
-            console.log('Orientation changed:', screen.orientation.type);
-            handleOrientationChange();
-        });
-    } else if (window.addEventListener) {
-        window.addEventListener('orientationchange', function() {
-            console.log('Orientation changed:', window.orientation);
-            handleOrientationChange();
-        });
-    }
-
-    // Also listen for resize events to capture orientation changes
-    window.addEventListener('resize', function() {
-        handleOrientationChange();
+    document.addEventListener('fullscreenchange', function() {
+        updateFullscreenButton();
+    });
+    document.addEventListener('webkitfullscreenchange', function() {
+        updateFullscreenButton();
+    });
+    document.addEventListener('mozfullscreenchange', function() {
+        updateFullscreenButton();
+    });
+    document.addEventListener('MSFullscreenChange', function() {
+        updateFullscreenButton();
     });
 
     // Start timer immediately if page is loaded (in case user refreshes)
     if (!isLoggedIn) {
         startTimer();
+    }
+
+    // Check if stream is already playing (for refresh)
+    if (gadematchIframe && gadematchIframe.src && gadematchIframe.src !== '') {
+        playStreamButtonContainer.classList.add('hidden');
+        videoPlayerContainer.style.display = 'flex';
+        fullscreenBtn.style.display = 'block';
     }
 });
 </script>
