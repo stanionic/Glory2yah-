@@ -245,6 +245,12 @@ def register_blueprints(app):
         app.register_blueprint(party_bp, url_prefix='/fet')
     except:
         pass
+    
+    try:
+        from mennem.app import mennem_bp
+        app.register_blueprint(mennem_bp, url_prefix='/mennenm')
+    except:
+        pass
 
 
 def register_error_handlers(app):
