@@ -146,6 +146,30 @@
     transform: scale(0.95);
 }
 
+/* Reset button */
+.gadematch-reset-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: linear-gradient(135deg, rgba(239,68,68,0.85) 0%, rgba(220,38,38,0.7) 100%);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000000;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.gadematch-reset-btn:active {
+    transform: scale(0.95);
+}
+
 /* Auto-rotate support */
 @media screen and (orientation: portrait) {
     .gadematch-video-container,
@@ -253,6 +277,8 @@
 
     <!-- Fullscreen Toggle Button -->
     <button id="fullscreenBtn" class="gadematch-fullscreen-btn" title="Fullscreen">⛶</button>
+    <!-- Reset Button -->
+    <button id="resetBtn" class="gadematch-reset-btn" title="Reset">RESET</button>
 </div>
 
 <script>
@@ -264,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const timerDisplay = document.getElementById('timerDisplay');
     const timerText = document.getElementById('timerText');
     const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const resetBtn = document.getElementById('resetBtn');
 
     // Timer variables
     let startTime = null;
@@ -397,18 +424,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Check if stream is already playing (for refresh)
+    const savedSrc = localStorage.getItem('gadematch_src');
+    if (savedSrc && savedSrc !== '') {
+        gadematchIframe.src = savedSrc;
+        playStreamButtonContainer.classList.add('hidden');
+        videoPlayerContainer.style.display = 'flex';
+        fullscreenBtn.style.display = 'block';
+        resetBtn.style.display = 'block';
+    }
+
+    // Save src to localStorage when play button is clicked
     if (playStreamButton) {
         playStreamButton.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             // Load the stream
-            gadematchIframe.src = 'https://famelack.com/tv/ht/9dYnjnGkh6Gk0r?autoplay=1';
+            const streamUrl = 'https://famelack.com/tv/ht/9dYnjnGkh6Gk0r?autoplay=1';
+            gadematchIframe.src = streamUrl;
+            localStorage.setItem('gadematch_src', streamUrl);
             
             // Hide play button
             playStreamButtonContainer.classList.add('hidden');
             videoPlayerContainer.style.display = 'flex';
             fullscreenBtn.style.display = 'block';
+            resetBtn.style.display = 'block';
             
             // Start timer
             startTimer();
@@ -427,6 +468,36 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             toggleFullScreen();
         });
+    }
+
+    // Reset button listener
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Clear localStorage
+            localStorage.removeItem('gadematch_src');
+            localStorage.removeItem('gadematch_start');
+            // Reset iframe
+            gadematchIframe.src = '';
+            // Show play button
+            playStreamButtonContainer.classList.remove('hidden');
+            videoPlayerContainer.style.display = 'none';
+            fullscreenBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+            // Hide timer
+            timerDisplay.style.display = 'none';
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+        });
+    }
+
+    // Show reset button when video is playing
+    if (videoPlayerContainer.style.display === 'flex' || videoPlayerContainer.style.display === '') {
+        if (resetBtn) {
+            resetBtn.style.display = 'block';
+        }
     }
 
     // Listen for fullscreen changes
