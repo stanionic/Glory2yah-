@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, send_from_directory
 from flask_socketio import emit, join_room, leave_room
-from models import db, KonferansRoom, KonferansRecording
+from app.models import db, KonferansRoom, KonferansRecording, User
 import uuid
 import os
 import json
@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import secrets
 
-konferans_bp = Blueprint('konferans', __name__, url_prefix='/konferans')
+konferans_bp = Blueprint('konferans', __name__, url_prefix='/konferans', template_folder='templates')
 
 # Global variables for room management
 active_rooms = {}  # room_id: {participants: [], is_recording: False}
