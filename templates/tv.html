@@ -8,6 +8,15 @@
 
 {% block extra_css %}
 <style>
+/* Ensure html and body take full screen */
+html, body {
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
 /* Hide header, bottom nav, and main content restrictions on GADE MATCH page */
 .g2y-header,
 .modern-bottom-nav,
@@ -24,6 +33,8 @@
     right: 0 !important;
     bottom: 0 !important;
     z-index: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .g2y-body {
@@ -31,6 +42,8 @@
     margin: 0 !important;
     padding: 0 !important;
     touch-action: none;
+    width: 100vw !important;
+    height: 100vh !important;
 }
 
 .gadematch-container {
@@ -46,8 +59,8 @@
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    width: 100vw;
-    height: 100vh;
+    width: 100vw !important;
+    height: 100vh !important;
 }
 
 .gadematch-video-container {
@@ -63,8 +76,8 @@
 }
 
 .gadematch-video-container iframe {
-    width: 100% !important;
-    height: 100% !important;
+    width: 100vw !important;
+    height: 100vh !important;
     border: none !important;
     position: absolute !important;
     top: 0 !important;
