@@ -161,6 +161,7 @@ def create_app(config_name=None):
         from app.models.message import Message
         from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
         from app.models.admin_settings import AdminSettings # Import AdminSettings
+        from app.models.party import Party, PartyParticipant
         db.create_all()
         
         # Create test user for easy testing

@@ -13,6 +13,7 @@ from app.models.batch import Batch
 from app.models.message import Message
 from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
 from app.models.story import Story
+from app.models.party import Party, PartyParticipant
 
 __all__ = [
     'BaseModel',
@@ -28,5 +29,7 @@ __all__ = [
     'AdStar',
     'AdComment',
     'AdRating',
-    'Story'
+    'Story',
+    'Party',
+    'PartyParticipant'
 ]
