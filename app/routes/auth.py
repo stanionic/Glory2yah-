@@ -107,7 +107,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("10 per hour")
+@limiter.limit("50 per hour")
 def login():
     """User login"""
     if current_user.is_authenticated:
@@ -117,7 +117,12 @@ def login():
         try:
             identifier = request.form.get('identifier', '').strip()
             password = request.form.get('password', '').strip()
-            remember = request.form.get('remember', False)
+            remember = bool(request.form.get('remember'))
+            
+            print("=== LOGIN DEBUG ===")
+            print(f"Identifier: '{identifier}'")
+            print(f"Password: '{password}'")
+            print(f"Remember: {remember}")
             
             if not identifier or not password:
                 flash('Tout chan yo obligatwa.', 'error')
@@ -130,6 +135,8 @@ def login():
             else:
                 clean_identifier = ''.join(c for c in clean_identifier if c.isdigit())
             
+            print(f"Cleaned identifier: '{clean_identifier}'")
+            
             # Find user by pseudo or whatsapp - multiple attempts
             user = None
             
@@ -141,22 +148,38 @@ def login():
                 )
             ).first()
             
-            # 2. If not found, try with clean identifier
-            if not user and clean_identifier != identifier:
-                user = User.query.filter(
-                    db.or_(
-                        User.pseudo == clean_identifier,
-                        User.whatsapp == clean_identifier
-                    )
-                ).first()
+            if user:
+                print(f"Found user (exact match): {user.pseudo}")
+            else:
+                # 2. If not found, try with clean identifier
+                if clean_identifier != identifier:
+                    user = User.query.filter(
+                        db.or_(
+                            User.pseudo == clean_identifier,
+                            User.whatsapp == clean_identifier
+                        )
+                    ).first()
+                    if user:
+                        print(f"Found user (cleaned match): {user.pseudo}")
+                # 3. If still not found, try LIKE matches
+                if not user:
+                    user = User.query.filter(User.pseudo.ilike(f'%{identifier}%')).first()
+                    if user:
+                        print(f"Found user (pseudo LIKE match): {user.pseudo}")
+                if not user:
+                    user = User.query.filter(User.whatsapp.ilike(f'%{identifier}%')).first()
+                    if user:
+                        print(f"Found user (whatsapp LIKE match): {user.pseudo}")
             
-            # 3. If not found, try LIKE matches
             if not user:
-                user = User.query.filter(User.pseudo.ilike(f'%{identifier}%')).first()
-            if not user:
-                user = User.query.filter(User.whatsapp.ilike(f'%{identifier}%')).first()
+                print("User NOT FOUND in database!")
+                flash('Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.', 'error')
+                return redirect(url_for('auth.login'))
             
-            if not user or not user.check_password(password):
+            print(f"Checking password...")
+            password_ok = user.check_password(password)
+            print(f"Password match: {password_ok}")
+            if not password_ok:
                 flash('Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.', 'error')
                 return redirect(url_for('auth.login'))
             
@@ -165,6 +188,7 @@ def login():
                 return redirect(url_for('auth.login'))
             
             # Login user
+            print("Logging user in...")
             login_user(user, remember=remember)
             
             # Make session permanent
@@ -179,11 +203,15 @@ def login():
             
             # Redirect to next page or home
             next_page = request.args.get('next')
+            print(f"Next page: {next_page}")
             if next_page:
                 return redirect(next_page)
             return redirect(url_for('main.index'))
             
         except Exception as e:
+            print(f"Login exception: {e}")
+            import traceback
+            print(traceback.format_exc())
             db.session.rollback()
             flash(f'Erè nan koneksyon: {str(e)}', 'error')
             return redirect(url_for('auth.login'))
