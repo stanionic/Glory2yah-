@@ -18,6 +18,7 @@
         {% endwith %}
         
         <form method="POST" enctype="multipart/form-data">
+            {{ csrf_token() }}
             <div class="form-group">
                 <label for="name">Non fè *</label>
                 <input type="text" id="name" name="name" required class="form-control" value="{{ party.name }}">
@@ -72,6 +73,7 @@
             <h3><i class="fas fa-trash"></i> Efase Fè</h3>
             <p class="text-danger">Atansyon: Lè w efase fè a, tout moun ki enskri yo pral efase tou.</p>
             <form method="POST" action="{{ url_for('party.delete_party', party_id=party.party_id) }}" onsubmit="return confirm('Èske w sikè vle efase fè sa a? Sa pral efase tout patisipan tou.');">
+                {{ csrf_token() }}
                 <button type="submit" class="btn btn-danger">
                     <i class="fas fa-trash"></i> Efase Fè a
                 </button>

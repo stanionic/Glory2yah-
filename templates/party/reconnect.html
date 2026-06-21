@@ -10,10 +10,15 @@
         <h2><i class="fas fa-key"></i> Konekte anko ak Fet ou</h2>
         <p class="text-muted">Si ou pèdi sesyon ou, ou ka konekte lè w tounen.</p>
         
-        <form method="POST" action="{{ url_for('party.reconnect', party_id=party_id) }}">
+        <form method="POST" action="{{ url_for('party.reconnect') }}">
+            {{ csrf_token() }}
             <div class="mb-3">
-                <label for="access_code">Kod Aksè:</label>
-                <input type="text" id="access_code" name="access_code" class="form-control" required>
+                <label for="party_id">Nimewo Fèt:</label>
+                <input type="text" id="party_id" name="party_id" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="owner_code">Kod Pwoprietè:</label>
+                <input type="text" id="owner_code" name="owner_code" class="form-control" required>
             </div>
             
             <button type="submit" class="btn btn-primary">

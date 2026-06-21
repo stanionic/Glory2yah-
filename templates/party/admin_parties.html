@@ -20,6 +20,7 @@
         <h2>Kreyé Nouvo Fètnenyen</h2>
         
         <form method="POST" enctype="multipart/form-data" class="party-form">
+            {{ csrf_token() }}
             <input type="hidden" name="action" value="create">
             
             <div class="form-group">
@@ -92,6 +93,7 @@
                         </td>
                         <td>
                             <form method="POST" style="display: inline;">
+                                {{ csrf_token() }}
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="party_id" value="{{ party.party_id }}">
                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Ou sicher ou vle efase fètnenyen sa a?')">

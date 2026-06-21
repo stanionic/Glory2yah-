@@ -82,6 +82,7 @@
                 <p>Èske ou certain ke ou vle efase fè "<span id="deletePartyName"></span>"?</p>
                 <p class="warning">Atansyon: Tout patisipan yo pral efase tou!</p>
                 <form id="deleteForm" method="POST" action="{{ url_for('party.delete_party', party_id=party.party_id) }}">
+                    {{ csrf_token() }}
                     <button type="submit" class="btn btn-danger">Wi, Efase</button>
                     <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Non, Anile</button>
                 </form>
@@ -100,6 +101,7 @@
             {% endwith %}
             
             <form method="POST" action="{{ url_for('party.register', party_id=party.party_id) }}">
+                {{ csrf_token() }}
                 <div class="form-group">
                     <label for="name">Non ou *</label>
                     <input type="text" id="name" name="name" required class="form-control">
