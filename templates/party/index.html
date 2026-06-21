@@ -219,7 +219,7 @@
 
 <script>
 function shareParty(partyId, partyName) {
-    var partyUrl = window.location.origin + '/party/' + partyId;
+    var partyUrl = window.location.origin + '/fet/' + partyId;
     
     if (navigator.share) {
         navigator.share({
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var partyCards = document.querySelectorAll('[id^="owner-actions-"]');
     partyCards.forEach(function(card) {
         var partyId = card.id.replace('owner-actions-', '');
-        fetch('/party/api/' + partyId + '/is_owner')
+        fetch('/fet/api/party/' + partyId + '/is_owner')
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.is_owner) {
