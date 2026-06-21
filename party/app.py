@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask_wtf.csrf import CSRFProtect
 import os
 import uuid
 from datetime import datetime
-from app import db
+from app import db, csrf
 from app.models.party import Party, PartyParticipant
 from app.models.user import User
 from app.models.user_gkach import UserGkach
@@ -10,6 +11,9 @@ from app.utils.validators import validate_whatsapp
 from flask_login import current_user
 
 party_bp = Blueprint('party', __name__)
+
+# Exempt all party routes from CSRF for now
+csrf.exempt(party_bp)
 
 
 def get_party_models():
