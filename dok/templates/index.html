@@ -6,7 +6,7 @@
     <meta name="description" content="Dòk GlorYah se yon aplikasyon medikal ki itilize entèlijans atifisyèl (IA) pou ede moun jwenn enfòmasyon sou sante yo an kreyòl">
     <meta name="theme-color" content="#2563eb">
     <title>Dòk GlorYah - Asistan Sante IA</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('dok.static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
@@ -141,7 +141,7 @@
 
             try {
                 // Envoyer la requête
-                const response = await fetch('/analyze', {
+                const response = await fetch('/dok/analyze', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
