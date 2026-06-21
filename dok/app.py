@@ -4,7 +4,7 @@ Dòk GlorYah - Application Web Médicale
 Asistan Sante Entelijan pou Ayiti
 """
 
-from flask import Flask, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify
 import sys
 import os
 
@@ -12,19 +12,18 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'ai'))
 from model import DokGlorYahAI
 
-# Konfigirasyon Flask
-app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False  # Pou sipòte karaktè kreyòl
+# Konfigirasyon Blueprint
+dok_bp = Blueprint('dok', __name__, template_folder='templates', static_folder='static', url_prefix='/dok')
 
 # Enstansye modèl IA
 ai_model = DokGlorYahAI()
 
-@app.route('/')
+@dok_bp.route('/')
 def index():
     """Paj prensipal aplikasyon an"""
     return render_template('index.html')
 
-@app.route('/analyze', methods=['POST'])
+@dok_bp.route('/analyze', methods=['POST'])
 def analyze():
     """
     Endpoint pou analize sentòm yo
@@ -56,25 +55,7 @@ def analyze():
             'message': 'Gen yon pwoblèm. Tanpri eseye ankò.'
         }), 500
 
-@app.route('/health')
+@dok_bp.route('/health')
 def health():
     """Endpoint pou tcheke si aplikasyon an ap fonksyone"""
     return jsonify({'status': 'ok', 'message': 'Dòk GlorYah ap fonksyone byen!'})
-
-if __name__ == '__main__':
-    # Konfigirasyon pou pwoduksyon oswa devlopman
-    debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
-    port = int(os.environ.get('PORT', 5000))
-    
-    print("\n" + "="*60)
-    print("🏥 DÒK GLORYAH - Asistan Sante Entelijan")
-    print("="*60)
-    print(f"📱 Aplikasyon an ap kouri sou: http://localhost:{port}")
-    print(f"🌐 Pou aksede sou telefòn: http://[IP-ou]:{port}")
-    print("="*60 + "\n")
-    
-    app.run(
-        host='0.0.0.0',  # Aksesib sou rezo lokal
-        port=port,
-        debug=debug_mode
-    )

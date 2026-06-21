@@ -252,6 +252,12 @@ def register_blueprints(app):
         app.register_blueprint(mennem_bp, url_prefix='/mennenm')
     except:
         pass
+    
+    try:
+        from dok.app import dok_bp
+        app.register_blueprint(dok_bp)
+    except:
+        pass
 
 
 def register_error_handlers(app):
