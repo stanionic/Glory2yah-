@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Peman Reyi! - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-2xl shadow-xl border border-green-200 p-8 sm:p-10 text-center">
+        <div class="w-20 h-20 bg-gradient-to-br from-green-100 to-green-50 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-green-200">
+            <span class="text-5xl">✅</span>
+        </div>
+        <h2 class="text-3xl font-bold text-green-800 mb-2">Peman Reyi!</h2>
+        <p class="text-gray-600 mb-8">Vwayaj ou an konfime. Kontakte chofè a kounye a!</p>
+        
+        <div class="space-y-4 mb-10 text-left bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-700 font-medium">Depa</span>
+                <span class="font-bold text-gray-900">{{ trip.from_location }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-700 font-medium">Destinasyon</span>
+                <span class="font-bold text-gray-900">{{ trip.to_location }}</span>
+            </div>
+            <div class="h-px bg-green-200 my-3"></div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-700 font-medium">Chofè</span>
+                <span class="font-bold text-gray-900">{{ trip.driver_name }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-700 font-medium">Pri</span>
+                <span class="text-xl font-bold text-green-700">{{ trip.price_gkach }} Gkach</span>
+            </div>
+        </div>
+        
+        <a href="https://wa.me/{{ trip.driver_phone.replace('+', '') }}" class="inline-flex items-center gap-3 bg-green-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-green-600/30 hover:bg-green-700 hover:shadow-xl transition-all duration-200">
+            <i class="fab fa-whatsapp text-xl"></i> 
+            Kontakte Chofè a Sou WhatsApp
+        </a>
+        
+        <div class="mt-10">
+            <a href="{{ url_for('mennem.index') }}" class="text-gray-500 hover:text-gray-700 text-sm font-medium inline-flex items-center gap-1 transition-colors duration-200">
+                <i class="fas fa-home"></i> Retounen nan akèy
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

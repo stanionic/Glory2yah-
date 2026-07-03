@@ -1,105 +1,53 @@
 {% extends "base.html" %}
 
+{% block title %}Anrejistre kòm Chofè - Glory2YahPub{% endblock %}
+
 {% block content %}
-<div class="container">
-    <div class="mennenm-register">
-        <h2>🚕 Anrejistre kòm Chofè</h2>
-        <p class="subtitle">Rejwenn kliyante nan zòn ou a</p>
-        
-        <form method="POST" action="{{ url_for('mennenm_register') }}" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="name">Non Konplè *</label>
-                <input type="text" id="name" name="name" required class="form-control" 
-                       placeholder="Antre non ou">
+<div class="max-w-2xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">🚕 Anrejistre kòm Chofè</h1>
+            <p class="text-sm text-gray-500 mt-1">Rejwenn kliyante nan zòn ou a</p>
+        </div>
+        <a href="{{ url_for('mennem.index') }}" class="mt-4 sm:mt-0 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center gap-1">
+            <i class="fas fa-arrow-left"></i> Retounen
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <form method="POST" action="{{ url_for('mennem.register_driver') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="space-y-6 mb-8">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Non Konplè *</label>
+                    <input type="text" id="name" name="name" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200" 
+                           placeholder="Antre non ou">
+                </div>
+                
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Nimewo WhatsApp *</label>
+                    <input type="tel" id="phone" name="phone" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200" 
+                           placeholder="egz: +50912345678">
+                </div>
+                
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Adrès Kote Ou Ye *</label>
+                    <input type="text" id="address" name="address" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200" 
+                           placeholder="egz: Delmas 33, Pétion-Ville, etc.">
+                    <p class="text-xs text-gray-500 mt-2">Nou itilize adrès sa a pou jwenn kliyante ki pre w.</p>
+                </div>
+                
+                <div>
+                    <label for="photo" class="block text-sm font-medium text-gray-700 mb-2">Foto Ou (Opsyonal)</label>
+                    <input type="file" id="photo" name="photo" accept="image/*" class="w-full px-5 py-4 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark">
+                    <p class="text-xs text-gray-500 mt-2">Kliyante yo ka wè foto ou lè yo chèche yon chofè.</p>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label for="phone">Nimewo WhatsApp *</label>
-                <input type="tel" id="phone" name="phone" required class="form-control" 
-                       placeholder="egz: +50912345678">
-            </div>
-            
-            <div class="form-group">
-                <label for="address">Adrès Kote Ou Ye *</label>
-                <input type="text" id="address" name="address" required class="form-control" 
-                       placeholder="egz: Delmas 33, Pétion-Ville, etc.">
-                <small class="form-text">Nou itilize adrès sa a pou jwenn kliyante ki pre w.</small>
-            </div>
-            
-            <div class="form-group">
-                <label for="photo">Foto Ou (Opsyonal)</label>
-                <input type="file" id="photo" name="photo" class="form-control" accept="image/*">
-                <small class="form-text">Kliyante yo ka wè foto ou lè yo chèche yon chofè.</small>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block">
+            <button type="submit" class="w-full bg-primary text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-2">
                 <i class="fas fa-user-plus"></i> Anrejistre
             </button>
         </form>
-        
-        <div class="back-link">
-            <a href="{{ url_for('mennenm_index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Retounen
-            </a>
-        </div>
     </div>
 </div>
-
-<style>
-.mennenm-register {
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.mennenm-register h2 {
-    text-align: center;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
-
-.mennenm-register .subtitle {
-    text-align: center;
-    color: #666;
-    margin-bottom: 2rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-    color: #333;
-}
-
-.form-control {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-.form-text {
-    display: block;
-    margin-top: 0.5rem;
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.btn-block {
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1rem;
-    margin-top: 1rem;
-}
-
-.back-link {
-    text-align: center;
-    margin-top: 2rem;
-}
-</style>
 {% endblock %}

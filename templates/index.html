@@ -103,12 +103,12 @@ window.CSRF_TOKEN = {{ csrf_token()|tojson }};
     </div>
 </section>
 
-<!-- ═══ GADE MATCH LIVE TV SECTION ═══ -->
+<!-- ═══ GADE TV SECTION ═══ -->
 <section class="gade-mondyal-section">
     <div class="gade-mondyal-container">
-        <button id="gade-mondyal-btn" class="gade-mondyal-btn" title="GADE MATCH - Transmisyon Dirèk" data-is-authenticated="{{ is_logged_in }}" data-gkach-balance="{{ gkach_balance }}">
-            <span class="soccer-icon">⚽</span>
-            <span class="btn-text">GADE MATCH</span>
+        <button id="gade-mondyal-btn" class="gade-mondyal-btn" title="GADE TV - Transmisyon Dirèk" data-is-authenticated="{{ is_logged_in }}" data-gkach-balance="{{ gkach_balance }}">
+            <span class="soccer-icon">📺</span>
+            <span class="btn-text">GADE TV</span>
             <span class="live-badge">LIVE</span>
         </button>
     </div>
@@ -132,14 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <h2 class="hero-title">🚀 KREYE PIBLISITE W</h2>
         <p class="hero-subtitle">Vann pwodwi ou, sèvis ou, oswa ankò fè reklamasyon ou</p>
         <div class="hero-buttons">
-            <a href="/piblisite" class="hero-btn primary">
+            <a href="/submit_ad" class="hero-btn primary">
                 <span class="btn-icon">✨</span>
                 KREYE PIBLISITE
             </a>
-            <div class="sub-buttons">
-                <a href="/piblisite/foto" class="sub-btn">📸 Foto</a>
-                <a href="/piblisite/video" class="sub-btn">🎥 Video</a>
-            </div>
         </div>
     </div>
 </section>

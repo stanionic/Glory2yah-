@@ -26,22 +26,34 @@ def index():
     )
 
 
-@cart_bp.route('/add/<product_id>', methods=['POST'])
+@cart_bp.route('/add/<product_id>', methods=['GET', 'POST'])
 @login_required
 def add(product_id):
-    """Add product to cart"""    
+    """Add product to cart (supports both GET and POST, JSON for AJAX)"""    
     from app.utils.validators import validate_amount, ValidationError
 
     try:
-        quantity = int(request.form.get('quantity', 1))
+        if request.method == 'POST':
+            quantity = int(request.form.get('quantity', 1))
+        else:
+            quantity = 1
+            
         CartService.add_to_cart(current_user.id, product_id, quantity)
-        flash('Atik ajoute nan panier!', 'success')
         
+        # Check if it's an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Content-Type') == 'application/x-www-form-urlencoded':
+            return jsonify({'success': True})
+            
+        flash('Atik ajoute nan panier!', 'success')
         return redirect(url_for('cart.index'))
     except ValidationError as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': str(e)}), 400
         flash(str(e), 'error')
         return redirect(url_for('main.index'))
     except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Erè nan ajoute nan panier.'}), 500
         flash('Erè nan ajoute nan panier.', 'error')
         return redirect(url_for('main.index'))
 

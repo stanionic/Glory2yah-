@@ -1,123 +1,88 @@
 {% extends "base.html" %}
 
+{% block title %}Mennen M - Glory2YahPub{% endblock %}
+
 {% block content %}
-<div class="container">
-    <div class="mennenm-header">
-        <h2>🚕 Mennen M</h2>
-        <p class="subtitle">Jwenn yon chofè pre ou nan Ayiti</p>
+<div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">🚕 Mennen M</h1>
+            <p class="text-sm text-gray-500 mt-1">Jwenn yon chofè pre ou nan Ayiti</p>
+        </div>
     </div>
 
-    <div class="mennenm-form">
-        <h3>📍 Kote ou vle ale?</h3>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">📍 Kote ou vle ale?</h2>
         
-        <form method="POST" action="{{ url_for('mennenm_find') }}">
-            <div class="form-group">
-                <input type="text" name="address" placeholder="Antre adrès ou vle ale a (egz: Delmas, Pétion-Ville, Carrefour)" required class="form-control">
+        <form method="POST" action="{{ url_for('mennem.find') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="space-y-5 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Depa</label>
+                    <input type="text" name="from" placeholder="Antre kote ou ye (eg: Delmas 32)" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Destinasyon</label>
+                    <input type="text" name="to" placeholder="Antre kote ou vle ale (eg: Pétion-Ville)" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200">
+                </div>
             </div>
             
-            <button type="submit" class="btn btn-primary btn-block">
-                <i class="fas fa-search"></i> Chèche Chofè
+            <button type="submit" class="w-full bg-primary text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-3">
+                <i class="fas fa-search text-lg"></i> Chèche Chofè
             </button>
         </form>
     </div>
 
-    <div class="mennenm-actions">
-        <p>Ou se yon chofè?</p>
-        <a href="{{ url_for('mennenm_register') }}" class="btn btn-secondary">
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 text-center border border-blue-100">
+        <p class="text-gray-700 mb-4 font-medium">Ou se yon chofè?</p>
+        <a href="{{ url_for('mennem.register_driver') }}" class="inline-flex items-center gap-2 bg-white text-gray-800 font-bold py-3 px-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200">
             <i class="fas fa-user-plus"></i> Anrejistre kòm Chofè
         </a>
     </div>
 
-    <div class="mennenm-info">
-        <h4>Kijan li fonksyone:</h4>
-        <ol>
-            <li>Antre adrès kote ou vle ale a</li>
-            <li>Sistèm nan ap jwenn chofè ki pi pre w la</li>
-            <li>Kontakte chofè a dirèkteman pa WhatsApp</li>
-            <li>Negosye pri ak chofè a</li>
-        </ol>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <i class="fas fa-info-circle text-primary"></i> Kijan li fonksyone?
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-primary font-bold">1</span>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Antre wout ou</p>
+                    <p class="text-gray-600 text-sm">Depi adrès kote ou ye rive nan kote ou vle ale.</p>
+                </div>
+            </div>
+            <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-primary font-bold">2</span>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Chwazi chofè</p>
+                    <p class="text-gray-600 text-sm">Chwazi nan mitan chofè ki disponib.</p>
+                </div>
+            </div>
+            <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-primary font-bold">3</span>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Peye ak Gkach</p>
+                    <p class="text-gray-600 text-sm">Peye sou platfòm nan sanbleman ak Gkach.</p>
+                </div>
+            </div>
+            <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-primary font-bold">4</span>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Kontakte chofè</p>
+                    <p class="text-gray-600 text-sm">Kontakte chofè a dirèkteman pa WhatsApp.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-<style>
-.mennenm-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.mennenm-header h2 {
-    color: #333;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
-.mennenm-header .subtitle {
-    color: #666;
-    font-size: 1.1rem;
-}
-
-.mennenm-form {
-    background: #f8f9fa;
-    padding: 2rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.mennenm-form h3 {
-    margin-bottom: 1.5rem;
-    color: #333;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-control {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-}
-
-.btn-block {
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1rem;
-}
-
-.mennenm-actions {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: #e9ecef;
-    border-radius: 8px;
-}
-
-.mennenm-actions p {
-    margin-bottom: 1rem;
-    color: #555;
-}
-
-.mennenm-info {
-    background: #fff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-}
-
-.mennenm-info h4 {
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-.mennenm-info ol {
-    padding-left: 1.5rem;
-}
-
-.mennenm-info li {
-    margin-bottom: 0.5rem;
-    color: #555;
-}
-</style>
 {% endblock %}

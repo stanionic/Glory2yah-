@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Istwa m yo - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Istwa m yo</h1>
+            <p class="text-sm text-gray-500 mt-1">Jere tout istwa ou isit la</p>
+        </div>
+        <a href="{{ url_for('auth.profile') }}" class="mt-4 sm:mt-0 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200">
+            ← Retounen nan pwofil
+        </a>
+    </div>
+
+    {% if stories %}
+    <div class="grid gap-4">
+        {% for story in stories %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row items-start gap-4">
+                {% if story.media %}
+                <div class="w-full h-48 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                    <img src="/static/uploads/{{ story.media }}" class="w-full h-full object-cover">
+                </div>
+                {% else %}
+                <div class="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
+                    <i class="fas fa-image text-xl"></i>
+                </div>
+                {% endif %}
+                
+                <div class="flex-1">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-lg">{{ story.title }}</h3>
+                            {% if story.price_gkach > 0 %}
+                            <p class="text-primary font-bold mt-1">{{ story.price_gkach }} Gkach</p>
+                            {% endif %}
+                            <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ story.description }}</p>
+                            <span class="inline-block mt-2 text-xs font-medium px-3 py-1 rounded-full 
+                                {% if story.admin_status == 'approved' %}
+                                    bg-green-100 text-green-700
+                                {% elif story.admin_status == 'under_review' %}
+                                    bg-yellow-100 text-yellow-700
+                                {% else %}
+                                    bg-red-100 text-red-700
+                                {% endif %}">
+                                {{ story.admin_status }}
+                            </span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+                            <a href="{{ url_for('auth.edit_story', story_id=story.story_id) }}" class="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition text-center">
+                                <i class="fas fa-edit mr-2"></i>Modifye
+                            </a>
+                            <form method="POST" action="{{ url_for('auth.delete_story', story_id=story.story_id) }}" onsubmit="return confirm('Ou sèten ou vle efase istwa sa a?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 text-sm font-bold text-red-600 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition text-center">
+                                    <i class="fas fa-trash mr-2"></i>Efase
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl p-8 sm:p-12 text-center border border-gray-100 border-dashed">
+        <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-2xl">
+            <i class="fas fa-images"></i>
+        </div>
+        <h3 class="text-gray-900 font-bold mb-1 text-xl">Pa gen istwa ankò</h3>
+        <p class="text-gray-400 text-sm mb-6">Kòmanse pataje istwa sou Glory2YahPub kounye a!</p>
+        <a href="#" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors duration-200">
+            <i class="fas fa-plus"></i>
+            Kreye premye istwa w
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

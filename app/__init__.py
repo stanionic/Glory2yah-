@@ -163,6 +163,7 @@ def create_app(config_name=None):
         from app.models.admin_settings import AdminSettings # Import AdminSettings
         from app.models.party import Party, PartyParticipant
         from app.models.konferans import KonferansRoom, KonferansRecording
+        from app.models.mennem_trip import MennemTrip
         db.create_all()
         
         # Create test user for easy testing
@@ -250,8 +251,11 @@ def register_blueprints(app):
     try:
         from mennem.app import mennem_bp
         app.register_blueprint(mennem_bp, url_prefix='/mennenm')
-    except:
-        pass
+        app.logger.info("Successfully registered mennem_bp at /mennenm")
+    except Exception as e:
+        app.logger.error(f"Failed to register mennem_bp: {type(e).__name__}: {str(e)}")
+        import traceback
+        app.logger.error(traceback.format_exc())
     
     try:
         from dok.app import dok_bp
