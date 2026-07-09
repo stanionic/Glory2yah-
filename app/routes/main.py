@@ -501,44 +501,43 @@ def submit_ad():
             if not current_user.is_authenticated:
                 flash('Ou dwe konekte pou soumèt yon piblisite!', 'error')
                 return redirect(url_for('auth.login'))
-                
+
             whatsapp = current_user.whatsapp
             media_type = request.form.get('media_type', 'images')
             ad_type = request.form.get('ad_type', 'publish')
             title = sanitize_text(request.form.get('title', ''))
             description = sanitize_text(request.form.get('description', ''))
-            price_gkach = int(request.form.get('price_gkach', 0))
-            
-            # Handle file uploads
+            price_gkach = int(request.form.get('price_gkach', 0) or 0)
+
+            # Resolve absolute upload folder path
+            upload_folder = os.path.join(current_app.root_path, '..', current_app.config['UPLOAD_FOLDER'])
+            upload_folder = os.path.abspath(upload_folder)
+            os.makedirs(upload_folder, exist_ok=True)
+
             images = []
+            video = None
+
             if media_type == 'images':
                 for i in range(1, 4):
-                    file_key = f'image_{i}'
-                    if file_key in request.files:
-                        file = request.files[file_key]
-                        if file and file.filename:
-                            # Save file
-                            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-                            filename = f'{uuid.uuid4().hex}.{ext}'
-                            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                            file.save(upload_path)
-                            images.append(filename)
-                
-            elif media_type == 'video':
-                if 'video' in request.files:
-                    file = request.files['video']
+                    file = request.files.get(f'image_{i}')
                     if file and file.filename:
-                        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
+                        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'jpg'
                         filename = f'{uuid.uuid4().hex}.{ext}'
-                        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                        file.save(upload_path)
-                        video = filename
-                    else:
-                        video = None
-            else:
-                video = None
-            
-            # Create the ad
+                        file.save(os.path.join(upload_folder, filename))
+                        images.append(filename)
+                if not images:
+                    raise ValidationError('Tanpri telechaje omwen yon imaj.')
+
+            elif media_type == 'video':
+                file = request.files.get('video')
+                if file and file.filename:
+                    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'mp4'
+                    filename = f'{uuid.uuid4().hex}.{ext}'
+                    file.save(os.path.join(upload_folder, filename))
+                    video = filename
+                else:
+                    raise ValidationError('Tanpri telechaje yon videyo.')
+
             ad = AdService.create_ad(
                 user_whatsapp=whatsapp,
                 title=title,
@@ -549,15 +548,15 @@ def submit_ad():
                 ad_type=ad_type,
                 price_gkach=price_gkach
             )
-            
+
             flash('Piblisite soumèt avèk siksè! Li ap revize pa admin yo.', 'success')
             return redirect(url_for('auth.my_ads'))
-            
+
         except ValidationError as e:
             flash(str(e), 'error')
         except Exception as e:
             current_app.logger.error(f"Error submitting ad: {e}")
-            flash('Erè pandan soumèt piblisite a.', 'error')
+            flash(f'Erè pandan soumèt piblisite a: {str(e)}', 'error')
     
     return render_template('submit_ad.html')
 

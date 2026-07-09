@@ -6,11 +6,6 @@
     
     <form method="POST" enctype="multipart/form-data" class="ad-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-group">
-            <label for="whatsapp">Nimewo WhatsApp ou *</label>
-            <input type="tel" id="whatsapp" name="whatsapp" required
-                   placeholder="Egzamp: +50912345678" oninput="formatWhatsAppNumber(this)">
-        </div>
 
         <div class="form-group">
             <label>Chwazi Tip Medya *</label>
@@ -31,14 +26,14 @@
             <div class="image-upload-grid">
                 <div class="upload-box">
                     <input type="file" name="image_1" accept="image/*" required>
-                    <span>Imaj 1</span>
+                    <span>Imaj 1 *</span>
                 </div>
                 <div class="upload-box">
-                    <input type="file" name="image_2" accept="image/*" required>
+                    <input type="file" name="image_2" accept="image/*">
                     <span>Imaj 2</span>
                 </div>
                 <div class="upload-box">
-                    <input type="file" name="image_3" accept="image/*" required>
+                    <input type="file" name="image_3" accept="image/*">
                     <span>Imaj 3</span>
                 </div>
             </div>
@@ -128,6 +123,30 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
+    const imagesSection = document.getElementById('images-section');
+    const videoSection = document.getElementById('video-section');
+    const image1Input = document.querySelector('input[name="image_1"]');
+    const videoInput = document.querySelector('input[name="video"]');
+
+    function toggleMediaSection() {
+        const selected = document.querySelector('input[name="media_type"]:checked').value;
+        if (selected === 'images') {
+            imagesSection.style.display = 'block';
+            videoSection.style.display = 'none';
+            image1Input.required = true;
+            if (videoInput) videoInput.required = false;
+        } else {
+            imagesSection.style.display = 'none';
+            videoSection.style.display = 'block';
+            image1Input.required = false;
+            if (videoInput) videoInput.required = true;
+        }
+    }
+
+    mediaTypeRadios.forEach(r => r.addEventListener('change', toggleMediaSection));
+    toggleMediaSection();
+
     const adTypeRadios = document.querySelectorAll('input[name="ad_type"]');
     const priceSection = document.getElementById('price-section');
     const priceInput = document.getElementById('price_gourdes');
@@ -146,11 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    adTypeRadios.forEach(radio => {
-        radio.addEventListener('change', togglePriceSection);
-    });
-
-    // Initial check
+    adTypeRadios.forEach(radio => radio.addEventListener('change', togglePriceSection));
     togglePriceSection();
 });
 </script>

@@ -25,7 +25,7 @@ class AdService:
         if not description or len(description) < 10:
             raise ValidationError("Deskripsyon dwe gen omwen 10 karaktè")
         
-        if media_type not in ['images', 'video']:
+        if media_type not in ['images', 'video', 'text', 'url']:
             raise ValidationError("Tip medya envalid")
         
         if ad_type == 'sell':
