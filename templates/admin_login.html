@@ -1,27 +1,42 @@
 {% extends "base.html" %}
 
+{% block title %}Koneksyon Administratè - Glory2YahPub{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <h2 class="text-center mb-4">Koneksyon Administratè</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'info' if category == 'info' else category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            <form method="POST">
-                <div class="mb-3">
-                    <label for="password" class="form-label">Modpas Administratè</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
+        <div class="col-md-5">
+            <div class="card shadow-sm p-4">
+                <div class="text-center mb-4">
+                    <img src="/static/images/logo.png" alt="Logo" style="height:60px" onerror="this.style.display='none'">
+                    <h4 class="mt-2 fw-bold">⚙️ Koneksyon Administratè</h4>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Antre</button>
-            </form>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="pseudo" class="form-label fw-semibold">Pseudo / WhatsApp Admin</label>
+                        <input type="text" class="form-control" id="pseudo" name="pseudo" placeholder="+50942882076" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-semibold">Modpas</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">🔐 Antre</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="/" class="text-muted small">← Retounen Akèy</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>

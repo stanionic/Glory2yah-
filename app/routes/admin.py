@@ -19,6 +19,28 @@ from app.utils.security import admin_required
 admin_bp = Blueprint('admin', __name__)
 
 
+@admin_bp.route('/login', methods=['GET', 'POST'])
+def admin_login():
+    """Dedicated admin login page"""
+    from flask_login import login_user, current_user
+    if current_user.is_authenticated and current_user.is_admin:
+        return redirect(url_for('admin.dashboard'))
+
+    if request.method == 'POST':
+        pseudo = request.form.get('pseudo', '').strip()
+        password = request.form.get('password', '').strip()
+        user = User.query.filter(
+            db.or_(User.pseudo == pseudo, User.whatsapp == pseudo)
+        ).first()
+        if user and user.is_admin and user.check_password(password):
+            login_user(user)
+            flash('Byenveni Administratè!', 'success')
+            return redirect(url_for('admin.dashboard'))
+        flash('Pseudo oswa modpas envalid.', 'error')
+
+    return render_template('admin_login.html')
+
+
 @admin_bp.route('/')
 @login_required
 @admin_required

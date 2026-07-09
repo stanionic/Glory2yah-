@@ -166,6 +166,35 @@ def create_app(config_name=None):
         from app.models.mennem_trip import MennemTrip
         db.create_all()
         
+        # Create admin user
+        try:
+            admin_user = User.query.filter_by(whatsapp='+50942882076').first()
+            if not admin_user:
+                admin_user = User(
+                    whatsapp='+50942882076',
+                    pseudo='+50942882076',
+                    name='Admin',
+                    auth_provider='whatsapp',
+                    is_active=True,
+                    is_admin=True
+                )
+                admin_user.set_password('StanGlory2Yah1986')
+                db.session.add(admin_user)
+                db.session.commit()
+                admin_gkach = UserGkach.query.filter_by(user_whatsapp=admin_user.whatsapp).first()
+                if not admin_gkach:
+                    db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
+                    db.session.commit()
+                app.logger.info("Admin user created: +50942882076")
+            elif not admin_user.is_admin:
+                admin_user.is_admin = True
+                admin_user.pseudo = '+50942882076'
+                admin_user.set_password('StanGlory2Yah1986')
+                db.session.commit()
+        except Exception as e:
+            app.logger.warning(f"Could not create admin user: {e}")
+            db.session.rollback()
+
         # Create test user for easy testing
         try:
             test_user = User.query.filter_by(whatsapp='+50912345678').first()
