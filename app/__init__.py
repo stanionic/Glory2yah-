@@ -40,26 +40,13 @@ def create_app(config_name=None):
     from app.config import get_config
     app.config.from_object(get_config(config_name))
 
-    # Setup secret key from config - don't regenerate it!
+    # Setup secret key - always comes from config
     secret_key = app.config.get("SECRET_KEY")
     if not secret_key:
-        if str(config_name).lower() in ("development", "local", "dev"):
-            # Config should handle this, but just in case
-            import secrets
-            secret_key_file = '.flask_secret_key'
-            if os.path.exists(secret_key_file):
-                with open(secret_key_file, 'r') as f:
-                    secret_key = f.read().strip()
-            else:
-                secret_key = secrets.token_hex(32)
-                with open(secret_key_file, 'w') as f:
-                    f.write(secret_key)
-            app.config["SECRET_KEY"] = secret_key
-        else:
-            raise RuntimeError(
-                "SECRET_KEY is required for CSRF protection but was not found. "
-                "Set the 'SECRET_KEY' environment variable."
-            )
+        raise RuntimeError(
+            "SECRET_KEY is required but was not found. "
+            "Set the 'SECRET_KEY' environment variable or ensure .flask_secret_key file exists."
+        )
     app.secret_key = secret_key
 
     setup_logging(app)
@@ -164,6 +151,8 @@ def create_app(config_name=None):
         from app.models.party import Party, PartyParticipant
         from app.models.konferans import KonferansRoom, KonferansRecording
         from app.models.mennem_trip import MennemTrip
+        # Import ecole_biblique models so their tables get created
+        from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade
         db.create_all()
         
         # Create admin user
@@ -268,7 +257,11 @@ def register_blueprints(app):
     try:
         from ecole_biblique.app import ecole_biblique_bp
         app.register_blueprint(ecole_biblique_bp, url_prefix='/ecole_biblique')
-    except:
+        # Exempt from CSRF protection after registration
+        csrf.exempt(ecole_biblique_bp)
+        app.logger.info("Registered ecole_biblique blueprint at /ecole_biblique")
+    except Exception as e:
+        app.logger.warning(f"Could not register ecole_biblique: {e}")
         pass
     
     try:

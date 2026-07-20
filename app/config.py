@@ -92,36 +92,39 @@ class Config:
 import secrets
 import os
 
+def _load_secret_key():
+    """Load or generate a persistent secret key"""
+    key = os.environ.get('SECRET_KEY')
+    if key and key != 'your-secret-key-here-change-this-in-production':
+        return key
+    secret_key_file = '.flask_secret_key'
+    if os.path.exists(secret_key_file):
+        with open(secret_key_file, 'r') as f:
+            return f.read().strip()
+    key = secrets.token_hex(32)
+    with open(secret_key_file, 'w') as f:
+        f.write(key)
+    return key
+
+
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
     TESTING = False
-    
+
+    SECRET_KEY = _load_secret_key()
+
     # Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         os.environ.get('DEV_DATABASE_URL') or \
         'sqlite:///glory2yahpub_dev.db'
-    
+
     # Disable HTTPS requirements
     SESSION_COOKIE_SECURE = False
-    
+
     # Fallback to simple cache when Redis not available
     CACHE_TYPE = 'simple'
     RATELIMIT_STORAGE_URL = 'memory://'
-    
-    # Development-only: Persist SECRET_KEY to a file for consistent sessions
-    def __init__(self):
-        super().__init__()
-        if not self.SECRET_KEY:
-            # Try to load from a persistent file
-            secret_key_file = '.flask_secret_key'
-            if os.path.exists(secret_key_file):
-                with open(secret_key_file, 'r') as f:
-                    self.SECRET_KEY = f.read().strip()
-            else:
-                self.SECRET_KEY = secrets.token_hex(32)
-                with open(secret_key_file, 'w') as f:
-                    f.write(self.SECRET_KEY)
 
 
 class TestingConfig(Config):
