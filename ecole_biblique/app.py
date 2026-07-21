@@ -49,7 +49,7 @@ def login():
             flash('Login successful!', 'success')
             return redirect(url_for('ecole_biblique.index'))
         flash('Invalid credentials', 'error')
-    return render_template('ecole_biblique/login.html')
+    return render_template('login.html')
 
 
 @ecole_biblique_bp.route('/register', methods=['GET', 'POST'])
@@ -58,17 +58,26 @@ def register():
         full_name = request.form['full_name']
         whatsapp = request.form['whatsapp']
         password = request.form['password']
-        role = request.form['role']
+        role = request.form.get('role', 'student')
         if EcoleUser.query.filter_by(whatsapp=whatsapp).first():
             flash('WhatsApp number already registered', 'error')
         else:
             user = EcoleUser(full_name=full_name, whatsapp=whatsapp, role=role)
             user.set_password(password)
             db.session.add(user)
+            db.session.flush()  # Get user.id before commit
+            
+            # Auto-create EcoleStudent record for student role
+            if role == 'student':
+                student = EcoleStudent.query.filter_by(whatsapp=whatsapp).first()
+                if not student:
+                    student = EcoleStudent(full_name=full_name, whatsapp=whatsapp)
+                    db.session.add(student)
+            
             db.session.commit()
             flash('Registration successful!', 'success')
             return redirect(url_for('ecole_biblique.login'))
-    return render_template('ecole_biblique/register.html')
+    return render_template('register.html')
 
 
 @ecole_biblique_bp.route('/logout')
@@ -84,7 +93,7 @@ def ranking():
         EcoleStudent,
         db.func.avg(Grade.average).label('overall_avg')
     ).join(Grade).group_by(EcoleStudent.id).order_by(db.desc('overall_avg')).all()
-    return render_template('ecole_biblique/ranking.html', courses=courses, overall_ranking=overall_ranking)
+    return render_template('ranking.html', courses=courses, overall_ranking=overall_ranking)
 
 
 @ecole_biblique_bp.route('/admin')
@@ -97,7 +106,7 @@ def admin_dashboard():
     users = EcoleUser.query.all()
     courses = Course.query.all()
     students = EcoleStudent.query.all()
-    return render_template('ecole_biblique/admin_dashboard.html', users=users, courses=courses, students=students)
+    return render_template('admin_dashboard.html', users=users, courses=courses, students=students)
 
 
 @ecole_biblique_bp.route('/teacher')
@@ -108,7 +117,7 @@ def teacher_dashboard():
     if not user or user.role != 'teacher':
         return redirect(url_for('ecole_biblique.login'))
     courses = Course.query.filter_by(teacher_id=user.id).all()
-    return render_template('ecole_biblique/teacher_dashboard.html', courses=courses)
+    return render_template('teacher_dashboard.html', courses=courses)
 
 
 @ecole_biblique_bp.route('/student')
@@ -125,7 +134,7 @@ def student_dashboard():
     grades = Grade.query.filter_by(student_id=student.id).all()
     # Get the last admission test for this user
     last_test = AdmissionTest.query.filter_by(user_id=user.id).order_by(AdmissionTest.started_at.desc()).first()
-    return render_template('ecole_biblique/student_dashboard.html', grades=grades, last_test=last_test)
+    return render_template('student_dashboard.html', grades=grades, last_test=last_test)
 
 
 # API for real-time updates
@@ -181,7 +190,7 @@ def admission_test():
         if q:
             questions.append(q)
 
-    return render_template('ecole_biblique/admission_test.html', 
+    return render_template('admission_test.html', 
                          test=current_test, 
                          questions=questions,
                          total=len(questions))
@@ -270,7 +279,7 @@ def admission_result(test_id):
                 'is_correct': answer.is_correct
             })
 
-    return render_template('ecole_biblique/admission_result.html',
+    return render_template('admission_result.html',
                          test=test,
                          results=results)
 
@@ -285,4 +294,4 @@ def admin_admission_results():
         return redirect(url_for('ecole_biblique.login'))
 
     tests = AdmissionTest.query.order_by(AdmissionTest.started_at.desc()).all()
-    return render_template('ecole_biblique/admin_admission_results.html', tests=tests)
+    return render_template('admin_admission_results.html', tests=tests)
