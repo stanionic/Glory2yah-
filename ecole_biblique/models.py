@@ -77,3 +77,38 @@ class Grade(db.Model):
 
     def __repr__(self):
         return f'<Grade {self.student.full_name} - {self.course.name}>'
+
+
+class AdmissionTest(db.Model):
+    """Admission test model for Ecole Biblique"""
+    __tablename__ = 'ecole_admission_tests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('ecole_users.id'), nullable=False)
+    score = db.Column(db.Float, nullable=True)
+    total_questions = db.Column(db.Integer, nullable=False, default=10)
+    passed = db.Column(db.Boolean, default=False)
+    completed = db.Column(db.Boolean, default=False)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    user = db.relationship('EcoleUser', backref='admission_tests', lazy=True)
+    answers = db.relationship('AdmissionAnswer', backref='test', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<AdmissionTest {self.user.full_name} - Score: {self.score}>'
+
+
+class AdmissionAnswer(db.Model):
+    """Individual answer for admission test"""
+    __tablename__ = 'ecole_admission_answers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    test_id = db.Column(db.Integer, db.ForeignKey('ecole_admission_tests.id'), nullable=False)
+    question_id = db.Column(db.Integer, nullable=False)
+    selected_option = db.Column(db.Integer, nullable=False)
+    is_correct = db.Column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f'<AdmissionAnswer Q:{self.question_id} - {"Correct" if self.is_correct else "Wrong"}>'

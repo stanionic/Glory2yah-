@@ -5,8 +5,11 @@ Blueprint for student/teacher/admin management with grades and rankings
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import random
+from datetime import datetime
 from app import db
-from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade
+from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade, AdmissionTest, AdmissionAnswer
+from ecole_biblique.admission_questions import ADMISSION_QUESTIONS
 
 ecole_biblique_bp = Blueprint('ecole_biblique', __name__, template_folder='../ecole_biblique/templates')
 
@@ -120,7 +123,9 @@ def student_dashboard():
         flash('Student profile not found', 'error')
         return redirect(url_for('ecole_biblique.login'))
     grades = Grade.query.filter_by(student_id=student.id).all()
-    return render_template('ecole_biblique/student_dashboard.html', grades=grades)
+    # Get the last admission test for this user
+    last_test = AdmissionTest.query.filter_by(user_id=user.id).order_by(AdmissionTest.started_at.desc()).first()
+    return render_template('ecole_biblique/student_dashboard.html', grades=grades, last_test=last_test)
 
 
 # API for real-time updates
@@ -134,3 +139,150 @@ def get_grades(course_id):
         'average': g.average
     } for g in grades]
     return jsonify(data)
+
+
+# Admission Test Routes
+@ecole_biblique_bp.route('/admission_test')
+def admission_test():
+    """Display admission test to logged-in student"""
+    if 'user_id' not in session:
+        return redirect(url_for('ecole_biblique.login'))
+    user = EcoleUser.query.get(session['user_id'])
+    if not user or user.role != 'student':
+        flash('Only students can take admission tests', 'error')
+        return redirect(url_for('ecole_biblique.login'))
+
+    # Check if student already passed
+    passed_test = AdmissionTest.query.filter_by(user_id=user.id, passed=True, completed=True).first()
+    if passed_test:
+        flash('You have already passed the admission test!', 'success')
+        return redirect(url_for('ecole_biblique.student_dashboard'))
+
+    # Get or create a test attempt
+    current_test = AdmissionTest.query.filter_by(user_id=user.id, completed=False).first()
+    if not current_test:
+        # Select 10 random questions from the bank
+        selected_questions = random.sample(ADMISSION_QUESTIONS, min(10, len(ADMISSION_QUESTIONS)))
+        current_test = AdmissionTest(
+            user_id=user.id,
+            total_questions=len(selected_questions),
+            completed=False
+        )
+        db.session.add(current_test)
+        db.session.commit()
+        # Store selected question IDs in session
+        session['admission_question_ids'] = [q['id'] for q in selected_questions]
+
+    # Get the questions for this test
+    question_ids = session.get('admission_question_ids', [])
+    questions = []
+    for qid in question_ids:
+        q = next((q for q in ADMISSION_QUESTIONS if q['id'] == qid), None)
+        if q:
+            questions.append(q)
+
+    return render_template('ecole_biblique/admission_test.html', 
+                         test=current_test, 
+                         questions=questions,
+                         total=len(questions))
+
+
+@ecole_biblique_bp.route('/admission_test/submit', methods=['POST'])
+def admission_test_submit():
+    """Submit admission test answers"""
+    if 'user_id' not in session:
+        return redirect(url_for('ecole_biblique.login'))
+    user = EcoleUser.query.get(session['user_id'])
+    if not user or user.role != 'student':
+        flash('Unauthorized access', 'error')
+        return redirect(url_for('ecole_biblique.login'))
+
+    current_test = AdmissionTest.query.filter_by(user_id=user.id, completed=False).first()
+    if not current_test:
+        flash('No active test found', 'error')
+        return redirect(url_for('ecole_biblique.admission_test'))
+
+    question_ids = session.get('admission_question_ids', [])
+    correct_count = 0
+    total = len(question_ids)
+
+    # Process each answer
+    for qid in question_ids:
+        selected = request.form.get(f'q_{qid}')
+        if selected is not None:
+            try:
+                selected_option = int(selected)
+                q = next((q for q in ADMISSION_QUESTIONS if q['id'] == qid), None)
+                is_correct = q and q['correct'] == selected_option
+                if is_correct:
+                    correct_count += 1
+                answer = AdmissionAnswer(
+                    test_id=current_test.id,
+                    question_id=qid,
+                    selected_option=selected_option,
+                    is_correct=is_correct
+                )
+                db.session.add(answer)
+            except (ValueError, TypeError):
+                pass
+
+    # Calculate score
+    score = (correct_count / total * 100) if total > 0 else 0
+    passed = score >= 70  # Passing threshold
+
+    # Update test record
+    current_test.score = score
+    current_test.passed = passed
+    current_test.completed = True
+    current_test.completed_at = datetime.utcnow()
+    db.session.commit()
+
+    # Clear session data
+    session.pop('admission_question_ids', None)
+
+    return redirect(url_for('ecole_biblique.admission_result', test_id=current_test.id))
+
+
+@ecole_biblique_bp.route('/admission_result/<int:test_id>')
+def admission_result(test_id):
+    """Show admission test result"""
+    if 'user_id' not in session:
+        return redirect(url_for('ecole_biblique.login'))
+    user = EcoleUser.query.get(session['user_id'])
+    if not user:
+        return redirect(url_for('ecole_biblique.login'))
+
+    test = AdmissionTest.query.get_or_404(test_id)
+    if test.user_id != user.id and user.role != 'admin':
+        flash('Access denied', 'error')
+        return redirect(url_for('ecole_biblique.index'))
+
+    # Get answers with question details
+    results = []
+    for answer in test.answers:
+        q = next((q for q in ADMISSION_QUESTIONS if q['id'] == answer.question_id), None)
+        if q:
+            results.append({
+                'question': q['question_fr'],
+                'options': q['options'],
+                'selected': answer.selected_option,
+                'correct': q['correct'],
+                'is_correct': answer.is_correct
+            })
+
+    return render_template('ecole_biblique/admission_result.html',
+                         test=test,
+                         results=results)
+
+
+@ecole_biblique_bp.route('/admin/admission_results')
+def admin_admission_results():
+    """Admin view of all admission test results"""
+    if 'user_id' not in session:
+        return redirect(url_for('ecole_biblique.login'))
+    user = EcoleUser.query.get(session['user_id'])
+    if not user or user.role != 'admin':
+        return redirect(url_for('ecole_biblique.login'))
+
+    tests = AdmissionTest.query.order_by(AdmissionTest.started_at.desc()).all()
+    return render_template('ecole_biblique/admin_admission_results.html', tests=tests)

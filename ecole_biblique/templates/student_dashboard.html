@@ -1,42 +1,101 @@
-{% extends "base.html" %}
+{% extends "ecole_biblique/eb_base.html" %}
 
 {% block head %}
+{{ super() }}
 <style>
-    /* Correction pour l'affichage avec la navbar globale */
-    header .container {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
+    .admission-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
     }
-    nav a {
-        color: white !important;
+    .admission-status-pass {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
     }
-    nav a:hover {
-        color: #FFD700 !important;
+    .admission-status-fail {
+        background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    .admission-status-pending {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
     }
 </style>
 {% endblock %}
 
-{% block content %}
-<h2>Student Dashboard</h2>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Course</th>
-            <th>Assignments</th>
-            <th>Exam</th>
-            <th>Average</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for grade in grades %}
-            <tr>
-                <td>{{ grade.course.name }}</td>
-                <td>{{ grade.assignments or 'N/A' }}</td>
-                <td>{{ grade.exam or 'N/A' }}</td>
-                <td>{{ grade.average or 'N/A' }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block eb_content %}
+<div class="row">
+    <div class="col-12">
+        <h2>👨‍🎓 Tableau de Bord Étudiant</h2>
+        
+        <!-- Admission Test Section -->
+        {% if last_test %}
+            {% if last_test.passed %}
+            <div class="admission-status-pass">
+                <h4>✅ Test d'Admission Réussi</h4>
+                <p>Score: {{ "%.1f"|format(last_test.score) }}% | Date: {{ last_test.completed_at.strftime('%d/%m/%Y') if last_test.completed_at else 'N/A' }}</p>
+            </div>
+            {% elif last_test.completed %}
+            <div class="admission-status-fail">
+                <h4>❌ Test d'Admission - Échoué</h4>
+                <p>Score: {{ "%.1f"|format(last_test.score) }}% - Vous n'avez pas atteint le score requis (70%).</p>
+                <a href="{{ url_for('ecole_biblique.admission_test') }}" class="btn btn-light">Réessayer le Test</a>
+                <a href="{{ url_for('ecole_biblique.admission_result', test_id=last_test.id) }}" class="btn btn-outline-light">Voir les Détails</a>
+            </div>
+            {% else %}
+            <div class="admission-status-pending">
+                <h4>⏳ Test d'Admission en Cours</h4>
+                <p>Vous avez un test d'admission incomplet.</p>
+                <a href="{{ url_for('ecole_biblique.admission_test') }}" class="btn btn-light">Continuer le Test</a>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="admission-card">
+            <h3>📝 Test d'Admission</h3>
+            <p>Avant de commencer vos cours, vous devez passer le test d'admission. Le test contient des questions sur la doctrine chrétienne.</p>
+            <p><strong>Score requis:</strong> 70% | <strong>Durée:</strong> 30 minutes</p>
+            <a href="{{ url_for('ecole_biblique.admission_test') }}" class="btn btn-light btn-lg">Commencer le Test d'Admission</a>
+        </div>
+        {% endif %}
+        
+        <hr>
+        
+        <h3>Mes Notes</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Assignments</th>
+                    <th>Exam</th>
+                    <th>Average</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grade in grades %}
+                    <tr>
+                        <td>{{ grade.course.name }}</td>
+                        <td>{{ grade.assignments or 'N/A' }}</td>
+                        <td>{{ grade.exam or 'N/A' }}</td>
+                        <td>{{ grade.average or 'N/A' }}</td>
+                    </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">Aucune note disponible pour le moment.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

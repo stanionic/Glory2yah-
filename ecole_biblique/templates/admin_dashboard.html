@@ -1,84 +1,103 @@
-{% extends "base.html" %}
+{% extends "ecole_biblique/eb_base.html" %}
 
 {% block head %}
+{{ super() }}
 <style>
-    /* Correction pour l'affichage avec la navbar globale */
-    header .container {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
+    .admin-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
     }
-    nav a {
-        color: white !important;
-    }
-    nav a:hover {
-        color: #FFD700 !important;
+    .admin-card h3 {
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
     }
 </style>
 {% endblock %}
 
-{% block content %}
-<h2>Admin Dashboard</h2>
+{% block eb_content %}
+<div class="row">
+    <div class="col-12">
+        <h2>👨‍💼 Tableau de Bord Administrateur</h2>
+        
+        <div class="admin-card">
+            <h3>📊 Tests d'Admission</h3>
+            <p>Consultez les résultats des tests d'admission des étudiants.</p>
+            <a href="{{ url_for('ecole_biblique.admin_admission_results') }}" class="btn btn-info">
+                Voir les Résultats des Tests
+            </a>
+        </div>
+        
+        <div class="admin-card">
+            <h3>👥 Utilisateurs</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>WhatsApp</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.full_name }}</td>
+                            <td>{{ user.whatsapp }}</td>
+                            <td>{{ user.role }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-<h3>Users</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>WhatsApp</th>
-            <th>Role</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-            <tr>
-                <td>{{ user.id }}</td>
-                <td>{{ user.full_name }}</td>
-                <td>{{ user.whatsapp }}</td>
-                <td>{{ user.role }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        <div class="admin-card">
+            <h3>📚 Cours</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Teacher</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                        <tr>
+                            <td>{{ course.id }}</td>
+                            <td>{{ course.name }}</td>
+                            <td>{{ course.teacher.full_name }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-<h3>Courses</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Teacher</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for course in courses %}
-            <tr>
-                <td>{{ course.id }}</td>
-                <td>{{ course.name }}</td>
-                <td>{{ course.teacher.full_name }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<h3>Students</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>WhatsApp</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for student in students %}
-            <tr>
-                <td>{{ student.id }}</td>
-                <td>{{ student.full_name }}</td>
-                <td>{{ student.whatsapp }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        <div class="admin-card">
+            <h3>🎓 Étudiants</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>WhatsApp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td>{{ student.id }}</td>
+                            <td>{{ student.full_name }}</td>
+                            <td>{{ student.whatsapp }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}

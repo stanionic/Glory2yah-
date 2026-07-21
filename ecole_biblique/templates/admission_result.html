@@ -1,0 +1,108 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .result-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5em;
+        font-weight: bold;
+        margin: 0 auto 20px;
+    }
+    .score-pass {
+        background: #d4edda;
+        color: #155724;
+        border: 5px solid #28a745;
+    }
+    .score-fail {
+        background: #f8d7da;
+        color: #721c24;
+        border: 5px solid #dc3545;
+    }
+    .correct-answer {
+        background: #d4edda;
+        border-color: #c3e6cb;
+    }
+    .wrong-answer {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+    }
+    .answer-detail {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid;
+    }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">📊 Résultat du Test d'Admission</h2>
+        
+        <div class="text-center mb-4">
+            <div class="score-circle {% if test.passed %}score-pass{% else %}score-fail{% endif %}">
+                {{ "%.0f"|format(test.score) }}%
+            </div>
+            <h3>
+                {% if test.passed %}
+                ✅ Félicitations! Vous avez réussi le test!
+                {% else %}
+                ❌ Désolé, vous n'avez pas atteint le score requis (70%).
+                {% endif %}
+            </h3>
+            <p class="text-muted">
+                Score: {{ "%.1f"|format(test.score) }}% | 
+                Réponses correctes: {{ test.answers|selectattr('is_correct')|list|length }}/{{ test.total_questions }}
+            </p>
+            <p class="text-muted">
+                Date: {{ test.completed_at.strftime('%d/%m/%Y %H:%M') if test.completed_at else 'N/A' }}
+            </p>
+        </div>
+
+        <hr>
+
+        <h4 class="mb-3">Détail des réponses:</h4>
+        {% for result in results %}
+        <div class="answer-detail {% if result.is_correct %}correct-answer{% else %}wrong-answer{% endif %}">
+            <p><strong>Question {{ loop.index }}:</strong> {{ result.question }}</p>
+            <p><strong>Votre réponse:</strong> {{ result.options[result.selected] }}</p>
+            {% if not result.is_correct %}
+            <p><strong>Réponse correcte:</strong> {{ result.options[result.correct] }}</p>
+            {% endif %}
+            <p>
+                {% if result.is_correct %}
+                <span class="text-success">✓ Correct</span>
+                {% else %}
+                <span class="text-danger">✗ Incorrect</span>
+                {% endif %}
+            </p>
+        </div>
+        {% endfor %}
+
+        <div class="text-center mt-4 mb-5">
+            <a href="{{ url_for('ecole_biblique.student_dashboard') }}" class="btn btn-primary btn-lg">
+                Retour au Tableau de Bord
+            </a>
+            {% if not test.passed %}
+            <a href="{{ url_for('ecole_biblique.admission_test') }}" class="btn btn-warning btn-lg ml-2">
+                Réessayer le Test
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

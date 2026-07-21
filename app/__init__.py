@@ -152,7 +152,7 @@ def create_app(config_name=None):
         from app.models.konferans import KonferansRoom, KonferansRecording
         from app.models.mennem_trip import MennemTrip
         # Import ecole_biblique models so their tables get created
-        from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade
+        from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade, AdmissionTest, AdmissionAnswer
         db.create_all()
         
         # Create admin user

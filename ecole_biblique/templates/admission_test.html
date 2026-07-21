@@ -1,0 +1,109 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .question-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .question-number {
+        background: #007bff;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    .option-label {
+        display: block;
+        padding: 10px 15px;
+        margin: 5px 0;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .option-label:hover {
+        background: #e9ecef;
+        border-color: #007bff;
+    }
+    .option-label input[type="radio"] {
+        margin-right: 10px;
+    }
+    .timer {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>📝 Test d'Admission - École Biblique</h2>
+            <div class="timer" id="timer">30:00</div>
+        </div>
+        
+        <div class="alert alert-info">
+            <strong>Instructions:</strong> Répondez à toutes les questions. Vous devez obtenir au moins 70% pour réussir le test.
+            Vous avez 30 minutes pour compléter le test.
+        </div>
+
+        <form method="POST" action="{{ url_for('ecole_biblique.admission_test_submit') }}" id="testForm">
+            {% for question in questions %}
+            <div class="question-card">
+                <h5>
+                    <span class="question-number">{{ loop.index }}</span>
+                    {{ question.question_fr }}
+                </h5>
+                <div class="options">
+                    {% for option in question.options %}
+                    <label class="option-label">
+                        <input type="radio" name="q_{{ question.id }}" value="{{ loop.index0 }}" required>
+                        {{ option }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="text-center mt-4 mb-5">
+                <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Êtes-vous sûr de vouloir soumettre le test ?')">
+                    ✅ Soumettre le Test
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Timer functionality
+    let timeLeft = 30 * 60; // 30 minutes in seconds
+    const timerElement = document.getElementById('timer');
+    
+    function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            document.getElementById('testForm').submit();
+        }
+        timeLeft--;
+    }
+    
+    setInterval(updateTimer, 1000);
+</script>
+{% endblock %}
+{% endblock %}
