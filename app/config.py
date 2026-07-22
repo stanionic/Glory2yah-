@@ -132,8 +132,13 @@ class TestingConfig(Config):
     DEBUG = True
     TESTING = True
     
-    # Use in-memory SQLite for tests
+    SECRET_KEY = _load_secret_key()
+    
+    # Use in-memory SQLite for tests  (pool options not supported by SQLite)
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+    }
     
     # Use fake Redis for tests
     CACHE_TYPE = 'simple'

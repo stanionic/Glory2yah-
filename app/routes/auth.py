@@ -107,7 +107,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("50 per hour")
+@limiter.limit("200 per hour")
 def login():
     """User login"""
     if current_user.is_authenticated:

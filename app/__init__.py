@@ -249,7 +249,7 @@ def register_blueprints(app):
     # Register old blueprints
     try:
         from konferans.routes import konferans_bp, register_socketio_handlers
-        app.register_blueprint(konferans_bp, url_prefix='/konferans')
+        app.register_blueprint(konferans_bp)
         register_socketio_handlers(socketio)
     except:
         pass
@@ -257,8 +257,6 @@ def register_blueprints(app):
     try:
         from ecole_biblique.app import ecole_biblique_bp
         app.register_blueprint(ecole_biblique_bp, url_prefix='/ecole_biblique')
-        # Exempt from CSRF protection after registration
-        csrf.exempt(ecole_biblique_bp)
         app.logger.info("Registered ecole_biblique blueprint at /ecole_biblique")
     except Exception as e:
         app.logger.warning(f"Could not register ecole_biblique: {e}")
