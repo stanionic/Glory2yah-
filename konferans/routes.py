@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, session, send_from_directory
 from flask_socketio import emit, join_room, leave_room
-from app.models import db, KonferansRoom, KonferansRecording, User
+from app import db
+from app.models import KonferansRoom, KonferansRecording, User
 import uuid
 import os
 import json
@@ -287,7 +288,7 @@ def create_room():
         
         # If user is logged in, try to get their profile info
         if user_id:
-            from models import User
+            from app.models.user import User
             user = User.query.get(user_id)
             if user:
                 # Use user's profile info if creator_name not provided
@@ -467,6 +468,41 @@ def upload_recording(room_id):
         db.session.rollback()
         print(f"Error uploading recording: {e}")
         return jsonify({'success': False, 'message': 'Erè nan telechajman anrejistreman an.'})
+
+@konferans_bp.route('/update_room_name', methods=['POST'])
+def update_room_name():
+    """Update room name"""
+    try:
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form
+
+        room_id = data.get('room_id')
+        room_name = data.get('room_name', '').strip()
+
+        if not room_id or not room_name:
+            return jsonify({'success': False, 'message': 'ID sal la ak non sal la obligatwa.'})
+
+        if len(room_name) > 100:
+            return jsonify({'success': False, 'message': 'Non sal la twò long.'})
+
+        room = KonferansRoom.query.filter_by(room_id=room_id).first()
+        if not room:
+            return jsonify({'success': False, 'message': 'Sal sa pa egziste.'})
+
+        room.room_name = room_name
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Non sal la chanje an {room_name}!'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating room name: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan modifye non sal la.'})
 
 @konferans_bp.route('/download_recording/<filename>')
 def download_recording(filename):

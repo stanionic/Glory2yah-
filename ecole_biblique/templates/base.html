@@ -22,7 +22,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('ecole_biblique.ranking') }}"><i class="fas fa-trophy"></i> Palmarès</a>
                     </li>
-                    {% if current_user %}
+                    {% if is_logged_in and current_user %}
                         {% if current_user.role == 'admin' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('ecole_biblique.admin_dashboard') }}"><i class="fas fa-user-shield"></i> Admin</a>
@@ -39,7 +39,7 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
-                    {% if session.get('user_id') %}
+                    {% if is_logged_in %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('ecole_biblique.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </li>

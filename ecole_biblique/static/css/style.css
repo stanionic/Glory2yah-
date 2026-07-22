@@ -1,16 +1,364 @@
-body {
-    background-color: #f8f9fa;
+/* ═══════════════════════════════════════════════
+   ECOLE BIBLIQUE MEGD-HAITI - MODERN STYLES
+   ═══════════════════════════════════════════════ */
+
+:root {
+    --eb-primary: #667eea;
+    --eb-secondary: #764ba2;
+    --eb-accent: #f093fb;
+    --eb-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    --eb-gradient-horizontal: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    --eb-dark: #1a1a2e;
+    --eb-card-bg: rgba(255, 255, 255, 0.98);
+    --eb-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+    --eb-shadow-hover: 0 12px 48px rgba(102, 126, 234, 0.25);
+    --eb-radius: 16px;
+    --eb-radius-sm: 10px;
+    --eb-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.navbar-brand img {
-    margin-right: 10px;
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* ═══ NAVBAR ═══ */
+.navbar {
+    background: var(--eb-gradient) !important;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    padding: 12px 0;
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-brand i {
+    font-size: 1.5rem;
+    background: rgba(255,255,255,0.2);
+    padding: 8px;
+    border-radius: 10px;
+}
+
+.nav-link {
+    font-weight: 600;
+    padding: 8px 16px !important;
+    border-radius: 10px;
+    transition: var(--eb-transition);
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.nav-link i {
+    margin-right: 6px;
+}
+
+/* ═══ MAIN CONTAINER ═══ */
+.container.mt-4 {
+    max-width: 1200px;
+    padding: 20px 16px;
+}
+
+/* ═══ CARDS ═══ */
+.card {
+    background: var(--eb-card-bg);
+    border: none;
+    border-radius: var(--eb-radius);
+    box-shadow: var(--eb-shadow);
+    transition: var(--eb-transition);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.card:hover {
+    box-shadow: var(--eb-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: var(--eb-gradient-horizontal) !important;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: none;
+    padding: 18px 24px;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+/* ═══ FORM STYLES ═══ */
+.form-control, .form-select {
+    border: 2px solid #e4e6eb;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 15px;
+    transition: var(--eb-transition);
+    background: #f8f9fa;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--eb-primary);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--eb-dark);
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+/* ═══ BUTTONS ═══ */
+.btn {
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 700;
+    font-size: 15px;
+    transition: var(--eb-transition);
+    border: none;
+}
+
+.btn-primary {
+    background: var(--eb-gradient-horizontal);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-light {
+    background: rgba(255,255,255,0.9);
+    color: var(--eb-dark);
+    backdrop-filter: blur(10px);
+}
+
+.btn-light:hover {
+    background: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline-light {
+    border: 2px solid rgba(255,255,255,0.6);
+    color: white;
+    background: transparent;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: white;
+}
+
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 16px;
+}
+
+/* ═══ TABLE STYLES ═══ */
+.table {
+    background: white;
+    border-radius: var(--eb-radius-sm);
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .table th {
-    background-color: #007bff;
+    background: var(--eb-gradient-horizontal) !important;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 16px;
+    border: none;
+}
+
+.table td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f2f5;
+    color: #333;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background: rgba(102, 126, 234, 0.03);
+}
+
+.table-striped tbody tr:hover {
+    background: rgba(102, 126, 234, 0.08);
+}
+
+/* ═══ ALERTS / FLASH MESSAGES ═══ */
+.alert {
+    border: none;
+    border-radius: var(--eb-radius-sm);
+    padding: 16px 20px;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
     color: white;
 }
 
-.alert {
-    margin-bottom: 20px;
+.alert-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #0dcaf0 100%);
+    color: white;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #333;
+}
+
+.btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+/* ═══ ADMISSION TEST CUSTOM CARDS ═══ */
+.admission-card {
+    background: var(--eb-gradient);
+    color: white;
+    border-radius: var(--eb-radius);
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+}
+
+.admission-card h3 {
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.admission-status-pass {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: var(--eb-radius);
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 30px rgba(40, 167, 69, 0.3);
+}
+
+.admission-status-fail {
+    background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    color: white;
+    border-radius: var(--eb-radius);
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 30px rgba(220, 53, 69, 0.3);
+}
+
+.admission-status-pending {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #333;
+    border-radius: var(--eb-radius);
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 30px rgba(255, 193, 7, 0.3);
+}
+
+/* ═══ RANKING PAGE ═══ */
+.ranking-trophy {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.ranking-position {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.ranking-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+.ranking-2 { background: linear-gradient(135deg, #C0C0C0, #A8A8A8); color: white; }
+.ranking-3 { background: linear-gradient(135deg, #CD7F32, #B8722A); color: white; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .card-body {
+        padding: 16px;
+    }
+    
+    .admission-card,
+    .admission-status-pass,
+    .admission-status-fail,
+    .admission-status-pending {
+        padding: 20px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container.mt-4 {
+        padding: 12px 8px;
+    }
+    
+    .btn {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+    
+    .btn-lg {
+        padding: 14px 24px;
+        font-size: 15px;
+    }
 }
