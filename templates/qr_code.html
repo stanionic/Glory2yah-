@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code - Glory2YahPub{% endblock %}
+
+{% block content %}
+<style>
+.qr-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.qr-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 30px;
+    animation: fadeInUp 0.6s ease;
+    text-align: center;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.qr-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+}
+
+.qr-subtitle {
+    font-size: 15px;
+    color: #65676b;
+    margin: 0 0 24px;
+}
+
+.qr-image-container {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    display: inline-block;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+.qr-image {
+    width: 250px;
+    height: 250px;
+    image-rendering: pixelated;
+}
+
+.qr-url {
+    font-size: 14px;
+    color: #667eea;
+    font-weight: 600;
+    word-break: break-all;
+    margin: 16px 0;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.qr-instructions {
+    font-size: 14px;
+    color: #65676b;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.qr-instructions strong {
+    color: #1a1a1a;
+}
+
+.qr-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.qr-btn {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qr-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.qr-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+}
+
+.qr-btn-secondary {
+    background: #f0f2f5;
+    color: #1a1a1a;
+}
+
+.qr-btn-secondary:hover {
+    background: #e4e6eb;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+    .qr-card {
+        padding: 32px 24px;
+        border-radius: 24px;
+    }
+    .qr-title { font-size: 24px; }
+    .qr-image { width: 200px; height: 200px; }
+}
+</style>
+
+<div class="qr-page">
+    <div class="qr-card">
+        <div class="qr-logo" style="font-size: 48px; margin-bottom: 16px;">📱</div>
+        <h1 class="qr-title">Glory2YahPub</h1>
+        <p class="qr-subtitle">Scannez pour lancer l'application</p>
+
+        <div class="qr-image-container">
+            <img src="{{ url_for('static', filename='images/qr_local.png') }}" alt="QR Code Glory2YahPub" class="qr-image" id="qrImage">
+        </div>
+
+        <div class="qr-url" id="qrUrl">{{ app_url }}</div>
+
+        <p class="qr-instructions">
+            <strong>📸 Comment utiliser :</strong><br>
+            1. Ouvrez l'appareil photo de votre téléphone<br>
+            2. Scannez ce code QR<br>
+            3. Cliquez sur le lien pour ouvrir l'application
+        </p>
+
+        <div class="qr-actions">
+            <a href="{{ url_for('main.index') }}" class="qr-btn qr-btn-primary">🏠 Accueil</a>
+            <button class="qr-btn qr-btn-secondary" onclick="downloadQR()">💾 Télécharger</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadQR() {
+    const link = document.createElement('a');
+    link.download = 'glory2yahpub_qr.png';
+    link.href = document.getElementById('qrImage').src;
+    link.click();
+}
+</script>
+{% endblock %}

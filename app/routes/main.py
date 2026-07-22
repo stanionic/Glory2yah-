@@ -13,6 +13,8 @@ from flask_login import current_user, login_required
 from app.models.admin_settings import AdminSettings
 from app.services.gkach_service import GkachService
 from datetime import datetime
+from flask import request as flask_req
+
 main_bp = Blueprint('main', __name__)
 
 
@@ -666,3 +668,13 @@ def preview_url():
     except Exception as e:
         current_app.logger.error(f"Error previewing URL: {e}")
         return jsonify({'success': False, 'message': 'Erè pandan preview URL'}), 500
+
+
+@main_bp.route('/qr')
+def qr_code():
+    """QR Code page to scan and launch the app"""
+    # Detect the app URL from the request
+    host = flask_req.host
+    scheme = flask_req.scheme
+    app_url = f"{scheme}://{host}"
+    return render_template('qr_code.html', app_url=app_url)
