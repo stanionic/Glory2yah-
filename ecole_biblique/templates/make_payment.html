@@ -1,0 +1,208 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .payment-method-card {
+        border: 2px solid var(--eb-gray-200);
+        border-radius: var(--eb-radius);
+        padding: 20px;
+        cursor: pointer;
+        transition: var(--eb-transition);
+        text-align: center;
+        margin-bottom: 16px;
+    }
+    .payment-method-card:hover { border-color: var(--eb-primary-light); }
+    .payment-method-card.selected { border-color: var(--eb-primary-light); background: rgba(42, 90, 140, 0.05); }
+    .payment-method-card .method-icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .payment-method-card h5 { font-size: 1.1rem; font-weight: 700; color: var(--eb-primary-dark); }
+    .payment-method-card p { font-size: 0.85rem; color: var(--eb-gray-600); margin: 0; }
+    .payment-form-section { display: none; }
+    .payment-form-section.active { display: block; }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="student-info-panel">
+                <h2>💳 Effectuer un Paiement</h2>
+                {% if module_number %}
+                <p class="text-muted">Paiement pour le <strong>Module {{ module_number }}</strong></p>
+                {% endif %}
+                {% if suggested_fee > 0 %}
+                <div class="alert alert-info">
+                    <div class="alert-icon"><i class="fas fa-info-circle"></i></div>
+                    <div class="alert-content">
+                        <strong>Frais suggérés: ${{ suggested_fee }} USD</strong>
+                        <p class="mb-0 mt-1">Type d'étudiant: {{ "Gratuit" if student_type == 'gratuit' else "Payant" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <form method="POST" action="{{ url_for('ecole_biblique.make_payment') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="module_number" value="{{ module_number or '' }}">
+                <input type="hidden" name="payment_type" value="module_fee">
+                <input type="hidden" name="payment_method" id="payment_method" value="">
+
+                <!-- Amount -->
+                <div class="card mb-4">
+                    <div class="card-header"><h3>💰 Montant</h3></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Montant (USD)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01"
+                                   value="{{ suggested_fee if suggested_fee > 0 else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="currency" class="form-label">Devise</label>
+                            <select class="form-control" id="currency" name="currency">
+                                <option value="USD">USD ($)</option>
+                                <option value="GKach">GKach</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="card mb-4">
+                    <div class="card-header"><h3>🏦 Méthode de Paiement</h3></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="payment-method-card" onclick="selectMethod('gkach')" id="method-gkach">
+                                    <div class="method-icon">🪙</div>
+                                    <h5>GKach</h5>
+                                    <p>Paiement instantané avec votre solde GKach</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="payment-method-card" onclick="selectMethod('wise')" id="method-wise">
+                                    <div class="method-icon">🌐</div>
+                                    <h5>Wise</h5>
+                                    <p>Paiement via Wise Transfer</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="payment-method-card" onclick="selectMethod('manual')" id="method-manual">
+                                    <div class="method-icon">📝</div>
+                                    <h5>Manuel</h5>
+                                    <p>Paiement manuel avec preuve</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GKach Section -->
+                <div class="payment-form-section" id="section-gkach">
+                    <div class="card mb-4">
+                        <div class="card-header"><h3>🪙 Paiement GKach</h3></div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <div class="alert-icon"><i class="fas fa-wallet"></i></div>
+                                <div class="alert-content">
+                                    Votre solde GKach sera débité immédiatement.
+                                    <br>Solde actuel: <strong>{{ gkach_balance }} GKach</strong>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-check-circle"></i> Payer avec GKach
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wise Section -->
+                <div class="payment-form-section" id="section-wise">
+                    <div class="card mb-4">
+                        <div class="card-header"><h3>🌐 Paiement via Wise</h3></div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <div class="alert-icon"><i class="fas fa-external-link-alt"></i></div>
+                                <div class="alert-content">
+                                    <strong>Étape 1:</strong> Effectuez votre paiement via Wise en utilisant le lien ci-dessous.
+                                </div>
+                            </div>
+                            <a href="{{ wise_link }}" target="_blank" class="btn btn-success btn-lg w-100 mb-3">
+                                <i class="fas fa-external-link-alt"></i> Payer via Wise
+                            </a>
+                            <div class="alert alert-warning">
+                                <div class="alert-icon"><i class="fas fa-upload"></i></div>
+                                <div class="alert-content">
+                                    <strong>Étape 2:</strong> Téléversez votre preuve de paiement (PDF, JPG, PNG)
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="proof_file_wise" class="form-label">Preuve de paiement</label>
+                                <input type="file" class="form-control" id="proof_file_wise" name="proof_file"
+                                       accept=".pdf,.jpg,.jpeg,.png">
+                                <div class="form-text">Formats acceptés: PDF, JPG, PNG</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reference_wise" class="form-label">Référence du paiement</label>
+                                <input type="text" class="form-control" id="reference_wise" name="reference"
+                                       placeholder="Numéro de transaction Wise">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-paper-plane"></i> Soumettre le paiement Wise
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Section -->
+                <div class="payment-form-section" id="section-manual">
+                    <div class="card mb-4">
+                        <div class="card-header"><h3>📝 Paiement Manuel</h3></div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="reference_manual" class="form-label">Référence</label>
+                                <input type="text" class="form-control" id="reference_manual" name="reference"
+                                       placeholder="Numéro de référence du paiement">
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Commentaire</label>
+                                <textarea class="form-control" id="description" name="description" rows="2"
+                                          placeholder="Informations supplémentaires..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="proof_file_manual" class="form-label">Preuve de paiement (PDF, JPG, PNG)</label>
+                                <input type="file" class="form-control" id="proof_file_manual" name="proof_file"
+                                       accept=".pdf,.jpg,.jpeg,.png">
+                                <div class="form-text">Formats acceptés: PDF, JPG, PNG</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-paper-plane"></i> Soumettre le paiement manuel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function selectMethod(method) {
+    document.getElementById('payment_method').value = method;
+
+    // Update card selection
+    document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('method-' + method).classList.add('selected');
+
+    // Show relevant section
+    document.querySelectorAll('.payment-form-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + method).classList.add('active');
+}
+
+// Auto-select first method
+selectMethod('gkach');
+</script>
+{% endblock %}

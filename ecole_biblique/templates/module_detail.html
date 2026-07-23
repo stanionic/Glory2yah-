@@ -1,0 +1,180 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .grade-display {
+        text-align: center;
+        padding: 30px;
+        border-radius: var(--eb-radius);
+        margin: 20px 0;
+    }
+    .grade-display.passed { background: linear-gradient(135deg, #1a8a42 0%, #28a745 100%); color: white; }
+    .grade-display.failed { background: linear-gradient(135deg, #8b1a1a 0%, #b22222 100%); color: white; }
+    .grade-display.pending { background: var(--eb-gray-100); border: 2px dashed var(--eb-gray-300); }
+    .grade-display .grade-number { font-size: 3rem; font-weight: 900; font-family: var(--eb-font-heading); }
+    .grade-display .grade-label { font-size: 1rem; opacity: 0.9; }
+    .grade-breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin: 20px 0; }
+    .grade-item { text-align: center; padding: 16px; background: white; border-radius: var(--eb-radius-sm); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .grade-item .value { font-size: 1.5rem; font-weight: 800; color: var(--eb-primary-dark); }
+    .grade-item .label { font-size: 0.85rem; color: var(--eb-gray-600); margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="fade-in">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('ecole_biblique.view_modules') }}">Modules</a></li>
+            <li class="breadcrumb-item active">Module {{ module.number }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="student-info-panel">
+                <h2>Module {{ module.number }}: {{ module.name }}</h2>
+                <p class="text-muted">{{ module.description }}</p>
+
+                {% if deadline_passed and current_user.role == 'student' %}
+                <div class="alert alert-warning">
+                    <div class="alert-icon"><i class="fas fa-clock"></i></div>
+                    <div class="alert-content">La date limite ({{ exam_deadline.strftime('%d/%m/%Y') }}) est dépassée.</div>
+                </div>
+                {% endif %}
+
+                {% if student_module.locked and current_user.role == 'student' %}
+                <div class="alert alert-secondary">
+                    <div class="alert-icon"><i class="fas fa-lock"></i></div>
+                    <div class="alert-content">
+                        <strong>Module verrouillé</strong>
+                        <p class="mb-0 mt-1">Vous devez réussir le module précédent avant de continuer.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Grade Display -->
+                {% if student_module.final_score is not none %}
+                <div class="grade-display {% if student_module.passed %}passed{% else %}failed{% endif %}">
+                    <div class="grade-label">Note Finale</div>
+                    <div class="grade-number">{{ "%.1f"|format(student_module.final_score) }}%</div>
+                    <div class="grade-label mt-2">
+                        {% if student_module.passed %}
+                        ✅ Réussi - Mention: {{ student_module.get_mention() }}
+                        {% else %}
+                        ❌ Échec - Score requis: {{ passing_score }}%
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grade-breakdown">
+                    <div class="grade-item">
+                        <div class="value">{{ "%.1f"|format(student_module.exam_score or 0) }}%</div>
+                        <div class="label">Examen (70%)</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="value">{{ "%.1f"|format(student_module.assignments_score or 0) }}%</div>
+                        <div class="label">Devoirs (30%)</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="value">{{ "%.1f"|format(student_module.final_score) }}%</div>
+                        <div class="label">Note Finale</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="value">{{ student_module.get_mention() }}</div>
+                        <div class="label">Mention</div>
+                    </div>
+                </div>
+
+                {% if not student_module.passed %}
+                <div class="alert alert-warning mt-3">
+                    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="alert-content">
+                        <strong>Module échoué</strong>
+                        <p class="mb-0 mt-1">Vous devez payer 50 USD pour reprendre ce module.</p>
+                        {% if student_module.retake_count > 0 %}
+                        <p class="mb-0">Nombre de reprises: {{ student_module.retake_count }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="grade-display pending">
+                    <div class="grade-label">Statut</div>
+                    <div class="grade-number" style="font-size: 2rem;">
+                        {% if student_module.locked %}🔒 Verrouillé{% else %}⏳ En attente de notation{% endif %}
+                    </div>
+                    <div class="grade-label mt-2">Les notes seront affichées ici une fois le module évalué.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header"><h3>📊 Résumé</h3></div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Module</span>
+                        <span class="info-value">{{ module.number }}/21</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Statut</span>
+                        <span class="info-value">
+                            {% if student_module.passed %}
+                            <span class="badge bg-success">Réussi</span>
+                            {% elif student_module.locked %}
+                            <span class="badge bg-secondary">Verrouillé</span>
+                            {% elif student_module.final_score is not none %}
+                            <span class="badge bg-danger">Échec</span>
+                            {% else %}
+                            <span class="badge bg-warning">En attente</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Note Requise</span>
+                        <span class="info-value">{{ passing_score }}%</span>
+                    </div>
+                    {% if student_module.retake_count > 0 %}
+                    <div class="info-row">
+                        <span class="info-label">Reprises</span>
+                        <span class="info-value">{{ student_module.retake_count }}</span>
+                    </div>
+                    {% endif %}
+                    {% if student_module.completed_at %}
+                    <div class="info-row">
+                        <span class="info-label">Complété le</span>
+                        <span class="info-value">{{ student_module.completed_at.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if current_user.role == 'teacher' or current_user.role == 'admin' %}
+            <div class="card mt-3">
+                <div class="card-header"><h3>✏️ Noter le Module</h3></div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label">Examen (sur 100)</label>
+                            <input type="number" class="form-control" name="exam_score" min="0" max="100" step="0.1"
+                                   value="{{ student_module.exam_score or '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Devoirs (sur 100)</label>
+                            <input type="number" class="form-control" name="assignments_score" min="0" max="100" step="0.1"
+                                   value="{{ student_module.assignments_score or '' }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Enregistrer les notes
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

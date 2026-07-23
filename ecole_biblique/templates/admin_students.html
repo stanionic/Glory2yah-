@@ -1,0 +1,97 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block eb_content %}
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>👥 Gestion des Étudiants</h2>
+        <div>
+            <a href="{{ url_for('ecole_biblique.admin_dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+            <a href="{{ url_for('ecole_biblique.api_export_students') }}" class="btn btn-success">
+                <i class="fas fa-download"></i> Export JSON
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Type</label>
+                    <select class="form-control" name="type" onchange="this.form.submit()">
+                        <option value="all" {% if student_type == 'all' %}selected{% endif %}>Tous</option>
+                        <option value="gratuit" {% if student_type == 'gratuit' %}selected{% endif %}>Gratuit</option>
+                        <option value="payant" {% if student_type == 'payant' %}selected{% endif %}>Payant</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select class="form-control" name="status" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous</option>
+                        <option value="registered" {% if status_filter == 'registered' %}selected{% endif %}>Inscrits</option>
+                        <option value="unregistered" {% if status_filter == 'unregistered' %}selected{% endif %}>Non inscrits</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3>Liste des Étudiants</h3></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nom</th>
+                            <th>WhatsApp</th>
+                            <th>Type</th>
+                            <th>Modules</th>
+                            <th>Payé</th>
+                            <th>Inscription</th>
+                            <th>Niveau</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in student_data %}
+                        <tr>
+                            <td>{{ data.user.id }}</td>
+                            <td><strong>{{ data.user.full_name }}</strong></td>
+                            <td>{{ data.user.whatsapp }}</td>
+                            <td>
+                                {% if data.user.student_type == 'gratuit' %}
+                                <span class="badge bg-info">Gratuit</span>
+                                {% elif data.user.student_type == 'payant' %}
+                                <span class="badge bg-warning">Payant</span>
+                                {% else %}
+                                <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ data.modules_passed }}/21</td>
+                            <td>${{ "%.0f"|format(data.total_paid) }}</td>
+                            <td>
+                                {% if data.user.registration_completed %}
+                                <span class="badge bg-success">✅</span>
+                                {% else %}
+                                <span class="badge bg-warning">⏳</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ data.user.study_level or '-' }}</td>
+                            <td>{{ data.user.created_at.strftime('%d/%m/%Y') if data.user.created_at else '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">Aucun étudiant trouvé.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

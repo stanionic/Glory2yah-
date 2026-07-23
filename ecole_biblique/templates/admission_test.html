@@ -60,6 +60,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('ecole_biblique.admission_test_submit') }}" id="testForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% for question in questions %}
             <div class="question-card">
                 <h5>

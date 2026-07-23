@@ -1,0 +1,204 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .registration-form { max-width: 800px; margin: 0 auto; }
+    .terms-box {
+        background: var(--eb-gray-100);
+        border: 2px solid var(--eb-gray-200);
+        border-radius: var(--eb-radius);
+        padding: 24px;
+        margin: 20px 0;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .terms-box h4 { color: var(--eb-primary); margin-bottom: 16px; }
+    .terms-box p, .terms-box li { color: var(--eb-gray-700); line-height: 1.8; font-size: 0.95rem; }
+    .terms-box ul { padding-left: 20px; }
+    .terms-box li { margin-bottom: 8px; }
+    .student-type-card {
+        border: 2px solid var(--eb-gray-200);
+        border-radius: var(--eb-radius);
+        padding: 20px;
+        cursor: pointer;
+        transition: var(--eb-transition);
+        text-align: center;
+    }
+    .student-type-card:hover { border-color: var(--eb-primary-light); }
+    .student-type-card.selected { border-color: var(--eb-primary-light); background: rgba(42, 90, 140, 0.05); }
+    .student-type-card .type-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .student-type-card .type-price { font-size: 1.5rem; font-weight: 800; color: var(--eb-primary-dark); }
+    .student-type-card .type-desc { font-size: 0.85rem; color: var(--eb-gray-600); margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="registration-form">
+    <div class="student-info-panel">
+        <h2>📋 Compléter votre inscription</h2>
+        <p class="text-muted">Félicitations pour avoir réussi le test d'admission ! Veuillez remplir ce formulaire obligatoire pour continuer.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('ecole_biblique.complete_registration') }}" class="needs-validation" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Personal Information -->
+        <div class="card mb-4">
+            <div class="card-header"><h3>👤 Informations Personnelles</h3></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="first_name" class="form-label">Prénom *</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ ecole_user.first_name or '' }}" required>
+                        <div class="invalid-feedback">Veuillez entrer votre prénom.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="last_name" class="form-label">Nom *</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ ecole_user.last_name or '' }}" required>
+                        <div class="invalid-feedback">Veuillez entrer votre nom.</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="study_level" class="form-label">Niveau d'étude *</label>
+                    <select class="form-control" id="study_level" name="study_level" required>
+                        <option value="">Sélectionnez votre niveau</option>
+                        <option value="Secondaire">Secondaire</option>
+                        <option value="Baccalauréat">Baccalauréat</option>
+                        <option value="Université (1ère année)">Université (1ère année)</option>
+                        <option value="Université (2ème année)">Université (2ème année)</option>
+                        <option value="Université (3ème année)">Université (3ème année)</option>
+                        <option value="Licence">Licence</option>
+                        <option value="Master">Master</option>
+                        <option value="Doctorat">Doctorat</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="theology_reason" class="form-label">Raison d'étudier la Théologie *</label>
+                    <textarea class="form-control" id="theology_reason" name="theology_reason" rows="3" required placeholder="Expliquez pourquoi vous souhaitez étudier la théologie..."></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="church_ministry" class="form-label">Ministère dans l'Église locale *</label>
+                    <input type="text" class="form-control" id="church_ministry" name="church_ministry" required placeholder="Ex: Pasteur, Enseignant, Louange, Jeunesse, etc.">
+                </div>
+
+                <div class="mb-3">
+                    <label for="whatsapp_number" class="form-label">Numéro WhatsApp *</label>
+                    <input type="text" class="form-control" id="whatsapp_number" name="whatsapp_number" value="{{ ecole_user.whatsapp }}" required placeholder="+509XXXXXXXX">
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Type -->
+        <div class="card mb-4">
+            <div class="card-header"><h3>🎓 Type d'Étudiant</h3></div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Choisissez votre type d'étudiant. Cette sélection déterminera votre parcours de paiement.</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="student-type-card" onclick="selectType('gratuit')" id="type-gratuit">
+                            <div class="type-icon">🆓</div>
+                            <h4>Gratuit</h4>
+                            <div class="type-price">$100</div>
+                            <p class="type-desc">Frais de graduation uniquement. Accès aux modules par bloc de $20.</p>
+                            <ul class="text-start small mt-2" style="list-style: none; padding: 0;">
+                                <li>✓ Modules 1-3: Gratuits</li>
+                                <li>✓ Modules 4-21: $20/3 modules</li>
+                                <li>✓ Frais de graduation: $100</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="student-type-card" onclick="selectType('payant')" id="type-payant">
+                            <div class="type-icon">💎</div>
+                            <h4>Payant</h4>
+                            <div class="type-price">$600</div>
+                            <p class="type-desc">Paiement unique. Bachelor Degree à la fin.</p>
+                            <ul class="text-start small mt-2" style="list-style: none; padding: 0;">
+                                <li>✓ Modules 1-3: Gratuits</li>
+                                <li>✓ $100/3 modules ensuite</li>
+                                <li>✓ Bachelor Degree inclus</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="student_type" id="student_type" value="gratuit">
+            </div>
+        </div>
+
+        <!-- Terms & Conditions -->
+        <div class="card mb-4">
+            <div class="card-header"><h3>📜 Conditions de l'École</h3></div>
+            <div class="card-body">
+                <div class="terms-box">
+                    <h4>Conditions Académiques</h4>
+                    <p>Veuillez lire attentivement les conditions suivantes :</p>
+                    <ul>
+                        <li>L'étudiant doit obtenir au moins <strong>80%</strong> pour réussir un module.</li>
+                        <li>La note finale est calculée automatiquement : <strong>70% examen automatique + 30% devoirs</strong> corrigés par les professeurs.</li>
+                        <li>Si la note finale est inférieure à 80%, le module est considéré comme <strong>échoué</strong>.</li>
+                        <li>L'étudiant doit alors payer <strong>50 USD</strong> de frais de reprise.</li>
+                        <li>Le module suivant reste <strong>verrouillé</strong> tant que le précédent n'est pas réussi.</li>
+                        <li>Tous les examens doivent être terminés avant le <strong>30 Novembre 2026</strong>.</li>
+                        <li>Les étudiants admissibles participeront à la graduation le <strong>25 Décembre 2026</strong>.</li>
+                    </ul>
+                    <p><em>Version {{ terms_version }} des conditions</em></p>
+                </div>
+
+                <div class="form-check mt-3">
+                    <input type="checkbox" class="form-check-input" id="accept_terms" name="accept_terms" required>
+                    <label class="form-check-label" for="accept_terms">
+                        <strong>J'accepte les conditions de l'École Biblique. *</strong>
+                    </label>
+                    <div class="invalid-feedback">Vous devez accepter les conditions pour continuer.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mb-5">
+            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                <i class="fas fa-check-circle"></i> Valider mon inscription
+            </button>
+            <p class="text-muted mt-2 small">Vous devez accepter les conditions pour soumettre le formulaire.</p>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function selectType(type) {
+    document.getElementById('student_type').value = type;
+    document.querySelectorAll('.student-type-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('type-' + type).classList.add('selected');
+}
+
+// Enable submit button only when terms are accepted
+document.getElementById('accept_terms').addEventListener('change', function() {
+    document.getElementById('submitBtn').disabled = !this.checked;
+});
+
+// Form validation
+(function() {
+    'use strict';
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+
+// Auto-select gratuit by default
+document.getElementById('type-gratuit').classList.add('selected');
+</script>
+{% endblock %}

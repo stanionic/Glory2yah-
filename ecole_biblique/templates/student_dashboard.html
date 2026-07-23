@@ -1,50 +1,48 @@
 {% extends "ecole_biblique/eb_base.html" %}
 
-{% block head %}
-{{ super() }}
-<style>
-    .admission-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
-        padding: 25px;
-        margin-bottom: 25px;
-    }
-    .admission-status-pass {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 25px;
-    }
-    .admission-status-fail {
-        background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
-        color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 25px;
-    }
-    .admission-status-pending {
-        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-        color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 25px;
-    }
-</style>
-{% endblock %}
-
 {% block eb_content %}
-<div class="row">
-    <div class="col-12">
-        <h2>👨‍🎓 Tableau de Bord Étudiant</h2>
-        
-        <!-- Admission Test Section -->
+<div class="fade-in">
+    <!-- Student Header -->
+    <div class="student-info-panel">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div>
+                <h2>👨‍🎓 {{ ecole_user.full_name or 'Étudiant' }}</h2>
+                <p class="text-muted mb-0">
+                    <span class="badge {% if ecole_user.student_type == 'gratuit' %}bg-info{% else %}bg-warning{% endif %}">
+                        {{ 'Gratuit' if ecole_user.student_type == 'gratuit' else 'Payant' }}
+                    </span>
+                    {% if not ecole_user.registration_completed %}
+                    <span class="badge bg-danger">Inscription incomplète</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-end">
+                <p class="mb-0 small text-muted">Date limite: {{ exam_deadline.strftime('%d/%m/%Y') }}</p>
+                {% if days_until_deadline > 0 and days_until_deadline <= 30 %}
+                <p class="mb-0 text-danger small fw-bold">⚠️ {{ days_until_deadline }} jours restants</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Deadline Alert -->
+    {% if deadline_passed %}
+    <div class="alert alert-danger">
+        <div class="alert-icon"><i class="fas fa-clock"></i></div>
+        <div class="alert-content">La date limite des examens (30 Novembre 2026) est dépassée. Veuillez contacter l'administration.</div>
+    </div>
+    {% endif %}
+
+    <!-- Admission Test Section -->
+    {% if not ecole_user.registration_completed %}
         {% if last_test %}
             {% if last_test.passed %}
             <div class="admission-status-pass">
                 <h4>✅ Test d'Admission Réussi</h4>
                 <p>Score: {{ "%.1f"|format(last_test.score) }}% | Date: {{ last_test.completed_at.strftime('%d/%m/%Y') if last_test.completed_at else 'N/A' }}</p>
+                <a href="{{ url_for('ecole_biblique.complete_registration') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-arrow-right"></i> Compléter votre inscription
+                </a>
             </div>
             {% elif last_test.completed %}
             <div class="admission-status-fail">
@@ -63,39 +61,222 @@
         {% else %}
         <div class="admission-card">
             <h3>📝 Test d'Admission</h3>
-            <p>Avant de commencer vos cours, vous devez passer le test d'admission. Le test contient des questions sur la doctrine chrétienne.</p>
-            <p><strong>Score requis:</strong> 70% | <strong>Durée:</strong> 30 minutes</p>
+            <p>Avant de commencer vos cours, vous devez passer le test d'admission.</p>
+            <p><strong>Score requis:</strong> 70%</p>
             <a href="{{ url_for('ecole_biblique.admission_test') }}" class="btn btn-light btn-lg">Commencer le Test d'Admission</a>
         </div>
         {% endif %}
-        
-        <hr>
-        
-        <h3>Mes Notes</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Course</th>
-                    <th>Assignments</th>
-                    <th>Exam</th>
-                    <th>Average</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for grade in grades %}
-                    <tr>
-                        <td>{{ grade.course.name }}</td>
-                        <td>{{ grade.assignments or 'N/A' }}</td>
-                        <td>{{ grade.exam or 'N/A' }}</td>
-                        <td>{{ grade.average or 'N/A' }}</td>
-                    </tr>
-                {% else %}
-                <tr>
-                    <td colspan="4" class="text-center">Aucune note disponible pour le moment.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    {% endif %}
+
+    {% if ecole_user.registration_completed %}
+    <!-- Stats Dashboard -->
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <div class="card-icon">📚</div>
+            <div class="card-value">{{ passed_modules }}/{{ total_modules }}</div>
+            <div class="card-label">Modules Réussis</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">📊</div>
+            <div class="card-value">{{ "%.1f"|format(overall_average) }}%</div>
+            <div class="card-label">Moyenne Générale</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">🔒</div>
+            <div class="card-value">{{ locked_modules }}</div>
+            <div class="card-label">Modules Verrouillés</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">💰</div>
+            <div class="card-value">${{ "%.0f"|format(remaining_fees) }}</div>
+            <div class="card-label">Frais Restants</div>
+        </div>
     </div>
+
+    <!-- Progress Bar -->
+    <div class="card mb-4">
+        <div class="card-header"><h3>📈 Progression</h3></div>
+        <div class="card-body">
+            <div class="progress-container">
+                <div class="progress">
+                    <div class="progress-bar {% if progress_pct >= 80 %}progress-bar-success{% elif progress_pct >= 50 %}progress-bar-gold{% endif %}"
+                         role="progressbar" style="width: {{ progress_pct }}%"
+                         aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+                <div class="progress-label">
+                    <span>{{ progress_pct }}% complété</span>
+                    <span>{{ passed_modules }}/{{ total_modules }} modules</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.view_modules') }}" class="btn btn-primary w-100">
+                <i class="fas fa-book"></i> Modules
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.list_payments') }}" class="btn btn-info w-100">
+                <i class="fas fa-credit-card"></i> Paiements
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.make_payment') }}" class="btn btn-success w-100">
+                <i class="fas fa-plus-circle"></i> Payer
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.ranking') }}" class="btn btn-warning w-100">
+                <i class="fas fa-trophy"></i> Classement
+            </a>
+        </div>
+    </div>
+
+    <!-- Grades Table -->
+    <div class="card">
+        <div class="card-header"><h3>📝 Mes Notes</h3></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>Examen (70%)</th>
+                            <th>Devoirs (30%)</th>
+                            <th>Note Finale</th>
+                            <th>Mention</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sm in student_modules %}
+                        {% set m = sm.module %}
+                        <tr>
+                            <td>
+                                <strong>Module {{ m.number }}:</strong> {{ m.name }}
+                            </td>
+                            <td>{{ "%.1f"|format(sm.exam_score or 0) }}%</td>
+                            <td>{{ "%.1f"|format(sm.assignments_score or 0) }}%</td>
+                            <td>
+                                {% if sm.final_score is not none %}
+                                <strong>{{ "%.1f"|format(sm.final_score) }}%</strong>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sm.final_score is not none %}
+                                {{ sm.get_mention() }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sm.passed %}
+                                <span class="badge bg-success">✅ Réussi</span>
+                                {% elif sm.final_score is not none and not sm.passed %}
+                                <span class="badge bg-danger">❌ Échec</span>
+                                {% elif sm.locked %}
+                                <span class="badge bg-secondary">🔒 Verrouillé</span>
+                                {% else %}
+                                <span class="badge bg-warning">⏳ En attente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Aucune note disponible pour le moment.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Summary -->
+    <div class="card mt-4">
+        <div class="card-header"><h3>💳 Paiements Récents</h3></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Méthode</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payments[:5] %}
+                        <tr>
+                            <td>{{ p.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td><strong>${{ "%.2f"|format(p.amount) }}</strong></td>
+                            <td>
+                                {% if p.payment_method == 'gkach' %}🪙 GKach
+                                {% elif p.payment_method == 'wise' %}🌐 Wise
+                                {% elif p.payment_method == 'manual' %}📝 Manuel
+                                {% else %}{{ p.payment_method }}{% endif %}
+                            </td>
+                            <td>
+                                {% if p.status == 'approved' %}
+                                <span class="badge bg-success">✅</span>
+                                {% elif p.status == 'rejected' %}
+                                <span class="badge bg-danger">❌</span>
+                                {% else %}
+                                <span class="badge bg-warning">⏳</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Aucun paiement pour le moment.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if payments|length > 5 %}
+            <div class="text-center mt-2">
+                <a href="{{ url_for('ecole_biblique.list_payments') }}" class="btn btn-sm btn-outline-primary">Voir tous les paiements</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Graduation Info -->
+    <div class="card mt-4">
+        <div class="card-header"><h3>🎓 Graduation</h3></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span class="info-label">Date prévue</span>
+                        <span class="info-value">{{ estimated_graduation.strftime('%d %B %Y') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Progression</span>
+                        <span class="info-value">{{ progress_pct }}%</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span class="info-label">Total payé</span>
+                        <span class="info-value">${{ "%.0f"|format(total_paid) }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Frais restants</span>
+                        <span class="info-value">${{ "%.0f"|format(remaining_fees) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

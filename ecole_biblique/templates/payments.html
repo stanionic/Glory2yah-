@@ -1,0 +1,111 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .payment-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .summary-card {
+        background: white;
+        border-radius: var(--eb-radius);
+        padding: 20px;
+        text-align: center;
+        box-shadow: var(--eb-shadow);
+    }
+    .summary-card .amount { font-size: 1.8rem; font-weight: 800; font-family: var(--eb-font-heading); }
+    .summary-card .label { font-size: 0.85rem; color: var(--eb-gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="fade-in">
+    <h2>💳 Mes Paiements</h2>
+
+    <div class="payment-summary">
+        <div class="summary-card">
+            <div class="amount text-success">${{ "%.2f"|format(total_paid) }}</div>
+            <div class="label">Payé</div>
+        </div>
+        <div class="summary-card">
+            <div class="amount text-warning">${{ "%.2f"|format(total_pending) }}</div>
+            <div class="label">En attente</div>
+        </div>
+    </div>
+
+    {% if current_user.role == 'student' %}
+    <div class="mb-4">
+        <a href="{{ url_for('ecole_biblique.make_payment') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus-circle"></i> Nouveau Paiement
+        </a>
+        <a href="{{ url_for('ecole_biblique.view_modules') }}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-book"></i> Voir les Modules
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header"><h3>Historique des Paiements</h3></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Devise</th>
+                            <th>Méthode</th>
+                            <th>Type</th>
+                            <th>Module</th>
+                            <th>Statut</th>
+                            {% if current_user.role == 'admin' %}
+                            <th>Étudiant</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr>
+                            <td>#{{ p.id }}</td>
+                            <td>{{ p.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td><strong>${{ "%.2f"|format(p.amount) }}</strong></td>
+                            <td>{{ p.currency }}</td>
+                            <td>
+                                {% if p.payment_method == 'gkach' %}🪙 GKach
+                                {% elif p.payment_method == 'wise' %}🌐 Wise
+                                {% elif p.payment_method == 'manual' %}📝 Manuel
+                                {% else %}{{ p.payment_method }}{% endif %}
+                            </td>
+                            <td>{{ p.payment_type|replace('_', ' ')|title }}</td>
+                            <td>{% if p.module_number %}Module {{ p.module_number }}{% else %}-{% endif %}</td>
+                            <td>
+                                {% if p.status == 'approved' %}
+                                <span class="badge bg-success">✅ Approuvé</span>
+                                {% elif p.status == 'rejected' %}
+                                <span class="badge bg-danger">❌ Rejeté</span>
+                                {% else %}
+                                <span class="badge bg-warning">⏳ En attente</span>
+                                {% endif %}
+                            </td>
+                            {% if current_user.role == 'admin' %}
+                            <td>{{ p.student.full_name }}</td>
+                            {% endif %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="{% if current_user.role == 'admin' %}9{% else %}8{% endif %}" class="text-center text-muted">
+                                Aucun paiement pour le moment.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

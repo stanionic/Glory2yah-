@@ -1,102 +1,241 @@
 {% extends "ecole_biblique/eb_base.html" %}
 
-{% block head %}
-{{ super() }}
-<style>
-    .admin-card {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    .admin-card h3 {
-        color: #007bff;
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 10px;
-    }
-</style>
-{% endblock %}
-
 {% block eb_content %}
-<div class="row">
-    <div class="col-12">
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>👨‍💼 Tableau de Bord Administrateur</h2>
-        
-        <div class="admin-card">
-            <h3>📊 Tests d'Admission</h3>
-            <p>Consultez les résultats des tests d'admission des étudiants.</p>
-            <a href="{{ url_for('ecole_biblique.admin_admission_results') }}" class="btn btn-info">
-                Voir les Résultats des Tests
+        <div class="text-end">
+            <p class="mb-0 small text-muted">Date limite: {{ exam_deadline.strftime('%d/%m/%Y') }}</p>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <div class="card-icon">👥</div>
+            <div class="card-value">{{ total_students }}</div>
+            <div class="card-label">Total Étudiants</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">✅</div>
+            <div class="card-value">{{ registered_students }}</div>
+            <div class="card-label">Inscrits</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">🆓</div>
+            <div class="card-value">{{ gratuit_students }}</div>
+            <div class="card-label">Gratuit</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">💎</div>
+            <div class="card-value">{{ payant_students }}</div>
+            <div class="card-label">Payant</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">⏳</div>
+            <div class="card-value">{{ pending_wise_payments + pending_manual_payments }}</div>
+            <div class="card-label">Paiements en attente</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">🔄</div>
+            <div class="card-value">{{ retake_students }}</div>
+            <div class="card-label">En reprise</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">🎓</div>
+            <div class="card-value">{{ graduation_eligible }}</div>
+            <div class="card-label">Admissibles Graduation</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.admin_students') }}" class="btn btn-primary w-100">
+                <i class="fas fa-users"></i> Étudiants
             </a>
         </div>
-        
-        <div class="admin-card">
-            <h3>👥 Utilisateurs</h3>
-            <table class="table table-striped">
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.admin_payments') }}" class="btn btn-info w-100">
+                <i class="fas fa-credit-card"></i> Paiements
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.admin_graduation') }}" class="btn btn-success w-100">
+                <i class="fas fa-graduation-cap"></i> Graduation
+            </a>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <a href="{{ url_for('ecole_biblique.admin_admission_results') }}" class="btn btn-warning w-100">
+                <i class="fas fa-file-alt"></i> Tests
+            </a>
+        </div>
+    </div>
+
+    <!-- Pending Payments -->
+    <div class="admin-card">
+        <h3>⏳ Paiements en Attente</h3>
+        {% if pending_wise_payments > 0 or pending_manual_payments > 0 %}
+        <div class="table-responsive">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Full Name</th>
+                        <th>Étudiant</th>
+                        <th>Montant</th>
+                        <th>Méthode</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in recent_payments %}
+                    {% if p.status == 'pending' %}
+                    <tr>
+                        <td>#{{ p.id }}</td>
+                        <td>{{ p.student.full_name }}</td>
+                        <td>${{ "%.2f"|format(p.amount) }}</td>
+                        <td>
+                            {% if p.payment_method == 'wise' %}🌐 Wise
+                            {% elif p.payment_method == 'manual' %}📝 Manuel
+                            {% else %}{{ p.payment_method }}{% endif %}
+                        </td>
+                        <td>{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('ecole_biblique.admin_payments') }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> Voir
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted">Aucun paiement en attente</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Aucun paiement en attente de validation.</p>
+        {% endif %}
+    </div>
+
+    <!-- Students Overview -->
+    <div class="admin-card">
+        <h3>👥 Aperçu des Étudiants</h3>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
                         <th>WhatsApp</th>
-                        <th>Role</th>
+                        <th>Type</th>
+                        <th>Modules</th>
+                        <th>Payé</th>
+                        <th>Inscrit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in student_data[:20] %}
+                    <tr>
+                        <td>{{ data.user.id }}</td>
+                        <td><strong>{{ data.user.full_name }}</strong></td>
+                        <td>{{ data.user.whatsapp }}</td>
+                        <td>
+                            {% if data.user.student_type == 'gratuit' %}
+                            <span class="badge bg-info">Gratuit</span>
+                            {% elif data.user.student_type == 'payant' %}
+                            <span class="badge bg-warning">Payant</span>
+                            {% else %}
+                            <span class="badge bg-secondary">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ data.modules_completed }}/21</td>
+                        <td>${{ "%.0f"|format(data.total_paid) }}</td>
+                        <td>
+                            {% if data.user.registration_completed %}
+                            <span class="badge bg-success">✅</span>
+                            {% else %}
+                            <span class="badge bg-warning">⏳</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">Aucun étudiant</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if student_data|length > 20 %}
+        <div class="text-center mt-2">
+            <a href="{{ url_for('ecole_biblique.admin_students') }}" class="btn btn-sm btn-outline-primary">Voir tous les étudiants</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Users -->
+    <div class="admin-card">
+        <h3>👤 Utilisateurs</h3>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>WhatsApp</th>
+                        <th>Rôle</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for user in users %}
-                        <tr>
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.full_name }}</td>
-                            <td>{{ user.whatsapp }}</td>
-                            <td>{{ user.role }}</td>
-                        </tr>
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ user.whatsapp }}</td>
+                        <td>{{ user.role }}</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
 
-        <div class="admin-card">
-            <h3>📚 Cours</h3>
-            <table class="table table-striped">
+    <!-- Courses -->
+    <div class="admin-card">
+        <h3>📚 Cours</h3>
+        <div class="table-responsive">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Name</th>
-                        <th>Teacher</th>
+                        <th>Nom</th>
+                        <th>Professeur</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in courses %}
-                        <tr>
-                            <td>{{ course.id }}</td>
-                            <td>{{ course.name }}</td>
-                            <td>{{ course.teacher.full_name }}</td>
-                        </tr>
+                    <tr>
+                        <td>{{ course.id }}</td>
+                        <td>{{ course.name }}</td>
+                        <td>{{ course.teacher.full_name }}</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
 
-        <div class="admin-card">
-            <h3>🎓 Étudiants</h3>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Full Name</th>
-                        <th>WhatsApp</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                        <tr>
-                            <td>{{ student.id }}</td>
-                            <td>{{ student.full_name }}</td>
-                            <td>{{ student.whatsapp }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Export Section -->
+    <div class="admin-card">
+        <h3>📤 Exportation</h3>
+        <p class="text-muted">Exportez les données des étudiants dans différents formats.</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('ecole_biblique.api_export_students') }}" class="btn btn-success">
+                <i class="fas fa-file-code"></i> Export JSON
+            </a>
+            <a href="{{ url_for('ecole_biblique.api_export_students') }}?format=csv" class="btn btn-info">
+                <i class="fas fa-file-csv"></i> Export CSV
+            </a>
         </div>
     </div>
 </div>
