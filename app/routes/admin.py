@@ -344,7 +344,158 @@ def popup_settings():
         AdminSettings.set_setting('popup_interval_minutes', request.form.get('popup_interval_minutes', type=int))
         AdminSettings.set_setting('gkach_target_date', request.form.get('gkach_target_date'))
         AdminSettings.set_setting('gkach_required_amount', request.form.get('gkach_required_amount', type=int))
-        flash('Paramèt popup yo mete ajou avèk siksè!', 'success')
+    flash('Paramèt popup yo mete ajou avèk siksè!', 'success')
     return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/ads/update', methods=['POST'])
+@login_required
+@admin_required
+def update_ad_status():
+    """Update ad admin status and payment status"""
+    ad_id = request.form.get('ad_id')
+    admin_status = request.form.get('status')
+    payment_status = request.form.get('payment_status')
+    
+    if not ad_id:
+        flash('ID piblisite obligatwa.', 'error')
+        return redirect(url_for('admin.dashboard'))
+    
+    ad = Ad.query.filter_by(ad_id=ad_id).first()
+    if not ad:
+        flash('Piblisite pa jwenn.', 'error')
+        return redirect(url_for('admin.dashboard'))
+    
+    if admin_status:
+        ad.admin_status = admin_status
+    if payment_status:
+        ad.payment_status = payment_status
+    
+    db.session.commit()
+    
+    # Invalidate cache
+    from app.services.redis_service import RedisService
+    from app import redis_client
+    RedisService(redis_client).invalidate_approved_ads()
+    RedisService(redis_client).cache_delete(f"ad:{ad_id}")
+    
+    flash('Estati piblisite mete ajou avèk siksè!', 'success')
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/ads/delete/<ad_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_ad(ad_id):
+    """Delete ad (admin only)"""
+    try:
+        AdService.delete_ad(ad_id=ad_id)
+        flash('Piblisite efase avèk siksè!', 'success')
+    except Exception as e:
+        flash(f'Erè nan efase piblisite: {str(e)}', 'error')
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/batches/delete/<batch_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_batch(batch_id):
+    """Delete a batch"""
+    from app.models.batch import Batch
+    from app.models.batch_ad import BatchAd
+    
+    batch = Batch.query.filter_by(batch_id=batch_id).first()
+    if not batch:
+        flash('Gwoup pa jwenn.', 'error')
+        return redirect(url_for('admin.dashboard'))
+    
+    # First, update ads in this batch to remove batch_id
+    BatchAd.query.filter_by(batch_id=batch_id).delete()
+    for ad in Ad.query.filter_by(batch_id=batch_id).all():
+        ad.batch_id = None
+    
+    # Delete the batch
+    db.session.delete(batch)
+    db.session.commit()
+    
+    flash('Gwoup efase avèk siksè!', 'success')
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.route('/batches/edit/<batch_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_batch(batch_id):
+    """View and edit a batch"""
+    from app.models.batch import Batch
+    from app.models.batch_ad import BatchAd
+
+    batch = Batch.query.filter_by(batch_id=batch_id).first_or_404()
+
+    if request.method == 'POST':
+        # TODO: Implement batch editing (e.g., change ads in batch, etc.)
+        flash('Modifikasyon gwoup ap vini byento!', 'info')
+        return redirect(url_for('admin.edit_batch', batch_id=batch_id))
+    
+    batch_ads = BatchAd.query.filter_by(batch_id=batch_id).order_by(BatchAd.position).all()
+    ads = [AdService.get_ad(ba.ad_id) for ba in batch_ads]
+    
+    # Get available ads (approved, not in any batch)
+    available_ads = Ad.query.filter_by(admin_status='approved', batch_id=None).all()
+    
+    return render_template('admin_edit_batch.html', batch=batch, batch_ads=ads, available_ads=available_ads)
+
+
+@admin_bp.route('/batches/<batch_id>/ads/<ad_id>/add', methods=['POST'])
+@login_required
+@admin_required
+def add_ad_to_batch(batch_id, ad_id):
+    """Add an ad to a batch"""
+    from app.models.batch import Batch
+    from app.models.batch_ad import BatchAd
+
+    batch = Batch.query.filter_by(batch_id=batch_id).first_or_404()
+    ad = Ad.query.filter_by(ad_id=ad_id).first_or_404()
+
+    # Check if ad is already in a batch
+    if ad.batch_id is not None:
+        flash('Piblisite sa a deja nan yon gwoup!', 'error')
+        return redirect(url_for('admin.edit_batch', batch_id=batch_id))
+
+    # Get next position
+    max_position = BatchAd.query.filter_by(batch_id=batch_id).count()
+    batch_ad = BatchAd(batch_id=batch_id, ad_id=ad_id, position=max_position)
+    db.session.add(batch_ad)
+    ad.batch_id = batch_id
+    db.session.commit()
+
+    flash('Piblisite ajoute nan gwoup avèk siksè!', 'success')
+    return redirect(url_for('admin.edit_batch', batch_id=batch_id))
+
+
+@admin_bp.route('/batches/<batch_id>/ads/<ad_id>/remove', methods=['POST'])
+@login_required
+@admin_required
+def remove_ad_from_batch(batch_id, ad_id):
+    """Remove an ad from a batch"""
+    from app.models.batch import Batch
+    from app.models.batch_ad import BatchAd
+
+    batch = Batch.query.filter_by(batch_id=batch_id).first_or_404()
+    ad = Ad.query.filter_by(ad_id=ad_id).first_or_404()
+
+    # Delete the batch ad
+    BatchAd.query.filter_by(batch_id=batch_id, ad_id=ad_id).delete()
+    ad.batch_id = None
+    db.session.commit()
+
+    # Reorder remaining ads
+    remaining = BatchAd.query.filter_by(batch_id=batch_id).order_by(BatchAd.position).all()
+    for i, ba in enumerate(remaining):
+        ba.position = i
+    db.session.commit()
+
+    flash('Piblisite retire nan gwoup avèk siksè!', 'success')
+    return redirect(url_for('admin.edit_batch', batch_id=batch_id))
 
 

@@ -441,7 +441,7 @@
             </p>
             <form method="POST" action="{{ url_for('auth.delete_account') }}" 
                   onsubmit="return confirm('Ou sèten ou vle efase kont ou? Aksyon sa a pa ka anile!');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="form-group">
                     <label>Konfime modpas ou</label>

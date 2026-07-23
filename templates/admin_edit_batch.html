@@ -23,8 +23,9 @@
                 </div>
 
                 <div class="ad-actions">
-                    <form method="POST" action="{{ url_for('remove_ad_from_batch', batch_id=batch.batch_id, ad_id=ad.ad_id) }}"
+                    <form method="POST" action="{{ url_for('admin.remove_ad_from_batch', batch_id=batch.batch_id, ad_id=ad.ad_id) }}"
                           onsubmit="return confirm('Èske w sèten w vle retire piblisite sa nan gwoup la?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger">Retire nan Gwoup</button>
                     </form>
                 </div>
@@ -50,7 +51,8 @@
                 </div>
 
                 <div class="ad-actions">
-                    <form method="POST" action="{{ url_for('add_ad_to_batch', batch_id=batch.batch_id, ad_id=ad.ad_id) }}">
+                    <form method="POST" action="{{ url_for('admin.add_ad_to_batch', batch_id=batch.batch_id, ad_id=ad.ad_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-blue">Ajoute nan Gwoup</button>
                     </form>
                 </div>
@@ -63,7 +65,7 @@
         {% endif %}
 
         <div class="batch-actions">
-            <a href="{{ url_for('admin') }}" class="btn btn-blue">Retounen nan Panno Admin</a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-blue">Retounen nan Panno Admin</a>
         </div>
     </div>
 </div>

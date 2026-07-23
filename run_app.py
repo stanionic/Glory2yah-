@@ -20,4 +20,4 @@ if __name__ == '__main__':
     print("Modern UI: Facebook + TikTok + AliExpress Style")
     print("2-Column Layout: POSTS (left) + ADS Carousel (right)")
     print("Auto-slide carousel every 1 second")
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True, use_reloader=False)

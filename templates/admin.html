@@ -1,152 +1,170 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>Panno Administratè Glory2yahPub</h2>
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">📊 Panno Administratè Glory2yahPub</h2>
     
     <!-- Quick Links -->
-    <div class="quick-links">
-        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary">
+    <div class="d-flex gap-3 mb-4 flex-wrap">
+        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary d-flex align-items-center gap-2">
             <i class="fas fa-users"></i> Jere Itilizatè yo
         </a>
-        <a href="{{ url_for('admin.manage_gkach') }}" class="btn btn-primary">
+        <a href="{{ url_for('admin.manage_gkach') }}" class="btn btn-primary d-flex align-items-center gap-2">
             <i class="fas fa-coins"></i> Jere Gkach
         </a>
     </div>
     
     <!-- Facebook Connection Test -->
-    <div class="facebook-section">
-        <a href="{{ url_for('test_facebook_connection') }}" class="btn btn-blue">
-            <i class="fab fa-facebook"></i> Teste Koneksyon Facebook
-        </a>
-        <a href="{{ url_for('show_facebook_batch_results') }}" class="btn btn-gold">
-            <i class="fas fa-chart-bar"></i> Wè Dènye Rezilta Facebook
-        </a>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="#" class="btn btn-primary d-flex align-items-center gap-2">
+                    <i class="fab fa-facebook"></i> Teste Koneksyon Facebook
+                </a>
+                <a href="#" class="btn btn-warning d-flex align-items-center gap-2 text-dark">
+                    <i class="fas fa-chart-bar"></i> Wè Dènye Rezilta Facebook
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Video Demo Section -->
-    <div class="video-demo-section">
-        <h3>📹 Videyo Demo Glory2YahPub</h3>
-        <div class="video-actions">
-            <a href="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" download class="btn btn-gold">
-                <i class="fas fa-download"></i> Telechaje Videyo Demo
-            </a>
-            <button onclick="shareToFacebook()" class="btn btn-blue">
-                <i class="fab fa-facebook"></i> Pataje sou Facebook
-            </button>
-            <button onclick="shareToWhatsApp()" class="btn btn-green">
-                <i class="fab fa-whatsapp"></i> Pataje sou WhatsApp
-            </button>
-        </div>
-        <div class="video-preview">
-            <video controls width="320" height="240">
-                <source src="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
+    <div class="card mb-4" style="background: radial-gradient(circle, #FFD700, #FFA500);">
+        <div class="card-body text-center">
+            <h3 class="mb-4 text-dark">📹 Videyo Demo Glory2YahPub</h3>
+            <div class="d-flex gap-3 justify-content-center mb-4 flex-wrap">
+                <a href="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" download class="btn btn-light d-flex align-items-center gap-2">
+                    <i class="fas fa-download"></i> Telechaje Videyo Demo
+                </a>
+                <button onclick="shareToFacebook()" class="btn btn-primary d-flex align-items-center gap-2">
+                    <i class="fab fa-facebook"></i> Pataje sou Facebook
+                </button>
+                <button onclick="shareToWhatsApp()" class="btn btn-success d-flex align-items-center gap-2">
+                    <i class="fab fa-whatsapp"></i> Pataje sou WhatsApp
+                </button>
+            </div>
+            <div class="video-preview d-flex justify-content-center">
+                <video controls class="rounded shadow" style="max-width: 100%; max-height: 400px;">
+                    <source src="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
         </div>
     </div>
 
-    <div class="admin-dashboard">
-        <div class="ads-section">
-            <div class="admin-section">
-                <h3>Revizyon Piblisite</h3>
+    <div class="row gap-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Revizyon Piblisite</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        {% for ad in ads %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                {% if ad.images %}
+                                <div class="d-flex flex-wrap gap-2 p-3 bg-light">
+                                    {% for image in ad.images.split(',') %}
+                                    <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Piblisite Imaj" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>WhatsApp:</strong> {{ ad.user_whatsapp }}</p>
+                                    <p class="mb-1"><strong>Deskripsyon:</strong> {{ ad.description }}</p>
+                                    <p class="mb-1"><strong>Estati:</strong> <span class="badge bg-info">{{ ad.admin_status }}</span></p>
+                                    <p class="mb-2"><strong>Pèman:</strong> <span class="badge bg-secondary">{{ ad.payment_status }}</span></p>
 
-                <div class="ads-list">
-                    {% for ad in ads %}
-                    <div class="ad-card">
-                        <div class="ad-images">
-                            {% if ad.images %}
-                            {% for image in ad.images.split(',') %}
-                            <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Piblisite Imaj">
-                            {% endfor %}
-                            {% endif %}
+                                    {% if ad.payment_proof %}
+                                    <p class="mb-3">
+                                        <strong>Prèv Pèman:</strong>
+                                        <a href="{{ url_for('static', filename='uploads/' + ad.payment_proof) }}" target="_blank" class="link-primary">Wè Prèv</a>
+                                    </p>
+                                    {% endif %}
+
+                                    <div class="d-flex flex-column gap-2">
+                                        <form method="POST" action="{{ url_for('admin.update_ad_status') }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="ad_id" value="{{ ad.ad_id }}">
+                                            <div class="d-flex gap-2 mb-2">
+                                                <select name="status" class="form-select form-select-sm">
+                                                    <option value="under_review" {% if ad.admin_status == 'under_review' %}selected{% endif %}>An Revizyon</option>
+                                                    <option value="approved" {% if ad.admin_status == 'approved' %}selected{% endif %}>Apwouve</option>
+                                                    <option value="rejected" {% if ad.admin_status == 'rejected' %}selected{% endif %}>Rejte</option>
+                                                </select>
+                                                <select name="payment_status" class="form-select form-select-sm">
+                                                    <option value="pending" {% if ad.payment_status == 'pending' %}selected{% endif %}>Pèman an Atann</option>
+                                                    <option value="verified" {% if ad.payment_status == 'verified' %}selected{% endif %}>Pèman Verifye</option>
+                                                    <option value="rejected" {% if ad.payment_status == 'rejected' %}selected{% endif %}>Pèman Rejte</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-sm w-100">Mete Ajou</button>
+                                        </form>
+
+                                        <form method="POST" action="{{ url_for('admin.admin_delete_ad', ad_id=ad.ad_id) }}" onsubmit="return confirm('Èske w sèten w vle efase piblisite sa a?')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger btn-sm w-100">Efase</button>
+                                        </form>
+
+                                        {% if ad.admin_status == 'approved' %}
+                                        <div class="d-flex gap-2">
+                                            <a href="#" class="btn btn-warning btn-sm flex-grow-1 text-dark">📄 Telechaje CSV</a>
+                                            <form method="POST" action="#" style="flex-grow:1;">
+                                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                    <i class="fab fa-facebook"></i> Pibliye Facebook
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+
+                                        <a href="https://wa.me/{{ ad.user_whatsapp }}?text=Ey%20Admin..." class="btn btn-success btn-sm" target="_blank">
+                                            <i class="fab fa-whatsapp"></i> Kontakte Itilizatè
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="ad-info">
-                            <p><strong>WhatsApp:</strong> {{ ad.user_whatsapp }}</p>
-                            <p><strong>Deskripsyon:</strong> {{ ad.description }}</p>
-                            <p><strong>Estati:</strong> {{ ad.admin_status }}</p>
-                            <p><strong>Pèman:</strong> {{ ad.payment_status }}</p>
-
-                            {% if ad.payment_proof %}
-                            <p><strong>Prèv Pèman:</strong>
-                                <a href="{{ url_for('static', filename='uploads/' + ad.payment_proof) }}" target="_blank">
-                                    Wè Prèv
-                                </a>
-                            </p>
-                            {% endif %}
-                        </div>
-
-                        <div class="ad-actions">
-                            <form method="POST" action="{{ url_for('update_ad_status') }}">
-                                <input type="hidden" name="ad_id" value="{{ ad.ad_id }}">
-                                <select name="status" required>
-                                    <option value="under_review" {% if ad.admin_status == 'under_review' %}selected{% endif %}>An Revizyon</option>
-                                    <option value="approved" {% if ad.admin_status == 'approved' %}selected{% endif %}>Apwouve</option>
-                                    <option value="rejected" {% if ad.admin_status == 'rejected' %}selected{% endif %}>Rejte</option>
-                                </select>
-                                <select name="payment_status" required>
-                                    <option value="pending" {% if ad.payment_status == 'pending' %}selected{% endif %}>Pèman an Atann</option>
-                                    <option value="verified" {% if ad.payment_status == 'verified' %}selected{% endif %}>Pèman Verifye</option>
-                                    <option value="rejected" {% if ad.payment_status == 'rejected' %}selected{% endif %}>Pèman Rejte</option>
-                                </select>
-                                <button type="submit" class="btn btn-blue">Mete Ajou</button>
-                            </form>
-
-                            <form method="POST" action="{{ url_for('delete_ad', ad_id=ad.ad_id) }}"
-                                  onsubmit="return confirm('Èske w sèten w vle efase piblisite sa?')">
-                                <button type="submit" class="btn btn-danger">Efase</button>
-                            </form>
-
-                            {% if ad.admin_status == 'approved' %}
-                            <a href="{{ url_for('download_csv', ad_id=ad.ad_id) }}" class="btn btn-gold" target="_blank">
-                                📄 Telechaje CSV
-                            </a>
-                            <form method="POST" action="{{ url_for('publish_ad_to_facebook', ad_id=ad.ad_id) }}" style="display: inline;">
-                                <button type="submit" class="btn btn-blue" title="Pibliye sou Facebook">
-                                    <i class="fab fa-facebook"></i> Pibliye Facebook
-                                </button>
-                            </form>
-                            {% endif %}
-
-                            <a href="https://wa.me/{{ ad.user_whatsapp }}?text=Ey%20Admin..." class="btn btn-whatsapp" target="_blank">
-                                📱 Ey Admin...
-                            </a>
-                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
 
-        <div class="other-widgets">
-            <div class="batches-section">
-                <div class="admin-section">
-                    <h3>Jesyon Gwoup</h3>
-                    <form method="POST" action="{{ url_for('create_batch') }}">
-                        <button type="submit" class="btn btn-gold">Kreye Nouvo Gwoup (5 Piblisite)</button>
+        <div class="col-lg-4">
+            <!-- Batches Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0">Jesyon Gwoup</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.create_batch') }}" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning w-100 text-dark">Kreye Nouvo Gwoup (5 Piblisite)</button>
                     </form>
 
-                    <div class="batches-grid">
+                    <div class="d-flex flex-column gap-3">
                         {% for batch in batches %}
-                        <div class="batch-card">
-                            <h4>{{ batch.batch_id }}</h4>
-                            <p>Piblisite: {{ batch.batch_ads.count() }}/5</p>
-                            <p>Pataj: {{ batch.share_count }}</p>
-                            <p>Rekonpans: {{ batch.click_rewards }} klike</p>
-                            <div class="batch-actions">
-                                <a href="{{ url_for('view_batch', batch_id=batch.batch_id) }}" class="btn btn-blue">Wè Gwoup</a>
-                                <a href="{{ url_for('edit_batch', batch_id=batch.batch_id) }}" class="btn btn-green">Modifye Gwoup</a>
-                                <button onclick="copyBatchLink('{{ batch.batch_id }}')" class="btn btn-gold">Kopi Lyen</button>
-                                <form method="POST" action="{{ url_for('publish_batch_to_facebook', batch_id=batch.batch_id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-blue" title="Pibliye gwoup sou Facebook">
-                                        <i class="fab fa-facebook"></i> Pibliye Facebook
-                                    </button>
-                                </form>
-                                <form method="POST" action="{{ url_for('delete_batch', batch_id=batch.batch_id) }}"
-                                      onsubmit="return confirm('Èske w sèten w vle efase gwoup sa?')">
-                                    <button type="submit" class="btn btn-danger">Efase</button>
-                                </form>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ batch.batch_id }}</h5>
+                                <p class="card-text mb-1">Piblisite: {{ batch.batch_ads.count() }}/5</p>
+                                <p class="card-text mb-1">Pataj: {{ batch.share_count }}</p>
+                                <p class="card-text mb-3">Rekonpans: {{ batch.click_rewards }} klike</p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{{ url_for('admin.edit_batch', batch_id=batch.batch_id) }}" class="btn btn-primary btn-sm">Wè Gwoup</a>
+                                    <a href="{{ url_for('admin.edit_batch', batch_id=batch.batch_id) }}" class="btn btn-success btn-sm">Modifye Gwoup</a>
+                                    <button onclick="copyBatchLink('{{ batch.batch_id }}')" class="btn btn-warning btn-sm text-dark">Kopi Lyen</button>
+                                    <form method="POST" action="#" class="d-inline">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fab fa-facebook"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('admin.delete_batch', batch_id=batch.batch_id) }}" class="d-inline" onsubmit="return confirm('Èske w sèten w vle efase gwoup sa a?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">Efase</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -154,84 +172,97 @@
                 </div>
             </div>
 
-            <div class="gkach-section">
-                <div class="admin-section">
-                    <h3>Jesyon Gkach</h3>
-
-                    <div class="rate-setting">
-                        <form method="POST" action="{{ url_for('manage_gkach') }}">
-                            <input type="hidden" name="action" value="set_rate">
-                            <label for="currency">Lajan:</label>
-                            <select name="currency" id="currency" required>
+            <!-- GKACH Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">Jesyon Gkach</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.manage_gkach') }}" class="mb-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="set_rate">
+                        <div class="mb-3">
+                            <label for="currency" class="form-label">Lajan:</label>
+                            <select name="currency" id="currency" class="form-select">
                                 <option value="HTG">HTG (Gourde)</option>
                                 <option value="USD">USD (Dollar)</option>
                             </select>
-                            <label for="rate">Taux pou 1 Gkach:</label>
-                            <input type="number" name="rate" id="rate" step="0.01" min="0.01" placeholder="Egzamp: 50.00" required>
-                            <button type="submit" class="btn btn-gold">Mete Ajou Taux</button>
-                        </form>
-                    </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rate" class="form-label">Taux pou 1 Gkach:</label>
+                            <input type="number" name="rate" id="rate" step="0.01" min="0.01" placeholder="Egz: 50.00" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Mete Ajou Taux</button>
+                    </form>
 
-                    <h4>Itilizatè ak Balans Gkach</h4>
+                    <h4 class="mb-3">Itilizatè ak Balans Gkach</h4>
 
                     {% for user in users_gkach %}
-                    <div class="user-gkach-card">
-                        <div class="user-header">
-                            <h5>{{ user.user_whatsapp }}</h5>
-                            <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;" onsubmit="return confirm('Èske ou sèten ou vle efase itilizatè sa a?')">
-                                <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
-                                <input type="hidden" name="action" value="delete_user">
-                                <button type="submit" class="btn btn-delete">Efase Itilizatè</button>
-                            </form>
-                        </div>
-                        <p><strong>Balans Gkach:</strong> {{ user.gkach_balance }}</p>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0">{{ user.user_whatsapp }}</h5>
+                                <form method="POST" action="{{ url_for('admin.manage_gkach') }}" onsubmit="return confirm('Èske ou sèten ou vle efase itilizatè sa a?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
+                                    <input type="hidden" name="action" value="delete_user">
+                                    <button type="submit" class="btn btn-sm btn-danger">Efase</button>
+                                </form>
+                            </div>
+                            <p class="card-text mb-3"><strong>Balans Gkach:</strong> {{ user.gkach_balance }}</p>
 
-                        {% if user.gkach_requests %}
+                            {% if user.gkach_requests %}
                             {% set requests = user.gkach_requests | fromjson %}
                             {% for req in requests %}
                                 {% if req.status == 'pending' %}
-                                <div class="pending-request">
-                                    <p><strong>Demann Pandan:</strong> {{ req.amount }} Gkach</p>
-                                    <p><strong>Dat:</strong> {{ req.requested_at }}</p>
+                                <div class="alert alert-warning mb-3">
+                                    <p class="mb-1"><strong>Demann Pandan:</strong> {{ req.amount }} Gkach</p>
+                                    <p class="mb-1"><strong>Dat:</strong> {{ req.requested_at }}</p>
                                     {% if req.document %}
-                                    <p><strong>Dokiman:</strong> <a href="{{ url_for('static', filename='uploads/' + req.document) }}" target="_blank">Wè Dokiman</a></p>
-                                    <div class="request-actions">
-                                        <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
+                                    <p class="mb-2">
+                                        <strong>Dokiman:</strong> 
+                                        <a href="{{ url_for('static', filename='uploads/' + req.document) }}" target="_blank" class="link-warning">Wè Dokiman</a>
+                                    </p>
+                                    <div class="d-flex gap-2">
+                                        <form method="POST" action="{{ url_for('admin.manage_gkach') }}" class="flex-grow-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                                             <input type="hidden" name="request_id" value="{{ req.request_id }}">
                                             <input type="hidden" name="action" value="approve_request">
-                                            <button type="submit" class="btn btn-success">Apwouve</button>
+                                            <button type="submit" class="btn btn-success btn-sm w-100">Apwouve</button>
                                         </form>
-                                        <form method="POST" action="{{ url_for('manage_gkach') }}" style="display: inline;">
+                                        <form method="POST" action="{{ url_for('admin.manage_gkach') }}" class="flex-grow-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                                             <input type="hidden" name="request_id" value="{{ req.request_id }}">
                                             <input type="hidden" name="action" value="reject_request">
-                                            <button type="submit" class="btn btn-danger">Rejte</button>
+                                            <button type="submit" class="btn btn-danger btn-sm w-100">Rejte</button>
                                         </form>
                                     </div>
                                     {% else %}
-                                    <p style="color: red;">Pa gen dokiman apwobasyon. Apwobasyon pa disponib.</p>
+                                    <p class="text-danger">Pa gen dokiman apwobasyon.</p>
                                     {% endif %}
                                 </div>
                                 {% endif %}
                             {% endfor %}
-                        {% endif %}
+                            {% endif %}
 
-                        <div class="balance-actions">
-                            <div class="edit-balance">
-                                <form method="POST" action="{{ url_for('manage_gkach') }}">
+                            <div class="d-flex gap-2 mt-3">
+                                <form method="POST" action="{{ url_for('admin.manage_gkach') }}" class="flex-grow-1">
                                     <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                                     <input type="hidden" name="action" value="edit_balance">
-                                    <input type="number" name="amount" placeholder="Nouvo balans" min="0" required>
-                                    <button type="submit" class="btn btn-edit">Modifye Balans</button>
+                                    <div class="d-flex gap-2">
+                                        <input type="number" name="amount" placeholder="Nouvo balans" min="0" class="form-control form-control-sm" required>
+                                        <button type="submit" class="btn btn-secondary btn-sm">Modifye</button>
+                                    </div>
                                 </form>
-                            </div>
-                            <div class="add-balance">
-                                <form method="POST" action="{{ url_for('manage_gkach') }}">
+                                <form method="POST" action="{{ url_for('admin.manage_gkach') }}" class="flex-grow-1">
                                     <input type="hidden" name="whatsapp" value="{{ user.user_whatsapp }}">
                                     <input type="hidden" name="action" value="add_balance">
-                                    <input type="number" name="amount" placeholder="Kantite Gkach" min="1" required>
-                                    <button type="submit" class="btn btn-blue">Ajoute Balans</button>
+                                    <div class="d-flex gap-2">
+                                        <input type="number" name="amount" placeholder="Ajoute" min="1" class="form-control form-control-sm" required>
+                                        <button type="submit" class="btn btn-primary btn-sm">Ajoute</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
@@ -239,7 +270,7 @@
                     {% endfor %}
 
                     {% if not users_gkach %}
-                    <p>Pa gen itilizatè Gkach pou montre.</p>
+                    <p class="text-muted">Pa gen itilizatè Gkach pou montre.</p>
                     {% endif %}
                 </div>
             </div>
@@ -247,416 +278,38 @@
     </div>
 
     <!-- Popup Configuration Section -->
-    <div class="popup-config-section">
-        <div class="admin-section">
-            <h3>Paramèt Pop-up</h3>
+    <div class="card mt-4">
+        <div class="card-header bg-info text-dark">
+            <h3 class="mb-0">Paramèt Pop-up</h3>
+        </div>
+        <div class="card-body">
             <form method="POST" action="{{ url_for('admin.popup_settings') }}">
-                <div class="form-group">
-                    <input type="checkbox" id="enable_account_reminder" name="enable_account_reminder" {% if admin_settings.enable_account_reminder == 'True' %}checked{% endif %}>
-                    <label for="enable_account_reminder">Aktive Rapèl Kreyasyon Kont</label>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3 d-flex align-items-center gap-2">
+                    <input type="checkbox" id="enable_account_reminder" name="enable_account_reminder" {% if admin_settings.enable_account_reminder == 'True' %}checked{% endif %} class="form-check-input">
+                    <label for="enable_account_reminder" class="form-check-label mb-0">Aktive Rapèl Kreyasyon Kont</label>
                 </div>
-                <div class="form-group">
-                    <input type="checkbox" id="enable_gkach_notice" name="enable_gkach_notice" {% if admin_settings.enable_gkach_notice == 'True' %}checked{% endif %}>
-                    <label for="enable_gkach_notice">Aktive Avi Gkach</label>
+                <div class="mb-3 d-flex align-items-center gap-2">
+                    <input type="checkbox" id="enable_gkach_notice" name="enable_gkach_notice" {% if admin_settings.enable_gkach_notice == 'True' %}checked{% endif %} class="form-check-input">
+                    <label for="enable_gkach_notice" class="form-check-label mb-0">Aktive Avi Gkach</label>
                 </div>
-                <div class="form-group">
-                    <label for="popup_interval_minutes">Entèval Pop-up (minit)</label>
-                    <input type="number" id="popup_interval_minutes" name="popup_interval_minutes" value="{{ admin_settings.popup_interval_minutes or 10 }}" min="1" required>
+                <div class="mb-3">
+                    <label for="popup_interval_minutes" class="form-label">Entèval Pop-up (minit)</label>
+                    <input type="number" id="popup_interval_minutes" name="popup_interval_minutes" value="{{ admin_settings.popup_interval_minutes or 10 }}" min="1" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label for="gkach_target_date">Dat Sib Gkach (YYYY-MM-DD)</label>
-                    <input type="date" id="gkach_target_date" name="gkach_target_date" value="{{ admin_settings.gkach_target_date or '2026-06-20' }}" required>
+                <div class="mb-3">
+                    <label for="gkach_target_date" class="form-label">Dat Sib Gkach (YYYY-MM-DD)</label>
+                    <input type="date" id="gkach_target_date" name="gkach_target_date" value="{{ admin_settings.gkach_target_date or '2026-06-20' }}" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label for="gkach_required_amount">Kantite Gkach Obligatwa</label>
-                    <input type="number" id="gkach_required_amount" name="gkach_required_amount" value="{{ admin_settings.gkach_required_amount or 1000 }}" min="0" required>
+                <div class="mb-3">
+                    <label for="gkach_required_amount" class="form-label">Kantite Gkach Obligatwa</label>
+                    <input type="number" id="gkach_required_amount" name="gkach_required_amount" value="{{ admin_settings.gkach_required_amount or 1000 }}" min="0" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-blue">Sove Paramèt Pop-up</button>
+                <button type="submit" class="btn btn-info text-dark">Sove Paramèt Pop-up</button>
             </form>
         </div>
     </div>
 </div>
-
-<style>
-.quick-links {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
-
-.quick-links .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: bold;
-}
-
-.admin-dashboard {
-    padding: 1rem;
-}
-
-.facebook-section {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    text-align: center;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.facebook-section .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.video-demo-section {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    padding: 2rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.video-demo-section h3 {
-    color: #000;
-    margin-bottom: 1.5rem;
-    font-size: 1.8rem;
-}
-
-.video-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.video-actions .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: bold;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.video-actions .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.video-preview {
-    display: flex;
-    justify-content: center;
-}
-
-.video-preview video {
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    width: 100%;
-    max-width: 400px;
-}
-
-.admin-section {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.admin-section h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-.ads-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.ad-card {
-    border: 1px solid #eee;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.ad-images {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.5rem;
-    padding: 1rem;
-    background: #f8f9fa;
-}
-
-.ad-images img {
-    width: 100%;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-.ad-info {
-    padding: 1rem;
-}
-
-.ad-info p {
-    margin: 0.5rem 0;
-    color: #555;
-}
-
-.ad-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem;
-    padding-top: 0;
-}
-
-.ad-actions form {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.ad-actions select,
-.ad-actions input {
-    padding: 0.5rem;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    flex: 1;
-    min-width: 120px;
-}
-
-.batches-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.batch-card {
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.batch-card h4 {
-    color: #333;
-    margin-bottom: 1rem;
-}
-
-.batch-card p {
-    margin: 0.5rem 0;
-    color: #555;
-}
-
-.batch-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-.user-gkach-card {
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.user-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.user-header h5 {
-    font-size: 1.25rem;
-    color: #333;
-    margin: 0;
-}
-
-.balance-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.balance-actions .edit-balance,
-.balance-actions .add-balance {
-    display: flex;
-    flex: 1;
-    min-width: 200px;
-}
-
-.balance-actions form {
-    display: flex;
-    gap: 0.75rem;
-    flex: 1;
-}
-
-.balance-actions input {
-    flex: 1;
-    padding: 0.5rem;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-}
-
-.pending-request {
-    background: #fff3cd;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-top: 1rem 0;
-.request-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-/* Popup Configuration Styles */
-.popup-config-section {
-    margin-top: 2rem;
-}
-
-.popup-config-section .admin-section {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-}
-
-.popup-config-section .admin-section h3 {
-    color: #495057;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.popup-config-section .form-group {
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.popup-config-section .form-group label {
-    font-weight: 600;
-    color: #343a40;
-    flex-basis: 200px; /* Align labels */
-}
-
-.popup-config-section .form-group input[type="checkbox"] {
-    transform: scale(1.2); /* Make checkbox larger */
-}
-
-.popup-config-section .form-group input[type="number"],
-.popup-config-section .form-group input[type="date"] {
-    flex-grow: 1;
-    padding: 0.5rem;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    max-width: 250px;
-}
-
-.popup-config-section .btn-blue {
-    background-color: #007bff;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.25rem;
-    font-weight: bold;
-    margin-top: 1rem;
-    transition: background-color 0.3s ease;
-}
-
-.popup-config-section .btn-blue:hover {
-    background-color: #0056b3;
-}
-
-@media (max-width: 768px) {
-    .popup-config-section .form-group {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .popup-config-section .form-group label {
-        flex-basis: auto;
-        margin-bottom: 5px;
-    }
-
-    .popup-config-section .form-group input[type="number"],
-    .popup-config-section .form-group input[type="date"] {
-        max-width: 100%;
-        width: 100%;
-    }
-}
-</style>   flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-    .admin-dashboard {
-        padding: 0.5rem;
-    }
-    
-    .facebook-section {
-        flex-direction: column;
-    }
-
-    .facebook-section .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .video-actions {
-        flex-direction: column;
-    }
-
-    .video-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .ad-images {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    }
-    
-    .ad-actions form {
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    .ad-actions select,
-    .ad-actions input {
-        width: 100%;
-    }
-    
-    .user-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .balance-actions {
-        flex-direction: column;
-    }
-    
-    .request-actions {
-        flex-direction: column;
-    }
-}
-</style>
 
 <script>
 function copyBatchLink(batchId) {
@@ -678,7 +331,7 @@ function shareToFacebook() {
 
 function shareToWhatsApp() {
     const videoUrl = `${window.location.origin}/static/glory2yahpub_demo.mp4`;
-    const message = `📹 Dekouvri Glory2YahPub - Platfòm Piblisite #1 nan Ayiti!\n\nVande ak achte ak Gkach (Lajan Virtual).\nTelechaje aplikasyon an kounye a!\n\nVideyo Demo: ${videoUrl}\n\n#Glory2YahPub #Ayiti #Biznis`;
+    const message = `📹 Dekouvri Glory2YahPub - Platfòm Piblisite #1 nan Ayiti!\n\nVande ak achte ak Gkach (Lajan Virtual).\nTelechaje aplikasyon an kounye a!\n\nVideyo Demo: ${videoUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }
