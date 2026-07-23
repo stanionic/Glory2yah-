@@ -499,3 +499,70 @@ def remove_ad_from_batch(batch_id, ad_id):
     return redirect(url_for('admin.edit_batch', batch_id=batch_id))
 
 
+# ═══════════════════════════════════════════
+# PWA ADMIN CONFIGURATION ROUTES
+# ═══════════════════════════════════════════
+
+@admin_bp.route('/mobile-config')
+@login_required
+@admin_required
+def mobile_config():
+    """PWA / Mobile App Configuration Page (Admin SEVIS)"""
+    from app.models.app_installation import AppInstallation
+    
+    # Get PWA settings
+    pwa_settings = {
+        'pwa_enabled': AdminSettings.get_setting('pwa_enabled', 'True'),
+        'pwa_popup_title': AdminSettings.get_setting('pwa_popup_title', 'Installer Glory2YahPub'),
+        'pwa_popup_description': AdminSettings.get_setting('pwa_popup_description', 
+            'Accédez rapidement aux boutiques, publications, annonces et services depuis votre téléphone.'),
+        'pwa_popup_button_text': AdminSettings.get_setting('pwa_popup_button_text', 'Installer maintenant'),
+        'pwa_popup_delay_seconds': AdminSettings.get_setting('pwa_popup_delay_seconds', '5'),
+        'pwa_ios_guide_enabled': AdminSettings.get_setting('pwa_ios_guide_enabled', 'True')
+    }
+    
+    # Get installation statistics
+    stats = AppInstallation.get_stats()
+    
+    return render_template(
+        'admin_mobile_config.html',
+        pwa_settings=pwa_settings,
+        stats=stats,
+        current_user=current_user
+    )
+
+
+@admin_bp.route('/mobile-config/update', methods=['POST'])
+@login_required
+@admin_required
+def mobile_config_update():
+    """Update PWA configuration settings"""
+    try:
+        # PWA enabled toggle
+        AdminSettings.set_setting('pwa_enabled', 
+            'True' if request.form.get('pwa_enabled') == 'on' else 'False')
+        
+        # Popup text settings
+        if request.form.get('pwa_popup_title'):
+            AdminSettings.set_setting('pwa_popup_title', request.form.get('pwa_popup_title'))
+        if request.form.get('pwa_popup_description'):
+            AdminSettings.set_setting('pwa_popup_description', request.form.get('pwa_popup_description'))
+        if request.form.get('pwa_popup_button_text'):
+            AdminSettings.set_setting('pwa_popup_button_text', request.form.get('pwa_popup_button_text'))
+        
+        # Popup delay
+        delay = request.form.get('pwa_popup_delay_seconds', type=int)
+        if delay and delay > 0:
+            AdminSettings.set_setting('pwa_popup_delay_seconds', str(delay))
+        
+        # iOS guide toggle
+        AdminSettings.set_setting('pwa_ios_guide_enabled',
+            'True' if request.form.get('pwa_ios_guide_enabled') == 'on' else 'False')
+        
+        flash('Configuration aplikasyon mobil mete ajou avèk siksè!', 'success')
+    except Exception as e:
+        flash(f'Erè nan konfigirasyon: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.mobile_config'))
+
+

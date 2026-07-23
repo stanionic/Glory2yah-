@@ -151,6 +151,7 @@ def create_app(config_name=None):
         from app.models.party import Party, PartyParticipant
         from app.models.konferans import KonferansRoom, KonferansRecording
         from app.models.mennem_trip import MennemTrip
+        from app.models.app_installation import AppInstallation  # PWA tracking model
         # Import ecole_biblique models so their tables get created
         from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade, AdmissionTest, AdmissionAnswer, Module, StudentModule, Payment, TermsAcceptance, AuditLog
         db.create_all()
@@ -245,6 +246,15 @@ def register_blueprints(app):
     app.register_blueprint(gkach_bp, url_prefix='/gkach')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(share_bp, url_prefix='/s')
+    
+    # Register PWA blueprint
+    try:
+        from app.routes.pwa import pwa_bp
+        app.register_blueprint(pwa_bp)
+        app.logger.info('Registered PWA blueprint at /pwa')
+    except Exception as e:
+        app.logger.warning(f"Could not register PWA blueprint: {e}")
+        pass
     
     # Register old blueprints
     try:

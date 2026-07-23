@@ -15,6 +15,7 @@ from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
 from app.models.story import Story
 from app.models.party import Party, PartyParticipant
 from app.models.konferans import KonferansRoom, KonferansRecording
+from app.models.app_installation import AppInstallation
 
 __all__ = [
     'BaseModel',
@@ -34,5 +35,6 @@ __all__ = [
     'Party',
     'PartyParticipant',
     'KonferansRoom',
-    'KonferansRecording'
+    'KonferansRecording',
+    'AppInstallation'
 ]
