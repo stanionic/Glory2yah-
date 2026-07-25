@@ -1,23 +1,6 @@
-{% extends "base.html" %}
+{% extends "ecole_biblique/eb_base.html" %}
 
-{% block head %}
-<style>
-    /* Correction pour l'affichage avec la navbar globale */
-    header .container {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-    }
-    nav a {
-        color: white !important;
-    }
-    nav a:hover {
-        color: #FFD700 !important;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
+{% block eb_content %}
 <div class="container mt-4">
     <h2 class="text-center mb-4"><i class="fas fa-trophy text-warning"></i> Palmarès - Ecole Biblique MEGD-Haiti</h2>
 
@@ -53,7 +36,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Populated by JS -->
                                 <tr id="empty-course-msg">
                                     <td colspan="3" class="text-center text-muted">Chwazi yon kou pou wè klasman an</td>
                                 </tr>
@@ -113,7 +95,6 @@ document.getElementById('course-select').addEventListener('change', function() {
     const spinner = document.getElementById('loading-spinner');
     
     if (courseId) {
-        // Show spinner, clear table
         spinner.style.display = 'block';
         tbody.innerHTML = '';
         
@@ -142,7 +123,7 @@ document.getElementById('course-select').addEventListener('change', function() {
                         rowClass = 'table-secondary fw-bold';
                     } else if (index === 2) {
                         rankDisplay = '🥉';
-                        rowClass = 'table-danger fw-bold'; // Using danger for bronze-ish look
+                        rowClass = 'table-danger fw-bold';
                     }
 
                     const row = `<tr class="${rowClass}">
