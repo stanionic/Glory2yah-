@@ -131,17 +131,24 @@ class AdmissionAnswer(db.Model):
 # ===== NEW MODELS FOR THE ENHANCED SYSTEM =====
 
 class Module(db.Model):
-    """Module model - 21 modules for the Bible School"""
+    """Module model - 3 modules for the Bible School"""
     __tablename__ = 'ecole_modules'
 
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.Integer, nullable=False, unique=True)  # 1-21
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    course_file = db.Column(db.String(255), nullable=True)  # PDF filename in COURS folder
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
     student_modules = db.relationship('StudentModule', lazy=True)
+
+    def get_course_url(self):
+        """Get the URL for the course file if available"""
+        if self.course_file:
+            return f'/ecole_biblique/cours/{self.course_file}'
+        return None
 
     def __repr__(self):
         return f'<Module {self.number}: {self.name}>'
