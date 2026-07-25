@@ -151,7 +151,11 @@ def create_app(config_name=None):
         from app.models.party import Party, PartyParticipant
         from app.models.konferans import KonferansRoom, KonferansRecording
         from app.models.mennem_trip import MennemTrip
-        from app.models.app_installation import AppInstallation  # PWA tracking model
+        try:
+            from app.models.app_installation import AppInstallation  # PWA tracking model
+        except ImportError:
+            app.logger.warning('AppInstallation model not available - import skipped')
+            AppInstallation = None
         # Import ecole_biblique models so their tables get created
         from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade, AdmissionTest, AdmissionAnswer, Module, StudentModule, Payment, TermsAcceptance, AuditLog
         db.create_all()
