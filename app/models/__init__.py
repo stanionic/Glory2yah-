@@ -15,7 +15,6 @@ from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
 from app.models.story import Story
 from app.models.party import Party, PartyParticipant
 from app.models.konferans import KonferansRoom, KonferansRecording
-from app.models.app_installation import AppInstallation
 
 __all__ = [
     'BaseModel',
@@ -38,3 +37,11 @@ __all__ = [
     'KonferansRecording',
     'AppInstallation'
 ]
+
+
+def __getattr__(name):
+    """Lazy import for AppInstallation to avoid circular imports"""
+    if name == 'AppInstallation':
+        from app.models.app_installation import AppInstallation
+        return AppInstallation
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
