@@ -1,89 +1,80 @@
-{% extends "base.html" %}
+{% extends "ecole_biblique/eb_base.html" %}
 
-{% block head %}
-<style>
-    /* Correction pour l'affichage avec la navbar globale */
-    header .container {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-    }
-    nav a {
-        color: white !important;
-    }
-    nav a:hover {
-        color: #FFD700 !important;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<h2>Teacher Dashboard</h2>
-
-<h3>My Courses</h3>
-<ul class="list-group mb-4">
-    {% for course in courses %}
-        <li class="list-group-item">
-            {{ course.name }}
-            <a href="#" class="btn btn-sm btn-primary float-end">Manage Grades</a>
-        </li>
-    {% endfor %}
-</ul>
-
-<h3>Enter Grades</h3>
-<form id="grade-form">
-    <div class="mb-3">
-        <label for="course" class="form-label">Course</label>
-        <select class="form-select" id="course" name="course" required>
-            {% for course in courses %}
-                <option value="{{ course.id }}">{{ course.name }}</option>
-            {% endfor %}
-        </select>
+{% block eb_content %}
+<div class="fade-in">
+    <div class="student-info-panel">
+        <h2>👨‍🏫 Tableau de Bord Enseignant</h2>
+        <p class="text-muted">Gérez vos cours et les notes de vos étudiants.</p>
     </div>
-    <div class="mb-3">
-        <label for="student" class="form-label">Student</label>
-        <select class="form-select" id="student" name="student" required>
-            <!-- Populated dynamically -->
-        </select>
-    </div>
-    <div class="mb-3">
-        <label for="assignments" class="form-label">Assignments Average</label>
-        <input type="number" step="0.01" class="form-control" id="assignments" name="assignments">
-    </div>
-    <div class="mb-3">
-        <label for="exam" class="form-label">Exam Grade</label>
-        <input type="number" step="0.01" class="form-control" id="exam" name="exam">
-    </div>
-    <button type="submit" class="btn btn-success">Save Grade</button>
-</form>
 
-<table class="table table-striped mt-4" id="grades-table">
-    <thead>
-        <tr>
-            <th>Student</th>
-            <th>Assignments</th>
-            <th>Exam</th>
-            <th>Average</th>
-        </tr>
-    </thead>
-    <tbody>
-        <!-- Populated by JS -->
-    </tbody>
-</table>
+    <!-- Quick Stats -->
+    <div class="dashboard-grid mb-4">
+        <div class="dashboard-card">
+            <div class="card-icon">📚</div>
+            <div class="card-value">{{ courses|length }}</div>
+            <div class="card-label">Mes Cours</div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">📝</div>
+            <div class="card-value">{{ modules|length }}</div>
+            <div class="card-label">Modules Disponibles</div>
+        </div>
+    </div>
 
-{% block scripts %}
-<script>
-document.getElementById('course').addEventListener('change', function() {
-    const courseId = this.value;
-    // Fetch students for the course and populate student select
-    // For simplicity, assuming students are enrolled, but in real app, need enrollment table
-});
+    <!-- My Courses -->
+    <div class="card mb-4">
+        <div class="card-header"><h3>📚 Mes Cours</h3></div>
+        <div class="card-body">
+            {% if courses %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom du Cours</th>
+                            <th>Créé le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td>{{ course.id }}</td>
+                            <td><strong>{{ course.name }}</strong></td>
+                            <td>{{ course.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <a href="{{ url_for('ecole_biblique.module_detail', module_id=1) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i> Noter
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">Aucun cours assigné pour le moment.</p>
+            {% endif %}
+        </div>
+    </div>
 
-document.getElementById('grade-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    // Submit grade via AJAX
-    // Calculate average: (assignments * 0.3) + (exam * 0.7)
-});
-</script>
-{% endblock %}
+    <!-- Modules Overview -->
+    <div class="card mb-4">
+        <div class="card-header"><h3>📖 Modules</h3></div>
+        <div class="card-body">
+            <div class="module-grid">
+                {% for module in modules %}
+                <div class="module-card">
+                    <div class="module-number">{{ module.number }}</div>
+                    <h4>{{ module.name }}</h4>
+                    <p class="small text-muted">{{ module.description }}</p>
+                    <a href="{{ url_for('ecole_biblique.module_detail', module_id=module.id) }}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="fas fa-edit"></i> Gérer les notes
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

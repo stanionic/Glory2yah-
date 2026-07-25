@@ -151,6 +151,18 @@
                 </div>
             </div>
 
+            {% if module.course_file and module.get_course_url() %}
+            <div class="card mt-3">
+                <div class="card-header"><h3>📖 Matériel de Cours</h3></div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Téléchargez le PDF du cours pour ce module.</p>
+                    <a href="{{ module.get_course_url() }}" target="_blank" class="btn btn-success w-100" rel="noopener">
+                        <i class="fas fa-file-pdf"></i> Télécharger le cours (PDF)
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
             {% if current_user.role == 'teacher' or current_user.role == 'admin' %}
             <div class="card mt-3">
                 <div class="card-header"><h3>✏️ Noter le Module</h3></div>

@@ -10,7 +10,40 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('ecole_biblique.static', filename='css/style.css') }}">
     {% block head %}{% endblock %}
+    <style>
+        /* Royal Blue Text for École Biblique MEGD-Haïti */
+        .header-title h1 {
+            color: #4169E1 !important;
+        }
+        .header-subtitle {
+            color: #4169E1 !important;
+        }
+        .header-subtitle strong {
+            color: #1E90FF !important;
+        }
+        .nav-link {
+            color: #4169E1 !important;
+            font-weight: 600;
+        }
+        .nav-link:hover {
+            color: #1E90FF !important;
+        }
+        .nav-brand {
+            color: #4169E1 !important;
+        }
+        .nav-brand:hover {
+            color: #1E90FF !important;
+        }
+        .eb-header {
+            border-bottom-color: #4169E1 !important;
+            box-shadow: 0 4px 30px rgba(65, 105, 225, 0.15) !important;
+        }
+        .eb-header > .container > .header-top .header-logo > i.fa-bible {
+            color: #4169E1 !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->

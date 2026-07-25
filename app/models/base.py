@@ -16,9 +16,19 @@ class BaseModel(db.Model):
     
     def to_dict(self):
         """Convert model to dictionary"""
+        try:
+            if hasattr(self, '__table__') and self.__table__ is not None:
+                return {
+                    column.name: getattr(self, column.name)
+                    for column in self.__table__.columns
+                }
+        except Exception:
+            pass
+        # Fallback: return common fields
         return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
+            'id': getattr(self, 'id', None),
+            'created_at': getattr(self, 'created_at', None),
+            'updated_at': getattr(self, 'updated_at', None)
         }
     
     def save(self):

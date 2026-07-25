@@ -1,9 +1,10 @@
-// Real-time updates using AJAX
+// Real-time updates using AJAX - Ecole Biblique
 function updateGrades(courseId) {
-    fetch(`/api/grades/${courseId}`)
+    fetch(`/ecole_biblique/api/grades/${courseId}`)
         .then(response => response.json())
         .then(data => {
             const tbody = document.querySelector('#grades-table tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
             data.forEach(grade => {
                 const row = `<tr>
@@ -14,8 +15,13 @@ function updateGrades(courseId) {
                 </tr>`;
                 tbody.innerHTML += row;
             });
-        });
+        })
+        .catch(err => console.error('Error fetching grades:', err));
 }
 
-// Example: Update every 5 seconds for course ID 1
-setInterval(() => updateGrades(1), 5000);
+// Only start auto-refresh if the grades table exists on the page
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.querySelector('#grades-table')) {
+        setInterval(() => updateGrades(1), 5000);
+    }
+});

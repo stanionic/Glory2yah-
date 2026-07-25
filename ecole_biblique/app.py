@@ -18,10 +18,10 @@ from ecole_biblique.models import (
 )
 from ecole_biblique.admission_questions import ADMISSION_QUESTIONS
 
-ecole_biblique_bp = Blueprint('ecole_biblique', __name__, template_folder='../ecole_biblique/templates')
+ecole_biblique_bp = Blueprint('ecole_biblique', __name__, template_folder='../ecole_biblique/templates', static_folder='static')
 
 # Constants
-TOTAL_MODULES = 21
+TOTAL_MODULES = 3
 PASSING_SCORE = 80
 EXAM_WEIGHT = 0.7
 ASSIGNMENTS_WEIGHT = 0.3
@@ -59,20 +59,26 @@ def log_audit(user_id, action, details=None):
 
 
 def init_modules():
-    """Initialize the 21 modules if they don't exist"""
+    """Initialize the 3 modules if they don't exist"""
     module_names = [
-        "Introduction à la Bible", "Ancien Testament I", "Ancien Testament II",
-        "Nouveau Testament I", "Nouveau Testament II", "Théologie Systématique I",
-        "Théologie Systématique II", "Herméneutique", "Exégèse Biblique",
-        "Histoire de l'Église I", "Histoire de l'Église II", "Doctrine Chrétienne I",
-        "Doctrine Chrétienne II", "Apologétique", "Éthique Chrétienne",
-        "Leadership Chrétien", "Counseling Biblique", "Missions et Évangélisation",
-        "Éducation Chrétienne", "Pastorale et Ministère", "Prophétie et Eschatologie"
+        "Religion", "Théologie", "Le Premier Être"
     ]
+    # Map course files to specific modules (from COURS folder)
+    course_files = {
+        1: "MODULE 1(RELIGION).pdf",
+        2: "MODULE 2(THEOLOGIE).pdf",
+        3: "MODULE 3(Le Premier Etre.pdf"
+    }
     for i, name in enumerate(module_names, 1):
-        if not Module.query.filter_by(number=i).first():
-            module = Module(number=i, name=name, description=f"Module {i}: {name}")
+        module = Module.query.filter_by(number=i).first()
+        if not module:
+            course_file = course_files.get(i)
+            module = Module(number=i, name=name, description=f"Module {i}: {name}", course_file=course_file)
             db.session.add(module)
+        else:
+            # Update course_file if not set
+            if not module.course_file and i in course_files:
+                module.course_file = course_files[i]
     db.session.commit()
 
 
@@ -98,21 +104,8 @@ def init_student_modules(student_id):
 
 def get_module_fee(student_type, module_number):
     """Calculate fee for a given module based on student type"""
-    if module_number <= FREE_MODULES:
-        return 0  # Free modules
-    
-    if student_type == 'gratuit':
-        # $20 per block of 3 modules (modules 4-6, 7-9, 10-12, etc.)
-        block = (module_number - 1) // 3
-        if block == 0:
-            return 0
-        return FREE_STUDENT_FEE_PER_BLOCK
-    else:  # payant
-        # $100 per block of 3 modules
-        block = (module_number - 1) // 3
-        if block == 0:
-            return 0
-        return PAID_STUDENT_FEE_PER_BLOCK
+    # All 3 modules are free
+    return 0
 
 
 def get_graduation_fee(student_type):
@@ -129,7 +122,7 @@ def check_exam_deadline():
 
 
 def get_passing_students():
-    """Get students who passed all 21 modules"""
+    """Get students who passed all 3 modules"""
     students = EcoleUser.query.filter_by(role='student', registration_completed=True).all()
     passing = []
     for student in students:
@@ -876,17 +869,11 @@ def student_dashboard():
     payments = Payment.query.filter_by(student_id=ecole_user.id).order_by(Payment.created_at.desc()).all()
     total_paid = sum(p.amount for p in payments if p.status == 'approved')
 
-    # Calculate remaining fees
+    # Calculate remaining fees (all modules are free)
     remaining_fees = 0
-    if ecole_user.student_type == 'gratuit':
-        remaining_blocks = max(0, ((TOTAL_MODULES - FREE_MODULES + 2) // 3) - (passed_modules // 3))
-        remaining_fees += remaining_blocks * FREE_STUDENT_FEE_PER_BLOCK
-        # Graduation fee
-        if passed_modules >= TOTAL_MODULES:
-            remaining_fees += FREE_STUDENT_GRADUATION_FEE
-    else:
-        remaining_blocks = max(0, ((TOTAL_MODULES - FREE_MODULES + 2) // 3) - (passed_modules // 3))
-        remaining_fees += remaining_blocks * PAID_STUDENT_FEE_PER_BLOCK
+    # Graduation fee only
+    if ecole_user.student_type == 'gratuit' and passed_modules >= TOTAL_MODULES:
+        remaining_fees += FREE_STUDENT_GRADUATION_FEE
 
     # Estimate graduation date
     estimated_graduation = GRADUATION_DATE
@@ -1253,3 +1240,26 @@ def admin_admission_results():
 
     tests = AdmissionTest.query.order_by(AdmissionTest.started_at.desc()).all()
     return render_template('admin_admission_results.html', tests=tests)
+
+
+# ===== COURSE FILES (PDF from COURS folder) =====
+
+@ecole_biblique_bp.route('/cours/<path:filename>')
+def serve_course_file(filename):
+    """Serve PDF course files from the COURS directory"""
+    import os
+    from flask import send_from_directory, abort
+    
+    # Get the COURS directory path (relative to this blueprint)
+    cours_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'COURS')
+    
+    # Security: ensure the file exists and is a PDF
+    if not filename.lower().endswith('.pdf'):
+        abort(404)
+    
+    # Check if file exists
+    filepath = os.path.join(cours_dir, filename)
+    if not os.path.exists(filepath):
+        abort(404)
+    
+    return send_from_directory(cours_dir, filename)
