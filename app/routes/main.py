@@ -235,6 +235,21 @@ def api_share_ad(ad_id):
         return jsonify({'success': False}), 500
 
 
+@main_bp.route('/api/ads/trending')
+def api_ads_trending():
+    """API endpoint for trending ads"""
+    try:
+        from app.models.ad import Ad
+        trending = Ad.query.filter_by(admin_status='approved').order_by(Ad.view_count.desc()).limit(10).all()
+        return jsonify({
+            'success': True,
+            'ads': [ad.to_dict() for ad in trending]
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error in api_ads_trending: {e}")
+        return jsonify({'success': False, 'ads': []}), 500
+
+
 @main_bp.route('/api/gkach/balance')
 def api_gkach_balance():
     """API endpoint to get user's Gkach balance"""
@@ -678,3 +693,13 @@ def qr_code():
     scheme = flask_req.scheme
     app_url = f"{scheme}://{host}"
     return render_template('qr_code.html', app_url=app_url)
+
+
+@main_bp.route('/demo')
+def demo():
+    """Demo page with autoplay video"""
+    host = flask_req.host
+    scheme = flask_req.scheme
+    app_url = f"{scheme}://{host}"
+    video_url = url_for('static', filename='glory2yahpub_demo.mp4')
+    return render_template('demo.html', app_url=app_url, video_url=video_url)

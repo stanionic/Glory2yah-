@@ -1,0 +1,125 @@
+﻿============================================================
+≡ƒº¬ TEST COMPLET DES BLUEPRINTS - GLORY2YAHPUB
+============================================================
+
+≡ƒôî 1. PAGE D'ACCUEIL (Blueprint: main)
+----------------------------------------
+  Γ£à GET / - 200 (contient: Glory2YahPub)
+
+≡ƒôî 2. INSCRIPTION / REGISTER (Blueprint: auth)
+----------------------------------------
+  Γ£à GET /auth/register - 200 (contient: register)
+   CSRF Token: ImQ2YTViZGE4OGQ5M2Fk...
+  Γ¥î POST /auth/register - 429
+
+≡ƒôî 3. CONNEXION / LOGIN (Blueprint: auth)
+----------------------------------------
+  Γ£à GET /auth/login - 200 (contient: login)
+   CSRF Token: ImQ2YTViZGE4OGQ5M2Fk...
+  Γ£à POST /auth/login (connexion r├⌐ussie)
+
+≡ƒôî 4. PROFIL (Blueprint: auth)
+----------------------------------------
+  Γ¥î GET /auth/profile - 200
+     Contenu attendu non trouv├⌐: pseudo
+  Γ£à GET /auth/profile/edit - 200 (contient: Modifye)
+
+≡ƒôî 5. MES ANNONCES (Blueprint: auth)
+----------------------------------------
+  Γ£à GET /auth/ads - 200 (contient: Piblisite)
+
+≡ƒôî 6. MES STORIES (Blueprint: auth)
+----------------------------------------
+  Γ£à GET /auth/stories - 200 (contient: Istwa)
+
+≡ƒôî 7. MARKETPLACE - MACHE (Blueprint: marketplace)
+----------------------------------------
+  Γ£à GET /mache - 200 (contient: Mache)
+  Γ¥î GET /mache/categories - 500
+     Contenu attendu non trouv├⌐: Kategori
+
+≡ƒôî 8. PANIER - CART (Blueprint: cart)
+----------------------------------------
+  Γ¥î GET /cart - 200
+     Contenu attendu non trouv├⌐: panier
+
+≡ƒôî 9. GKACH (Blueprint: gkach)
+----------------------------------------
+  Γ¥î GET /gkach - 404
+     Contenu attendu non trouv├⌐: GKach
+
+≡ƒôî 10. LIVRAISON / DELIVERY (Blueprint: delivery)
+----------------------------------------
+  Γ£à GET /delivery/my-deliveries - 200 (contient: Livrezon)
+
+≡ƒôî 11. ADMIN (Blueprint: admin)
+----------------------------------------
+  Γ¥î GET /admin - Got 403, Expected [200, 302]
+  Γ¥î GET /admin/users - Got 403, Expected [200, 302]
+  Γ¥î GET /admin/ads - Got 403, Expected [200, 302]
+
+≡ƒôî 12. ECOLE BIBLIQUE (Blueprint: ecole_biblique)
+----------------------------------------
+  Γ£à GET /ecole_biblique/ - 200 (contient: Biblique)
+  Γ¥î GET /ecole_biblique/register - 200
+     Contenu attendu non trouv├⌐: Inscription
+  Γ£à GET /ecole_biblique/ranking - 200 (contient: klasman)
+
+≡ƒôî 13. KONFERANS (Blueprint: konferans)
+----------------------------------------
+  Γ£à GET /konferans/ - 200 (contient: Konferans)
+
+≡ƒôî 14. PARTY - FET (Blueprint: party)
+----------------------------------------
+  Γ£à GET /fet/ - 200 (contient: F├¿t)
+
+≡ƒôî 15. PWA (Blueprint: pwa)
+----------------------------------------
+  Γ¥î GET /pwa/manifest.json - 200
+     Contenu attendu non trouv├⌐: json
+  Γ£à GET /pwa/api/settings - 200
+  Γ¥î GET /pwa/api/stats - Got 500, Expected 200
+  Γ£à GET /pwa/offline - 200 (contient: offline)
+
+≡ƒôî 16. SHARE (Blueprint: share)
+----------------------------------------
+  Γ£à GET /s/create - 200 (contient: Fonksyon)
+  Γ¥î GET /s/b/test-batch - Got 200, Expected 302
+
+≡ƒôî 17. API ENDPOINTS
+----------------------------------------
+  Γ£à GET /api/feed - 200
+  Γ£à GET /api/stories - 200
+  Γ¥î GET /api/ads/trending - Got 404, Expected 200
+
+≡ƒôî 18. D├ëCONNEXION / LOGOUT (Blueprint: auth)
+----------------------------------------
+  Γ£à GET /auth/logout - 200 (contient: dekonekte)
+
+============================================================
+≡ƒôè R├ëSULTATS DES TESTS
+============================================================
+Total: 32 tests
+Γ£à R├⌐ussis: 19
+Γ¥î ├ëchou├⌐s: 13
+≡ƒÄ» Taux de succ├¿s: 59.4%
+
+≡ƒôï D├⌐tails des ├⌐checs:
+  Γ¥î POST /auth/register - Status: 429, Attendu: [302, 200]
+  Γ¥î GET /auth/profile - Status: 200, Attendu: 200
+  Γ¥î GET /mache/categories - Status: 500, Attendu: 200
+  Γ¥î GET /cart - Status: 200, Attendu: 200
+  Γ¥î GET /gkach - Status: 404, Attendu: 200
+  Γ¥î GET /admin - Status: 403, Attendu: [200, 302]
+  Γ¥î GET /admin/users - Status: 403, Attendu: [200, 302]
+  Γ¥î GET /admin/ads - Status: 403, Attendu: [200, 302]
+  Γ¥î GET /ecole_biblique/register - Status: 200, Attendu: 200
+  Γ¥î GET /pwa/manifest.json - Status: 200, Attendu: 200
+  Γ¥î GET /pwa/api/stats - Status: 500, Attendu: 200
+  Γ¥î GET /s/b/test-batch - Status: 200, Attendu: 302
+  Γ¥î GET /api/ads/trending - Status: 404, Attendu: 200
+
+============================================================
+≡ƒöº Plusieurs blueprints ont besoin d'├¬tre corrig├⌐s.
+
+≡ƒôü Rapport enregistr├⌐: test_report_20260723_154029.json

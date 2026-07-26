@@ -24,14 +24,12 @@
     <!-- Order Summary -->
     <div class="order-section">
         <h3 class="section-title">📦 Rezime Kòmand</h3>
-        
         <div class="order-items">
             {% for item in cart_items %}
             {% set ad = item.ad if item.ad else {} %}
             {% set ad_title = ad.title if ad else 'Pwodui' %}
             {% set ad_price = ad.price_gkach if ad else 0 %}
-            {% set ad_images = ad.get_images_list() if ad and hasattr(ad, 'get_images_list') else [] %}
-            
+            {% set ad_images = ad.get_images_list() if ad is not mapping else [] %}
             <div class="order-item">
                 <div class="order-item-image">
                     {% if ad_images %}
@@ -53,7 +51,6 @@
     <!-- Delivery Info -->
     <div class="delivery-section">
         <h3 class="section-title">🚚 Enfòmasyon Livrezon</h3>
-        
         <div class="info-card">
             <div class="info-icon">ℹ️</div>
             <div class="info-text">
@@ -66,7 +63,6 @@
     <!-- Payment Method -->
     <div class="payment-section">
         <h3 class="section-title">💰 Metòd Peman</h3>
-        
         <div class="payment-option selected">
             <div class="payment-radio">
                 <input type="radio" name="payment" id="gkach" checked>
@@ -82,6 +78,93 @@
         </div>
     </div>
 
+    <!-- Charitable Donation Section -->
+    <div class="donation-section">
+        <h3 class="section-title">❤️ Don pou Oeuvres Caritatives</h3>
+        <div class="donation-card">
+            <div class="donation-toggle" onclick="toggleDonation()">
+                <div class="donation-toggle-icon">❤️</div>
+                <div class="donation-toggle-text">
+                    <p><strong>Ajoute yon don charitab</strong></p>
+                    <p>Vote don ap ede moun ki nan bezwen nan kominote a</p>
+                </div>
+                <div class="donation-toggle-switch">
+                    <input type="checkbox" id="enableDonation" onchange="toggleDonation()">
+                    <label for="enableDonation"></label>
+                </div>
+            </div>
+            <div class="donation-options" id="donationOptions" style="display: none;">
+                <div class="donation-presets">
+                    <p class="donation-label">Chwazi yon montan:</p>
+                    <div class="preset-buttons">
+                        <button type="button" class="preset-btn" data-amount="10" onclick="selectDonation(10)">10 Gkach</button>
+                        <button type="button" class="preset-btn" data-amount="25" onclick="selectDonation(25)">25 Gkach</button>
+                        <button type="button" class="preset-btn" data-amount="50" onclick="selectDonation(50)">50 Gkach</button>
+                        <button type="button" class="preset-btn" data-amount="100" onclick="selectDonation(100)">100 Gkach</button>
+                        <button type="button" class="preset-btn" data-amount="custom" onclick="customDonation()">🖊️ Lòt</button>
+                    </div>
+                </div>
+                <div class="donation-custom" id="customDonation" style="display: none;">
+                    <p class="donation-label">Montan pèsonalize:</p>
+                    <div class="custom-input-group">
+                        <input type="number" id="donationAmount" name="donation_amount" min="1" value="0" placeholder="Antre montan an" onchange="updateDonationTotal()">
+                        <span class="input-suffix">Gkach</span>
+                    </div>
+                </div>
+                <div class="donation-cause">
+                    <p class="donation-label">Kòz charitab:</p>
+                    <div class="cause-options">
+                        {% if charity_causes %}
+                        {% for cause in charity_causes %}
+                        <label class="cause-option {% if cause.cause_id == 'general' %}selected{% endif %}">
+                            <input type="radio" name="donation_cause" value="{{ cause.cause_id }}" {% if cause.cause_id == 'general' %}checked{% endif %} onchange="selectCause(this)">
+                            <span class="cause-icon">{{ cause.icon }}</span>
+                            <span class="cause-name">{{ cause.name }}</span>
+                        </label>
+                        {% endfor %}
+                        {% else %}
+                        <label class="cause-option selected">
+                            <input type="radio" name="donation_cause" value="general" checked>
+                            <span class="cause-icon">❤️</span>
+                            <span class="cause-name">Jeneral</span>
+                        </label>
+                        <label class="cause-option">
+                            <input type="radio" name="donation_cause" value="education">
+                            <span class="cause-icon">📚</span>
+                            <span class="cause-name">Edikasyon</span>
+                        </label>
+                        <label class="cause-option">
+                            <input type="radio" name="donation_cause" value="health">
+                            <span class="cause-icon">🏥</span>
+                            <span class="cause-name">Sante</span>
+                        </label>
+                        <label class="cause-option">
+                            <input type="radio" name="donation_cause" value="community">
+                            <span class="cause-icon">🏘️</span>
+                            <span class="cause-name">Kominote</span>
+                        </label>
+                        <label class="cause-option">
+                            <input type="radio" name="donation_cause" value="food">
+                            <span class="cause-icon">🍲</span>
+                            <span class="cause-name">Manje</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="donation-summary" id="donationSummary" style="display: none;">
+                    <div class="summary-row">
+                        <span>Don ou:</span>
+                        <span id="donationDisplay">0 Gkach</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Kòz:</span>
+                        <span id="causeDisplay">Jeneral</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Order Total -->
     <div class="total-section">
         <div class="total-row">
@@ -92,10 +175,14 @@
             <span class="total-label">Livrezon</span>
             <span class="total-value total-pending">Pou negosye</span>
         </div>
+        <div class="total-row" id="donationRow" style="display: none;">
+            <span class="total-label">Don charitab</span>
+            <span class="total-value donation-value" id="donationTotal">🪙 0</span>
+        </div>
         <div class="total-divider"></div>
         <div class="total-row total-grand">
             <span class="total-label">Total</span>
-            <span class="total-value">🪙 {{ subtotal }}</span>
+            <span class="total-value" id="grandTotal">🪙 {{ subtotal }}</span>
         </div>
     </div>
 
@@ -133,7 +220,6 @@
             <span>Konekte</span>
         </a>
         {% endif %}
-        
         <a href="/cart" class="back-btn">
             <span>←</span>
             <span>Retounen nan Panyen</span>
@@ -148,6 +234,9 @@
         <div class="modal-icon">✅</div>
         <h3 class="modal-title">Kòmand Konfime!</h3>
         <p class="modal-text">Vandè a ap kontakte ou byento pou diskite livrezon.</p>
+        <div class="donation-thanks" id="donationThanks" style="display: none;">
+            <p>❤️ <strong>Mèsi pou don ou!</strong> Ou ap ede kominote a.</p>
+        </div>
         <div class="modal-actions">
             <a href="/" class="modal-btn modal-btn-primary">Retounen Akèy</a>
             <a href="/delivery/list" class="modal-btn modal-btn-secondary">Wè Kòmand</a>
@@ -156,534 +245,192 @@
 </div>
 
 <style>
-.checkout-page {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 16px;
-    padding-bottom: 100px;
-}
-
-/* Step Indicator */
-.step-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 24px;
-    padding: 20px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.step-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #e4e6eb;
-    color: #65676b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
-
-.step.active .step-circle {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    transform: scale(1.1);
-}
-
-.step-label {
-    font-size: 12px;
-    color: #65676b;
-    font-weight: 600;
-}
-
-.step.active .step-label {
-    color: #667eea;
-}
-
-.step-line {
-    width: 40px;
-    height: 2px;
-    background: #e4e6eb;
-    margin: 0 8px;
-}
-
-/* Section Title */
-.section-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 16px 0;
-}
-
-/* Order Section */
-.order-section {
-    margin-bottom: 16px;
-}
-
-.order-items {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.order-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-bottom: 1px solid #f0f2f5;
-}
-
-.order-item:last-child {
-    border-bottom: none;
-}
-
-.order-item-image {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
-    overflow: hidden;
-    flex-shrink: 0;
-    background: #f0f2f5;
-}
-
-.order-item-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.order-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-}
-
-.order-item-info {
-    flex: 1;
-}
-
-.order-item-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-}
-
-.order-item-qty {
-    font-size: 12px;
-    color: #65676b;
-}
-
-.order-item-price {
-    font-size: 14px;
-    font-weight: 700;
-    color: #667eea;
-}
-
-/* Delivery Section */
-.delivery-section {
-    margin-bottom: 16px;
-}
-
-.info-card {
-    background: #fff3e0;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    gap: 12px;
-}
-
-.info-icon {
-    font-size: 24px;
-    flex-shrink: 0;
-}
-
-.info-text {
-    flex: 1;
-}
-
-.info-text p {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    color: #1a1a1a;
-}
-
-.info-text p:last-child {
-    margin-bottom: 0;
-    color: #65676b;
-}
-
-/* Payment Section */
-.payment-section {
-    margin-bottom: 16px;
-}
-
-.payment-option {
-    background: white;
-    border: 2px solid #e4e6eb;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.payment-option.selected {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
-}
-
-.payment-radio {
-    position: relative;
-}
-
-.payment-radio input[type="radio"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.payment-info {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.payment-icon {
-    font-size: 32px;
-}
-
-.payment-details {
-    flex: 1;
-}
-
-.payment-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-}
-
-.payment-balance {
-    font-size: 13px;
-    color: #65676b;
-}
-
-/* Total Section */
-.total-section {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.total-label {
-    font-size: 14px;
-    color: #65676b;
-}
-
-.total-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-}
-
-.total-pending {
-    color: #f57c00;
-    font-size: 12px;
-}
-
-.total-divider {
-    height: 1px;
-    background: #e4e6eb;
-    margin: 16px 0;
-}
-
-.total-grand {
-    margin-bottom: 0;
-}
-
-.total-grand .total-label {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-.total-grand .total-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #667eea;
-}
-
-/* Action Section */
-.action-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.confirm-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
-    padding: 16px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-}
-
-.confirm-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
-}
-
-.insufficient-balance,
-.login-required {
-    background: #fff3e0;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    gap: 12px;
-}
-
-.warning-icon {
-    font-size: 24px;
-    flex-shrink: 0;
-}
-
-.warning-text p {
-    margin: 0 0 4px 0;
-    font-size: 13px;
-    color: #1a1a1a;
-}
-
-.warning-text p:last-child {
-    margin-bottom: 0;
-    color: #65676b;
-}
-
-.recharge-btn,
-.login-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
-    border: none;
-    color: white;
-    padding: 16px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.recharge-btn:hover,
-.login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(245, 124, 0, 0.4);
-}
-
-.back-btn {
-    width: 100%;
-    background: white;
-    border: 2px solid #e4e6eb;
-    color: #65676b;
-    padding: 16px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.back-btn:hover {
-    background: #f0f2f5;
-    border-color: #65676b;
-}
-
-/* Modal */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-}
-
-.modal-content {
-    position: relative;
-    background: white;
-    border-radius: 20px;
-    padding: 32px 24px;
-    max-width: 400px;
-    width: 100%;
-    text-align: center;
-    animation: modalSlideUp 0.3s ease;
-}
-
-@keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.modal-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
-}
-
-.modal-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 12px 0;
-}
-
-.modal-text {
-    font-size: 14px;
-    color: #65676b;
-    margin: 0 0 24px 0;
-}
-
-.modal-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.modal-btn {
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 14px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.modal-btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.modal-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
-}
-
-.modal-btn-secondary {
-    background: white;
-    color: #667eea;
-    border: 2px solid #667eea;
-}
-
-.modal-btn-secondary:hover {
-    background: #f0f2f5;
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-    .checkout-page {
-        padding: 12px;
-    }
-    
-    .step-indicator {
-        padding: 16px 12px;
-    }
-    
-    .step-circle {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
-    }
-    
-    .step-line {
-        width: 30px;
-    }
-}
+.checkout-page { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+.step-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 24px; padding: 20px; background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.step { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.step-circle { width: 40px; height: 40px; border-radius: 50%; background: #e4e6eb; color: #65676b; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; transition: all 0.3s ease; }
+.step.active .step-circle { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; transform: scale(1.1); }
+.step-label { font-size: 12px; color: #65676b; font-weight: 600; }
+.step.active .step-label { color: #667eea; }
+.step-line { width: 40px; height: 2px; background: #e4e6eb; margin: 0 8px; }
+.section-title { font-size: 18px; font-weight: 700; color: #1a1a1a; margin: 0 0 16px 0; }
+.order-items { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.order-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f2f5; }
+.order-item:last-child { border-bottom: none; }
+.order-item-image { width: 50px; height: 50px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #f0f2f5; }
+.order-item-image img { width: 100%; height: 100%; object-fit: cover; }
+.order-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.order-item-info { flex: 1; }
+.order-item-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+.order-item-qty { font-size: 12px; color: #65676b; }
+.order-item-price { font-size: 14px; font-weight: 700; color: #667eea; }
+.info-card { background: #fff3e0; border-radius: 12px; padding: 16px; display: flex; gap: 12px; }
+.info-icon { font-size: 24px; flex-shrink: 0; }
+.info-text p { margin: 0 0 8px 0; font-size: 13px; color: #1a1a1a; }
+.info-text p:last-child { margin-bottom: 0; color: #65676b; }
+.payment-option { background: white; border: 2px solid #e4e6eb; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px; }
+.payment-option.selected { border-color: #667eea; background: rgba(102,126,234,0.05); }
+.payment-info { flex: 1; display: flex; align-items: center; gap: 12px; }
+.payment-icon { font-size: 32px; }
+.payment-name { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+.payment-balance { font-size: 13px; color: #65676b; }
+.donation-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.donation-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; cursor: pointer; }
+.donation-toggle:hover { background: #f8f9fa; }
+.donation-toggle-icon { font-size: 32px; flex-shrink: 0; }
+.donation-toggle-text { flex: 1; }
+.donation-toggle-text p { margin: 0; font-size: 13px; color: #1a1a1a; }
+.donation-toggle-text p:first-child { font-weight: 600; margin-bottom: 4px; }
+.donation-toggle-text p:last-child { color: #65676b; font-size: 12px; }
+.donation-toggle-switch input[type="checkbox"] { display: none; }
+.donation-toggle-switch label { display: block; width: 50px; height: 28px; background: #e4e6eb; border-radius: 14px; cursor: pointer; position: relative; transition: all 0.3s ease; }
+.donation-toggle-switch label::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.donation-toggle-switch input:checked + label { background: linear-gradient(135deg,#e74c3c 0%,#c0392b 100%); }
+.donation-toggle-switch input:checked + label::after { left: 25px; }
+.donation-options { padding: 0 16px 16px; border-top: 1px solid #f0f2f5; padding-top: 16px; }
+.donation-label { font-size: 13px; font-weight: 600; color: #1a1a1a; margin: 0 0 12px 0; }
+.preset-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.preset-btn { padding: 8px 16px; border: 2px solid #e4e6eb; border-radius: 8px; background: white; color: #1a1a1a; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+.preset-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+.preset-btn.active { border-color: #e74c3c; background: rgba(231,76,60,0.1); color: #e74c3c; }
+.custom-input-group { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.custom-input-group input { flex: 1; padding: 10px 12px; border: 2px solid #e4e6eb; border-radius: 8px; font-size: 14px; outline: none; }
+.custom-input-group input:focus { border-color: #e74c3c; }
+.input-suffix { font-size: 14px; font-weight: 600; color: #65676b; }
+.cause-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.cause-option { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e4e6eb; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s ease; }
+.cause-option:hover { border-color: #667eea; }
+.cause-option.selected { border-color: #667eea; background: rgba(102,126,234,0.1); }
+.cause-option input[type="radio"] { display: none; }
+.cause-icon { font-size: 18px; }
+.cause-name { font-weight: 600; }
+.donation-summary { background: #fff5f5; border-radius: 8px; padding: 12px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+.summary-row:last-child { margin-bottom: 0; }
+.summary-row span:last-child { font-weight: 600; color: #e74c3c; }
+.total-section { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.total-label { font-size: 14px; color: #65676b; }
+.total-value { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.total-pending { color: #f57c00; font-size: 12px; }
+.donation-value { color: #e74c3c; }
+.total-divider { height: 1px; background: #e4e6eb; margin: 16px 0; }
+.total-grand { margin-bottom: 0; }
+.total-grand .total-label { font-size: 18px; font-weight: 700; }
+.total-grand .total-value { font-size: 24px; font-weight: 700; color: #667eea; }
+.action-section { display: flex; flex-direction: column; gap: 12px; }
+.confirm-btn { width: 100%; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); border: none; color: white; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; }
+.confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(102,126,234,0.4); }
+.insufficient-balance, .login-required { background: #fff3e0; border-radius: 12px; padding: 16px; display: flex; gap: 12px; }
+.warning-icon { font-size: 24px; flex-shrink: 0; }
+.warning-text p { margin: 0 0 4px 0; font-size: 13px; }
+.warning-text p:last-child { margin-bottom: 0; color: #65676b; }
+.recharge-btn, .login-btn { width: 100%; background: linear-gradient(135deg,#f57c00 0%,#ff9800 100%); color: white; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; }
+.recharge-btn:hover, .login-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(245,124,0,0.4); }
+.back-btn { width: 100%; background: white; border: 2px solid #e4e6eb; color: #65676b; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; }
+.back-btn:hover { background: #f0f2f5; border-color: #65676b; }
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+.modal-content { position: relative; background: white; border-radius: 20px; padding: 32px 24px; max-width: 400px; width: 100%; text-align: center; animation: modalSlideUp 0.3s ease; }
+@keyframes modalSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.modal-icon { font-size: 64px; margin-bottom: 16px; }
+.modal-title { font-size: 24px; font-weight: 700; margin: 0 0 12px 0; }
+.modal-text { font-size: 14px; color: #65676b; margin: 0 0 8px 0; }
+.donation-thanks { background: #fff5f5; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.donation-thanks p { margin: 0; font-size: 14px; color: #e74c3c; }
+.modal-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.modal-btn { padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.3s ease; }
+.modal-btn-primary { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; }
+.modal-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(102,126,234,0.4); }
+.modal-btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; }
+.modal-btn-secondary:hover { background: #f0f2f5; }
+@media (max-width: 480px) { .checkout-page { padding: 12px; } .step-indicator { padding: 16px 12px; } .step-circle { width: 36px; height: 36px; font-size: 14px; } .step-line { width: 30px; } }
 </style>
 
 <script>
+let donationEnabled = false;
+let donationAmount = 0;
+let selectedCause = 'general';
+const checkoutSubtotal = {{ subtotal }};
+
+function toggleDonation() {
+    const cb = document.getElementById('enableDonation');
+    const opts = document.getElementById('donationOptions');
+    const dRow = document.getElementById('donationRow');
+    donationEnabled = cb.checked;
+    opts.style.display = donationEnabled ? 'block' : 'none';
+    if (!donationEnabled) {
+        donationAmount = 0;
+        document.getElementById('donationAmount').value = 0;
+        document.getElementById('donationSummary').style.display = 'none';
+        dRow.style.display = 'none';
+        updateGrandTotal();
+        document.querySelectorAll('.preset-btn').forEach(function(btn) { btn.classList.remove('active'); });
+    }
+}
+function selectDonation(amount) {
+    if (!donationEnabled) return;
+    document.querySelectorAll('.preset-btn').forEach(function(btn) { btn.classList.remove('active'); });
+    if (amount === 'custom') {
+        document.getElementById('customDonation').style.display = 'block';
+        document.getElementById('donationAmount').focus();
+        return;
+    }
+    event.target.classList.add('active');
+    document.getElementById('customDonation').style.display = 'none';
+    donationAmount = amount;
+    document.getElementById('donationAmount').value = amount;
+    updateDonationTotal();
+}
+function customDonation() {
+    if (!donationEnabled) return;
+    document.querySelectorAll('.preset-btn').forEach(function(btn) { btn.classList.remove('active'); });
+    event.target.classList.add('active');
+    document.getElementById('customDonation').style.display = 'block';
+    document.getElementById('donationAmount').focus();
+}
+function updateDonationTotal() {
+    var input = document.getElementById('donationAmount');
+    donationAmount = parseInt(input.value) || 0;
+    if (donationAmount > 0) {
+        document.getElementById('donationSummary').style.display = 'block';
+        document.getElementById('donationDisplay').textContent = donationAmount + ' Gkach';
+        document.getElementById('donationRow').style.display = 'flex';
+        document.getElementById('donationTotal').textContent = '🪙 ' + donationAmount;
+    } else {
+        document.getElementById('donationSummary').style.display = 'none';
+        document.getElementById('donationRow').style.display = 'none';
+    }
+    updateGrandTotal();
+}
+function selectCause(input) {
+    document.querySelectorAll('.cause-option').forEach(function(opt) { opt.classList.remove('selected'); });
+    input.closest('.cause-option').classList.add('selected');
+    selectedCause = input.value;
+    var causeName = input.closest('.cause-option').querySelector('.cause-name').textContent;
+    document.getElementById('causeDisplay').textContent = causeName;
+}
+function updateGrandTotal() {
+    var total = checkoutSubtotal + donationAmount;
+    document.getElementById('grandTotal').textContent = '🪙 ' + total;
+}
 function confirmOrder() {
-    const btn = event.target.closest('.confirm-btn');
-    const originalContent = btn.innerHTML;
-    
+    var btn = event.target.closest('.confirm-btn');
+    var originalContent = btn.innerHTML;
     btn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
     btn.disabled = true;
-    
+    var formData = new URLSearchParams();
+    formData.append('donation_amount', donationAmount);
+    formData.append('donation_cause', selectedCause);
     fetch('/cart/checkout', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData.toString()
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
         if (data.success) {
+            if (data.donation) { document.getElementById('donationThanks').style.display = 'block'; }
             showModal();
         } else {
             alert(data.error || 'Erè nan konfime kòmand');
@@ -691,19 +438,13 @@ function confirmOrder() {
             btn.disabled = false;
         }
     })
-    .catch(() => {
+    .catch(function() {
         alert('Erè nan konfime kòmand');
         btn.innerHTML = originalContent;
         btn.disabled = false;
     });
 }
-
-function showModal() {
-    document.getElementById('confirmModal').style.display = 'flex';
-}
-
-function closeModal() {
-    document.getElementById('confirmModal').style.display = 'none';
-}
+function showModal() { document.getElementById('confirmModal').style.display = 'flex'; }
+function closeModal() { document.getElementById('confirmModal').style.display = 'none'; }
 </script>
 {% endblock %}

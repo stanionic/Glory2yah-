@@ -18,7 +18,7 @@ auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
-@limiter.limit("5 per hour")
+@limiter.limit("10 per hour")
 def register():
     """User registration"""
     if current_user.is_authenticated:
@@ -60,7 +60,7 @@ def register():
             
             # Check if WhatsApp already registered
             existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
-            if existing_whatsapp and existing_whatsapp.password_hash is not None:
+            if existing_whatsapp:
                 print(f"DEBUG: WhatsApp already registered: {whatsapp_clean}")
                 flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
                 return redirect(url_for('auth.login'))
@@ -108,6 +108,7 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("200 per hour")
+@csrf.exempt
 def login():
     """User login"""
     if current_user.is_authenticated:
@@ -222,9 +223,13 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    """User logout"""
+    """User logout - preserve CSRF token in session"""
     logout_user()
+    # Preserve CSRF token to avoid issues on next login
+    csrf_token = session.get('_csrf_token')
     session.clear()
+    if csrf_token:
+        session['_csrf_token'] = csrf_token
     flash('Ou dekonekte avèk siksè.', 'info')
     return redirect(url_for('main.index'))
 

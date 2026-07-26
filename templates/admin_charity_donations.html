@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}Dons Caritatifs - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-charity-page">
+    <div class="page-header">
+        <h1>❤️ Dons Caritatifs</h1>
+        <p class="subtitle">Gere dons yo ak kòz charitab yo</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ stats.total_gkach }}</div>
+                <div class="stat-label">Total Dons (Gkach)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ stats.total_donations }}</div>
+                <div class="stat-label">Dons total</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ stats.total_donors }}</div>
+                <div class="stat-label">Donatè inik</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('donations')">📋 Dons yo</button>
+        <button class="tab-btn" onclick="switchTab('causes')">🏷️ Kòz yo</button>
+    </div>
+
+    <!-- Donations Tab -->
+    <div id="tab-donations" class="tab-content active">
+        <div class="section-card">
+            <h3>Dons resan yo</h3>
+            {% if donations %}
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Dat</th>
+                            <th>Donatè</th>
+                            <th>Kòz</th>
+                            <th>Montan</th>
+                            <th>Estati</th>
+                            <th>Livrezon</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donation in donations %}
+                        <tr>
+                            <td>{{ donation.created_at[:10] if donation.created_at else 'N/A' }}</td>
+                            <td>
+                                <span class="donor-info">
+                                    {% if donation.is_anonymous %}
+                                    <em>Anonim</em>
+                                    {% else %}
+                                    {{ donation.donor_name or donation.donor_whatsapp }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td><span class="cause-badge">{{ donation.cause }}</span></td>
+                            <td class="amount-cell">🪙 {{ donation.amount_gkach }}</td>
+                            <td>
+                                <span class="status-badge {{ donation.status }}">
+                                    {{ donation.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if donation.delivery_id %}
+                                <a href="/delivery/{{ donation.delivery_id }}" class="delivery-link">Voir</a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <p>Pa gen dons ankò.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Breakdown by cause -->
+        <div class="section-card">
+            <h3>Repatisyon pa kòz</h3>
+            {% if cause_breakdown %}
+            <div class="cause-breakdown">
+                {% for item in cause_breakdown %}
+                <div class="cause-bar-item">
+                    <div class="cause-bar-header">
+                        <span class="cause-bar-name">{{ item.cause }}</span>
+                        <span class="cause-bar-amount">🪙 {{ item.total }}</span>
+                    </div>
+                    <div class="cause-bar-track">
+                        <div class="cause-bar-fill" style="width: {{ item.percentage }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>Pa gen done pou repatisyon an.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Causes Tab -->
+    <div id="tab-causes" class="tab-content">
+        <div class="section-card">
+            <div class="card-header">
+                <h3>Jere Kòz Caritatif</h3>
+                <button class="btn btn-primary btn-sm" onclick="showAddCause()">+ Ajoute Kòz</button>
+            </div>
+            
+            {% if causes %}
+            <div class="causes-grid">
+                {% for cause in causes %}
+                <div class="cause-card {% if cause.is_active %}active{% endif %}">
+                    <div class="cause-icon">{{ cause.icon }}</div>
+                    <div class="cause-details">
+                        <h4>{{ cause.name }}</h4>
+                        <p>{{ cause.description or 'Pa gen deskripsyon' }}</p>
+                    </div>
+                    <div class="cause-actions">
+                        <span class="status-indicator {{ 'active' if cause.is_active else 'inactive' }}">
+                            {{ 'Aktif' if cause.is_active else 'Inaktif' }}
+                        </span>
+                        <form method="POST" action="/admin/charity/causes/toggle" style="display:inline;">
+                            <input type="hidden" name="cause_id" value="{{ cause.cause_id }}">
+                            <button type="submit" class="btn btn-sm {{ 'btn-warning' if cause.is_active else 'btn-success' }}">
+                                {{ 'Deaktive' if cause.is_active else 'Aktive' }}
+                            </button>
+                        </form>
+                        <form method="POST" action="/admin/charity/causes/delete" style="display:inline;" onsubmit="return confirm('Efase kòz sa a?')">
+                            <input type="hidden" name="cause_id" value="{{ cause.cause_id }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Efase</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🏷️</div>
+                <p>Pa gen kòz charitab defini. Kreye premye kòz la!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Add Cause Form (hidden by default) -->
+        <div id="addCauseForm" class="section-card" style="display:none;">
+            <h3>Ajoute Nouvo Kòz</h3>
+            <form method="POST" action="/admin/charity/causes/add">
+                <div class="form-group">
+                    <label>Non kòz la</label>
+                    <input type="text" name="name" class="form-control" required placeholder="Ex: Edikasyon, Sante...">
+                </div>
+                <div class="form-group">
+                    <label>Deskripsyon</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Deskripsyon kòz la..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Icon</label>
+                    <input type="text" name="icon" class="form-control" value="❤️" placeholder="❤️ 📚 🏥 🏘️ 🍲">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Kreye Kòz</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddCause()">Anile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-charity-page { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 28px; font-weight: 800; margin: 0 0 8px 0; color: #1a1a1a; }
+.subtitle { font-size: 14px; color: #65676b; margin: 0; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.stat-icon { font-size: 36px; }
+.stat-value { font-size: 28px; font-weight: 800; color: #1a1a1a; }
+.stat-label { font-size: 13px; color: #65676b; margin-top: 4px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+.tab-btn { padding: 10px 20px; border: 2px solid #e4e6eb; background: white; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
+.tab-btn.active { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; border-color: transparent; }
+.tab-btn:hover:not(.active) { border-color: #667eea; color: #667eea; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.section-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.section-card h3 { font-size: 18px; font-weight: 700; margin: 0 0 16px 0; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-header h3 { margin: 0; }
+.table-responsive { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th { text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #65676b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f0f2f5; }
+.admin-table td { padding: 12px 8px; font-size: 14px; border-bottom: 1px solid #f0f2f5; }
+.admin-table tr:hover { background: #f8f9fa; }
+.donor-info { font-weight: 600; }
+.cause-badge { background: #f0f2f5; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.amount-cell { font-weight: 700; color: #667eea; }
+.status-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.status-badge.completed { background: #e8f5e9; color: #2e7d32; }
+.status-badge.pending { background: #fff3e0; color: #f57c00; }
+.status-badge.refunded { background: #ffebee; color: #c62828; }
+.delivery-link { color: #667eea; text-decoration: none; font-weight: 600; }
+.text-muted { color: #65676b; }
+.empty-state { text-align: center; padding: 40px 20px; color: #65676b; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.cause-breakdown { display: flex; flex-direction: column; gap: 12px; }
+.cause-bar-item { margin-bottom: 8px; }
+.cause-bar-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.cause-bar-name { font-weight: 600; font-size: 14px; }
+.cause-bar-amount { font-weight: 700; color: #667eea; }
+.cause-bar-track { height: 8px; background: #e4e6eb; border-radius: 4px; overflow: hidden; }
+.cause-bar-fill { height: 100%; background: linear-gradient(90deg,#667eea 0%,#764ba2 100%); border-radius: 4px; transition: width 0.5s ease; }
+.causes-grid { display: flex; flex-direction: column; gap: 12px; }
+.cause-card { display: flex; align-items: center; gap: 16px; padding: 16px; border: 2px solid #e4e6eb; border-radius: 12px; transition: all 0.3s ease; }
+.cause-card.active { border-color: #667eea; background: rgba(102,126,234,0.05); }
+.cause-icon { font-size: 36px; flex-shrink: 0; }
+.cause-details { flex: 1; }
+.cause-details h4 { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; }
+.cause-details p { margin: 0; font-size: 13px; color: #65676b; }
+.cause-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.status-indicator { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-indicator.active { background: #e8f5e9; color: #2e7d32; }
+.status-indicator.inactive { background: #f5f5f5; color: #9e9e9e; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #1a1a1a; }
+.form-control { width: 100%; padding: 10px 12px; border: 2px solid #e4e6eb; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.3s ease; }
+.form-control:focus { border-color: #667eea; }
+.form-actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+.btn-secondary { background: white; border: 2px solid #e4e6eb; color: #65676b; }
+.btn-secondary:hover { border-color: #65676b; }
+.btn-success { background: #2e7d32; color: white; }
+.btn-success:hover { background: #1b5e20; }
+.btn-warning { background: #f57c00; color: white; }
+.btn-warning:hover { background: #e65100; }
+.btn-danger { background: #c62828; color: white; }
+.btn-danger:hover { background: #b71c1c; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+@media (max-width: 640px) { .admin-charity-page { padding: 16px; } .stats-grid { grid-template-columns: 1fr; } .cause-card { flex-direction: column; align-items: flex-start; } .cause-actions { width: 100%; justify-content: flex-end; } }
+</style>
+
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(function(btn) { btn.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(content) { content.classList.remove('active'); });
+    document.querySelector('.tab-btn[onclick*="' + tab + '"]').classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+}
+function showAddCause() { document.getElementById('addCauseForm').style.display = 'block'; }
+function hideAddCause() { document.getElementById('addCauseForm').style.display = 'none'; }
+</script>
+{% endblock %}

@@ -96,6 +96,7 @@ class CartService:
                 total_shipping += item.shipping_fee
                 
         return {
+            'subtotal': total_products,
             'total_products': total_products,
             'total_shipping': total_shipping,
             'grand_total': total_products + total_shipping,

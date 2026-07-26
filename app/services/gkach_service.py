@@ -223,31 +223,100 @@ class GkachService:
         )
     
     @staticmethod
-    def process_purchase(buyer_whatsapp, seller_whatsapp, amount, ad_id, delivery_id):
+    def process_purchase(buyer_whatsapp, seller_whatsapp, amount, ad_id, delivery_id, donation_amount=0, donation_cause='general'):
         """
-        Process purchase transaction
-        Atomic: deduct from buyer, add to seller
+        Process purchase transaction with optional charitable donation
+        Atomic: deduct from buyer, add to seller, process donation if any
         """
         buyer_whatsapp = validate_whatsapp(buyer_whatsapp)
         seller_whatsapp = validate_whatsapp(seller_whatsapp)
         amount = validate_amount(amount, min_amount=1)
         
+        # Validate donation amount
+        if donation_amount > 0:
+            donation_amount = validate_amount(donation_amount, min_amount=1)
+            total_to_deduct = amount + donation_amount
+        else:
+            total_to_deduct = amount
+        
         try:
-            # Deduct from buyer
+            # Deduct total (purchase + donation) from buyer
             GkachService.deduct_balance(
                 buyer_whatsapp,
-                amount,
-                f"Achte piblisite {ad_id}",
+                total_to_deduct,
+                f"Achte piblisite {ad_id}" + (f" + don {donation_amount} Gkach" if donation_amount > 0 else ""),
                 'purchase'
             )
             
-            # Add to seller
+            # Add purchase amount to seller
             GkachService.add_balance(
                 seller_whatsapp,
                 amount,
                 f"Vann piblisite {ad_id}",
                 'sale'
             )
+            
+            # Process donation if any
+            if donation_amount > 0:
+                # Get or create charity account
+                charity_whatsapp = '+509CHARITY'  # Compte caritatif dédié
+                charity_account = UserGkach.query.filter_by(user_whatsapp=charity_whatsapp).first()
+                if not charity_account:
+                    # Create charity account if not exists
+                    from app.models.user import User
+                    charity_user = User.query.filter_by(whatsapp=charity_whatsapp).first()
+                    if not charity_user:
+                        charity_user = User(
+                            whatsapp=charity_whatsapp,
+                            pseudo='CharityFund',
+                            name='Fonds Caritatif Glory2Yah',
+                            auth_provider='whatsapp',
+                            is_active=True
+                        )
+                        db.session.add(charity_user)
+                        db.session.flush()
+                    
+                    charity_account = UserGkach(
+                        user_id=charity_user.id,
+                        user_whatsapp=charity_whatsapp,
+                        gkach_balance=0
+                    )
+                    db.session.add(charity_account)
+                    db.session.flush()
+                
+                # Add donation to charity account (use direct DB ops to avoid premature commit)
+                charity_account = db.session.query(UserGkach).filter_by(
+                    user_whatsapp=charity_whatsapp
+                ).with_for_update().first()
+                
+                old_balance = charity_account.gkach_balance
+                charity_account.gkach_balance += donation_amount
+                
+                # Log charity donation transaction
+                charity_tx = GkachTransaction(
+                    transaction_id=str(uuid.uuid4()),
+                    user_whatsapp=charity_whatsapp,
+                    transaction_type='donation',
+                    amount=donation_amount,
+                    old_balance=old_balance,
+                    new_balance=charity_account.gkach_balance,
+                    description=f"Don {donation_cause} from {buyer_whatsapp}",
+                    status='completed'
+                )
+                db.session.add(charity_tx)
+                
+                # Record donation in CharityDonation model
+                from app.models.charity import CharityDonation
+                donation = CharityDonation(
+                    donation_id=str(uuid.uuid4()),
+                    donor_whatsapp=buyer_whatsapp,
+                    delivery_id=delivery_id,
+                    amount_gkach=donation_amount,
+                    cause=donation_cause,
+                    status='completed',
+                    is_anonymous=False
+                )
+                db.session.add(donation)
             
             # Update transactions with related data
             buyer_tx = GkachTransaction.query.filter_by(

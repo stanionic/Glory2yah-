@@ -1,0 +1,21 @@
+[2026-07-23 14:41:24,306] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+C:\Users\Ops\AppData\Roaming\Python\Python311\site-packages\flask_limiter\extension.py:336: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+[2026-07-23 14:41:24,403] WARNING in __init__: SocketIO running without Redis message queue
+Traceback (most recent call last):
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\run.py", line 12, in <module>
+    from app import app, socketio
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 417, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', 'development'))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 134, in create_app
+    register_blueprints(app)
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 232, in register_blueprints
+    from app.routes.main import main_bp
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\routes\main.py", line 9, in <module>
+    from app.services.ad_service import AdService
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\services\ad_service.py", line 6, in <module>
+    from app.models.ad import Ad
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\models\__init__.py", line 18, in <module>
+    from app.models.app_installation import AppInstallation
+ImportError: cannot import name 'AppInstallation' from 'app.models.app_installation' (C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\models\app_installation.py)

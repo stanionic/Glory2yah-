@@ -21,7 +21,7 @@ from ecole_biblique.admission_questions import ADMISSION_QUESTIONS
 ecole_biblique_bp = Blueprint('ecole_biblique', __name__, template_folder='../ecole_biblique/templates', static_folder='static')
 
 # Constants
-TOTAL_MODULES = 3
+TOTAL_MODULES = 20
 PASSING_SCORE = 80
 EXAM_WEIGHT = 0.7
 ASSIGNMENTS_WEIGHT = 0.3
@@ -32,10 +32,10 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = 'static/uploads/ecole_payments'
 
 # Fee structure
-FREE_MODULES = 3  # First 3 modules free
-FREE_STUDENT_FEE_PER_BLOCK = 20  # $20 per 3 modules for free students
+FREE_MODULES = 20  # All 20 modules free
+FREE_STUDENT_FEE_PER_BLOCK = 0  # No fee per block for free students
 FREE_STUDENT_GRADUATION_FEE = 100  # $100 graduation fee
-PAID_STUDENT_FEE_PER_BLOCK = 100  # $100 per 3 modules for paid students
+PAID_STUDENT_FEE_PER_BLOCK = 0  # No fee per block for paid students
 PAID_STUDENT_TOTAL = 600  # $600 total
 
 
@@ -59,26 +59,38 @@ def log_audit(user_id, action, details=None):
 
 
 def init_modules():
-    """Initialize the 3 modules if they don't exist"""
-    module_names = [
-        "Religion", "Théologie", "Le Premier Être"
+    """Initialize all 20 modules from the COURS folder if they don't exist"""
+    module_definitions = [
+        (1, "Introduction à la Bible (Religion)", "Module 1: Introduction à la Bible (Religion)", "Module 1(RELIGION).pdf"),
+        (2, "Le Premier Être", "Module 2: Le Premier Être", "Module 2 (Le Premier Etre.pdf"),
+        (3, "Théologie", "Module 3: Théologie", "Module 3(Theologie).pdf"),
+        (4, "Christologie", "Module 4: Christologie", "Module 4(CHRISTOLOGIE).pdf"),
+        (5, "Angéologie", "Module 5: Angéologie", "ANGEOLOGIE.pdf"),
+        (6, "Anthropologie Chrétienne", "Module 6: Anthropologie Chrétienne", "ANTROPOLOGIE CHRETIENNE.pdf"),
+        (7, "Apologétique", "Module 7: Apologétique", "APOLOGETIQUE.pdf"),
+        (8, "Démonologie", "Module 8: Démonologie", "DEMONOLOGIE.pdf"),
+        (9, "Dogmatique", "Module 9: Dogmatique", "DOGMATIQUE.pdf"),
+        (10, "Évangélisation", "Module 10: Évangélisation", "Evangélisation-1.pdf"),
+        (11, "Exégèse", "Module 11: Exégèse", "EXEGESE.pdf"),
+        (12, "Homilétique", "Module 12: Homilétique", "HOMILETIQUE.pdf"),
+        (13, "La Houlette du Berger", "Module 13: La Houlette du Berger", "La houlette du berger.pdf"),
+        (14, "Le Ministère Chrétien", "Module 14: Le Ministère Chrétien", "LE MINISTERE CHRETIEN.pdf"),
+        (15, "Le Plus Grand Ennemis de l'Humanité", "Module 15: Le Plus Grand Ennemis de l'Humanité", "le-plus-grand-ennemis-de-l-humanite-16.pdf"),
+        (16, "L'Église", "Module 16: L'Église", "LEglise-1.pdf"),
+        (17, "Leurres de Satan", "Module 17: Leurres de Satan", "leurres-de-satan.pdf"),
+        (18, "Louange et Adoration", "Module 18: Louange et Adoration", "Louange-et-Adoration.pdf"),
+        (19, "Psaumes", "Module 19: Psaumes", "Psaumes.pdf"),
+        (20, "Théologie", "Module 20: Théologie", "THEOLOGIE.pdf"),
     ]
-    # Map course files to specific modules (from COURS folder)
-    course_files = {
-        1: "MODULE 1(RELIGION).pdf",
-        2: "MODULE 2(THEOLOGIE).pdf",
-        3: "MODULE 3(Le Premier Etre.pdf"
-    }
-    for i, name in enumerate(module_names, 1):
-        module = Module.query.filter_by(number=i).first()
+    for number, name, description, course_file in module_definitions:
+        module = Module.query.filter_by(number=number).first()
         if not module:
-            course_file = course_files.get(i)
-            module = Module(number=i, name=name, description=f"Module {i}: {name}", course_file=course_file)
+            module = Module(number=number, name=name, description=description, course_file=course_file)
             db.session.add(module)
         else:
             # Update course_file if not set
-            if not module.course_file and i in course_files:
-                module.course_file = course_files[i]
+            if not module.course_file:
+                module.course_file = course_file
     db.session.commit()
 
 
@@ -91,20 +103,20 @@ def init_student_modules(student_id):
             sm = StudentModule(
                 student_id=student_id,
                 module_id=module.id,
-                locked=(i > 0),  # First module unlocked, rest locked
+                locked=(i >= 3),  # First 3 modules unlocked, rest locked
                 passed=False
             )
             db.session.add(sm)
-    # Unlock module 1
-    first = StudentModule.query.filter_by(student_id=student_id).join(Module).order_by(Module.number).first()
-    if first:
-        first.locked = False
+    # Unlock modules 1, 2, 3 (first 3 modules free)
+    unlocked_modules = StudentModule.query.filter_by(student_id=student_id).join(Module).order_by(Module.number).limit(3).all()
+    for sm in unlocked_modules:
+        sm.locked = False
     db.session.commit()
 
 
 def get_module_fee(student_type, module_number):
     """Calculate fee for a given module based on student type"""
-    # All 3 modules are free
+    # All 20 modules are free
     return 0
 
 
@@ -122,7 +134,7 @@ def check_exam_deadline():
 
 
 def get_passing_students():
-    """Get students who passed all 3 modules"""
+    """Get students who passed all 20 modules"""
     students = EcoleUser.query.filter_by(role='student', registration_completed=True).all()
     passing = []
     for student in students:
@@ -221,7 +233,8 @@ def register():
                 db.session.flush()
 
             ecole_user = EcoleUser(full_name=full_name, whatsapp=whatsapp, role=role)
-            ecole_user.set_password(password if not current_user.is_authenticated else 'ecole_only')
+            # Use the provided password; if user is already authenticated, they already have a main app password
+            ecole_user.set_password(password if password else 'ecole_only')
             db.session.add(ecole_user)
             db.session.flush()
 
@@ -243,7 +256,11 @@ def register():
 def logout():
     from flask_login import logout_user
     logout_user()
+    # Preserve CSRF token to avoid issues on next login
+    csrf_token = session.get('_csrf_token')
     session.clear()
+    if csrf_token:
+        session['_csrf_token'] = csrf_token
     flash('Vous êtes déconnecté avec succès.', 'info')
     return redirect(url_for('main.index'))
 
@@ -645,7 +662,8 @@ def module_detail(module_id):
                          student_module=sm,
                          deadline_passed=deadline_passed,
                          exam_deadline=EXAM_DEADLINE,
-                         passing_score=PASSING_SCORE)
+                         passing_score=PASSING_SCORE,
+                         total_modules=TOTAL_MODULES)
 
 
 # ===== PAYMENT SYSTEM (Part 8 & 9) =====
@@ -1087,7 +1105,8 @@ def admin_students():
     return render_template('admin_students.html',
                          student_data=student_data,
                          student_type=student_type,
-                         status_filter=status_filter)
+                         status_filter=status_filter,
+                         total_modules=TOTAL_MODULES)
 
 
 @ecole_biblique_bp.route('/admin/graduation')

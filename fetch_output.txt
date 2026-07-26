@@ -1,0 +1,166 @@
+Form fields: ['viewport', 'theme-color', 'csrf-token', 'apple-mobile-web-app-capable', 'apple-mobile-web-app-status-bar-style', 'apple-mobile-web-app-title', 'mobile-web-app-capable', 'q', 'csrf_token', 'identifier', 'password', 'remember']
+Login data keys: ['password', 'csrf_token']
+Login -> http://localhost:8080/auth/login (status 200)
+Student -> http://localhost:8080/auth/login?next=%2Fecole_biblique%2Fstudent (status 200)
+
+=== MAIN CONTENT ===
+<main class="g2y-main" id="mainContent">
+        
+<style>
+.login-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 30px;
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.login-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.login-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+}
+
+.login-subtitle {
+    font-size: 15px;
+    color: #65676b;
+    margin: 0;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 16px 18px;
+    font-size: 15px;
+    border: 2px solid #e4e6eb;
+    border-radius: 16px;
+    background: #f8f9fa;
+    color: #1a1a1a;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+    color: #a0a3a8;
+}
+
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.forgot-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: #667eea;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.forgot-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.login-button {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.login-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+.register-prompt {
+    text-align: center;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #f0f2f5;
+}
+
+.register-prompt-text {
+    font-size: 14px;
+    color: #65676b;
+    margin: 0;
+}
+
+.register-link {
+    fon

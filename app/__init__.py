@@ -158,7 +158,35 @@ def create_app(config_name=None):
             AppInstallation = None
         # Import ecole_biblique models so their tables get created
         from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade, AdmissionTest, AdmissionAnswer, Module, StudentModule, Payment, TermsAcceptance, AuditLog
+        # Import charity models
+        from app.models.charity import CharityDonation, CharityCause
         db.create_all()
+        
+        # Create default charity causes if they don't exist
+        try:
+            default_causes = [
+                {'cause_id': 'education', 'name': 'Edikasyon', 'description': 'Sipò pou edikasyon timoun ki nan bezwen', 'icon': '📚'},
+                {'cause_id': 'health', 'name': 'Sante', 'description': 'Sipò medikal pou moun ki malad', 'icon': '🏥'},
+                {'cause_id': 'community', 'name': 'Kominote', 'description': 'Pwojè kominotè ak devlopman lokal', 'icon': '🏘️'},
+                {'cause_id': 'food', 'name': 'Manje', 'description': 'Distribisyon manje pou moun ki grangou', 'icon': '🍲'},
+                {'cause_id': 'general', 'name': 'Jeneral', 'description': 'Don jeneral pou tout bezwen charitab', 'icon': '❤️'},
+            ]
+            for cause_data in default_causes:
+                existing = CharityCause.query.filter_by(cause_id=cause_data['cause_id']).first()
+                if not existing:
+                    import uuid
+                    cause = CharityCause(
+                        cause_id=cause_data['cause_id'],
+                        name=cause_data['name'],
+                        description=cause_data['description'],
+                        icon=cause_data['icon'],
+                        is_active=True
+                    )
+                    db.session.add(cause)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            app.logger.warning(f"Could not create default charity causes: {e}")
         
         # Create admin user
         try:

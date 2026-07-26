@@ -124,12 +124,17 @@ FILE_SIGNATURES = {
 
 
 def admin_required(f):
-    """Decorator to require admin access"""
+    """Decorator to require admin access - redirects to login if not admin"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         from flask_login import current_user
-        if not current_user.is_authenticated or not current_user.is_admin:
-            abort(403, description="Admin access required")
+        from flask import redirect, url_for, flash
+        if not current_user.is_authenticated:
+            flash('Ou dwe konekte pou aksede paj sa a.', 'warning')
+            return redirect(url_for('auth.login'))
+        if not current_user.is_admin:
+            flash('Ou pa gen aksè administrasyon.', 'error')
+            return redirect(url_for('main.index'))
         return f(*args, **kwargs)
     return decorated_function
 

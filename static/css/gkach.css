@@ -1,0 +1,715 @@
+/* ═══════════════════════════════════════════
+   GLORY2YAHPUB - GKACH (Virtual Currency)
+   Modern Wallet Design
+   ═══════════════════════════════════════════ */
+
+/* ═══ WALLET PAGE ═══ */
+.gkach-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: 100px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+}
+
+/* Balance Card */
+.gkach-balance-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 24px;
+    padding: 32px 24px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: gkachSlideUp 0.5s ease-out;
+}
+
+@keyframes gkachSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.gkach-balance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.gkach-balance-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.gkach-balance-icon {
+    font-size: 28px;
+}
+
+.gkach-balance-label {
+    font-size: 14px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.gkach-balance-amount {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.gkach-balance-subtitle {
+    font-size: 18px;
+    opacity: 0.8;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.gkach-balance-htg {
+    font-size: 20px;
+    opacity: 0.9;
+    font-weight: 600;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.gkach-balance-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+.gkach-balance-btn {
+    flex: 1;
+    max-width: 150px;
+    padding: 12px 20px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
+}
+
+.gkach-balance-btn-primary {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.gkach-balance-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
+}
+
+.gkach-balance-btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+}
+
+.gkach-balance-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-3px);
+}
+
+/* Section Title */
+.gkach-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Earnings Dashboard */
+.gkach-earnings {
+    margin-bottom: 24px;
+}
+
+.gkach-earnings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.gkach-earning-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.gkach-earning-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.gkach-earning-icon {
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    border-radius: 12px;
+}
+
+.gkach-earning-info {
+    flex: 1;
+}
+
+.gkach-earning-label {
+    font-size: 12px;
+    color: #65676b;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.gkach-earning-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+/* Referral Section */
+.gkach-referral {
+    margin-bottom: 24px;
+}
+
+.gkach-referral-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.gkach-referral-desc {
+    font-size: 14px;
+    color: #65676b;
+    margin: 0 0 12px 0;
+}
+
+.gkach-referral-link-box {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.gkach-referral-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e4e6eb;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #1a1a2e;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.gkach-referral-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+}
+
+.gkach-copy-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.gkach-copy-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.gkach-share-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.gkach-share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Transactions */
+.gkach-transactions {
+    margin-bottom: 24px;
+}
+
+.gkach-transactions-list {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.gkach-transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid #f0f2f5;
+    transition: all 0.2s ease;
+    animation: gkachFadeIn 0.3s ease;
+}
+
+@keyframes gkachFadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.gkach-transaction-item:last-child {
+    border-bottom: none;
+}
+
+.gkach-transaction-item:hover {
+    background: #f8f9fa;
+}
+
+.gkach-tx-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.gkach-tx-icon-in {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.gkach-tx-icon-out {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.gkach-tx-icon-sale {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.gkach-tx-icon-neutral {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.gkach-tx-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.gkach-tx-type {
+    font-weight: 600;
+    color: #1a1a2e;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.gkach-tx-desc {
+    font-size: 12px;
+    color: #65676b;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gkach-tx-date {
+    font-size: 11px;
+    color: #999;
+}
+
+.gkach-tx-amount {
+    font-weight: 700;
+    font-size: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gkach-tx-amount-in {
+    color: #2e7d32;
+}
+
+.gkach-tx-amount-out {
+    color: #c62828;
+}
+
+/* Empty State */
+.gkach-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.gkach-empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.gkach-empty-text {
+    color: #65676b;
+    margin: 0;
+    font-size: 15px;
+}
+
+/* ═══ TRANSFER & REQUEST PAGES ═══ */
+.gkach-page-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+}
+
+.gkach-page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.gkach-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 1px solid #e4e6eb;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.gkach-back-btn:hover {
+    background: #f0f2f5;
+    transform: translateX(-2px);
+}
+
+.gkach-page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.gkach-page-content {
+    display: grid;
+    gap: 20px;
+}
+
+.gkach-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.gkach-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.gkach-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 8px 0;
+}
+
+.gkach-card-subtitle {
+    color: #65676b;
+    font-size: 14px;
+    margin: 0 0 16px 0;
+}
+
+.gkach-balance-info {
+    color: #65676b;
+    font-size: 14px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #f0f9ff;
+    border-radius: 10px;
+    border: 1px solid #bae6fd;
+}
+
+.gkach-balance-info strong {
+    color: #0369a1;
+}
+
+/* Form Elements */
+.gkach-form-group {
+    margin-bottom: 20px;
+}
+
+.gkach-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.gkach-form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    color: #333;
+}
+
+.gkach-form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+}
+
+.gkach-form-control::placeholder {
+    color: #999;
+}
+
+.gkach-form-hint {
+    display: block;
+    color: #65676b;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.gkach-htg-preview {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #f0f9ff;
+    border-radius: 10px;
+    color: #0369a1;
+    font-size: 14px;
+    border: 1px solid #bae6fd;
+}
+
+/* Action Button */
+.gkach-action-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.gkach-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.gkach-action-btn:active {
+    transform: translateY(0);
+}
+
+.gkach-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.gkach-btn-primary:hover {
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+/* Activity Items */
+.gkach-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f2f5;
+    transition: all 0.2s ease;
+}
+
+.gkach-activity-item:last-child {
+    border-bottom: none;
+}
+
+.gkach-activity-item:hover {
+    background: #f8f9fa;
+    margin: 0 -24px;
+    padding: 16px 24px;
+    border-radius: 8px;
+}
+
+.gkach-activity-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.gkach-activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.gkach-activity-title {
+    font-size: 15px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.gkach-activity-date {
+    color: #65676b;
+    font-size: 13px;
+}
+
+.gkach-activity-status {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 4px;
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+
+.gkach-activity-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.gkach-activity-status.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.gkach-activity-status.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.gkach-activity-amount {
+    font-weight: 700;
+    font-size: 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gkach-activity-amount-in {
+    color: #2e7d32;
+}
+
+.gkach-activity-amount-out {
+    color: #c62828;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .gkach-page {
+        padding: 12px;
+    }
+
+    .gkach-balance-card {
+        padding: 24px 16px;
+        border-radius: 20px;
+    }
+
+    .gkach-balance-amount {
+        font-size: 48px;
+    }
+
+    .gkach-earnings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gkach-page-container {
+        padding: 12px;
+    }
+
+    .gkach-card {
+        padding: 16px;
+    }
+
+    .gkach-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

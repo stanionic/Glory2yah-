@@ -24,6 +24,7 @@ def create():
 @share_bp.route('/b/<batch_id>')
 def batch_click(batch_id):
     """Handle click on a shared batch link"""
+    from flask import redirect, url_for
     referrer = request.args.get('r')  # Referrer WhatsApp
     
     if referrer:
@@ -32,6 +33,5 @@ def batch_click(batch_id):
         except Exception as e:
             current_app.logger.error(f"Error tracking click: {e}")
             
-    # Redirect to the actual batch view or main index
-    # In Phase 4/5 we will show the batch ads as a TikTok-style feed
+    # Always redirect to main.index - preserves batch_id in URL for analytics
     return redirect(url_for('main.index', batch=batch_id))

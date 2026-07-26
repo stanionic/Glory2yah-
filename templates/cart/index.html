@@ -19,7 +19,7 @@
         {% set ad_id = ad.ad_id if ad else '' %}
         {% set ad_title = ad.title if ad else 'Pwodui' %}
         {% set ad_price = ad.price_gkach if ad else 0 %}
-        {% set ad_images = ad.get_images_list() if ad and hasattr(ad, 'get_images_list') else [] %}
+        {% set ad_images = ad.get_images_list() if ad is not mapping else [] %}
         
         <div class="cart-item" data-item-id="{{ item.id }}">
             <div class="item-image">

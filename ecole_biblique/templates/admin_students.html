@@ -71,7 +71,7 @@
                                 <span class="badge bg-secondary">-</span>
                                 {% endif %}
                             </td>
-                            <td>{{ data.modules_passed }}/21</td>
+                            <td>{{ data.modules_passed }}/{{ total_modules }}</td>
                             <td>${{ "%.0f"|format(data.total_paid) }}</td>
                             <td>
                                 {% if data.user.registration_completed %}

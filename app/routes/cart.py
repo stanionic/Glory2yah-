@@ -86,11 +86,16 @@ def remove(item_id):
 @cart_bp.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
-    """Checkout process"""
+    """Checkout process with optional charitable donation"""
+    from app.models.charity import CharityCause
+    
     items = CartService.get_user_cart(current_user.id)
     if not items:
         flash('Panier ou vid.', 'error')
         return redirect(url_for('main.index'))
+    
+    # Get active charity causes
+    charity_causes = CharityCause.query.filter_by(is_active=True).all()
         
     if request.method == 'POST':
         # Check if AJAX request
@@ -103,10 +108,20 @@ def checkout():
                 totals = CartService.calculate_totals(current_user.id)
                 total_price = totals.get('subtotal', 0)
                 
+                # Get donation data from form
+                donation_amount = int(request.form.get('donation_amount', 0) or 0)
+                donation_cause = request.form.get('donation_cause', 'general')
+                
+                # Validate donation
+                if donation_amount < 0:
+                    donation_amount = 0
+                
+                total_with_donation = total_price + donation_amount
+                
                 # Check balance
                 balance = GkachService.get_balance(current_user.whatsapp)
-                if balance < total_price:
-                    return jsonify({'success': False, 'error': 'Balans ensifisan'}), 400
+                if balance < total_with_donation:
+                    return jsonify({'success': False, 'error': f'Balans ensifisan. Ou bezwen {total_with_donation} Gkach men ou gen {balance} Gkach.'}), 400
                 
                 # Group items by seller
                 sellers = {}
@@ -128,7 +143,7 @@ def checkout():
                         } for item in seller_items
                     ]
                     
-                    DeliveryService.create_delivery(
+                    delivery = DeliveryService.create_delivery(
                         buyer_whatsapp=current_user.whatsapp,
                         seller_whatsapp=seller_whatsapp,
                         cart_items=cart_data,
@@ -136,10 +151,21 @@ def checkout():
                         delivery_address='Pou negosye'
                     )
                     
+                    # Process payment with donation
+                    GkachService.process_purchase(
+                        buyer_whatsapp=current_user.whatsapp,
+                        seller_whatsapp=seller_whatsapp,
+                        amount=seller_total,
+                        ad_id=item.product_id,
+                        delivery_id=delivery.delivery_id,
+                        donation_amount=donation_amount if seller_whatsapp == list(sellers.keys())[0] else 0,
+                        donation_cause=donation_cause
+                    )
+                    
                 # Clear cart after successful checkout
                 CartService.clear_cart(current_user.id)
                 
-                return jsonify({'success': True})
+                return jsonify({'success': True, 'donation': donation_amount > 0})
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)}), 500
         
@@ -161,6 +187,7 @@ def checkout():
         cart_items=items,
         subtotal=totals.get('subtotal', 0),
         balance=balance,
+        charity_causes=charity_causes,
         current_user=current_user
     )
 

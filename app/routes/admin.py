@@ -566,3 +566,144 @@ def mobile_config_update():
     return redirect(url_for('admin.mobile_config'))
 
 
+# ═══════════════════════════════════════════
+# CHARITY DONATION ADMIN ROUTES
+# ═══════════════════════════════════════════
+
+@admin_bp.route('/charity/donations')
+@login_required
+@admin_required
+def charity_donations():
+    """View all charitable donations"""
+    from app.models.charity import CharityDonation, CharityCause
+    from sqlalchemy import func
+    
+    # Get all donations ordered by date
+    donations = CharityDonation.query.order_by(CharityDonation.created_at.desc()).all()
+    
+    # Calculate stats
+    total_gkach = sum(d.amount_gkach for d in donations if d.status == 'completed') or 0
+    total_donations = len(donations)
+    total_donors = len(set(d.donor_whatsapp for d in donations if d.donor_whatsapp))
+    
+    # Breakdown by cause
+    cause_totals = db.session.query(
+        CharityDonation.cause,
+        func.sum(CharityDonation.amount_gkach).label('total')
+    ).filter(
+        CharityDonation.status == 'completed'
+    ).group_by(CharityDonation.cause).all()
+    
+    max_total = max([c.total for c in cause_totals], default=0)
+    cause_breakdown = []
+    for ct in cause_totals:
+        percentage = int((ct.total / max_total * 100)) if max_total > 0 else 0
+        cause_breakdown.append({
+            'cause': ct.cause,
+            'total': ct.total,
+            'percentage': percentage
+        })
+    
+    stats = {
+        'total_gkach': total_gkach,
+        'total_donations': total_donations,
+        'total_donors': total_donors
+    }
+    
+    # Get all charity causes
+    causes = CharityCause.query.all()
+    
+    donation_data = [d.to_dict() for d in donations]
+    
+    return render_template(
+        'admin_charity_donations.html',
+        donations=donation_data,
+        stats=stats,
+        cause_breakdown=cause_breakdown,
+        causes=causes,
+        current_user=current_user
+    )
+
+
+@admin_bp.route('/charity/causes/add', methods=['POST'])
+@login_required
+@admin_required
+def add_charity_cause():
+    """Add a new charitable cause"""
+    from app.models.charity import CharityCause
+    import uuid
+    
+    try:
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        icon = request.form.get('icon', '❤️').strip()
+        
+        if not name:
+            flash('Non kòz la obligatwa.', 'error')
+            return redirect(url_for('admin.charity_donations'))
+        
+        cause = CharityCause(
+            cause_id=str(uuid.uuid4()),
+            name=name,
+            description=description,
+            icon=icon,
+            is_active=True
+        )
+        db.session.add(cause)
+        db.session.commit()
+        flash(f'Kòz "{name}" kreye avèk siksè!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erè nan kreye kòz: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.charity_donations'))
+
+
+@admin_bp.route('/charity/causes/toggle', methods=['POST'])
+@login_required
+@admin_required
+def toggle_charity_cause():
+    """Toggle active status of a charitable cause"""
+    from app.models.charity import CharityCause
+    
+    try:
+        cause_id = request.form.get('cause_id')
+        cause = CharityCause.query.filter_by(cause_id=cause_id).first()
+        if not cause:
+            flash('Kòz pa jwenn.', 'error')
+            return redirect(url_for('admin.charity_donations'))
+        
+        cause.is_active = not cause.is_active
+        db.session.commit()
+        flash(f'Kòz "{cause.name}" {"aktive" if cause.is_active else "deaktive"} avèk siksè!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erè nan modifikasyon: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.charity_donations'))
+
+
+@admin_bp.route('/charity/causes/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_charity_cause():
+    """Delete a charitable cause"""
+    from app.models.charity import CharityCause
+    
+    try:
+        cause_id = request.form.get('cause_id')
+        cause = CharityCause.query.filter_by(cause_id=cause_id).first()
+        if not cause:
+            flash('Kòz pa jwenn.', 'error')
+            return redirect(url_for('admin.charity_donations'))
+        
+        db.session.delete(cause)
+        db.session.commit()
+        flash(f'Kòz "{cause.name}" efase avèk siksè!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erè nan efase: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.charity_donations'))
+
+

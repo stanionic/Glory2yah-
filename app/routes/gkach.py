@@ -11,6 +11,12 @@ from app.utils.validators import ValidationError
 gkach_bp = Blueprint('gkach', __name__)
 
 
+@gkach_bp.route('/')
+def index():
+    """Redirect to wallet"""
+    return redirect(url_for('gkach.wallet'))
+
+
 @gkach_bp.route('/wallet')
 @login_required
 def wallet():
