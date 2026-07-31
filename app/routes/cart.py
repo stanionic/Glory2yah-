@@ -100,84 +100,83 @@ def checkout():
     if request.method == 'POST':
         # Check if AJAX request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            from app.services.delivery_service import DeliveryService
+            from app.services.gkach_service import GkachService
+            from app import db
+
+            totals = CartService.calculate_totals(current_user.id)
+            total_price = totals.get('subtotal', 0)
+
+            donation_amount = int(request.form.get('donation_amount', 0) or 0)
+            donation_cause = request.form.get('donation_cause', 'general')
+
+            if donation_amount < 0:
+                donation_amount = 0
+
+            total_with_donation = total_price + donation_amount
+
+            balance = GkachService.get_balance(current_user.whatsapp)
+            if balance < total_with_donation:
+                return jsonify({'success': False, 'error': f'Balans ensifisan. Ou bezwen {total_with_donation} Gkach men ou gen {balance} Gkach.'}), 400
+
+            sellers = {}
+            for item in items:
+                ad = item.ad
+                if ad.user_whatsapp not in sellers:
+                    sellers[ad.user_whatsapp] = []
+                sellers[ad.user_whatsapp].append(item)
+
+            # P1 FIX: single transaction for ALL sellers (atomic multi-seller checkout)
+            # P1 FIX: escrow_hold=True — funds to ESCROW account, NOT direct seller (fixes double charge contradiction)
+            any_error = None
             try:
-                from app.services.delivery_service import DeliveryService
-                from app.services.gkach_service import GkachService
-                from app import db
+                _first_seller = list(sellers.keys())[0] if sellers else None
+                donation_applied = False
 
-                totals = CartService.calculate_totals(current_user.id)
-                total_price = totals.get('subtotal', 0)
+                for seller_whatsapp, seller_items in sellers.items():
+                    seller_total = sum(item.ad.price_gkach * item.quantity for item in seller_items)
+                    cart_data = [
+                        {
+                            'ad_id': item.product_id,
+                            'ad_title': item.ad.title,
+                            'quantity': item.quantity,
+                            'price': item.ad.price_gkach
+                        } for item in seller_items
+                    ]
 
-                donation_amount = int(request.form.get('donation_amount', 0) or 0)
-                donation_cause = request.form.get('donation_cause', 'general')
+                    delivery = DeliveryService.create_delivery(
+                        buyer_whatsapp=current_user.whatsapp,
+                        seller_whatsapp=seller_whatsapp,
+                        cart_items=cart_data,
+                        total_price=seller_total,
+                        delivery_address='Pou negosye'
+                    )
 
-                if donation_amount < 0:
-                    donation_amount = 0
+                    # Only one seller charges the donation (first seller only)
+                    this_donation = 0
+                    this_cause = donation_cause
+                    if (donation_amount > 0) and (not donation_applied) and (seller_whatsapp == _first_seller):
+                        this_donation = donation_amount
+                        donation_applied = True
 
-                total_with_donation = total_price + donation_amount
+                    GkachService.process_purchase(
+                        buyer_whatsapp=current_user.whatsapp,
+                        seller_whatsapp=seller_whatsapp,
+                        amount=seller_total,
+                        ad_id=seller_items[0].product_id,
+                        delivery_id=delivery.delivery_id,
+                        donation_amount=this_donation,
+                        donation_cause=this_cause,
+                        escrow_hold=True
+                    )
 
-                balance = GkachService.get_balance(current_user.whatsapp)
-                if balance < total_with_donation:
-                    return jsonify({'success': False, 'error': f'Balans ensifisan. Ou bezwen {total_with_donation} Gkach men ou gen {balance} Gkach.'}), 400
-
-                sellers = {}
-                for item in items:
-                    ad = item.ad
-                    if ad.user_whatsapp not in sellers:
-                        sellers[ad.user_whatsapp] = []
-                    sellers[ad.user_whatsapp].append(item)
-
-                # P1 FIX: single transaction for ALL sellers (atomic multi-seller checkout)
-                # P1 FIX: escrow_hold=True — funds to ESCROW account, NOT direct seller (fixes double charge contradiction)
-                any_error = None
-                try:
-                    _first_seller = list(sellers.keys())[0] if sellers else None
-                    donation_applied = False
-
-                    for seller_whatsapp, seller_items in sellers.items():
-                        seller_total = sum(item.ad.price_gkach * item.quantity for item in seller_items)
-                        cart_data = [
-                            {
-                                'ad_id': item.product_id,
-                                'ad_title': item.ad.title,
-                                'quantity': item.quantity,
-                                'price': item.ad.price_gkach
-                            } for item in seller_items
-                        ]
-
-                        delivery = DeliveryService.create_delivery(
-                            buyer_whatsapp=current_user.whatsapp,
-                            seller_whatsapp=seller_whatsapp,
-                            cart_items=cart_data,
-                            total_price=seller_total,
-                            delivery_address='Pou negosye'
-                        )
-
-                        # Only one seller charges the donation (first seller only)
-                        this_donation = 0
-                        this_cause = donation_cause
-                        if (donation_amount > 0) and (not donation_applied) and (seller_whatsapp == _first_seller):
-                            this_donation = donation_amount
-                            donation_applied = True
-
-                        GkachService.process_purchase(
-                            buyer_whatsapp=current_user.whatsapp,
-                            seller_whatsapp=seller_whatsapp,
-                            amount=seller_total,
-                            ad_id=seller_items[0].product_id,
-                            delivery_id=delivery.delivery_id,
-                            donation_amount=this_donation,
-                            donation_cause=this_cause,
-                            escrow_hold=True
-                        )
-
-                    CartService.clear_cart(current_user.id)
-                    db.session.commit()
-                    return jsonify({'success': True, 'donation': donation_amount > 0})
-                except Exception as e:
-                    db.session.rollback()
-                    any_error = e
-                    return jsonify({'success': False, 'error': str(any_error)}), 500
+                CartService.clear_cart(current_user.id)
+                db.session.commit()
+                return jsonify({'success': True, 'donation': donation_amount > 0})
+            except Exception as e:
+                db.session.rollback()
+                any_error = e
+                return jsonify({'success': False, 'error': str(any_error)}), 500
 
         # Regular form submission — P1 FIX: correct endpoint name my_deliveries
         flash('Kòmand voye bay vandè yo!', 'success')
