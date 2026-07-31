@@ -83,16 +83,35 @@ class DeliveryService:
     
     @staticmethod
     def set_delivery_cost(delivery_id, cost):
-        """Set delivery cost (seller action)"""
+        """Set delivery cost (seller action).
+        P1 FIX V08: only allowed during negotiation / awaiting_buyer_confirmation.
+        Status already past this phase (confirmed/delivered/completed) = BLOCKED.
+        Prevents seller price tamper after buyer signed / paid."""
         delivery = DeliveryService.get_delivery(delivery_id)
-        delivery.delivery_cost = int(cost)
+        if delivery.status not in ('negotiating', 'awaiting_buyer_confirmation'):
+            raise ValidationError(
+                "Pri livrezon deja konfime pa achtè a, pa kapab modifye l ankò."
+            )
+        try:
+            cost_int = int(cost)
+            if cost_int < 0:
+                raise ValueError("negative")
+        except (TypeError, ValueError):
+            raise ValidationError("Pri livrezon invalide, yo resevwa nonb antye ki pozitif sèlman")
+        delivery.delivery_cost = cost_int
         delivery.status = 'awaiting_buyer_confirmation'
         db.session.commit()
         return delivery
     
     @staticmethod
     def confirm_delivery(delivery_id, buyer_whatsapp):
-        """Buyer confirms the purchase terms (not final pay — escrow already held at checkout per P1 FIX V07)"""
+        """Buyer confirms the purchase terms.
+        P1 FIX V08 (DOUBLE-PAY HOTFIX):
+          - Buyer DEDUCTS grand_total ONCE here (reserved = virtual escrow)
+          - Seller is NOT paid yet at this step (only after mark_completed below)
+          - Prevents legacy deduct+credit bug that caused seller 2× payout on confirm + complete.
+        Escrow_held status: reserved at checkout; skip deduct so it's not double-withdrawn.
+        """
         from app.services.gkach_service import GkachService as _GS
         delivery = DeliveryService.get_delivery(delivery_id)
         buyer_whatsapp = validate_whatsapp(buyer_whatsapp)
@@ -100,33 +119,40 @@ class DeliveryService:
         if delivery.buyer_whatsapp != buyer_whatsapp:
             raise ValidationError("Se sèlman achtè a ki ka konfime")
 
+        if delivery.status in ('awaiting_delivery', 'completed', 'cancelled'):
+            raise ValidationError("Livrezon sa a deja konfime, pa kapab re-konfime")
+
         grand_total = delivery.total_price + delivery.delivery_cost
 
-        # P1 FIX V07: if delivery is paid via escrow_hold at checkout, status starts at 'escrow_held'
-        # Else legacy path (direct manual delivery): deduct + pay now (old fallback for mixed data).
+        # Deduct buyer ONCE only here (reserve). Seller gets paid ONLY on mark_completed (not here).
         if getattr(delivery, 'status', '') != 'escrow_held':
-            _GS.deduct_balance(
-                buyer_whatsapp,
-                grand_total,
-                f"Payment for delivery {delivery_id}",
-                'purchase'
-            )
-            _GS.add_balance(
-                delivery.seller_whatsapp,
-                grand_total,
-                f"Payment received for delivery {delivery_id}",
-                'sale'
-            )
+            if grand_total > 0:
+                _GS.deduct_balance(
+                    buyer_whatsapp,
+                    grand_total,
+                    f"Reserve peman livrezon {delivery_id} (en attente resepsyon)",
+                    'purchase_hold',
+                    _commit=False
+                )
 
         delivery.status = 'awaiting_delivery'
         delivery.confirmed_at = db.func.now()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise ValidationError(f"Erè nan konfime: {e}")
 
         return delivery
 
     @staticmethod
     def mark_completed(delivery_id):
-        """Mark delivery as completed — P1 FIX V07: release escrow hold + pay seller (commission already reserved)"""
+        """Mark delivery as completed (buyer received goods).
+        P1 FIX V08 (single payout): release buyer reserve → pay seller ONCE only here.
+        Removes legacy "add_balance fallback" blind-fire (that always doubled payout
+        because release_escrow method did not exist in GkachService → always excepted).
+        Now: direct atomic add_balance + commit → ONE transfer, never double.
+        """
         from app.services.gkach_service import GkachService as _GS
         delivery = DeliveryService.get_delivery(delivery_id)
 
@@ -135,23 +161,21 @@ class DeliveryService:
 
         grand_total = delivery.total_price + delivery.delivery_cost
 
-        try:
-            _GS.release_escrow(delivery.delivery_id, delivery.seller_whatsapp)
-        except Exception as exc:
-            try:
-                db.session.rollback()
-            except Exception:
-                pass
-            # Fallback: if escrow record missing, direct pay (mixed legacy datasets)
+        if grand_total > 0:
             _GS.add_balance(
                 delivery.seller_whatsapp,
                 grand_total,
-                f"Payment received for delivery {delivery_id} (direct fallback)",
-                'sale'
+                f"Peman final livrezon {delivery_id} (vantès resevwa konfime)",
+                'sale',
+                _commit=False
             )
 
         delivery.status = 'completed'
         delivery.delivered_at = db.func.now()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise ValidationError(f"Erè nan finalize peman: {e}")
 
         return delivery
