@@ -4,11 +4,11 @@ Modern Flask application with Redis caching and modular architecture
 """
 import os
 import logging
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
@@ -429,6 +429,26 @@ def register_error_handlers(app):
         except Exception:
             pass
         return render_template('error.html'), 500
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(e):
+        """P1 FIX: friendly CSRF error instead of blank white 'Bad Request The CSRF session token is missing.'"""
+        from flask import url_for as _uf
+        # Session expired / fresh visitor → redirect to where they were (or home) + flash notice.
+        # For login/register/posts with CSRF missing → send user back with regeneration (new session + new token).
+        msg = (
+            "Sesyon ou an ekspire oswa token sekirite pa t la (CSRF token missing). "
+            "Tanpri eseye ankò (paj lan te re-chaje avèk nouvo token)."
+        )
+        try:
+            flash(msg, "error")
+        except Exception:
+            pass
+        target = request.referrer or _uf('main.index')
+        # Never redirect back to /error page, loop prevention
+        if '/error' in target:
+            target = _uf('main.index')
+        return redirect(target, code=303)
 
 
 def register_template_filters(app):

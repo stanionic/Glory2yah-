@@ -3,16 +3,41 @@ Configuration Management for Glory2YahPub
 Supports: Development, Staging, Production
 """
 import os
+import secrets
 from datetime import timedelta
+
+
+def _load_secret_key():
+    """Load or generate a persistent SECRET_KEY (never None)."""
+    env_key = os.environ.get('SECRET_KEY', '')
+    weak = ('', 'your-secret-key-here-change-this-in-production', 'None', None)
+    if env_key not in weak:
+        return env_key
+    secret_key_file = '.flask_secret_key'
+    if os.path.exists(secret_key_file):
+        try:
+            with open(secret_key_file, 'r') as f:
+                data = f.read().strip()
+                if data:
+                    return data
+        except Exception:
+            pass
+    key = secrets.token_hex(32)
+    try:
+        with open(secret_key_file, 'w') as f:
+            f.write(key)
+    except Exception:
+        pass
+    return key
 
 
 class Config:
     """Base configuration"""
-    
-    # App
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+
+    # App — persistent SECRET_KEY via _load_secret_key() (env > file > auto-generated)
+    SECRET_KEY = _load_secret_key()
     APP_NAME = 'Glory2YahPub'
-    
+
     # Database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -46,7 +71,12 @@ class Config:
     
     # Security
     WTF_CSRF_ENABLED = True
+    # P1 FIX CSRF: no expiry (users with long open login tabs don't get Bad Request on submit)
     WTF_CSRF_TIME_LIMIT = None
+    # P1 FIX CSRF: token lives in SESSION (default); ensure we don't SSL-check mismatch on Render proxy
+    WTF_CSRF_SSL_CHECKS = False
+    WTF_CSRF_METHODS = {'POST', 'PUT', 'PATCH', 'DELETE'}
+    WTF_CSRF_HEADERS = ['X-CSRFToken', 'X-CSRF-Token']
     BCRYPT_LOG_ROUNDS = 12
     
     # Rate Limiting
@@ -89,24 +119,6 @@ class Config:
         pass
 
 
-import secrets
-import os
-
-def _load_secret_key():
-    """Load or generate a persistent secret key"""
-    key = os.environ.get('SECRET_KEY')
-    if key and key != 'your-secret-key-here-change-this-in-production':
-        return key
-    secret_key_file = '.flask_secret_key'
-    if os.path.exists(secret_key_file):
-        with open(secret_key_file, 'r') as f:
-            return f.read().strip()
-    key = secrets.token_hex(32)
-    with open(secret_key_file, 'w') as f:
-        f.write(key)
-    return key
-
-
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
@@ -131,7 +143,7 @@ class TestingConfig(Config):
     """Testing configuration"""
     DEBUG = True
     TESTING = True
-    
+
     SECRET_KEY = _load_secret_key()
     
     # Use in-memory SQLite for tests  (pool options not supported by SQLite)
@@ -164,7 +176,7 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     TESTING = False
-    
+
     # Production-only Overrides
     REDIS_URL = os.environ.get('REDIS_URL')
     CACHE_REDIS_URL = os.environ.get('REDIS_URL')
@@ -172,9 +184,21 @@ class ProductionConfig(Config):
     CELERY_BROKER_URL = os.environ.get('REDIS_URL')
     CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
 
-    # Strict security
-    SESSION_COOKIE_SECURE = True
-    
+    # Strict security: SESSION_COOKIE_SECURE on Render / HTTPS proxies.
+    # Auto-detect if we are behind TLS proxy (PORT=10000 Render convention / SECURE_PROXY_SSL_HEADER env)
+    # If user explicitly set SESSION_COOKIE_SECURE env (0/1), respect that; else True for HTTPS safety.
+    _cookie_secure_env = os.environ.get('SESSION_COOKIE_SECURE', None)
+    if _cookie_secure_env is not None:
+        SESSION_COOKIE_SECURE = str(_cookie_secure_env) not in ('0', 'false', 'False', 'no', 'off')
+    else:
+        SESSION_COOKIE_SECURE = bool(os.environ.get('DYNO') or os.environ.get('RENDER') or os.environ.get('PORT'))
+
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+
     # Production logging
     LOG_LEVEL = 'WARNING'
 
