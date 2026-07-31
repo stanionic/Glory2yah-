@@ -32,12 +32,13 @@ TERMS_VERSION = '1.0'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = 'static/uploads/ecole_payments'
 
-# Fee structure
-FREE_MODULES = 20  # All 20 modules free
-FREE_STUDENT_FEE_PER_BLOCK = 0  # No fee per block for free students
-FREE_STUDENT_GRADUATION_FEE = 100  # $100 graduation fee
-PAID_STUDENT_FEE_PER_BLOCK = 0  # No fee per block for paid students
-PAID_STUDENT_TOTAL = 600  # $600 total
+# Fee structure — Cycle 2026
+FREE_MODULES = 3                       # 3 premiers modules = 100 % gratuits tout le monde
+FREE_STUDENT_FEE_PER_BLOCK = 30        # Étudiant gratuit : $30 USD par bloc TANDEM (2 modules) après #3
+FREE_STUDENT_GRADUATION_FEE = 100      # Frais de graduation étudiant gratuit
+PAID_STUDENT_FEE_PER_BLOCK = 0         # Étudiant payant : blocs TANDEM inclus (total $600)
+PAID_STUDENT_TOTAL = 600               # Paiement unique étudiant payant (inclut blocs + graduation + Bachelor)
+TANDEM_BLOCK_SIZE = 2                  # Modules 4+ se débloquent 2 par 2 en tandem
 
 
 def allowed_file(filename):
@@ -116,9 +117,39 @@ def init_student_modules(student_id):
 
 
 def get_module_fee(student_type, module_number):
-    """Calculate fee for a given module based on student type"""
-    # All 20 modules are free
-    return 0
+    """Calculate fee for a given module based on student type + tandem blocks.
+
+    Business rules Cycle 2026 :
+      - Modules 1..FREE_MODULES (1, 2, 3) : GRATUITS pour TOUS les étudiants.
+      - Modules 4+ : par blocs de TANDEM_BLOCK_SIZE (2) appelés "blocs tandem".
+        L'étudiant paie UNE SEULE FOIS le frais du bloc pour débloquer les
+        2 modules qui le composent. Le frais est facturé sur le PREMIER module
+        impair de chaque bloc (4, 6, 8, ..., 20). Le module pair qui suit
+        (5, 7, 9, ..., 21) est alors gratuit car déjà couvert.
+      - Student gratuit : FREE_STUDENT_FEE_PER_BLOCK ($30 USD) par bloc tandem.
+      - Student payant  : blocs tandem inclus dans le $600 (frais = $0).
+    """
+    if not isinstance(module_number, int) or module_number <= FREE_MODULES:
+        return 0
+
+    if module_number > TOTAL_MODULES:
+        return 0
+
+    # Modules 4+ : chaque bloc est [pair_impair 4,5] [6,7] [8,9] ...
+    # Premier module du bloc = module_number % TANDEM_BLOCK_SIZE == 0 when TANDEM_BLOCK_SIZE==2 and number>=4 even
+    if TANDEM_BLOCK_SIZE == 2:
+        is_first_of_block = (module_number % 2 == 0)  # 4,6,8...20
+    else:
+        offset = module_number - FREE_MODULES - 1
+        is_first_of_block = (offset % TANDEM_BLOCK_SIZE == 0)
+
+    if not is_first_of_block:
+        # Deuxième module du bloc tandem : déjà payé via le premier module
+        return 0
+
+    if student_type == 'payant':
+        return PAID_STUDENT_FEE_PER_BLOCK  # 0 (inclus)
+    return FREE_STUDENT_FEE_PER_BLOCK  # 30 USD par bloc pour gratuit
 
 
 def get_graduation_fee(student_type):
@@ -394,7 +425,21 @@ def complete_registration():
             db.session.commit()
             log_audit(ecole_user.id, 'complete_registration',
                       f'Student {first_name} {last_name} completed registration as {student_type}')
-            flash('Inscription complétée avec succès ! Bienvenue à l\'École Biblique.', 'success')
+
+            # Auto-start Module #1 (set started_at immediately so timeline begins)
+            mod1 = Module.query.filter_by(number=1).first()
+            if mod1:
+                sm1 = StudentModule.query.filter_by(student_id=ecole_user.id, module_id=mod1.id).first()
+                if sm1 and not sm1.started_at:
+                    sm1.started_at = datetime.utcnow()
+                    db.session.commit()
+                    log_audit(ecole_user.id, 'module_started',
+                              f'Auto-start Module #1 immediately post-registration (route {student_type})')
+
+            flash('Inscription complétée avec succès ! Bienvenue à l\'École Biblique. '
+                  'Vous commencez dès maintenant le Module #1.', 'success')
+            if mod1:
+                return redirect(url_for('ecole_biblique.module_detail', module_id=mod1.id))
             return redirect(url_for('ecole_biblique.student_dashboard'))
 
     return render_template('complete_registration.html',
@@ -651,10 +696,13 @@ def module_detail(module_id):
         flash('Module non trouvé pour cet étudiant.', 'error')
         return redirect(url_for('ecole_biblique.view_modules'))
 
-    # Check if deadline passed
+    # Check if deadline passed — after 30 Novembre, exams are closed for students
     deadline_passed = check_exam_deadline()
     if deadline_passed and ecole_user.role == 'student':
-        flash('La date limite des examens (30 Novembre 2026) est dépassée. Veuillez contacter l\'administration.', 'warning')
+        flash(f'La date limite des examens ({EXAM_DEADLINE.strftime("%d %B %Y")}) est dépassée. '
+              f'Tous les examens et paiements devaient être soldés avant cette date. '
+              f'Veuillez contacter l\'administration.', 'error')
+        return redirect(url_for('ecole_biblique.student_dashboard'))
 
     # Check module lock
     if sm.locked and ecole_user.role == 'student':
@@ -666,7 +714,7 @@ def module_detail(module_id):
                 flash('Vous devez réussir le module précédent avant de continuer.', 'warning')
                 return redirect(url_for('ecole_biblique.view_modules'))
 
-        # Check if fee is required
+        # Check if fee is required for module (tandem block paid on FIRST-OF-BLOCK only — already computed by get_module_fee)
         fee = get_module_fee(ecole_user.student_type, module.number)
         if fee > 0:
             payment = Payment.query.filter_by(
@@ -676,37 +724,67 @@ def module_detail(module_id):
                 payment_type='module_fee'
             ).first()
             if not payment:
-                flash(f'Paiement requis pour accéder à ce module. Frais: ${fee} USD.', 'warning')
-                return redirect(url_for('ecole_biblique.make_payment', module_number=module.number))
+                # Tandem block coverage check: if THIS module is the SECOND in the block (odd # >=5),
+                # a payment on the first-of-block (module_number-1) ALSO counts as payment for both.
+                if TANDEM_BLOCK_SIZE == 2 and module.number > FREE_MODULES and module.number % 2 == 1:
+                    first_of_block = module.number - 1  # e.g. 5 -> 4
+                    pair_payment = Payment.query.filter_by(
+                        student_id=ecole_user.id,
+                        module_number=first_of_block,
+                        status='approved',
+                        payment_type='module_fee'
+                    ).first()
+                    if not pair_payment:
+                        # Redirect to pay for first-of-block (since it's cheaper & covers both)
+                        flash(f'Paiement du bloc tandem requis pour débloquer Modules #{first_of_block} et #{module.number}. '
+                              f'Frais bloc: ${get_module_fee(ecole_user.student_type, first_of_block)} USD.',
+                              'warning')
+                        return redirect(url_for('ecole_biblique.make_payment', module_number=first_of_block))
+                else:
+                    flash(f'Paiement requis pour accéder à ce module. Frais: ${fee} USD.', 'warning')
+                    return redirect(url_for('ecole_biblique.make_payment', module_number=module.number))
 
+    # Teacher/Admin grade update — also blocked AFTER 30 Novembre (scores frozen)
     if request.method == 'POST' and ecole_user.role in ['teacher', 'admin']:
-        exam_score = request.form.get('exam_score')
-        assignments_score = request.form.get('assignments_score')
+        if check_exam_deadline():
+            flash(f'Impossible de modifier les notes après le {EXAM_DEADLINE.strftime("%d %B %Y")}. '
+                  f'Cycle 2026 est terminé.', 'error')
+        else:
+            exam_score = request.form.get('exam_score')
+            assignments_score = request.form.get('assignments_score')
+            if exam_score is not None and assignments_score is not None:
+                try:
+                    sm.exam_score = float(exam_score)
+                    sm.assignments_score = float(assignments_score)
+                    calculate_student_module_grade(sm)
+                    sm.completed_at = datetime.utcnow()
+                    db.session.commit()
 
-        if exam_score is not None and assignments_score is not None:
-            try:
-                sm.exam_score = float(exam_score)
-                sm.assignments_score = float(assignments_score)
-                calculate_student_module_grade(sm)
-                sm.completed_at = datetime.utcnow()
-                db.session.commit()
+                    # Unlock next module if passed
+                    if sm.passed:
+                        next_module = Module.query.filter_by(number=module.number + 1).first()
+                        if next_module:
+                            next_sm = StudentModule.query.filter_by(
+                                student_id=ecole_user.id, module_id=next_module.id
+                            ).first()
+                            if next_sm:
+                                next_sm.locked = False
+                                db.session.commit()
 
-                # Unlock next module if passed
-                if sm.passed:
-                    next_module = Module.query.filter_by(number=module.number + 1).first()
-                    if next_module:
-                        next_sm = StudentModule.query.filter_by(
-                            student_id=ecole_user.id, module_id=next_module.id
-                        ).first()
-                        if next_sm:
-                            next_sm.locked = False
-                            db.session.commit()
+                    log_audit(ecole_user.id if ecole_user.role == 'teacher' else ecole_user.id,
+                             'grade_updated', f'Module {module.number}: Exam={exam_score}, Assignments={assignments_score}')
+                    flash(f'Notes du module {module.number} mises à jour avec succès.', 'success')
+                except (ValueError, TypeError):
+                    flash('Veuillez entrer des notes valides.', 'error')
 
-                log_audit(ecole_user.id if ecole_user.role == 'teacher' else ecole_user.id,
-                         'grade_updated', f'Module {module.number}: Exam={exam_score}, Assignments={assignments_score}')
-                flash(f'Notes du module {module.number} mises à jour avec succès.', 'success')
-            except (ValueError, TypeError):
-                flash('Veuillez entrer des notes valides.', 'error')
+    # Auto-start: first time viewing module #1, mark started_at
+    if module.number == 1 and not sm.started_at and ecole_user.role == 'student':
+        sm.started_at = datetime.utcnow()
+        try:
+            db.session.commit()
+            log_audit(ecole_user.id, 'module_started', 'Démarrage automatique du Module #1 après inscription complète')
+        except Exception:
+            db.session.rollback()
 
     return render_template('module_detail.html',
                          module=module,
