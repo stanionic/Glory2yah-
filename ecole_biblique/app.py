@@ -10,6 +10,7 @@ import json
 from datetime import datetime, date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from flask_login import login_required, current_user
+from jinja2 import TemplateNotFound
 from werkzeug.utils import secure_filename
 from app import db
 from ecole_biblique.models import (
@@ -196,60 +197,92 @@ def login():
 
 @ecole_biblique_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated and get_ecole_user():
-        return redirect(url_for('ecole_biblique.index'))
+    try:
+        if current_user.is_authenticated and get_ecole_user():
+            return redirect(url_for('ecole_biblique.index'))
+    except Exception as _e:
+        current_app.logger.warning("register auth guard failed: %s", _e)
 
     if request.method == 'POST':
-        from app.models.user import User
+        try:
+            from app.models.user import User
 
-        if current_user.is_authenticated:
-            full_name = request.form.get('full_name', current_user.name or current_user.pseudo or '').strip()
-            whatsapp = current_user.whatsapp
-            role = 'student'
-        else:
-            full_name = request.form.get('full_name', '').strip()
-            whatsapp = request.form.get('whatsapp', '').strip()
-            password = request.form.get('password', '').strip()
-            role = 'student'
+            if current_user.is_authenticated:
+                full_name = request.form.get('full_name', current_user.name or current_user.pseudo or '').strip()
+                whatsapp = current_user.whatsapp
+                role = 'student'
+            else:
+                full_name = request.form.get('full_name', '').strip()
+                whatsapp = request.form.get('whatsapp', '').strip()
+                password = request.form.get('password', '').strip()
+                role = 'student'
 
-        if not full_name or not whatsapp:
-            flash('Nom et numéro WhatsApp obligatoires.', 'error')
-            return render_template('register.html')
+            if not full_name or not whatsapp:
+                flash('Nom et numéro WhatsApp obligatoires.', 'error')
+                return _safe_register_render()
 
-        if EcoleUser.query.filter_by(whatsapp=whatsapp).first():
-            flash('Ce numéro WhatsApp est déjà enregistré à l\'École Biblique.', 'error')
-        else:
-            main_user = User.query.filter_by(whatsapp=whatsapp).first()
-            if not main_user and not current_user.is_authenticated:
-                main_user = User(
-                    whatsapp=whatsapp,
-                    pseudo=full_name,
-                    name=full_name,
-                    auth_provider='whatsapp',
-                    is_active=True
-                )
-                main_user.set_password(password)
-                db.session.add(main_user)
-                db.session.flush()
+            if EcoleUser.query.filter_by(whatsapp=whatsapp).first():
+                flash('Ce numéro WhatsApp est déjà enregistré à l\'École Biblique.', 'error')
+            else:
+                try:
+                    main_user = User.query.filter_by(whatsapp=whatsapp).first()
+                    if not main_user and not current_user.is_authenticated:
+                        main_user = User(
+                            whatsapp=whatsapp,
+                            pseudo=full_name,
+                            name=full_name,
+                            auth_provider='whatsapp',
+                            is_active=True
+                        )
+                        main_user.set_password(password)
+                        db.session.add(main_user)
+                        db.session.flush()
 
-            ecole_user = EcoleUser(full_name=full_name, whatsapp=whatsapp, role=role)
-            # Use the provided password; if user is already authenticated, they already have a main app password
-            ecole_user.set_password(password if password else 'ecole_only')
-            db.session.add(ecole_user)
-            db.session.flush()
+                    ecole_user = EcoleUser(full_name=full_name, whatsapp=whatsapp, role=role)
+                    ecole_user.set_password(password if password else 'ecole_only')
+                    db.session.add(ecole_user)
+                    db.session.flush()
 
-            if role == 'student':
-                student = EcoleStudent.query.filter_by(whatsapp=whatsapp).first()
-                if not student:
-                    student = EcoleStudent(full_name=full_name, whatsapp=whatsapp)
-                    db.session.add(student)
+                    if role == 'student':
+                        student = EcoleStudent.query.filter_by(whatsapp=whatsapp).first()
+                        if not student:
+                            student = EcoleStudent(full_name=full_name, whatsapp=whatsapp)
+                            db.session.add(student)
 
-            db.session.commit()
-            log_audit(ecole_user.id, 'register', f'User registered as {role}')
-            flash('Inscription à l\'École Biblique réussie !', 'success')
-            return redirect(url_for('ecole_biblique.index'))
+                    db.session.commit()
+                    log_audit(ecole_user.id, 'register', f'User registered as {role}')
+                    flash('Inscription à l\'École Biblique réussie !', 'success')
+                    return redirect(url_for('ecole_biblique.index'))
+                except Exception as inner:
+                    db.session.rollback()
+                    current_app.logger.error("register POST commit failed: %s", inner, exc_info=True)
+                    flash('Erreur lors de l\'inscription. Réessayez s\'il vous plaît.', 'error')
+        except Exception as outer:
+            db.session.rollback()
+            current_app.logger.error("register POST handler failed: %s", outer, exc_info=True)
+            flash('Une erreur est survenue pendant l\'inscription.', 'error')
 
-    return render_template('register.html')
+    return _safe_register_render()
+
+
+def _safe_register_render():
+    """Render register.html with TemplateNotFound + generic exception fallback
+    (avoids HTTP 500 on Render production when template or dependency missing)."""
+    try:
+        return render_template('register.html')
+    except TemplateNotFound:
+        current_app.logger.error(
+            "ecole_biblique.register: template register.html missing on disk."
+        )
+        flash('Page inscription temporairement indisponible.', 'error')
+        return redirect(url_for('main.index'))
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error(
+            "ecole_biblique.register render failed: %s", exc, exc_info=True
+        )
+        flash('Page inscription temporairement indisponible.', 'error')
+        return redirect(url_for('main.index'))
 
 
 @ecole_biblique_bp.route('/logout')
