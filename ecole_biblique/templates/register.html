@@ -18,6 +18,19 @@
 {% endblock %}
 
 {% block eb_content %}
+{% set main_user = none %}
+{% if current_user and current_user.is_authenticated and current_user.whatsapp is defined %}
+  {% set main_user = current_user %}
+{% endif %}
+{% set prefill_name = '' %}
+{% set prefill_whatsapp = '' %}
+{% set prefill_role = 'student' %}
+{% if main_user %}
+  {% set prefill_name = main_user.name or main_user.pseudo or '' %}
+  {% set prefill_whatsapp = main_user.whatsapp or '' %}
+{% endif %}
+{% set is_auth = (main_user is not none) %}
+
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card">
@@ -25,28 +38,80 @@
                 <h3>Register</h3>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" autocomplete="off" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="full_name" class="form-label">Pseudo</label>
-                        <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        <input type="text"
+                               class="form-control"
+                               id="full_name"
+                               name="full_name"
+                               placeholder="Non ou pseudo"
+                               value="{{ request.form.get('full_name', prefill_name) }}"
+                               autocomplete="off"
+                               data-lpignore="true"
+                               required>
                     </div>
                     <div class="mb-3">
                         <label for="whatsapp" class="form-label">WhatsApp Number</label>
-                        <input type="text" class="form-control" id="whatsapp" name="whatsapp" required>
+                        {% if is_auth and prefill_whatsapp %}
+                        <input type="text"
+                               class="form-control"
+                               id="whatsapp"
+                               name="whatsapp"
+                               value="{{ prefill_whatsapp }}"
+                               readonly
+                               style="background-color: #f0f4ff; color: #333;">
+                        <div class="form-text">Konekte avek kont Glory2Yah ou → nimewo sa a fiks.</div>
+                        {% else %}
+                        <input type="tel"
+                               class="form-control"
+                               id="whatsapp"
+                               name="whatsapp"
+                               placeholder="+509XXXXXXXX"
+                               value="{{ request.form.get('whatsapp', '') }}"
+                               autocomplete="tel"
+                               inputmode="tel"
+                               pattern="^\+?[0-9\s\-]{8,20}$"
+                               data-lpignore="true"
+                               required>
+                        <div class="form-text">Egzanp: +509 37 12 34 56</div>
+                        {% endif %}
                     </div>
+                    {% if not is_auth %}
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password"
+                               class="form-control"
+                               id="password"
+                               name="password"
+                               placeholder="Minim 6 karaktè"
+                               value="{{ request.form.get('password', '') }}"
+                               autocomplete="new-password"
+                               minlength="6"
+                               data-lpignore="true"
+                               required>
+                        <div class="form-text">Yo ap itilize sa a pou konekte ou nan Lekòl Biblik la.</div>
                     </div>
+                    {% else %}
+                    <div class="mb-3" style="display:none;">
+                        <input type="hidden" id="password" name="password" value="__authenticated_user__" autocomplete="off">
+                    </div>
+                    <div class="alert alert-info py-2 mb-3" role="alert" style="font-size:0.95rem;">
+                        🔐 Ou deja konekte avek kont <strong>{{ prefill_name or prefill_whatsapp }}</strong>.
+                        Pa bezwen mete modpas — sòlye klike Register pou enskri nan Lekòl Biblik la.
+                    </div>
+                    {% endif %}
                     <div class="mb-3">
                         <label for="role" class="form-label">Type de Compte</label>
                         <select class="form-control" id="role" name="role" required>
-                            <option value="student">Étudiant</option>
+                            <option value="student" {% if prefill_role == 'student' %}selected{% endif %}>Étudiant</option>
                         </select>
                         <small class="form-text text-muted">Seul l'administrateur peut créer des comptes Enseignant ou Admin.</small>
                     </div>
-                    <button type="submit" class="btn btn-primary">Register</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        {% if is_auth %}🎓 Enskri m nan Lekòl Biblik{% else %}Register{% endif %}
+                    </button>
                 </form>
             </div>
         </div>

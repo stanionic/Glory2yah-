@@ -208,18 +208,32 @@ def register():
             from app.models.user import User
 
             if current_user.is_authenticated:
-                full_name = request.form.get('full_name', current_user.name or current_user.pseudo or '').strip()
+                full_name = request.form.get('full_name', '').strip() or \
+                    (current_user.name or current_user.pseudo or '').strip()
                 whatsapp = current_user.whatsapp
                 role = 'student'
+                password = None
             else:
                 full_name = request.form.get('full_name', '').strip()
                 whatsapp = request.form.get('whatsapp', '').strip()
-                password = request.form.get('password', '').strip()
-                role = 'student'
+                password = request.form.get('password', '').strip() or None
+                # Security: client-side role select has Étudiant only; whitelist server-side
+                client_role = (request.form.get('role', 'student') or 'student').lower()
+                role = client_role if client_role in {'student'} else 'student'
+                if not password or len(password) < 6:
+                    flash('Le mot de passe doit contenir au moins 6 caractères.', 'error')
+                    return _safe_register_render()
 
             if not full_name or not whatsapp:
                 flash('Nom et numéro WhatsApp obligatoires.', 'error')
                 return _safe_register_render()
+
+            # Validation: whatsapp must look like a phone/token if user is NOT authenticated
+            if not current_user.is_authenticated:
+                import re as _re
+                if not _re.match(r'^\+?[A-Za-z0-9\s\-]{6,25}$', whatsapp):
+                    flash('Numéro WhatsApp invalide.', 'error')
+                    return _safe_register_render()
 
             if EcoleUser.query.filter_by(whatsapp=whatsapp).first():
                 flash('Ce numéro WhatsApp est déjà enregistré à l\'École Biblique.', 'error')
@@ -239,7 +253,11 @@ def register():
                         db.session.flush()
 
                     ecole_user = EcoleUser(full_name=full_name, whatsapp=whatsapp, role=role)
-                    ecole_user.set_password(password if password else 'ecole_only')
+                    # Authenticated users: derive ecole password from main app identity marker
+                    pw_to_set = password if password else (
+                        'ecole_authenticated_' + (whatsapp or 'user')[-6:]
+                    )
+                    ecole_user.set_password(pw_to_set)
                     db.session.add(ecole_user)
                     db.session.flush()
 
