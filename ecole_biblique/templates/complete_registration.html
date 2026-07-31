@@ -3,165 +3,305 @@
 {% block head %}
 {{ super() }}
 <style>
-    .registration-form { max-width: 800px; margin: 0 auto; }
+    .registration-form { max-width: 980px; margin: 0 auto; }
+    .student-info-panel {
+        background: linear-gradient(135deg, #4169E1 0%, #6A8AE8 100%);
+        border-radius: 14px;
+        padding: 28px 32px;
+        color: #fff;
+        margin-bottom: 28px;
+        box-shadow: 0 8px 24px rgba(65,105,225,0.18);
+    }
+    .student-info-panel h2 { margin: 0 0 6px; font-size: 1.8rem; color: #fff; }
+    .student-info-panel p { margin: 0; opacity: 0.95; }
+    .step-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 50%;
+        background: rgba(255,255,255,0.22); color: #fff;
+        font-weight: 800; font-size: 0.85rem; margin-right: 10px;
+    }
+
+    .card-header h3 { font-size: 1.15rem; margin: 0; color: #4169E1; font-weight: 700; }
+    .card-header { background: #f6f9ff; border-bottom: 1px solid #e4ebff; padding: 14px 20px; }
     .terms-box {
-        background: var(--eb-gray-100);
-        border: 2px solid var(--eb-gray-200);
-        border-radius: var(--eb-radius);
+        background: #fafcff;
+        border: 2px solid #e4ebff;
+        border-radius: 12px;
         padding: 24px;
         margin: 20px 0;
-        max-height: 400px;
+        max-height: 380px;
         overflow-y: auto;
     }
-    .terms-box h4 { color: var(--eb-primary); margin-bottom: 16px; }
-    .terms-box p, .terms-box li { color: var(--eb-gray-700); line-height: 1.8; font-size: 0.95rem; }
+    .terms-box h5 { color: #4169E1; margin-bottom: 14px; font-weight: 700; }
+    .terms-box p, .terms-box li { color: #3a4a6a; line-height: 1.75; font-size: 0.93rem; }
     .terms-box ul { padding-left: 20px; }
-    .terms-box li { margin-bottom: 8px; }
-    .student-type-card {
-        border: 2px solid var(--eb-gray-200);
-        border-radius: var(--eb-radius);
-        padding: 20px;
+    .terms-box li { margin-bottom: 6px; }
+
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 18px; }
+    @media (max-width: 720px) { .pricing-grid { grid-template-columns: 1fr; } }
+    .plan-card {
+        position: relative;
+        border: 2px solid #e4ebff;
+        border-radius: 14px;
+        padding: 22px 20px 18px;
         cursor: pointer;
-        transition: var(--eb-transition);
-        text-align: center;
+        transition: all 0.25s ease;
+        background: #fff;
+        text-align: left;
     }
-    .student-type-card:hover { border-color: var(--eb-primary-light); }
-    .student-type-card.selected { border-color: var(--eb-primary-light); background: rgba(42, 90, 140, 0.05); }
-    .student-type-card .type-icon { font-size: 2.5rem; margin-bottom: 12px; }
-    .student-type-card .type-price { font-size: 1.5rem; font-weight: 800; color: var(--eb-primary-dark); }
-    .student-type-card .type-desc { font-size: 0.85rem; color: var(--eb-gray-600); margin-top: 8px; }
+    .plan-card:hover {
+        border-color: #6A8AE8;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(65,105,225,0.12);
+    }
+    .plan-card.selected {
+        border-color: #4169E1;
+        background: linear-gradient(180deg, #f6f9ff 0%, #ffffff 100%);
+        box-shadow: 0 10px 26px rgba(65,105,225,0.18);
+    }
+    .plan-card.selected::after {
+        content: "✓";
+        position: absolute; top: 12px; right: 16px;
+        width: 28px; height: 28px; line-height: 28px; text-align: center;
+        border-radius: 50%;
+        background: #4169E1; color: #fff; font-weight: 800;
+        box-shadow: 0 4px 10px rgba(65,105,225,0.35);
+    }
+    .plan-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .plan-head .emoji { font-size: 1.6rem; }
+    .plan-head h4 { margin: 0; font-size: 1.15rem; color: #1d2949; font-weight: 700; }
+    .plan-price { font-size: 1.75rem; font-weight: 800; color: #4169E1; margin: 6px 0 4px; }
+    .plan-price small { color: #8a96b5; font-weight: 500; font-size: 0.8rem; margin-left: 4px; }
+    .plan-sub { color: #5a698a; font-size: 0.88rem; margin-bottom: 14px; min-height: 2.6rem; }
+    .plan-perks { list-style: none; padding: 0; margin: 0; }
+    .plan-perks li {
+        display: flex; align-items: flex-start; gap: 8px;
+        color: #2b3b5e; font-size: 0.88rem; padding: 5px 0;
+    }
+    .plan-perks li .ok { color: #2E7D32; font-weight: 800; flex-shrink: 0; }
+    .plan-perks li .warn { color: #d97706; font-weight: 800; flex-shrink: 0; }
+    .plan-card.selected .plan-perks li { color: #1d2949; }
+    .plan-tag {
+        position: absolute; top: -10px; left: 18px;
+        background: #d97706; color: #fff;
+        padding: 3px 10px; border-radius: 999px;
+        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px;
+    }
+
+    .deadline-banner {
+        background: #fff7ed;
+        border-left: 4px solid #d97706;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        color: #7c2d12;
+        font-size: 0.93rem;
+    }
+    .deadline-banner strong { color: #92400e; }
+
+    .submit-wrap {
+        text-align: center; margin: 28px 0 60px;
+        padding: 22px;
+        background: linear-gradient(180deg, #f6f9ff 0%, #ffffff 100%);
+        border-radius: 14px;
+        border: 1px dashed #c8d4f7;
+    }
+    .btn-primary { background: #4169E1 !important; border-color: #4169E1 !important; }
+    .btn-primary:hover { background: #2f55c9 !important; }
+    .btn-primary:disabled { background: #b9c5e8 !important; border-color: #b9c5e8 !important; }
+
+    label.form-label { color: #1d2949; font-weight: 600; font-size: 0.92rem; }
+    .form-check-label { font-size: 0.95rem; }
+    .required-star { color: #e11d48; margin-left: 2px; }
 </style>
 {% endblock %}
 
 {% block eb_content %}
 <div class="registration-form">
     <div class="student-info-panel">
-        <h2>📋 Compléter votre inscription</h2>
-        <p class="text-muted">Félicitations pour avoir réussi le test d'admission ! Veuillez remplir ce formulaire obligatoire pour continuer.</p>
+        <h2><span class="step-badge">2</span>Compléter votre inscription</h2>
+        <p>Félicitations pour avoir réussi le test d'admission ! 3 étapes rapides : <strong>identité</strong> → <strong>choix gratuit / payant</strong> → <strong>accepter les conditions</strong>. Puis vous commencez immédiatement le <strong>Module #1</strong>.</p>
     </div>
 
-    <form method="POST" action="{{ url_for('ecole_biblique.complete_registration') }}" class="needs-validation" novalidate>
+    <div class="deadline-banner">
+        ⏳ <strong>Calendrier officiel du cycle 2026 :</strong>
+        Les <strong>3 premiers modules</strong> sont <strong>100 % gratuits</strong> pour tout le monde.
+        Après le module #3, les modules #4 à #20 se débloquent <strong>2 par 2 en TANDEM</strong> (bloc payant) jusqu'à la fin du cycle.
+        Délai final pour terminer <strong>TOUS les examens + solder TOUS les paiements</strong> : <strong>30 Novembre 2026</strong>.
+        Graduation : <strong>25 Décembre 2026</strong>.
+    </div>
+
+    <form method="POST" action="{{ url_for('ecole_biblique.complete_registration') }}" class="needs-validation" novalidate autocomplete="off">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <!-- Personal Information -->
+        <!-- STEP 1 - Personal Information -->
         <div class="card mb-4">
-            <div class="card-header"><h3>👤 Informations Personnelles</h3></div>
+            <div class="card-header"><h3><span class="step-badge" style="background:rgba(65,105,225,0.12);color:#4169E1;">1</span> 👤 Informations Personnelles</h3></div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="first_name" class="form-label">Prénom *</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ ecole_user.first_name or '' }}" required>
+                        <label for="first_name" class="form-label">Prénom<span class="required-star">*</span></label>
+                        <input type="text" class="form-control" id="first_name" name="first_name"
+                               value="{{ ecole_user.first_name or '' }}"
+                               autocomplete="off" data-lpignore="true" required>
                         <div class="invalid-feedback">Veuillez entrer votre prénom.</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="last_name" class="form-label">Nom *</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ ecole_user.last_name or '' }}" required>
+                        <label for="last_name" class="form-label">Nom<span class="required-star">*</span></label>
+                        <input type="text" class="form-control" id="last_name" name="last_name"
+                               value="{{ ecole_user.last_name or '' }}"
+                               autocomplete="off" data-lpignore="true" required>
                         <div class="invalid-feedback">Veuillez entrer votre nom.</div>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="study_level" class="form-label">Niveau d'étude *</label>
+                    <label for="study_level" class="form-label">Niveau d'étude<span class="required-star">*</span></label>
                     <select class="form-control" id="study_level" name="study_level" required>
                         <option value="">Sélectionnez votre niveau</option>
-                        <option value="Secondaire">Secondaire</option>
-                        <option value="Baccalauréat">Baccalauréat</option>
-                        <option value="Université (1ère année)">Université (1ère année)</option>
-                        <option value="Université (2ème année)">Université (2ème année)</option>
-                        <option value="Université (3ème année)">Université (3ème année)</option>
-                        <option value="Licence">Licence</option>
-                        <option value="Master">Master</option>
-                        <option value="Doctorat">Doctorat</option>
-                        <option value="Autre">Autre</option>
+                        <option>Secondaire</option><option>Baccalauréat</option>
+                        <option>Université (1ère année)</option><option>Université (2ème année)</option>
+                        <option>Université (3ème année)</option>
+                        <option>Licence</option><option>Master</option><option>Doctorat</option>
+                        <option>Autre</option>
                     </select>
                 </div>
 
                 <div class="mb-3">
-                    <label for="theology_reason" class="form-label">Raison d'étudier la Théologie *</label>
-                    <textarea class="form-control" id="theology_reason" name="theology_reason" rows="3" required placeholder="Expliquez pourquoi vous souhaitez étudier la théologie..."></textarea>
+                    <label for="theology_reason" class="form-label">Raison d'étudier la Théologie<span class="required-star">*</span></label>
+                    <textarea class="form-control" id="theology_reason" name="theology_reason" rows="3"
+                              required placeholder="Expliquez pourquoi vous voulez étudier la théologie..."
+                              autocomplete="off" data-lpignore="true"></textarea>
                 </div>
 
                 <div class="mb-3">
-                    <label for="church_ministry" class="form-label">Ministère dans l'Église locale *</label>
-                    <input type="text" class="form-control" id="church_ministry" name="church_ministry" required placeholder="Ex: Pasteur, Enseignant, Louange, Jeunesse, etc.">
+                    <label for="church_ministry" class="form-label">Ministère dans l'Église locale<span class="required-star">*</span></label>
+                    <input type="text" class="form-control" id="church_ministry" name="church_ministry"
+                           required placeholder="Ex: Pasteur, Enseignant, Louange, Jeunesse, Diacre..."
+                           autocomplete="off" data-lpignore="true">
                 </div>
 
                 <div class="mb-3">
-                    <label for="whatsapp_number" class="form-label">Numéro WhatsApp *</label>
-                    <input type="text" class="form-control" id="whatsapp_number" name="whatsapp_number" value="{{ ecole_user.whatsapp }}" required placeholder="+509XXXXXXXX">
+                    <label for="whatsapp_number" class="form-label">Numéro WhatsApp<span class="required-star">*</span></label>
+                    {% if ecole_user.whatsapp %}
+                    <input type="text" class="form-control" id="whatsapp_number" name="whatsapp_number"
+                           value="{{ ecole_user.whatsapp }}" readonly
+                           style="background:#f0f4ff;color:#333;">
+                    <div class="form-text">Konekte avek kont Glory2Yah ou → nimewo sa a fiks.</div>
+                    {% else %}
+                    <input type="tel" class="form-control" id="whatsapp_number" name="whatsapp_number"
+                           placeholder="+509XXXXXXXX"
+                           value="{{ ecole_user.whatsapp or '' }}"
+                           pattern="^\+?[0-9\s\-]{8,20}$"
+                           inputmode="tel" autocomplete="tel" data-lpignore="true" required>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Student Type -->
+        <!-- STEP 2 - Student Type (GRATUIT vs PAYANT) -->
         <div class="card mb-4">
-            <div class="card-header"><h3>🎓 Type d'Étudiant</h3></div>
+            <div class="card-header"><h3><span class="step-badge" style="background:rgba(65,105,225,0.12);color:#4169E1;">2</span> 🎓 Choisissez votre Parcours</h3></div>
             <div class="card-body">
-                <p class="text-muted mb-3">Choisissez votre type d'étudiant. Cette sélection déterminera votre parcours de paiement.</p>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="student-type-card" onclick="selectType('gratuit')" id="type-gratuit">
-                            <div class="type-icon">🆓</div>
-                            <h4>Gratuit</h4>
-                            <div class="type-price">$100</div>
-                            <p class="type-desc">Frais de graduation uniquement. Accès aux modules par bloc de $20.</p>
-                            <ul class="text-start small mt-2" style="list-style: none; padding: 0;">
-                                <li>✓ Tous les 20 modules: Gratuits</li>
-                                <li>✓ Frais de graduation: $100</li>
-                            </ul>
+                <p class="mb-3" style="color:#3a4a6a;">
+                    Les <strong>3 premiers modules</strong> sont <strong>totalement gratuits</strong> dans les 2 plans.
+                    Après le module #3, les modules se débloquent <strong>2 par 2 en TANDEM</strong> jusqu'à la fin du cycle.
+                    Le <strong>30 Novembre 2026</strong> est la date limite pour finir <em>tous</em> les examens et solder <em>tous</em> les paiements.
+                </p>
+
+                <div class="pricing-grid">
+                    <div class="plan-card {% if not ecole_user.student_type or ecole_user.student_type == 'gratuit' %}selected{% endif %}"
+                         onclick="selectType('gratuit')" id="type-gratuit">
+                        <div class="plan-head">
+                            <span class="emoji">🆓</span>
+                            <h4>Étudiant Gratuit</h4>
                         </div>
+                        <div class="plan-price">$0 <small>d'abord</small></div>
+                        <div class="plan-sub">Accès libre. Payez au fur et à mesure par bloc de 2 modules tandem après #3.</div>
+                        <ul class="plan-perks">
+                            <li><span class="ok">✓</span> Modules <strong>#1, #2, #3</strong> → 100 % gratuits tout de suite</li>
+                            <li><span class="ok">✓</span> Déblocage TANDEM : <strong>2 modules</strong> par bloc après #3</li>
+                            <li><span class="warn">!</span> Frais bloc tandem (Modules 4+) : <strong>$30 USD / 2 modules</strong></li>
+                            <li><span class="warn">!</span> Frais de reprise si échec : <strong>$50 USD / module</strong></li>
+                            <li><span class="warn">!</span> Frais de graduation : <strong>$100 USD</strong> (à la fin)</li>
+                            <li><span class="ok">✓</span> Certificat de fin d'études si éligible</li>
+                            <li><span class="ok">✓</span> Délai : <strong>30 Novembre 2026</strong> pour tout terminer</li>
+                        </ul>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="student-type-card" onclick="selectType('payant')" id="type-payant">
-                            <div class="type-icon">💎</div>
-                            <h4>Payant</h4>
-                            <div class="type-price">$600</div>
-                            <p class="type-desc">Paiement unique. Bachelor Degree à la fin.</p>
-                            <ul class="text-start small mt-2" style="list-style: none; padding: 0;">
-                                <li>✓ Tous les 20 modules: Gratuits</li>
-                                <li>✓ Bachelor Degree inclus</li>
-                            </ul>
+
+                    <div class="plan-card {% if ecole_user.student_type == 'payant' %}selected{% endif %}"
+                         onclick="selectType('payant')" id="type-payant">
+                        <div class="plan-tag">RECOMMANDÉ</div>
+                        <div class="plan-head">
+                            <span class="emoji">💎</span>
+                            <h4>Étudiant Payant</h4>
                         </div>
+                        <div class="plan-price">$600 <small>total cycle complet</small></div>
+                        <div class="plan-sub">Paiement unique. Tous les modules + Bachelor Degree inclus. Idéal pour engagement total.</div>
+                        <ul class="plan-perks">
+                            <li><span class="ok">✓</span> Modules <strong>#1, #2, #3</strong> → gratuits inclus</li>
+                            <li><span class="ok">✓</span> Tous les blocs TANDEM (modules 4 → 20) → <strong>payés d'avance</strong></li>
+                            <li><span class="ok">✓</span> <strong>Bachelor Degree</strong> inclus avec le partenaire USA</li>
+                            <li><span class="ok">✓</span> Frais de reprise si échec : <strong>$50 USD / module</strong></li>
+                            <li><span class="ok">✓</span> Frais de graduation : <strong>0 $ (inclus)</strong></li>
+                            <li><span class="ok">✓</span> Certificat + Diplôme Bachelor officiel</li>
+                            <li><span class="ok">✓</span> Délai : <strong>30 Novembre 2026</strong> pour tout terminer</li>
+                        </ul>
                     </div>
                 </div>
-                <input type="hidden" name="student_type" id="student_type" value="gratuit">
+                <input type="hidden" name="student_type" id="student_type"
+                       value="{{ ecole_user.student_type if ecole_user.student_type in ['gratuit','payant'] else 'gratuit' }}">
             </div>
         </div>
 
-        <!-- Terms & Conditions -->
+        <!-- STEP 3 - Terms & Conditions -->
         <div class="card mb-4">
-            <div class="card-header"><h3>📜 Conditions de l'École</h3></div>
+            <div class="card-header"><h3><span class="step-badge" style="background:rgba(65,105,225,0.12);color:#4169E1;">3</span> 📜 Conditions de l'École</h3></div>
             <div class="card-body">
                 <div class="terms-box">
-                    <h4>Conditions Académiques</h4>
-                    <p>Veuillez lire attentivement les conditions suivantes :</p>
+                    <h5>🎯 Conditions Académiques & Financières — Cycle 2026</h5>
+                    <p>Veuillez lire attentivement ces conditions avant de cocher la case d'acceptation :</p>
                     <ul>
-                        <li>L'étudiant doit obtenir au moins <strong>80%</strong> pour réussir un module.</li>
-                        <li>La note finale est calculée automatiquement : <strong>70% examen automatique + 30% devoirs</strong> corrigés par les professeurs.</li>
-                        <li>Si la note finale est inférieure à 80%, le module est considéré comme <strong>échoué</strong>.</li>
-                        <li>L'étudiant doit alors payer <strong>50 USD</strong> de frais de reprise.</li>
-                        <li>Le module suivant reste <strong>verrouillé</strong> tant que le précédent n'est pas réussi.</li>
-                        <li>Tous les examens doivent être terminés avant le <strong>30 Novembre 2026</strong>.</li>
-                        <li>Les étudiants admissibles participeront à la graduation le <strong>25 Décembre 2026</strong>.</li>
+                        <li>Pour réussir un module, l'étudiant doit obtenir <strong>au moins 80 % de moyenne</strong>.</li>
+                        <li>Calcul automatique : <strong>70 % examen + 30 % devoirs</strong> corrigés par les professeurs.</li>
+                        <li>Si la note finale est inférieure à 80 %, le module est considéré comme <strong>échoué</strong>.</li>
+                        <li>En cas d'échec, l'étudiant doit payer <strong>$50 USD</strong> de frais de reprise avant de repasser.</li>
+                        <li>Le module suivant reste <strong>verrouillé</strong> tant que le module précédent n'est pas réussi.</li>
+                        <li>Les <strong>3 premiers modules</strong> sont <strong>entièrement gratuits</strong> pour tous les étudiants inscrits.</li>
+                        <li>Après le module #3, l'accès aux modules suivants se fait <strong>par 2 en TANDEM</strong> :
+                            les modules #4 et #5 se débloquent ensemble, puis #6 et #7, etc., jusqu'à la fin du cycle.
+                        </li>
+                        <li>Étudiant <strong>gratuit</strong> : chaque bloc tandem de 2 modules coûte <strong>$30 USD</strong>, payable avant déblocage.
+                            Frais de graduation en sus : <strong>$100 USD</strong>.
+                        </li>
+                        <li>Étudiant <strong>payant</strong> : paiement unique de <strong>$600 USD</strong> couvrant TOUS les blocs tandem + graduation.
+                            Bachelor Degree inclus en fin de cycle.
+                        </li>
+                        <li><strong>30 Novembre 2026</strong> est la date limite <em>impérative</em> :
+                            tous les examens doivent être terminés ET tous les paiements (blocs tandem, reprises, graduation) doivent être soldés.
+                            Au-delà de cette date, l'accès aux examens est fermé.
+                        </li>
+                        <li>La cérémonie de graduation est prévue le <strong>25 Décembre 2026</strong> pour les étudiants admissibles.</li>
+                        <li>Toute fraude ou tentative de triche sur un devoir ou un examen entraine une exclusion immédiate sans remboursement.</li>
                     </ul>
-                    <p><em>Version {{ terms_version }} des conditions</em></p>
+                    <p style="margin-top:14px;"><em>Version {{ terms_version }} des conditions — signée électroniquement ci-dessous.</em></p>
                 </div>
 
                 <div class="form-check mt-3">
                     <input type="checkbox" class="form-check-input" id="accept_terms" name="accept_terms" required>
-                    <label class="form-check-label" for="accept_terms">
-                        <strong>J'accepte les conditions de l'École Biblique. *</strong>
+                    <label class="form-check-label fw-bold" for="accept_terms">
+                        J'accepte les conditions de l'École Biblique MEGD-Haïti. Je m'engage à terminer tous les examens et à solder tous les paiements avant le <strong>30 Novembre 2026</strong>. *
                     </label>
                     <div class="invalid-feedback">Vous devez accepter les conditions pour continuer.</div>
                 </div>
             </div>
         </div>
 
-        <div class="text-center mb-5">
-            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
-                <i class="fas fa-check-circle"></i> Valider mon inscription
+        <div class="submit-wrap">
+            <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn" disabled>
+                🚀 Confirmer & Commencer le Module #1
             </button>
-            <p class="text-muted mt-2 small">Vous devez accepter les conditions pour soumettre le formulaire.</p>
+            <p class="text-muted mt-2 small mb-0">Cochez la case « J'accepte les conditions » pour débloquer le bouton.</p>
         </div>
     </form>
 </div>
@@ -172,31 +312,24 @@
 <script>
 function selectType(type) {
     document.getElementById('student_type').value = type;
-    document.querySelectorAll('.student-type-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById('type-' + type).classList.add('selected');
+    document.querySelectorAll('.plan-card').forEach(function(c){ c.classList.remove('selected'); });
+    var el = document.getElementById('type-' + type);
+    if (el) el.classList.add('selected');
 }
-
-// Enable submit button only when terms are accepted
 document.getElementById('accept_terms').addEventListener('change', function() {
     document.getElementById('submitBtn').disabled = !this.checked;
 });
-
-// Form validation
-(function() {
-    'use strict';
-    var forms = document.querySelectorAll('.needs-validation');
-    Array.prototype.slice.call(forms).forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        }, false);
-    });
-})();
-
-// Auto-select gratuit by default
+document.querySelectorAll('.needs-validation').forEach(function(form) {
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) { event.preventDefault(); event.stopPropagation(); }
+        form.classList.add('was-validated');
+    }, false);
+});
+{% if ecole_user.student_type in ['gratuit','payant'] %}
+selectType('{{ ecole_user.student_type }}');
+{% else %}
 document.getElementById('type-gratuit').classList.add('selected');
+document.getElementById('student_type').value = 'gratuit';
+{% endif %}
 </script>
 {% endblock %}
