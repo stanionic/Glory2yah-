@@ -1,33 +1,27 @@
 /* ================================
    Dòk GlorYah - Stylesheet
    Design mobile-first optimisé
+   Intégré au système de design G2Y
    ================================ */
 
 /* Variables CSS */
 :root {
-    /* Couleurs principales */
     --primary-color: #2563eb;
     --primary-dark: #1e40af;
     --success-color: #16a34a;
     --warning-color: #f59e0b;
     --danger-color: #dc2626;
     --whatsapp-color: #25D366;
-    
-    /* Couleurs neutres */
     --bg-color: #f8fafc;
     --card-bg: #ffffff;
     --text-primary: #1e293b;
     --text-secondary: #64748b;
     --border-color: #e2e8f0;
-    
-    /* Spacing */
     --spacing-xs: 0.5rem;
     --spacing-sm: 1rem;
     --spacing-md: 1.5rem;
     --spacing-lg: 2rem;
     --spacing-xl: 3rem;
-    
-    /* Tailles */
     --border-radius: 12px;
     --max-width: 600px;
 }
@@ -51,7 +45,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--g2y-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
     background-color: var(--bg-color);
     color: var(--text-primary);
     line-height: 1.6;
@@ -59,7 +53,6 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Container principal */
 .container {
     min-height: 100vh;
     display: flex;
@@ -69,9 +62,7 @@ body {
     padding: var(--spacing-sm);
 }
 
-/* ================================
-   HEADER
-   ================================ */
+/* HEADER */
 .header {
     text-align: center;
     padding: var(--spacing-md) 0;
@@ -106,9 +97,7 @@ body {
     text-align: center;
 }
 
-/* ================================
-   MAIN CONTENT
-   ================================ */
+/* MAIN CONTENT */
 .main-content {
     flex: 1;
     display: flex;
@@ -116,12 +105,11 @@ body {
     gap: var(--spacing-md);
 }
 
-/* Input Section */
 .input-section {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--g2y-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
 .label {
@@ -168,7 +156,7 @@ body {
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: var(--g2y-transition, all 0.3s);
     text-decoration: none;
     margin-top: var(--spacing-md);
 }
@@ -181,7 +169,7 @@ body {
 .btn-primary:hover:not(:disabled) {
     background: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    box-shadow: var(--g2y-shadow-md, 0 4px 12px rgba(37, 99, 235, 0.3));
 }
 
 .btn-primary:active:not(:disabled) {
@@ -201,7 +189,7 @@ body {
 .btn-whatsapp:hover {
     background: #128C7E;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    box-shadow: var(--g2y-shadow-md, 0 4px 12px rgba(37, 211, 102, 0.3));
 }
 
 .btn-icon {
@@ -218,7 +206,7 @@ body {
     padding: var(--spacing-lg);
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--g2y-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
 .spinner {
@@ -228,11 +216,7 @@ body {
     border-top-color: var(--primary-color);
     border-radius: 50%;
     margin: 0 auto var(--spacing-sm);
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
+    animation: g2y-spin 1s linear infinite;
 }
 
 .loading p {
@@ -245,19 +229,8 @@ body {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    box-shadow: var(--g2y-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+    animation: g2y-fadeInUp 0.3s ease-out;
 }
 
 .response-header {
@@ -300,12 +273,10 @@ body {
         background: #7f1d1d;
         color: #fca5a5;
     }
-    
     .level-moderate {
         background: #78350f;
         color: #fcd34d;
     }
-    
     .level-mild {
         background: #14532d;
         color: #86efac;
@@ -348,7 +319,7 @@ body {
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--g2y-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
 .whatsapp-label {
@@ -357,14 +328,12 @@ body {
     margin-bottom: var(--spacing-sm);
 }
 
-/* ================================
-   DONATION SECTION
-   ================================ */
+/* DONATION SECTION */
 .donation-section {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--g2y-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
     margin-top: var(--spacing-md);
 }
 
@@ -498,48 +467,62 @@ body {
     display: none !important;
 }
 
-/* ================================
-   RESPONSIVE
-   ================================ */
+/* DARK MODE CLASS SUPPORT */
+.dark-mode body {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+}
 
-/* Tablettes */
+.dark-mode .level-urgent {
+    background: #7f1d1d;
+    color: #fca5a5;
+}
+
+.dark-mode .level-moderate {
+    background: #78350f;
+    color: #fcd34d;
+}
+
+.dark-mode .level-mild {
+    background: #14532d;
+    color: #86efac;
+}
+
+.dark-mode .warning-text {
+    background: #78350f;
+    color: #fcd34d;
+}
+
+/* RESPONSIVE */
 @media (min-width: 768px) {
     .container {
         padding: var(--spacing-lg);
     }
-    
     .title {
         font-size: 2.5rem;
     }
-    
     .subtitle {
         font-size: 1.1rem;
     }
-    
     .textarea {
         min-height: 150px;
     }
 }
 
-/* Desktop */
 @media (min-width: 1024px) {
     .btn:hover {
         transform: translateY(-2px);
     }
 }
 
-/* Optimisations pour connexion lente */
 @media (prefers-reduced-data: reduce) {
-    .logo {
-        animation: none;
-    }
-    
-    .response-section {
-        animation: none;
-    }
+    .logo { animation: none; }
+    .response-section { animation: none; }
 }
 
-/* Optimisations pour mode économie d'énergie */
 @media (prefers-reduced-motion: reduce) {
     * {
         animation-duration: 0.01ms !important;
@@ -548,18 +531,18 @@ body {
     }
 }
 
-/* Support pour très petits écrans */
 @media (max-width: 360px) {
-    .title {
-        font-size: 1.5rem;
-    }
-    
-    .btn {
-        padding: var(--spacing-sm);
-        font-size: 1rem;
-    }
-    
-    .btn-icon {
-        font-size: 1.1rem;
-    }
+    .title { font-size: 1.5rem; }
+    .btn { padding: var(--spacing-sm); font-size: 1rem; }
+    .btn-icon { font-size: 1.1rem; }
+}
+
+/* DARK MODE CLASS for manual toggle */
+.dark-mode .donation-method {
+    background: var(--bg-color);
+    border-color: var(--border-color);
+}
+
+.dark-mode .donation-name strong {
+    color: var(--text-primary);
 }

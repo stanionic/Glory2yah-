@@ -1,148 +1,222 @@
-{% extends "base.html" %}
+ake it {% extends "base.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/css/konferans.css?v=2">
 <style>
-    /* Styles spécifiques pour la salle de conférence */
-    .conference-wrapper {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: calc(100vh - 150px);
+    /* Additional modern styles for the index page */
+    .konf-hero-icon {
+        font-size: 3.5rem;
+        margin-bottom: 8px;
+        display: block;
+        animation: g2y-float 6s ease-in-out infinite;
+    }
+
+    .konf-subtitle {
+        color: rgba(255,255,255,0.85);
+        font-size: 1rem;
+        margin-top: 4px;
+        font-weight: 400;
+    }
+
+    .konf-divider {
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-
-    .container-conf {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        padding: 40px;
-        width: 100%;
-        max-width: 500px;
-        text-align: center;
-    }
-
-    .logo-conf {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #667eea;
-        margin-bottom: 10px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .subtitle {
-        color: #666;
-        margin-bottom: 30px;
-        font-size: 1.1rem;
-    }
-
-    .form-section {
-        margin-bottom: 30px;
-    }
-
-    .form-section h3 {
-        color: #333;
-        margin-bottom: 15px;
-        font-size: 1.2rem;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-        text-align: left;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        color: #555;
-        font-weight: 500;
-    }
-
-    .form-group input {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #e1e5e9;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s;
-    }
-
-    .form-group input:focus {
-        outline: none;
-        border-color: #667eea;
-    }
-
-    .btn-conf {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 15px 30px;
-        border-radius: 8px;
-        font-size: 1.1rem;
+        gap: 16px;
+        margin: 24px 0;
+        color: var(--g2y-text-muted);
+        font-size: 0.85rem;
         font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        width: 100%;
-        margin-top: 10px;
     }
 
-    .btn-conf:hover {
+    .konf-divider::before,
+    .konf-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--g2y-border);
+    }
+
+    .konf-input-icon {
+        position: relative;
+    }
+
+    .konf-input-icon .form-control {
+        padding-left: 40px;
+    }
+
+    .konf-input-icon i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--g2y-text-muted);
+        font-size: 1rem;
+        pointer-events: none;
+    }
+
+    .konf-btn-outline {
+        background: transparent;
+        border: 2px solid var(--g2y-border);
+        color: var(--g2y-text);
+    }
+
+    .konf-btn-outline:hover {
+        border-color: var(--g2y-primary-light);
+        color: var(--g2y-primary-light);
+        background: rgba(74, 111, 199, 0.05);
+    }
+
+    .konf-features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--g2y-border);
+    }
+
+    .konf-feature-item {
+        text-align: center;
+        padding: 12px 8px;
+        border-radius: 12px;
+        background: var(--g2y-bg-alt);
+        transition: var(--g2y-transition);
+    }
+
+    .konf-feature-item:hover {
+        background: var(--g2y-card-hover);
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
     }
 
-    .divider {
-        margin: 20px 0;
-        border-bottom: 1px solid #eee;
+    .konf-feature-item i {
+        font-size: 1.5rem;
+        color: var(--g2y-primary-light);
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .konf-feature-item span {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--g2y-text-secondary);
+        display: block;
+    }
+
+    @media (max-width: 480px) {
+        .konf-features {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="conference-wrapper">
-    <div class="container-conf">
-        <div class="logo-conf">Konferans</div>
-        <p class="subtitle">Sal Konferans Videyo Glory2Yah</p>
+<div class="konferans-page">
+    <div class="konferans-container">
+        <div class="konferans-card">
+            <div class="konferans-card-header">
+                <span class="konf-hero-icon">🎥</span>
+                <h3>Konferans</h3>
+                <p class="konf-subtitle">Sal Konferans Videyo Glory2Yah</p>
+            </div>
+            <div class="konferans-card-body">
+                <!-- Create Room Section -->
+                <div class="konferans-section-title">
+                    <i class="fas fa-plus-circle"></i> Kreye yon Sal
+                </div>
+                
+                <div class="konf-form-group">
+                    <label for="create_room_name">Non Sal la</label>
+                    <div class="konf-input-icon">
+                        <i class="fas fa-door-open"></i>
+                        <input type="text" id="create_room_name" class="form-control" placeholder="Egz: Reyinyon Fanmi">
+                    </div>
+                </div>
+                
+                <div class="konf-form-group">
+                    <label for="create_user_name">Non w</label>
+                    <div class="konf-input-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="create_user_name" class="form-control" placeholder="Egz: Jean Philippe">
+                    </div>
+                </div>
+                
+                <div class="konf-form-group">
+                    <label for="create_password">Modpas (Opsyonèl)</label>
+                    <div class="konf-input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="create_password" class="form-control" placeholder="Kite vid si w pa vle modpas">
+                    </div>
+                </div>
+                
+                <button class="konf-btn konf-btn-primary" onclick="createRoom()">
+                    <i class="fas fa-plus-circle"></i> Kreye Sal
+                </button>
 
-        <div class="form-section">
-            <h3>Kreye yon Sal</h3>
-            <div class="form-group">
-                <label for="create_room_name">Non Sal la</label>
-                <input type="text" id="create_room_name" placeholder="Egz: Reyinyon Fanmi">
-            </div>
-            <div class="form-group">
-                <label for="create_user_name">Non w</label>
-                <input type="text" id="create_user_name" placeholder="Egz: Jean Philippe">
-            </div>
-            <div class="form-group">
-                <label for="create_password">Modpas (Opsyonèl)</label>
-                <input type="password" id="create_password" placeholder="Kite vid si w pa vle modpas">
-            </div>
-            <button class="btn-conf" onclick="createRoom()">Kreye Sal</button>
-        </div>
+                <div class="konf-divider">
+                    <span>OSWA</span>
+                </div>
 
-        <div class="divider"></div>
+                <!-- Join Room Section -->
+                <div class="konferans-section-title">
+                    <i class="fas fa-sign-in-alt"></i> Antre nan yon Sal
+                </div>
+                
+                <div class="konf-form-group">
+                    <label for="join_room_code">Kòd Sal la</label>
+                    <div class="konf-input-icon">
+                        <i class="fas fa-key"></i>
+                        <input type="text" id="join_room_code" class="form-control" placeholder="Egz: AB1234">
+                    </div>
+                </div>
+                
+                <div class="konf-form-group">
+                    <label for="join_user_name">Non w</label>
+                    <div class="konf-input-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="join_user_name" class="form-control" placeholder="Egz: Jean Philippe">
+                    </div>
+                </div>
+                
+                <div class="konf-form-group">
+                    <label for="join_password">Modpas (Si genyen)</label>
+                    <div class="konf-input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="join_password" class="form-control" placeholder="Antre modpas sal la">
+                    </div>
+                </div>
+                
+                <button class="konf-btn konf-btn-success" onclick="joinRoom()">
+                    <i class="fas fa-sign-in-alt"></i> Antre nan Sal
+                </button>
 
-        <div class="form-section">
-            <h3>Antre nan yon Sal</h3>
-            <div class="form-group">
-                <label for="join_room_code">Kòd Sal la</label>
-                <input type="text" id="join_room_code" placeholder="Egz: AB1234">
+                <!-- Features -->
+                <div class="konf-features">
+                    <div class="konf-feature-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Ankripte</span>
+                    </div>
+                    <div class="konf-feature-item">
+                        <i class="fas fa-users"></i>
+                        <span>Plizyè Patisipan</span>
+                    </div>
+                    <div class="konf-feature-item">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Mobil & Desktop</span>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="join_user_name">Non w</label>
-                <input type="text" id="join_user_name" placeholder="Egz: Jean Philippe">
-            </div>
-            <div class="form-group">
-                <label for="join_password">Modpas (Si genyen)</label>
-                <input type="password" id="join_password" placeholder="Antre modpas sal la">
-            </div>
-            <button class="btn-conf" onclick="joinRoom()">Antre nan Sal</button>
         </div>
     </div>
 </div>
 
 <script>
+    // Get CSRF token from meta tag
+    function getCSRFToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
     async function createRoom() {
         const roomName = document.getElementById('create_room_name').value;
         const creatorName = document.getElementById('create_user_name').value;
@@ -157,7 +231,8 @@
             const response = await fetch('/konferans/create_room', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
                 },
                 body: JSON.stringify({
                     room_name: roomName,
@@ -196,7 +271,8 @@
             const response = await fetch('/konferans/join_room', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
                 },
                 body: JSON.stringify({
                     room_code: roomCode,

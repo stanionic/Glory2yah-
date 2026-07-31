@@ -1,21 +1,31 @@
-from flask import Blueprint, render_template, request, jsonify, session, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, session, send_from_directory, current_app
 from flask_socketio import emit, join_room, leave_room
+from flask_login import login_required, current_user
 from app import db
 from app.models import KonferansRoom, KonferansRecording, User
+from app.utils.security import admin_required
 import uuid
 import os
 import json
 import random
 import string
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash, safe_join
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import secrets
+
+_ALLOWED_RECORDING_EXTS = {'.webm', '.mp4', '.mkv', '.mov', '.ogg', '.m4v'}
+_MAX_RECORDING_MB = 512
 
 konferans_bp = Blueprint('konferans', __name__, url_prefix='/konferans', template_folder='templates')
 
 # Global variables for room management
-active_rooms = {}  # room_id: {participants: [], is_recording: False}
+active_rooms = {}  # room_id: {participants: [], is_recording: False, ...}
 room_participants = {}  # room_id: {socket_id: user_name}
+room_whiteboard = {}  # room_id: {strokes: [], current_color: '#000000', current_size: 2}
+room_polls = {}  # room_id: {poll_id: {question, options, votes, active}}
+room_raised_hands = {}  # room_id: [user_name, ...]
+room_breakouts = {}  # room_id: {breakout_rooms: [{id, name, participants: []}]}
 
 def register_socketio_handlers(socketio):
     """Register all socketio event handlers"""
@@ -43,7 +53,9 @@ def register_socketio_handlers(socketio):
             active_rooms[room_id] = {
                 'participants': [],
                 'is_recording': False,
-                'recording_started_by': None
+                'recording_started_by': None,
+                'is_screen_sharing': False,
+                'screen_sharer': None
             }
 
         if user_name not in active_rooms[room_id]['participants']:
@@ -60,6 +72,12 @@ def register_socketio_handlers(socketio):
 
         # Send existing peers to the new user
         emit('all_users', peers, room=request.sid)
+
+        # Send current whiteboard state to new user
+        if room_id in room_whiteboard and room_whiteboard[room_id].get('strokes'):
+            emit('whiteboard_state', {
+                'strokes': room_whiteboard[room_id]['strokes']
+            }, room=request.sid)
 
         # Notify others in room
         emit('user_joined', {
@@ -99,7 +117,8 @@ def register_socketio_handlers(socketio):
         # Broadcast message to room
         emit('chat_message', {
             'user_name': user_name,
-            'message': message
+            'message': message,
+            'timestamp': datetime.now().strftime('%H:%M')
         }, room=room_id)
 
     @socketio.on('start_recording')
@@ -220,6 +239,279 @@ def register_socketio_handlers(socketio):
             'room_name': room_name
         }, room=room_id)
 
+    # ===== WHITEBOARD EVENTS =====
+    @socketio.on('whiteboard_draw')
+    def handle_whiteboard_draw(data):
+        """Handle whiteboard drawing"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        stroke = data.get('stroke')
+
+        if not room_id or not stroke:
+            return
+
+        if room_id not in room_whiteboard:
+            room_whiteboard[room_id] = {'strokes': [], 'current_color': '#000000', 'current_size': 2}
+
+        room_whiteboard[room_id]['strokes'].append(stroke)
+
+        emit('whiteboard_draw', {
+            'stroke': stroke,
+            'user_name': room_participants.get(room_id, {}).get(request.sid, 'Unknown')
+        }, room=room_id, skip_sid=request.sid)
+
+    @socketio.on('whiteboard_clear')
+    def handle_whiteboard_clear(data):
+        """Handle whiteboard clear"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+
+        if not room_id:
+            return
+
+        if room_id in room_whiteboard:
+            room_whiteboard[room_id]['strokes'] = []
+
+        emit('whiteboard_cleared', room=room_id)
+
+    @socketio.on('whiteboard_undo')
+    def handle_whiteboard_undo(data):
+        """Handle whiteboard undo"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+
+        if not room_id or room_id not in room_whiteboard:
+            return
+
+        if room_whiteboard[room_id]['strokes']:
+            room_whiteboard[room_id]['strokes'].pop()
+
+        emit('whiteboard_undone', room=room_id)
+
+    # ===== POLL EVENTS =====
+    @socketio.on('poll_create')
+    def handle_poll_create(data):
+        """Handle poll creation"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        question = data.get('question')
+        options = data.get('options')
+
+        if not room_id or not question or not options or len(options) < 2:
+            return
+
+        if room_id not in room_polls:
+            room_polls[room_id] = {}
+
+        poll_id = str(uuid.uuid4())[:8]
+        room_polls[room_id][poll_id] = {
+            'question': question,
+            'options': options,
+            'votes': {opt: 0 for opt in options},
+            'voters': [],
+            'active': True,
+            'created_by': room_participants.get(room_id, {}).get(request.sid, 'Unknown')
+        }
+
+        emit('poll_created', {
+            'poll_id': poll_id,
+            'question': question,
+            'options': options,
+            'votes': {opt: 0 for opt in options}
+        }, room=room_id)
+
+    @socketio.on('poll_vote')
+    def handle_poll_vote(data):
+        """Handle poll voting"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        poll_id = data.get('poll_id')
+        option = data.get('option')
+        user_name = room_participants.get(room_id, {}).get(request.sid)
+
+        if not room_id or not poll_id or not option or not user_name:
+            return
+
+        if room_id not in room_polls or poll_id not in room_polls[room_id]:
+            return
+
+        poll = room_polls[room_id][poll_id]
+        if not poll['active']:
+            return
+
+        if user_name in poll['voters']:
+            emit('poll_error', {'message': 'Ou deja vote!'}, room=request.sid)
+            return
+
+        if option not in poll['options']:
+            return
+
+        poll['votes'][option] += 1
+        poll['voters'].append(user_name)
+
+        emit('poll_updated', {
+            'poll_id': poll_id,
+            'votes': poll['votes'],
+            'total_votes': len(poll['voters'])
+        }, room=room_id)
+
+    @socketio.on('poll_close')
+    def handle_poll_close(data):
+        """Handle poll closing"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        poll_id = data.get('poll_id')
+
+        if not room_id or not poll_id:
+            return
+
+        if room_id not in room_polls or poll_id not in room_polls[room_id]:
+            return
+
+        room_polls[room_id][poll_id]['active'] = False
+
+        emit('poll_closed', {
+            'poll_id': poll_id,
+            'results': room_polls[room_id][poll_id]['votes']
+        }, room=room_id)
+
+    # ===== RAISE HAND EVENTS =====
+    @socketio.on('raise_hand')
+    def handle_raise_hand(data):
+        """Handle raise hand"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        user_name = room_participants.get(room_id, {}).get(request.sid)
+
+        if not room_id or not user_name:
+            return
+
+        if room_id not in room_raised_hands:
+            room_raised_hands[room_id] = []
+
+        if user_name not in room_raised_hands[room_id]:
+            room_raised_hands[room_id].append(user_name)
+
+        emit('hand_raised', {
+            'user_name': user_name,
+            'raised_hands': room_raised_hands[room_id]
+        }, room=room_id)
+
+    @socketio.on('lower_hand')
+    def handle_lower_hand(data):
+        """Handle lower hand"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        user_name = data.get('user_name') or room_participants.get(room_id, {}).get(request.sid)
+
+        if not room_id or not user_name:
+            return
+
+        if room_id in room_raised_hands and user_name in room_raised_hands[room_id]:
+            room_raised_hands[room_id].remove(user_name)
+
+        emit('hand_lowered', {
+            'user_name': user_name,
+            'raised_hands': room_raised_hands[room_id]
+        }, room=room_id)
+
+    # ===== BREAKOUT ROOM EVENTS =====
+    @socketio.on('breakout_create')
+    def handle_breakout_create(data):
+        """Handle breakout room creation"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        rooms = data.get('rooms', [])
+
+        if not room_id or not rooms:
+            return
+
+        if room_id not in room_breakouts:
+            room_breakouts[room_id] = {'breakout_rooms': []}
+
+        breakout_rooms = []
+        for r in rooms:
+            br_id = str(uuid.uuid4())[:8]
+            breakout_rooms.append({
+                'id': br_id,
+                'name': r.get('name', f'Sal {len(breakout_rooms)+1}'),
+                'participants': []
+            })
+
+        room_breakouts[room_id]['breakout_rooms'] = breakout_rooms
+
+        emit('breakout_created', {
+            'breakout_rooms': breakout_rooms
+        }, room=room_id)
+
+    @socketio.on('breakout_join')
+    def handle_breakout_join(data):
+        """Handle joining a breakout room"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        breakout_id = data.get('breakout_id')
+        user_name = room_participants.get(room_id, {}).get(request.sid)
+
+        if not room_id or not breakout_id or not user_name:
+            return
+
+        if room_id not in room_breakouts:
+            return
+
+        # Remove user from any current breakout
+        for br in room_breakouts[room_id]['breakout_rooms']:
+            if user_name in br['participants']:
+                br['participants'].remove(user_name)
+
+        # Add user to new breakout
+        for br in room_breakouts[room_id]['breakout_rooms']:
+            if br['id'] == breakout_id:
+                br['participants'].append(user_name)
+                break
+
+        emit('breakout_updated', {
+            'breakout_rooms': room_breakouts[room_id]['breakout_rooms']
+        }, room=room_id)
+
+    @socketio.on('breakout_return')
+    def handle_breakout_return(data):
+        """Handle returning from breakout room"""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        user_name = room_participants.get(room_id, {}).get(request.sid)
+
+        if not room_id or not user_name:
+            return
+
+        if room_id not in room_breakouts:
+            return
+
+        for br in room_breakouts[room_id]['breakout_rooms']:
+            if user_name in br['participants']:
+                br['participants'].remove(user_name)
+
+        emit('breakout_updated', {
+            'breakout_rooms': room_breakouts[room_id]['breakout_rooms']
+        }, room=room_id)
+
+    # ===== BANDWIDTH / CONNECTION QUALITY =====
+    @socketio.on('connection_stats')
+    def handle_connection_stats(data):
+        """Handle client connection quality stats"""
+        room_id = data.get('room_id')
+        stats = data.get('stats', {})
+
+        if not room_id:
+            return
+
+        # Broadcast connection quality to room (for UI indicators)
+        user_name = room_participants.get(room_id, {}).get(request.sid)
+        if user_name:
+            emit('peer_connection_quality', {
+                'user_name': user_name,
+                'quality': stats.get('quality', 'unknown')
+            }, room=room_id, skip_sid=request.sid)
+
     @socketio.on('disconnect')
     def handle_disconnect():
         """Handle user disconnecting"""
@@ -238,6 +530,20 @@ def register_socketio_handlers(socketio):
                         active_rooms[room_id]['is_screen_sharing'] = False
                         active_rooms[room_id]['screen_sharer'] = None
                         emit('screen_share_stopped', room=room_id)
+
+                    # Remove from raised hands
+                    if room_id in room_raised_hands and user_name in room_raised_hands[room_id]:
+                        room_raised_hands[room_id].remove(user_name)
+                        emit('hand_lowered', {
+                            'user_name': user_name,
+                            'raised_hands': room_raised_hands[room_id]
+                        }, room=room_id)
+
+                    # Remove from breakout rooms
+                    if room_id in room_breakouts:
+                        for br in room_breakouts[room_id]['breakout_rooms']:
+                            if user_name in br['participants']:
+                                br['participants'].remove(user_name)
 
                     # Notify others
                     emit('user_left', {
@@ -505,13 +811,33 @@ def update_room_name():
         return jsonify({'success': False, 'message': 'Erè nan modifye non sal la.'})
 
 @konferans_bp.route('/download_recording/<filename>')
+@login_required
 def download_recording(filename):
-    """Download recording file"""
+    """Download recording file — P1 FIX: login_required + safe filename + dir traversal blocked"""
     try:
-        recordings_dir = os.path.join('static', 'recordings')
-        return send_from_directory(recordings_dir, filename, as_attachment=True)
+        recordings_dir = os.path.abspath(os.path.join(os.getcwd(), 'static', 'recordings'))
+        if not os.path.isdir(recordings_dir):
+            os.makedirs(recordings_dir, exist_ok=True)
+        safe = secure_filename(str(filename))
+        target = safe_join(recordings_dir, safe)
+        if not target or not os.path.abspath(target).startswith(recordings_dir) or not os.path.isfile(target):
+            return "Dosye a pa egziste oubyen se yon operasyon enterdi.", 404
+        is_admin = False
+        try:
+            is_admin = bool(current_user.is_authenticated and current_user.is_admin)
+        except Exception:
+            is_admin = False
+        rec = KonferansRecording.query.filter_by(filename=safe).first()
+        if rec and not is_admin:
+            room = KonferansRoom.query.filter_by(room_id=rec.room_id).first() if rec.room_id else None
+            is_owner = current_user.is_authenticated and room and (
+                (hasattr(room, 'creator_whatsapp') and room.creator_whatsapp == current_user.whatsapp) or
+                (getattr(room, 'creator_name', '') == (current_user.name or current_user.pseudo or ''))
+            )
+            if not is_owner:
+                return "Ou pa gen dwa telechaje dosye sa a.", 403
+        return send_from_directory(recordings_dir, safe, as_attachment=True)
 
     except Exception as e:
         print(f"Error downloading recording: {e}")
         return "Erè nan telechajman dosye a.", 500
-

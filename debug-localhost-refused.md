@@ -1,22 +1,27 @@
 # Debug Session: localhost-refused
 
-Status: OPEN
+Status: RESOLVED
 
 Symptom:
-- `http://localhost:8080` returns connection refused.
+- `http://localhost:8080` returned connection refused.
 
-Expected:
-- Flask app listens on port `8080` and serves the home page.
+Root Cause:
+- The application was not running. No previous server process was active on port 8080.
 
-Hypotheses:
-- H1: The startup script exits before the server bind call is reached.
-- H2: An import-time side effect or environment mismatch aborts the process without a visible traceback.
-- H3: The app blocks during initialization and never reaches the socket bind step.
-- H4: The chosen runner (`run.py` or `simple_start.py`) is incompatible with the current environment.
-- H5: A dependency/runtime mismatch inside the repaired virtualenv causes silent termination during launch.
+Resolution:
+- Ran `python run.py` which successfully started the Flask/SocketIO server.
+- The app is now listening on:
+  - http://127.0.0.1:8080
+  - http://10.181.67.244:8080
+- Server responds with HTTP 200 on the home page.
 
-Evidence Log:
-- Pending.
+Evidence:
+- Import test: `from app import app` succeeds without errors.
+- Server startup logs show all blueprints registered (PWA, ecole_biblique, mennem).
+- Redis is unavailable (expected in dev without Redis) - app falls back to database-only mode gracefully.
+- SocketIO running without Redis message queue (expected in dev).
+- Database: SQLite connected successfully.
+- Admin user and test user created on first run.
 
-Next Step:
-- Collect runtime evidence with minimal instrumentation only.
+Next Steps:
+- No further action needed. The app is running and accessible.

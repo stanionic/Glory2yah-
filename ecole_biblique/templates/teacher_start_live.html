@@ -1,0 +1,69 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block eb_content %}
+<div class="fade-in">
+    <div class="student-info-panel">
+        <h2>📹 Kòmanse yon Live Class</h2>
+        <p class="text-muted">Kreye yon sal konferans pou anseye yon modil an dirèk.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Kreye Sal Konferans</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('ecole_biblique.teacher_start_live') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                
+                <div class="mb-3">
+                    <label for="module_id" class="form-label">Modil (Opsyonèl)</label>
+                    <select name="module_id" id="module_id" class="form-select">
+                        <option value="">-- Pa gen modil espesifik --</option>
+                        {% for module in modules %}
+                        <option value="{{ module.id }}">Modil {{ module.number }}: {{ module.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Chwazi yon modil si ou vle fè yon klas sou yon sijè espesifik.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="room_name" class="form-label">Non Sal la</label>
+                    <input type="text" name="room_name" id="room_name" class="form-control" 
+                           placeholder="Egz: Klas Modil 3 - Teoloji" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Modpas (Opsyonèl)</label>
+                    <input type="password" name="password" id="password" class="form-control" 
+                           placeholder="Kite vid si ou pa vle modpas">
+                    <small class="text-muted">Si ou mete yon modpas, se moun ki gen modpas la kapab antre.</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-video"></i> Kòmanse Live
+                    </button>
+                    <a href="{{ url_for('ecole_biblique.teacher_dashboard') }}" class="btn btn-secondary">
+                        Annile
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3>💡 Konsèy</h3>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Asire w gen yon bon koneksyon entènèt anvan ou kòmanse.</li>
+                <li>Itilize yon mikwo deyò pou pi bon kalite son.</li>
+                <li>Ou ka pataje ekran ou pou montre prezantasyon ou.</li>
+                <li>Itilize tablo blan an pou ekri oswa desine pandan klas la.</li>
+                <li>Ou ka kreye sondaj pou wè si elèv yo konprann leson an.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

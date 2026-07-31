@@ -68,6 +68,28 @@
         {% endif %}
     {% endif %}
 
+    <!-- Live Classes Section -->
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="fas fa-video"></i> 📹 Live Classes - Konferans</h4>
+        </div>
+        <div class="card-body">
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+                <a href="{{ url_for('ecole_biblique.live_classes') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-eye"></i> Wè Live Classes
+                </a>
+                <a href="/konferans/" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-video"></i> Kreye/Antre nan Konferans
+                </a>
+            </div>
+            <p class="text-muted mt-2 mb-0 small">
+                <i class="fas fa-info-circle"></i> 
+                Live classes se konferans videyo pwofesè yo fè an dirèk. Ou ka antre nan yon klas lè pwofesè a kòmanse l.
+                Konferans lan tou lib pou tout moun — ou pa bezwen fè pati lekòl la pou itilize l.
+            </p>
+        </div>
+    </div>
+
     {% if ecole_user.registration_completed %}
     <!-- Stats Dashboard -->
     <div class="dashboard-grid">

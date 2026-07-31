@@ -147,7 +147,13 @@
                     <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
                 </video>
             {% else %}
+                {% if ad.images %}
                 <img class="product-image" src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}" alt="{{ ad.title }}">
+                {% else %}
+                <div class="product-image" style="display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#999;">
+                    <i class="fas fa-image"></i>
+                </div>
+                {% endif %}
             {% endif %}
             
             <div class="product-info">

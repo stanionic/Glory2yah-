@@ -10,12 +10,12 @@
     padding: 16px;
     padding-bottom: 100px;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    background: var(--g2y-gradient-bg);
 }
 
 /* Balance Card */
 .gkach-balance-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     border-radius: 24px;
     padding: 32px 24px;
     text-align: center;
@@ -24,12 +24,7 @@
     margin-bottom: 24px;
     position: relative;
     overflow: hidden;
-    animation: gkachSlideUp 0.5s ease-out;
-}
-
-@keyframes gkachSlideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    animation: g2y-fadeInUp 0.5s ease-out;
 }
 
 .gkach-balance-card::before {
@@ -112,14 +107,14 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--g2y-transition);
     border: none;
     cursor: pointer;
 }
 
 .gkach-balance-btn-primary {
     background: white;
-    color: #667eea;
+    color: var(--g2y-primary-light);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -144,7 +139,7 @@
 .gkach-section-title {
     font-size: 18px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--g2y-text);
     margin: 0 0 16px 0;
     display: flex;
     align-items: center;
@@ -163,20 +158,20 @@
 }
 
 .gkach-earning-card {
-    background: white;
+    background: var(--g2y-card);
     border-radius: 16px;
     padding: 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: var(--g2y-shadow-sm);
+    transition: var(--g2y-transition);
+    border: 1px solid var(--g2y-border);
 }
 
 .gkach-earning-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--g2y-shadow-md);
 }
 
 .gkach-earning-icon {
@@ -186,7 +181,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    background: var(--g2y-gradient-bg);
     border-radius: 12px;
 }
 
@@ -196,7 +191,7 @@
 
 .gkach-earning-label {
     font-size: 12px;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     margin-bottom: 4px;
     font-weight: 500;
 }
@@ -204,7 +199,7 @@
 .gkach-earning-value {
     font-size: 20px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--g2y-text);
 }
 
 /* Referral Section */
@@ -213,16 +208,16 @@
 }
 
 .gkach-referral-card {
-    background: white;
+    background: var(--g2y-card);
     border-radius: 16px;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: var(--g2y-shadow-sm);
+    border: 1px solid var(--g2y-border);
 }
 
 .gkach-referral-desc {
     font-size: 14px;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     margin: 0 0 12px 0;
 }
 
@@ -235,29 +230,29 @@
 .gkach-referral-input {
     flex: 1;
     padding: 12px 16px;
-    border: 2px solid #e4e6eb;
+    border: 2px solid var(--g2y-border);
     border-radius: 12px;
     font-size: 13px;
-    color: #1a1a2e;
-    background: #f8f9fa;
-    transition: all 0.3s ease;
+    color: var(--g2y-text);
+    background: var(--g2y-bg-alt);
+    transition: var(--g2y-transition);
 }
 
 .gkach-referral-input:focus {
     outline: none;
-    border-color: #667eea;
-    background: white;
+    border-color: var(--g2y-primary-light);
+    background: var(--g2y-card);
 }
 
 .gkach-copy-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     border: none;
     color: white;
     padding: 12px 16px;
     border-radius: 12px;
     cursor: pointer;
     font-size: 18px;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
     flex-shrink: 0;
 }
 
@@ -268,7 +263,7 @@
 
 .gkach-share-btn {
     width: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     border: none;
     color: white;
     padding: 12px;
@@ -280,7 +275,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
 }
 
 .gkach-share-btn:hover {
@@ -294,11 +289,11 @@
 }
 
 .gkach-transactions-list {
-    background: white;
+    background: var(--g2y-card);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: var(--g2y-shadow-sm);
+    border: 1px solid var(--g2y-border);
 }
 
 .gkach-transaction-item {
@@ -306,14 +301,9 @@
     align-items: center;
     gap: 12px;
     padding: 16px;
-    border-bottom: 1px solid #f0f2f5;
-    transition: all 0.2s ease;
-    animation: gkachFadeIn 0.3s ease;
-}
-
-@keyframes gkachFadeIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
+    border-bottom: 1px solid var(--g2y-border-light);
+    transition: var(--g2y-transition-fast);
+    animation: g2y-fadeIn 0.3s ease;
 }
 
 .gkach-transaction-item:last-child {
@@ -321,7 +311,7 @@
 }
 
 .gkach-transaction-item:hover {
-    background: #f8f9fa;
+    background: var(--g2y-bg-alt);
 }
 
 .gkach-tx-icon {
@@ -362,14 +352,14 @@
 
 .gkach-tx-type {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--g2y-text);
     font-size: 14px;
     margin-bottom: 2px;
 }
 
 .gkach-tx-desc {
     font-size: 12px;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -378,7 +368,7 @@
 
 .gkach-tx-date {
     font-size: 11px;
-    color: #999;
+    color: var(--g2y-text-muted);
 }
 
 .gkach-tx-amount {
@@ -400,9 +390,9 @@
 .gkach-empty-state {
     text-align: center;
     padding: 40px 20px;
-    background: white;
+    background: var(--g2y-card);
     border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--g2y-shadow-sm);
 }
 
 .gkach-empty-icon {
@@ -411,7 +401,7 @@
 }
 
 .gkach-empty-text {
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     margin: 0;
     font-size: 15px;
 }
@@ -422,7 +412,7 @@
     margin: 0 auto;
     padding: 20px;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    background: var(--g2y-gradient-bg);
 }
 
 .gkach-page-header {
@@ -436,26 +426,26 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: white;
-    border: 1px solid #e4e6eb;
-    color: #333;
+    background: var(--g2y-card);
+    border: 1px solid var(--g2y-border);
+    color: var(--g2y-text);
     font-size: 14px;
     cursor: pointer;
     padding: 8px 14px;
     border-radius: 10px;
-    transition: all 0.2s ease;
+    transition: var(--g2y-transition-fast);
     font-weight: 500;
 }
 
 .gkach-back-btn:hover {
-    background: #f0f2f5;
+    background: var(--g2y-bg);
     transform: translateX(-2px);
 }
 
 .gkach-page-title {
     font-size: 22px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--g2y-text);
     margin: 0;
 }
 
@@ -465,33 +455,33 @@
 }
 
 .gkach-card {
-    background: white;
+    background: var(--g2y-card);
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    box-shadow: var(--g2y-shadow-sm);
+    border: 1px solid var(--g2y-border);
+    transition: var(--g2y-transition);
 }
 
 .gkach-card:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--g2y-shadow-md);
 }
 
 .gkach-card-title {
     font-size: 18px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--g2y-text);
     margin: 0 0 8px 0;
 }
 
 .gkach-card-subtitle {
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 14px;
     margin: 0 0 16px 0;
 }
 
 .gkach-balance-info {
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 14px;
     margin-bottom: 20px;
     padding: 12px 16px;
@@ -512,7 +502,7 @@
 .gkach-form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #333;
+    color: var(--g2y-text);
     font-weight: 600;
     font-size: 14px;
 }
@@ -520,29 +510,29 @@
 .gkach-form-control {
     width: 100%;
     padding: 12px 16px;
-    border: 2px solid #e0e0e0;
+    border: 2px solid var(--g2y-border);
     border-radius: 10px;
     font-size: 15px;
-    transition: all 0.3s ease;
-    background: #f8f9fa;
-    color: #333;
+    transition: var(--g2y-transition);
+    background: var(--g2y-bg-alt);
+    color: var(--g2y-text);
 }
 
 .gkach-form-control:focus {
     outline: none;
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    border-color: var(--g2y-primary-light);
+    background: var(--g2y-card);
+    box-shadow: 0 0 0 3px rgba(74, 111, 199, 0.15);
     transform: translateY(-1px);
 }
 
 .gkach-form-control::placeholder {
-    color: #999;
+    color: var(--g2y-text-muted);
 }
 
 .gkach-form-hint {
     display: block;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 12px;
     margin-top: 4px;
 }
@@ -566,7 +556,7 @@
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--g2y-transition);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -575,7 +565,7 @@
 
 .gkach-action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--g2y-shadow-md);
 }
 
 .gkach-action-btn:active {
@@ -583,7 +573,7 @@
 }
 
 .gkach-btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     color: white;
     box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
 }
@@ -598,8 +588,8 @@
     align-items: center;
     gap: 16px;
     padding: 16px 0;
-    border-bottom: 1px solid #f0f2f5;
-    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--g2y-border-light);
+    transition: var(--g2y-transition-fast);
 }
 
 .gkach-activity-item:last-child {
@@ -607,7 +597,7 @@
 }
 
 .gkach-activity-item:hover {
-    background: #f8f9fa;
+    background: var(--g2y-bg-alt);
     margin: 0 -24px;
     padding: 16px 24px;
     border-radius: 8px;
@@ -631,13 +621,13 @@
 
 .gkach-activity-title {
     font-size: 15px;
-    color: #333;
+    color: var(--g2y-text);
     font-weight: 600;
     margin-bottom: 2px;
 }
 
 .gkach-activity-date {
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 13px;
 }
 
@@ -678,6 +668,151 @@
 
 .gkach-activity-amount-out {
     color: #c62828;
+}
+
+/* ═══ DARK MODE ═══ */
+.dark-mode .gkach-page {
+    background: var(--g2y-bg);
+}
+
+.dark-mode .gkach-section-title {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-earning-card {
+    background: var(--g2y-card);
+    border-color: var(--g2y-border);
+}
+
+.dark-mode .gkach-earning-icon {
+    background: var(--g2y-bg-alt);
+}
+
+.dark-mode .gkach-earning-label {
+    color: var(--g2y-text-secondary);
+}
+
+.dark-mode .gkach-earning-value {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-referral-card {
+    background: var(--g2y-card);
+    border-color: var(--g2y-border);
+}
+
+.dark-mode .gkach-referral-desc {
+    color: var(--g2y-text-secondary);
+}
+
+.dark-mode .gkach-referral-input {
+    background: var(--g2y-bg-alt);
+    border-color: var(--g2y-border);
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-referral-input:focus {
+    background: var(--g2y-card);
+    border-color: var(--g2y-primary-light);
+}
+
+.dark-mode .gkach-transactions-list {
+    background: var(--g2y-card);
+    border-color: var(--g2y-border);
+}
+
+.dark-mode .gkach-transaction-item {
+    border-bottom-color: var(--g2y-border-light);
+}
+
+.dark-mode .gkach-transaction-item:hover {
+    background: var(--g2y-bg-alt);
+}
+
+.dark-mode .gkach-tx-type {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-tx-desc {
+    color: var(--g2y-text-secondary);
+}
+
+.dark-mode .gkach-tx-date {
+    color: var(--g2y-text-muted);
+}
+
+.dark-mode .gkach-empty-state {
+    background: var(--g2y-card);
+}
+
+.dark-mode .gkach-empty-text {
+    color: var(--g2y-text-secondary);
+}
+
+.dark-mode .gkach-page-container {
+    background: var(--g2y-bg);
+}
+
+.dark-mode .gkach-page-title {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-back-btn {
+    background: var(--g2y-card);
+    border-color: var(--g2y-border);
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-back-btn:hover {
+    background: var(--g2y-bg);
+}
+
+.dark-mode .gkach-card {
+    background: var(--g2y-card);
+    border-color: var(--g2y-border);
+}
+
+.dark-mode .gkach-card-title {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-card-subtitle {
+    color: var(--g2y-text-secondary);
+}
+
+.dark-mode .gkach-form-group label {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-form-control {
+    background: var(--g2y-bg-alt);
+    border-color: var(--g2y-border);
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-form-control:focus {
+    background: var(--g2y-card);
+    border-color: var(--g2y-primary-light);
+}
+
+.dark-mode .gkach-form-hint {
+    color: var(--g2y-text-secondary);
+}
+
+.dark-mode .gkach-activity-item {
+    border-bottom-color: var(--g2y-border-light);
+}
+
+.dark-mode .gkach-activity-item:hover {
+    background: var(--g2y-bg-alt);
+}
+
+.dark-mode .gkach-activity-title {
+    color: var(--g2y-text);
+}
+
+.dark-mode .gkach-activity-date {
+    color: var(--g2y-text-secondary);
 }
 
 /* Responsive */

@@ -247,26 +247,26 @@ def manage_gkach():
             account = UserGkach.query.filter_by(user_whatsapp=user_whatsapp).first()
             if account:
                 old_balance = account.gkach_balance
-                account.gkach_balance = new_balance
-                
-                from app.models.gkach_transaction import GkachTransaction
-                tx = GkachTransaction(
-                    transaction_id=str(uuid.uuid4()),
-                    user_whatsapp=user_whatsapp,
-                    transaction_type='admin_edit',
-                    amount=new_balance - old_balance,
-                    old_balance=old_balance,
-                    new_balance=new_balance,
-                    description=f'Admin edit balance from {old_balance} to {new_balance}',
-                    status='completed'
-                )
-                db.session.add(tx)
-                
-                from app.services.redis_service import RedisService
-                from app import redis_client
-                RedisService(redis_client).invalidate_gkach_balance(user_whatsapp)
-                
-                db.session.commit()
+                delta = new_balance - old_balance
+                # P1 FIX: utiliser helpers add/deduct (thread-safe, CheckConstraint respecté, logs auto via GkachTransaction)
+                if delta > 0:
+                    GkachService.add_balance(
+                        user_whatsapp,
+                        delta,
+                        f"Admin edit balance from {old_balance} to {new_balance}",
+                        'admin_credit'
+                    )
+                elif delta < 0:
+                    try:
+                        GkachService.deduct_balance(
+                            user_whatsapp,
+                            abs(delta),
+                            f"Admin edit balance from {old_balance} to {new_balance}",
+                            'admin_debit'
+                        )
+                    except ValidationError as ve:
+                        flash(f'Impossible de débiter: {str(ve)}', 'error')
+                        return redirect(url_for('admin.manage_gkach'))
                 flash('Balans modifye avèk siksè!', 'success')
         elif action == 'add_balance':
             user_whatsapp = request.form.get('whatsapp')
@@ -322,6 +322,8 @@ def create_batch():
 
 
 @admin_bp.route('/api/popup_settings', methods=['GET'])
+@login_required
+@admin_required
 def get_popup_settings_api():
     settings = AdminSettings.get_all_settings()
     # Convert boolean strings back to actual booleans

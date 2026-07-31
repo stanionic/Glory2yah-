@@ -3,10 +3,21 @@
    Modern Glassmorphism Design
    ═══════════════════════════════════════════ */
 
+/* ═══ FLOATING ANIMATIONS ═══ */
+@keyframes konf-float-slow {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-10px) scale(1.02); }
+}
+
+@keyframes konf-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.2); }
+    50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.4); }
+}
+
 /* ═══ INDEX PAGE (Conference Home) ═══ */
 .konferans-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: var(--g2y-gradient-bg);
     padding: 20px;
 }
 
@@ -21,18 +32,13 @@
     -webkit-backdrop-filter: blur(20px);
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--g2y-shadow-lg);
     overflow: hidden;
-    animation: konfSlideUp 0.5s ease-out;
-}
-
-@keyframes konfSlideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    animation: g2y-fadeInUp 0.5s ease-out;
 }
 
 .konferans-card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     padding: 24px;
     text-align: center;
     color: white;
@@ -55,7 +61,7 @@
 .konferans-section-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--g2y-text);
     margin-bottom: 20px;
     display: flex;
     align-items: center;
@@ -66,7 +72,7 @@
     content: '';
     width: 4px;
     height: 20px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: var(--g2y-gradient-purple);
     border-radius: 2px;
 }
 
@@ -77,7 +83,7 @@
 .konf-form-group label {
     display: block;
     font-weight: 600;
-    color: #333;
+    color: var(--g2y-text);
     margin-bottom: 8px;
     font-size: 0.9rem;
 }
@@ -85,18 +91,19 @@
 .konf-form-group .form-control {
     width: 100%;
     padding: 14px 16px;
-    border: 2px solid #e8e8e8;
+    border: 2px solid var(--g2y-border);
     border-radius: 12px;
     font-size: 1rem;
-    transition: all 0.3s ease;
-    background: #f8f9fa;
+    transition: var(--g2y-transition);
+    background: var(--g2y-bg-alt);
+    color: var(--g2y-text);
 }
 
 .konf-form-group .form-control:focus {
     outline: none;
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    border-color: var(--g2y-primary-light);
+    background: var(--g2y-card);
+    box-shadow: 0 0 0 3px rgba(74, 111, 199, 0.15);
     transform: translateY(-1px);
 }
 
@@ -111,14 +118,14 @@
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--g2y-transition);
     width: 100%;
     text-decoration: none;
 }
 
 .konf-btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--g2y-shadow-md);
 }
 
 .konf-btn:active {
@@ -126,13 +133,13 @@
 }
 
 .konf-btn-success {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: var(--g2y-gradient-green);
     color: white;
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 }
 
 .konf-btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     color: white;
     box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
 }
@@ -142,12 +149,7 @@
     border-radius: 12px;
     margin-top: 8px;
     font-size: 0.9rem;
-    animation: konfFadeIn 0.3s ease;
-}
-
-@keyframes konfFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    animation: g2y-fadeIn 0.3s ease;
 }
 
 /* ═══ ROOM PAGE (Conference Room) ═══ */
@@ -155,7 +157,7 @@
     background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
     min-height: 100vh;
     color: white;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--g2y-font);
 }
 
 .konf-room-container {
@@ -188,7 +190,7 @@
 }
 
 .konf-room-name i {
-    color: #667eea;
+    color: var(--g2y-primary-light);
 }
 
 .konf-room-controls-top {
@@ -208,7 +210,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
     font-size: 16px;
 }
 
@@ -232,7 +234,7 @@
     border-radius: 16px;
     overflow: hidden;
     aspect-ratio: 16/9;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
 }
 
 .konf-video-wrapper:hover {
@@ -288,7 +290,7 @@
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
     text-decoration: none;
 }
 
@@ -303,13 +305,13 @@
 }
 
 .konf-ctrl-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     border: none;
     box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
 }
 
 .konf-ctrl-danger {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background: var(--g2y-gradient-red);
     border: none;
     box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
 }
@@ -325,7 +327,7 @@
 }
 
 .konf-ctrl-active {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: var(--g2y-gradient-green);
     border: none;
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 }
@@ -346,7 +348,7 @@
     border-radius: 12px;
     padding: 8px;
     min-width: 180px;
-    z-index: 100;
+    z-index: var(--g2y-z-dropdown);
     display: none;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
@@ -364,7 +366,7 @@
     text-decoration: none;
     border-radius: 8px;
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: var(--g2y-transition-fast);
 }
 
 .konf-quality-item:hover {
@@ -422,12 +424,7 @@
     border-radius: 12px;
     font-size: 14px;
     line-height: 1.4;
-    animation: konfChatIn 0.3s ease;
-}
-
-@keyframes konfChatIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    animation: g2y-fadeInUp 0.3s ease;
 }
 
 .konf-chat-own {
@@ -452,7 +449,7 @@
 .konf-chat-sender {
     font-weight: 700;
     font-size: 12px;
-    color: #667eea;
+    color: var(--g2y-primary-light);
     margin-bottom: 4px;
 }
 
@@ -472,7 +469,7 @@
     color: white;
     font-size: 14px;
     outline: none;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
 }
 
 .konf-chat-input::placeholder {
@@ -480,7 +477,7 @@
 }
 
 .konf-chat-input:focus {
-    border-color: #667eea;
+    border-color: var(--g2y-primary-light);
     background: rgba(255, 255, 255, 0.15);
 }
 
@@ -488,14 +485,14 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     border: none;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
     flex-shrink: 0;
 }
 
@@ -535,7 +532,7 @@
     padding: 10px 12px;
     border-radius: 10px;
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: var(--g2y-transition-fast);
 }
 
 .konf-participant-item:hover {
@@ -546,7 +543,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--g2y-gradient-purple);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -632,6 +629,39 @@
     background: rgba(34, 197, 94, 0.15);
     border-color: rgba(34, 197, 94, 0.3);
     color: #4ade80;
+}
+
+/* ═══ DARK MODE ═══ */
+.dark-mode .konferans-page {
+    background: var(--g2y-bg);
+}
+
+.dark-mode .konferans-card {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: var(--g2y-border);
+}
+
+.dark-mode .konferans-card-body {
+    background: transparent;
+}
+
+.dark-mode .konferans-section-title {
+    color: var(--g2y-text);
+}
+
+.dark-mode .konf-form-group label {
+    color: var(--g2y-text);
+}
+
+.dark-mode .konf-form-group .form-control {
+    background: var(--g2y-bg-alt);
+    border-color: var(--g2y-border);
+    color: var(--g2y-text);
+}
+
+.dark-mode .konf-form-group .form-control:focus {
+    background: var(--g2y-card);
+    border-color: var(--g2y-primary-light);
 }
 
 /* Responsive */

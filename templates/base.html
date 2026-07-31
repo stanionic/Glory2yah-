@@ -14,6 +14,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GloryYah">
     <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="/static/css/variables.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/g2y-app.css">
     <link rel="stylesheet" href="/static/css/pwa.css">
@@ -224,6 +225,25 @@
         }
         lastScroll = current;
     }, { passive: true });
+
+    // P1 FIX B01 — toggleServicesMenu() was undefined (ReferenceError)
+    (function () {
+        if (typeof window.toggleServicesMenu === 'function') return;
+        window.toggleServicesMenu = function () {
+            try {
+                const popup = document.getElementById('servicesPopup');
+                if (!popup) return;
+                const isHidden = popup.style.display === 'none' || popup.style.display === '';
+                popup.style.display = isHidden ? 'flex' : 'none';
+                const html = document.documentElement;
+                if (isHidden) {
+                    html.style.overflow = 'hidden';
+                } else {
+                    html.style.overflow = '';
+                }
+            } catch (e) {}
+        };
+    })();
     </script>
 
 <!-- ═══ MODERN BOTTOM NAVIGATION STYLES ═══ -->

@@ -7,8 +7,14 @@
     {% if ad %}
     <div class="cart-item">
         <div class="ad-preview">
+            {% if ad.images %}
             <img src="{{ url_for('static', filename='uploads/' + ad.images.split(',')[0]) }}"
                  alt="Piblisite Imaj" style="max-width: 200px; height: auto;">
+            {% else %}
+            <div style="max-width:200px;height:200px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#999;">
+                <i class="fas fa-image fa-2x"></i>
+            </div>
+            {% endif %}
             <div class="ad-details">
                 <h3>{{ ad.title }}</h3>
                 <p>{{ ad.description }}</p>

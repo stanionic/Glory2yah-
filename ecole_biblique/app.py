@@ -205,12 +205,12 @@ def register():
         if current_user.is_authenticated:
             full_name = request.form.get('full_name', current_user.name or current_user.pseudo or '').strip()
             whatsapp = current_user.whatsapp
-            role = request.form.get('role', 'student')
+            role = 'student'
         else:
             full_name = request.form.get('full_name', '').strip()
             whatsapp = request.form.get('whatsapp', '').strip()
             password = request.form.get('password', '').strip()
-            role = request.form.get('role', 'student')
+            role = 'student'
 
         if not full_name or not whatsapp:
             flash('Nom et numéro WhatsApp obligatoires.', 'error')
@@ -1164,7 +1164,94 @@ def teacher_dashboard():
         return redirect(url_for('ecole_biblique.index'))
     courses = Course.query.filter_by(teacher_id=ecole_user.id).all()
     modules = Module.query.order_by(Module.number).all()
-    return render_template('teacher_dashboard.html', courses=courses, modules=modules)
+    
+    # Get active conference rooms created by this teacher
+    from app.models.konferans import KonferansRoom
+    active_rooms = KonferansRoom.query.filter_by(
+        creator_name=ecole_user.full_name,
+        is_active=True
+    ).all()
+    
+    return render_template('teacher_dashboard.html', 
+                         courses=courses, 
+                         modules=modules,
+                         active_rooms=active_rooms)
+
+
+# ===== KONFERANS INTEGRATION (LIVE CLASSES) =====
+
+@ecole_biblique_bp.route('/teacher/start_live', methods=['GET', 'POST'])
+@login_required
+def teacher_start_live():
+    """Teacher starts a live conference for a module"""
+    ecole_user = get_ecole_user()
+    if not ecole_user or ecole_user.role != 'teacher':
+        flash('Accès réservé aux enseignants.', 'error')
+        return redirect(url_for('ecole_biblique.index'))
+
+    if request.method == 'POST':
+        module_id = request.form.get('module_id', type=int)
+        room_name = request.form.get('room_name', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        module = Module.query.get(module_id) if module_id else None
+        
+        if not room_name:
+            room_name = f"Cours {module.name}" if module else "Klass An Live"
+        
+        # Call the konferans create_room logic
+        import requests
+        import json
+        
+        # Get the base URL
+        from flask import url_for
+        with current_app.test_request_context():
+            create_url = url_for('konferans.create_room', _external=True)
+        
+        # Prepare request data
+        data = {
+            'room_name': room_name,
+            'creator_name': ecole_user.full_name,
+            'password': password
+        }
+        
+        # Make internal request
+        try:
+            from konferans.routes import konferans_bp
+            with current_app.test_request_context():
+                resp = current_app.test_client().post('/konferans/create_room', 
+                    data=json.dumps(data),
+                    content_type='application/json')
+                result = resp.get_json()
+            
+            if result and result.get('success'):
+                flash(f'Live class started! Code: {result["room_code"]}', 'success')
+                return redirect(result['redirect'])
+            else:
+                error_msg = result.get('message', 'Erè nan kreyasyon sal la.')
+                flash(error_msg, 'error')
+        except Exception as e:
+            flash(f'Erè: {str(e)}', 'error')
+        
+        return redirect(url_for('ecole_biblique.teacher_dashboard'))
+    
+    modules = Module.query.order_by(Module.number).all()
+    return render_template('teacher_start_live.html', modules=modules)
+
+
+@ecole_biblique_bp.route('/live_classes')
+def live_classes():
+    """List all active live classes / conference rooms"""
+    from app.models.konferans import KonferansRoom
+    
+    # Get all active rooms
+    rooms = KonferansRoom.query.filter_by(is_active=True).order_by(KonferansRoom.created_at.desc()).all()
+    
+    # Get teachers list for filtering
+    teachers = EcoleUser.query.filter_by(role='teacher').all()
+    teacher_names = [t.full_name for t in teachers]
+    
+    return render_template('live_classes.html', rooms=rooms, teacher_names=teacher_names)
 
 
 # ===== API ROUTES =====

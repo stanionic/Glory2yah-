@@ -1,40 +1,25 @@
-# Plan de Travail - ADS + Dons Caritatifs ✅ COMPLETED
+# CSS Modernization Plan - TODO
 
-## Phase 1: Créer les ADS de test ✅
-- [x] Créer le script `create_test_ads.py` pour générer des ADS Sell & Publish
-- [x] Exécuter le script pour créer les annonces de test (13 ADS créées: 8 Sell + 5 Publish)
-- [x] Vérifier que les annonces sont créées et approuvées
+## Phase 1: Core Design System (style.css → g2y-app.css unification)
+- [x] 1. Create unified CSS variables file (`static/css/variables.css`)
 
-## Phase 2: Modèle CharityDonation ✅
-- [x] Créer `app/models/charity.py` - Modèle de donation (CharityDonation + CharityCause)
-- [x] Enregistrer le modèle dans `app/__init__.py`
-- [x] Créer les tables en base de données
+## Phase 2: Component Styles
+- [x] 2. Modernize `static/css/style.css` - Replace old hardcoded colors (--royal-blue, --golden, --white) with --g2y-* vars, remove duplicate animations, add .dark-mode support
+- [x] 3. Modernize `static/css/g2y-app.css` - Remove duplicate :root vars, remove duplicate animations, add dark mode, use --g2y-* vars
+- [x] 4. Modernize `static/css/admin.css` - Replace all hardcoded hex colors with --g2y-* vars, replace standalone gradients, add dark mode
+- [x] 5. Modernize `static/css/gkach.css` - Replace hardcoded hex colors with --g2y-* vars, add dark mode, use --g2y-* vars
+- [x] 6. Modernize `static/css/konferans.css` - Replace hardcoded hex colors with --g2y-* vars, add dark mode, use --g2y-* vars
+- [x] 7. Modernize `static/css/pwa.css` - Use --g2y-* vars instead of hardcoded colors, add .dark-mode class support
 
-## Phase 3: Modification du checkout pour les dons ✅
-- [x] Modifier `app/services/gkach_service.py` - Ajouter donation dans process_purchase
-- [x] Modifier `app/routes/cart.py` - Ajouter donation_amount dans checkout
-- [x] Modifier `templates/cart/checkout.html` - UI pour les dons optionnels (toggle, presets, custom, cause selection, summary)
+## Phase 3: Ecole Biblique & Dok
+- [x] 8. Modernize `ecole_biblique/static/css/style.css` - Map --eb-* vars to --g2y-* system, add dark mode
+- [x] 9. Modernize `dok/static/style.css` - Integrate with --g2y-* system
 
-## Phase 4: Page Admin pour les dons ✅
-- [x] Ajouter route admin dans `app/routes/admin.py` pour voir les dons (charity_donations, add/toggle/delete causes)
-- [x] Créer template `templates/admin_charity_donations.html` (stats, donations table, cause breakdown, cause management)
+## Phase 4: Template Updates
+- [x] 10. Update templates to include variables.css
+- [ ] 11. Update all templates to use modern CSS classes (in progress)
 
-## Phase 5: Test et vérification ✅
-- [x] Exécuter l'application (démarrée sur http://localhost:5000)
-- [x] Créer utilisateur test (+50912345678 / 123456)
-- [x] Créer 13 ADS de test (8 Sell + 5 Publish)
-- [x] Seed causes caritatives par défaut (5 causes)
-- [x] Vérifier le compte caritatif dédié (+509CHARITY)
-- [x] Batch publicitaire créé avec 5 ADS
-
-## Résumé des fichiers créés/modifiés:
-- `create_test_ads.py` - Script création ADS test
-- `seed_charity_causes.py` - Script causes caritatives
-- `app/models/charity.py` - Modèles CharityDonation & CharityCause
-- `app/models/__init__.py` - Export des modèles
-- `app/__init__.py` - Enregistrement des modèles
-- `app/services/gkach_service.py` - Donation dans process_purchase
-- `app/routes/cart.py` - Donation_amount dans checkout
-- `app/routes/admin.py` - Routes admin pour dons
-- `templates/cart/checkout.html` - UI donation dans checkout
-- `templates/admin_charity_donations.html` - Page admin dons
+## Phase 5: Testing
+- [ ] 12. Run the app and verify all pages render correctly
+- [ ] 13. Check dark mode toggle works
+- [ ] 14. Verify responsive behavior

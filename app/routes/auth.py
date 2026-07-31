@@ -90,8 +90,17 @@ def register():
             db.session.commit()
             print(f"DEBUG: GKACH account created")
             
-            flash('Kont kreye avèk siksè! Ou kapab konekte kounye a.', 'success')
-            return redirect(url_for('auth.login'))
+            # Auto-login the user right after registration
+            print("DEBUG: Auto-logging in user after registration")
+            login_user(user, remember=True)
+            session.permanent = True
+            
+            # Update last login
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            flash('Kont kreye avèk siksè! Byenveni nan Glory2YahPub!', 'success')
+            return redirect(url_for('main.index'))
             
         except ValidationError as e:
             print(f"DEBUG: Validation error - {str(e)}")
@@ -107,8 +116,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("200 per hour")
-@csrf.exempt
+@limiter.limit("10 per minute")
 def login():
     """User login"""
     if current_user.is_authenticated:
@@ -118,7 +126,11 @@ def login():
         try:
             identifier = request.form.get('identifier', '').strip()
             password = request.form.get('password', '').strip()
-            remember = bool(request.form.get('remember'))
+            # Default to True for better persistence, only False if explicitly unchecked
+            remember = request.form.get('remember') != 'no'
+            # Make remember True by default for better UX
+            if request.form.get('remember') is None:
+                remember = True
             
             print("=== LOGIN DEBUG ===")
             print(f"Identifier: '{identifier}'")
@@ -201,12 +213,17 @@ def login():
             db.session.commit()
             
             flash(f'Byenveni, {user.pseudo}!', 'success')
-            
-            # Redirect to next page or home
+
             next_page = request.args.get('next')
-            print(f"Next page: {next_page}")
             if next_page:
-                return redirect(next_page)
+                from werkzeug.security import url_has_allowed_host_and_scheme
+                allowed = False
+                try:
+                    allowed = url_has_allowed_host_and_scheme(next_page, request.host)
+                except Exception:
+                    allowed = False
+                if allowed:
+                    return redirect(next_page)
             return redirect(url_for('main.index'))
             
         except Exception as e:

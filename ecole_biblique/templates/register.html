@@ -40,12 +40,11 @@
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
                     <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
+                        <label for="role" class="form-label">Type de Compte</label>
                         <select class="form-control" id="role" name="role" required>
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="admin">Admin</option>
+                            <option value="student">Étudiant</option>
                         </select>
+                        <small class="form-text text-muted">Seul l'administrateur peut créer des comptes Enseignant ou Admin.</small>
                     </div>
                     <button type="submit" class="btn btn-primary">Register</button>
                 </form>

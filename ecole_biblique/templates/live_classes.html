@@ -1,0 +1,60 @@
+{% extends "eb_base.html" %}
+
+{% block eb_content %}
+<div class="fade-in">
+    <div class="student-info-panel">
+        <h2>📹 Live Classes - Konferans</h2>
+        <p class="text-muted">Tout sal konferans ki disponib kounye a. Ou ka antre nan nenpòt sal.</p>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <a href="/konferans/" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Kreye yon Sal
+        </a>
+        <a href="{{ url_for('ecole_biblique.teacher_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retounen
+        </a>
+    </div>
+
+    {% if rooms %}
+    <div class="row">
+        {% for room in rooms %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-video"></i> Live</span>
+                    <small>Kòd: <kbd class="bg-light text-dark">{{ room.room_code }}</kbd></small>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ room.room_name }}</h5>
+                    <p class="card-text small text-muted">
+                        <i class="fas fa-user"></i> Kreyatè: {{ room.creator_name }}<br>
+                        <i class="fas fa-clock"></i> Kreyè: {{ room.created_at.strftime('%d/%m/%Y %H:%M') if room.created_at else 'N/A' }}
+                    </p>
+                    {% if room.creator_name in teacher_names %}
+                    <span class="badge bg-info mb-2">🎓 Live Class Lekòl Biblik</span>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="/konferans/room/{{ room.room_code }}?user_name=Envite" 
+                       class="btn btn-success w-100" target="_blank">
+                        <i class="fas fa-door-open"></i> Antre nan Sal
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">📹</div>
+        <h4>Pa gen Live Classes aktif kounye a</h4>
+        <p class="text-muted">Tann yon pwofesè kòmanse yon klas, oswa kreye pwòp sal konferans ou.</p>
+        <a href="/konferans/" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus-circle"></i> Kreye yon Sal Konferans
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

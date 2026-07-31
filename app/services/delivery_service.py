@@ -92,49 +92,66 @@ class DeliveryService:
     
     @staticmethod
     def confirm_delivery(delivery_id, buyer_whatsapp):
-        """Buyer confirms and pays"""
+        """Buyer confirms the purchase terms (not final pay — escrow already held at checkout per P1 FIX V07)"""
+        from app.services.gkach_service import GkachService as _GS
         delivery = DeliveryService.get_delivery(delivery_id)
         buyer_whatsapp = validate_whatsapp(buyer_whatsapp)
-        
+
         if delivery.buyer_whatsapp != buyer_whatsapp:
             raise ValidationError("Se sèlman achtè a ki ka konfime")
-            
+
         grand_total = delivery.total_price + delivery.delivery_cost
-        
-        # Deduct from buyer
-        GkachService.deduct_balance(
-            buyer_whatsapp,
-            grand_total,
-            f"Payment for delivery {delivery_id}",
-            'purchase'
-        )
-        
+
+        # P1 FIX V07: if delivery is paid via escrow_hold at checkout, status starts at 'escrow_held'
+        # Else legacy path (direct manual delivery): deduct + pay now (old fallback for mixed data).
+        if getattr(delivery, 'status', '') != 'escrow_held':
+            _GS.deduct_balance(
+                buyer_whatsapp,
+                grand_total,
+                f"Payment for delivery {delivery_id}",
+                'purchase'
+            )
+            _GS.add_balance(
+                delivery.seller_whatsapp,
+                grand_total,
+                f"Payment received for delivery {delivery_id}",
+                'sale'
+            )
+
         delivery.status = 'awaiting_delivery'
         delivery.confirmed_at = db.func.now()
         db.session.commit()
-        
+
         return delivery
-    
+
     @staticmethod
     def mark_completed(delivery_id):
-        """Mark delivery as completed and release funds to seller"""
+        """Mark delivery as completed — P1 FIX V07: release escrow hold + pay seller (commission already reserved)"""
+        from app.services.gkach_service import GkachService as _GS
         delivery = DeliveryService.get_delivery(delivery_id)
-        
+
         if delivery.status != 'awaiting_delivery':
             raise ValidationError("Livrezon sa a pa ka konfime kòm resevwa")
-            
+
         grand_total = delivery.total_price + delivery.delivery_cost
-        
-        # Add to seller
-        GkachService.add_balance(
-            delivery.seller_whatsapp,
-            grand_total,
-            f"Payment received for delivery {delivery_id}",
-            'sale'
-        )
-        
+
+        try:
+            _GS.release_escrow(delivery.delivery_id, delivery.seller_whatsapp)
+        except Exception as exc:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            # Fallback: if escrow record missing, direct pay (mixed legacy datasets)
+            _GS.add_balance(
+                delivery.seller_whatsapp,
+                grand_total,
+                f"Payment received for delivery {delivery_id} (direct fallback)",
+                'sale'
+            )
+
         delivery.status = 'completed'
         delivery.delivered_at = db.func.now()
         db.session.commit()
-        
+
         return delivery

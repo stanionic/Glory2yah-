@@ -4,7 +4,7 @@ Modern Flask application with Redis caching and modular architecture
 """
 import os
 import logging
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -68,21 +68,53 @@ def create_app(config_name=None):
         app.config['CACHE_TYPE'] = 'simple'
         app.config['RATELIMIT_STORAGE_URL'] = 'memory://'
     
+    # Configure session settings explicitly before initializing extensions
+    from datetime import timedelta
+    # Ensure session cookies persist for 30 days even without "remember me"
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+    app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+    # Cookie settings for better persistence
+    app.config['SESSION_COOKIE_NAME'] = 'glory2yah_session'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # Session cookie secure only if HTTPS in production, never in dev
+    app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', False)
+    
+    # Flask-Login remember cookie settings
+    app.config['REMEMBER_COOKIE_NAME'] = 'glory2yah_remember'
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=365)  # 1 year remember
+    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
+    app.config['REMEMBER_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', False)
+    app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
+
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    # Configure login_manager settings
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Ou dwe konekte pou aksede paj sa a.'
+    login_manager.session_protection = 'strong'  # P1 FIX V18 — protect against session fixation (dev: use 'basic' if mobile IP flips cause logout)
+    login_manager.needs_refresh_message = (u"Tanpri rekonfim modpas ou pou kontinye.")
+    login_manager.needs_refresh_message_category = "info"
+
     csrf.init_app(app)
     limiter.init_app(app)
     cache.init_app(app)
-    # Initialize SocketIO with Redis if available
-    if redis_client:
-        socketio.init_app(app, cors_allowed_origins="*", message_queue=app.config['REDIS_URL'])
+    # Initialize SocketIO with Redis if available — P1 FIX: restrict CORS origins, no wildcard
+    import os as _os
+    _allowed_origins_env = _os.environ.get('SOCKETIO_CORS_ALLOWED_ORIGINS')
+    if _allowed_origins_env:
+        _cors_origins = [o.strip() for o in _allowed_origins_env.split(',') if o.strip()]
+    elif config_name == 'production':
+        _cors_origins = []
     else:
-        socketio.init_app(app, cors_allowed_origins="*")
+        _cors_origins = "*"
+    if redis_client:
+        socketio.init_app(app, cors_allowed_origins=_cors_origins, message_queue=app.config['REDIS_URL'])
+    else:
+        socketio.init_app(app, cors_allowed_origins=_cors_origins)
         app.logger.warning('SocketIO running without Redis message queue')
-    
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Ou dwe konekte pou aksede paj sa a.'
     
     # Custom template filter to get video embed URL
     @app.template_filter('get_embed_url')
@@ -106,7 +138,14 @@ def create_app(config_name=None):
     @login_manager.user_loader
     def load_user(user_id):
         from app.models.user import User
-        return User.query.get(int(user_id))
+        try:
+            user_id_int = int(user_id)
+            user = User.query.get(user_id_int)
+            if user and user.is_active:
+                return user
+            return None
+        except (ValueError, TypeError, Exception):
+            return None
     
     @app.context_processor
     def inject_global_data():
@@ -188,70 +227,82 @@ def create_app(config_name=None):
             db.session.rollback()
             app.logger.warning(f"Could not create default charity causes: {e}")
         
-        # Create admin user
+        # Create admin user — P1 FIX: from env vars, NOT hardcoded; one-shot only when no admin exists; NEVER overwrite existing admin pw
         try:
-            admin_user = User.query.filter_by(whatsapp='+50942882076').first()
-            if not admin_user:
-                admin_user = User(
-                    whatsapp='+50942882076',
-                    pseudo='+50942882076',
-                    name='Admin',
-                    auth_provider='whatsapp',
-                    is_active=True,
-                    is_admin=True
-                )
-                admin_user.set_password('StanGlory2Yah1986')
-                db.session.add(admin_user)
-                db.session.commit()
-                admin_gkach = UserGkach.query.filter_by(user_whatsapp=admin_user.whatsapp).first()
-                if not admin_gkach:
-                    db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
-                    db.session.commit()
-                app.logger.info("Admin user created: +50942882076")
-            elif not admin_user.is_admin:
-                admin_user.is_admin = True
-                admin_user.pseudo = '+50942882076'
-                admin_user.set_password('StanGlory2Yah1986')
-                db.session.commit()
+            any_admin = User.query.filter_by(is_admin=True).first()
+            if not any_admin:
+                admin_phone = _os.environ.get('ADMIN_WHATSAPP')
+                admin_password = _os.environ.get('ADMIN_PASSWORD')
+                admin_pseudo = _os.environ.get('ADMIN_PSEUDO', admin_phone or 'SystemAdmin')
+                admin_name = _os.environ.get('ADMIN_NAME', 'Administrateur')
+                if admin_phone and admin_password:
+                    existing = User.query.filter_by(whatsapp=admin_phone).first()
+                    if not existing:
+                        admin_user = User(
+                            whatsapp=admin_phone,
+                            pseudo=admin_pseudo,
+                            name=admin_name,
+                            auth_provider='whatsapp',
+                            is_active=True,
+                            is_admin=True
+                        )
+                        admin_user.set_password(admin_password)
+                        db.session.add(admin_user)
+                        db.session.flush()
+                        admin_gkach = UserGkach.query.filter_by(user_whatsapp=admin_user.whatsapp).first()
+                        if not admin_gkach:
+                            db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
+                        db.session.commit()
+                        app.logger.info(f"Admin user created: {admin_phone} (from env)")
+                    else:
+                        if not existing.is_admin:
+                            existing.is_admin = True
+                            db.session.commit()
+                else:
+                    app.logger.warning(
+                        "Aucun administrateur existant. Définissez ADMIN_WHATSAPP + ADMIN_PASSWORD dans .env pour créer le compte admin initial."
+                    )
         except Exception as e:
-            app.logger.warning(f"Could not create admin user: {e}")
+            app.logger.warning(f"Could not process admin user setup: {e}")
             db.session.rollback()
 
-        # Create test user for easy testing
+        # Test user — P1 FIX: ONLY when FLASK_ENV=development AND TEST_USER=1 env var set; NEVER in production
         try:
-            test_user = User.query.filter_by(whatsapp='+50912345678').first()
-            if not test_user:
-                # Check if pseudo 'testuser' exists, if yes, use a different one
-                pseudo = 'testuser'
-                count = 1
-                while User.query.filter_by(pseudo=pseudo).first():
-                    pseudo = f'testuser{count}'
-                    count += 1
-                
-                test_user = User(
-                    whatsapp='+50912345678',
-                    pseudo=pseudo,
-                    name='Test User',
-                    auth_provider='whatsapp',
-                    is_active=True
-                )
-                test_user.set_password('123456')
-                db.session.add(test_user)
-                db.session.commit()
-                
-                # Create GKACH account for test user if not exists
-                test_gkach = UserGkach.query.filter_by(user_whatsapp=test_user.whatsapp).first()
-                if not test_gkach:
-                    test_gkach = UserGkach(
-                        user_id=test_user.id,
-                        user_whatsapp=test_user.whatsapp,
-                        gkach_balance=1000
+            import os as __os
+            if config_name != 'production' and __os.environ.get('CREATE_TEST_USER', '0') == '1':
+                test_phone = '+50912345678'
+                test_user = User.query.filter_by(whatsapp=test_phone).first()
+                if not test_user:
+                    pseudo = 'testuser'
+                    count = 1
+                    while User.query.filter_by(pseudo=pseudo).first():
+                        pseudo = f'testuser{count}'
+                        count += 1
+                    test_pw = __os.environ.get('TEST_USER_PASSWORD', None)
+                    if not test_pw:
+                        test_pw = '123456'
+                    test_user = User(
+                        whatsapp=test_phone,
+                        pseudo=pseudo,
+                        name='Test User',
+                        auth_provider='whatsapp',
+                        is_active=True
                     )
-                    db.session.add(test_gkach)
+                    test_user.set_password(test_pw)
+                    db.session.add(test_user)
+                    db.session.flush()
+                    test_gkach = UserGkach.query.filter_by(user_whatsapp=test_user.whatsapp).first()
+                    if not test_gkach:
+                        test_gkach = UserGkach(
+                            user_id=test_user.id,
+                            user_whatsapp=test_user.whatsapp,
+                            gkach_balance=1000
+                        )
+                        db.session.add(test_gkach)
                     db.session.commit()
-                app.logger.info("Test user created: +50912345678 / 123456")
+                    app.logger.info(f"Test user created (dev, opt-in): +50912345678 / CREATE_TEST_USER=1")
         except Exception as e:
-            app.logger.warning(f"Could not create test user: {e}")
+            app.logger.warning(f"Could not create test user (opt-in): {e}")
             db.session.rollback()
     
     app.logger.info(f'Glory2YahPub started in {config_name} mode')
@@ -327,14 +378,56 @@ def register_blueprints(app):
 
 
 def register_error_handlers(app):
-    """Register error handlers"""
-    
+    """Register error handlers — P1 FIX: 500 rolls back session, add security headers on every response"""
+
+    @app.after_request
+    def inject_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        if request.is_secure or app.config.get('SESSION_COOKIE_SECURE'):
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        nonce = getattr(request, '_csp_nonce', None)
+        if nonce:
+            response.headers['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                f"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+                "img-src 'self' data: https: blob:; "
+                "font-src 'self' https://cdnjs.cloudflare.com data:; "
+                "media-src 'self' https: blob:; "
+                "connect-src 'self' wss: ws: https:; "
+                "frame-src 'self' https:; "
+                "object-src 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'"
+            )
+        else:
+            response.headers['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+                "img-src 'self' data: https: blob:; "
+                "font-src 'self' https://cdnjs.cloudflare.com data:; "
+                "media-src 'self' https: blob:; "
+                "connect-src 'self' wss: ws: https:; "
+                "frame-src 'self' https:; "
+                "object-src 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'"
+            )
+        return response
+
     @app.errorhandler(404)
     def not_found(e):
         return render_template('error.html'), 404
-    
+
     @app.errorhandler(500)
     def internal_error(e):
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
         return render_template('error.html'), 500
 
 

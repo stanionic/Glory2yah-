@@ -15,9 +15,10 @@ class GkachService:
     
     @staticmethod
     def get_or_create_account(whatsapp):
-        """Get or create Gkach account for user"""
+        """Get or create Gkach account for user
+        P1 FIX: does NOT auto-commit — caller commits. Composable with other writes."""
         whatsapp = validate_whatsapp(whatsapp)
-        
+
         account = UserGkach.query.filter_by(user_whatsapp=whatsapp).first()
         if not account:
             account = UserGkach(
@@ -25,8 +26,8 @@ class GkachService:
                 gkach_balance=0
             )
             db.session.add(account)
-            db.session.commit()
-        
+            db.session.flush()
+
         return account
     
     @staticmethod
@@ -53,29 +54,39 @@ class GkachService:
         return balance
     
     @staticmethod
-    def add_balance(whatsapp, amount, description='', transaction_type='credit'):
+    def _invalidate_balance_cache(whatsapp):
+        """Helper: invalidate gkach cache after mutation (private, called after outer commit)"""
+        try:
+            from app.services.redis_service import RedisService
+            from app import redis_client
+            redis_service = RedisService(redis_client)
+            redis_service.invalidate_gkach_balance(whatsapp)
+        except Exception:
+            pass
+
+    @staticmethod
+    def add_balance(whatsapp, amount, description='', transaction_type='credit', _commit=True):
         """
         Add Gkach to account
-        Thread-safe with database locking
+        Thread-safe with database locking.
+        P1 FIX: _commit=False by default when used inside compositions.
         """
         whatsapp = validate_whatsapp(whatsapp)
         amount = validate_amount(amount, min_amount=1)
-        
-        # Use database-level locking
+
         account = db.session.query(UserGkach).filter_by(
             user_whatsapp=whatsapp
         ).with_for_update().first()
-        
+
         if not account:
-            account = GkachService.get_or_create_account(whatsapp)
+            GkachService.get_or_create_account(whatsapp)
             account = db.session.query(UserGkach).filter_by(
                 user_whatsapp=whatsapp
             ).with_for_update().first()
-        
+
         old_balance = account.gkach_balance
         account.gkach_balance += amount
-        
-        # Log transaction
+
         transaction = GkachTransaction(
             transaction_id=str(uuid.uuid4()),
             user_whatsapp=whatsapp,
@@ -87,40 +98,36 @@ class GkachService:
             status='completed'
         )
         db.session.add(transaction)
-        db.session.commit()
-        
-        # Invalidate cache
-        from app.services.redis_service import RedisService
-        from app import redis_client
-        redis_service = RedisService(redis_client)
-        redis_service.invalidate_gkach_balance(whatsapp)
-        
+
+        if _commit:
+            db.session.commit()
+            GkachService._invalidate_balance_cache(whatsapp)
+
         return account.gkach_balance
-    
+
     @staticmethod
-    def deduct_balance(whatsapp, amount, description='', transaction_type='debit'):
+    def deduct_balance(whatsapp, amount, description='', transaction_type='debit', _commit=True):
         """
         Deduct Gkach from account
-        Thread-safe with database locking
+        Thread-safe with database locking.
+        P1 FIX: _commit=False by default when used inside compositions.
         """
         whatsapp = validate_whatsapp(whatsapp)
         amount = validate_amount(amount, min_amount=1)
-        
-        # Use database-level locking
+
         account = db.session.query(UserGkach).filter_by(
             user_whatsapp=whatsapp
         ).with_for_update().first()
-        
+
         if not account:
             raise ValidationError("Kont Gkach pa jwenn")
-        
+
         if account.gkach_balance < amount:
             raise ValidationError(f"Balans ensifisan. Ou gen {account.gkach_balance} Gkach")
-        
+
         old_balance = account.gkach_balance
         account.gkach_balance -= amount
-        
-        # Log transaction
+
         transaction = GkachTransaction(
             transaction_id=str(uuid.uuid4()),
             user_whatsapp=whatsapp,
@@ -132,46 +139,73 @@ class GkachService:
             status='completed'
         )
         db.session.add(transaction)
-        db.session.commit()
-        
-        # Invalidate cache
-        from app.services.redis_service import RedisService
-        from app import redis_client
-        redis_service = RedisService(redis_client)
-        redis_service.invalidate_gkach_balance(whatsapp)
-        
+
+        if _commit:
+            db.session.commit()
+            GkachService._invalidate_balance_cache(whatsapp)
+
         return account.gkach_balance
-    
+
     @staticmethod
-    def transfer(from_whatsapp, to_whatsapp, amount, description=''):
+    def transfer(from_whatsapp, to_whatsapp, amount, description='', commission_rate=None):
         """
-        Transfer Gkach between accounts
-        Atomic transaction
+        Transfer Gkach between accounts — ATOMIC (P1 FIX single transaction).
+        Optional commission_rate (Decimal 0-1): platform commission deducted from amount,
+        so receiver gets amount*(1-commission_rate).
         """
         from_whatsapp = validate_whatsapp(from_whatsapp)
         to_whatsapp = validate_whatsapp(to_whatsapp)
         amount = validate_amount(amount, min_amount=1)
-        
+
         if from_whatsapp == to_whatsapp:
             raise ValidationError("Pa ka transfere bay tèt ou")
-        
+
         try:
-            # Deduct from sender
+            platform_whatsapp = '+509PLATFORM'
+            commission_amount = 0
+            if commission_rate is not None:
+                from decimal import Decimal
+                commission_amount = int(round(float(amount) * float(commission_rate)))
+                if commission_amount < 0:
+                    commission_amount = 0
+
+            send_total = amount
+            receive_amount = amount - commission_amount
+
             GkachService.deduct_balance(
                 from_whatsapp,
-                amount,
-                f"Transfer to {to_whatsapp}: {description}",
-                'transfer_out'
+                send_total,
+                f"Transfer to {to_whatsapp}: {description}" + (f" (commission {commission_amount} GK)" if commission_amount else ""),
+                'transfer_out',
+                _commit=False
             )
-            
-            # Add to receiver
-            GkachService.add_balance(
-                to_whatsapp,
-                amount,
-                f"Transfer from {from_whatsapp}: {description}",
-                'transfer_in'
-            )
-            
+
+            if receive_amount > 0:
+                GkachService.add_balance(
+                    to_whatsapp,
+                    receive_amount,
+                    f"Transfer from {from_whatsapp}: {description}" + (f" (after commission {commission_amount} GK)" if commission_amount else ""),
+                    'transfer_in',
+                    _commit=False
+                )
+
+            if commission_amount > 0:
+                try:
+                    GkachService.add_balance(
+                        platform_whatsapp,
+                        commission_amount,
+                        f"Commission 2% on transfer {from_whatsapp}->{to_whatsapp}",
+                        'commission',
+                        _commit=False
+                    )
+                except Exception:
+                    pass
+
+            db.session.commit()
+            GkachService._invalidate_balance_cache(from_whatsapp)
+            GkachService._invalidate_balance_cache(to_whatsapp)
+            if commission_amount > 0:
+                GkachService._invalidate_balance_cache(platform_whatsapp)
             return True
         except Exception as e:
             db.session.rollback()

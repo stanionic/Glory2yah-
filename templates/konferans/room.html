@@ -1,216 +1,299 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>{{ room.room_name }} - Konferans</title>
+<link rel="stylesheet" href="/static/css/konferans.css">
 <style>
-    /* Correction pour l'affichage avec la navbar globale */
+    /* Override base template main padding for full-screen room */
     main {
         padding: 0 !important;
         margin: 0 !important;
         max-width: none !important;
     }
 
-    #videoContainer {
+    .konf-room-layout {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 10px;
-        margin-bottom: 20px;
-        background: #1a1a1a;
-        padding: 20px;
-        border-radius: 8px;
-        min-height: 400px;
+        grid-template-columns: 1fr 320px;
+        gap: 16px;
+        min-height: calc(100vh - 60px);
     }
 
-    .video-wrapper {
-        position: relative;
-        background: #000;
-        border-radius: 8px;
-        overflow: hidden;
-        aspect-ratio: 16/9;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
-
-    .video-wrapper video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .video-label {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        z-index: 10;
-    }
-
-    #chatContainer {
-        height: 400px;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 10px;
-        background: #f9f9f9;
-    }
-
-    .chat-message {
-        margin-bottom: 8px;
-        padding: 8px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        word-wrap: break-word;
-    }
-
-    .chat-message.own {
-        background: #007bff;
-        color: white;
-        text-align: right;
-        margin-left: 20%;
-    }
-
-    .chat-message.other {
-        background: #e9ecef;
-        margin-right: 20%;
-    }
-
-    .chat-message.system {
-        background: #fff3cd;
-        color: #856404;
-        text-align: center;
-        margin: 5px 0;
-        font-style: italic;
-    }
-
-    .controls {
-        margin-top: 20px;
-        padding: 15px;
-        background: #2a2a2a;
-        border-radius: 8px;
+    .konf-main-area {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
     }
 
-    .recording-indicator {
-        color: #ff4444;
-        animation: blink 1s infinite;
-        font-weight: bold;
+    .konf-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
-    @keyframes blink {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0; }
+    .konf-room-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
-    .quality-status-container {
+    .konf-room-info h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .konf-room-code {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
         font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,0.8);
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
-    /* Scrollbar styles for dark theme */
-    #videoContainer::-webkit-scrollbar {
-        width: 8px;
+    .konf-room-code i {
+        color: var(--g2y-primary-light);
     }
-    #videoContainer::-webkit-scrollbar-track {
-        background: #1a1a1a;
+
+    .konf-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
     }
-    #videoContainer::-webkit-scrollbar-thumb {
-        background: #444;
-        border-radius: 4px;
+
+    .konf-status-badge.recording {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+        animation: konfPulse 1.5s infinite;
+    }
+
+    .konf-status-badge.eco {
+        background: rgba(234, 179, 8, 0.15);
+        border: 1px solid rgba(234, 179, 8, 0.3);
+        color: #facc15;
+    }
+
+    .konf-status-badge.hd {
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: #60a5fa;
+    }
+
+    .konf-status-badge.uhd {
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #4ade80;
+    }
+
+    /* Chat panel in sidebar */
+    .konf-chat-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 300px;
+    }
+
+    .konf-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        max-height: 350px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.2) transparent;
+    }
+
+    .konf-chat-messages::-webkit-scrollbar {
+        width: 4px;
+    }
+    .konf-chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .konf-chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+    }
+
+    /* Participants panel */
+    .konf-participants {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .konf-participants::-webkit-scrollbar {
+        width: 4px;
+    }
+    .konf-participants::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .konf-participants::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .konf-room-layout {
+            grid-template-columns: 1fr;
+        }
+        .konf-sidebar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .konf-room-layout {
+            grid-template-columns: 1fr;
+        }
+        .konf-sidebar {
+            grid-template-columns: 1fr;
+        }
+        .konf-room-header {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .konf-video-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .konf-room-container {
+            padding: 8px;
+        }
+        .konf-controls-bar {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            justify-content: flex-start;
+        }
+        .konf-ctrl-btn span:not(.konf-ctrl-icon) {
+            display: none;
+        }
+        .konf-ctrl-btn {
+            padding: 10px;
+            min-width: 44px;
+            justify-content: center;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4" style="background: #121212; min-height: calc(100vh - 140px);">
-    <div class="row">
-        <div class="col-md-9">
-            <div class="d-flex justify-content-between align-items-center mb-3 text-white">
-                <div>
-                    <h3 class="mb-0">{{ room.room_name }}</h3>
-                    <small class="text-muted">Kòd: {{ room.room_code }}</small>
-                </div>
-                <div id="recordingStatus" style="display: none;">
-                    <span class="recording-indicator"><i class="fas fa-circle"></i> Anrejistreman ap mache</span>
-                </div>
-                <div id="qualityStatus" class="alert alert-info py-1 px-2 mb-0" style="font-size: 0.8rem;">
-                    <i class="fas fa-signal"></i> Mode Économique activé (Faible débit)
-                </div>
+<body class="konf-room-body">
+<div class="konf-room-container">
+    <!-- Room Header -->
+    <div class="konf-room-header">
+        <div class="konf-room-info">
+            <div class="konf-room-name">
+                <i class="fas fa-video"></i> {{ room.room_name }}
             </div>
+            <span class="konf-room-code">
+                <i class="fas fa-key"></i> {{ room.room_code }}
+            </span>
+        </div>
+        <div class="konf-room-controls-top">
+            <div id="recordingStatus" style="display: none;">
+                <span class="konf-status-badge recording">
+                    <span class="konf-recording-dot"></span> Anrejistreman ap mache
+                </span>
+            </div>
+            <div id="qualityStatus" class="konf-status-badge eco">
+                <i class="fas fa-signal"></i> Mode Économique (Faible débit)
+            </div>
+        </div>
+    </div>
 
-            <div id="videoContainer">
+    <!-- Main Layout -->
+    <div class="konf-room-layout">
+        <!-- Main Area: Video Grid + Controls -->
+        <div class="konf-main-area">
+            <!-- Video Grid -->
+            <div class="konf-video-grid" id="videoContainer">
                 <!-- Videos will be added here dynamically -->
             </div>
 
-            <div class="controls">
-                <div class="btn-group me-2" title="Chanje Kalite Videyo">
-                    <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-cog"></i> <span class="d-none d-md-inline">Kalite</span>
+            <!-- Controls Bar -->
+            <div class="konf-controls-bar">
+                <!-- Quality Dropdown -->
+                <div class="konf-quality-dropdown">
+                    <button class="konf-ctrl-btn konf-ctrl-secondary">
+                        <i class="fas fa-cog"></i> <span>Kalite</span>
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="changeQuality('low')"><i class="fas fa-signal text-warning"></i> Eko (360p)</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="changeQuality('hd')"><i class="fas fa-tv text-primary"></i> HD (720p)</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="changeQuality('uhd')"><i class="fas fa-film text-success"></i> UHD (1080p)</a></li>
-                    </ul>
+                    <div class="konf-quality-menu">
+                        <a class="konf-quality-item" href="#" onclick="changeQuality('low')">
+                            <i class="fas fa-signal text-warning"></i> Eko (360p)
+                        </a>
+                        <a class="konf-quality-item" href="#" onclick="changeQuality('hd')">
+                            <i class="fas fa-tv text-primary"></i> HD (720p)
+                        </a>
+                        <a class="konf-quality-item" href="#" onclick="changeQuality('uhd')">
+                            <i class="fas fa-film text-success"></i> UHD (1080p)
+                        </a>
+                    </div>
                 </div>
-                
-                <button id="toggleVideo" class="btn btn-primary" title="Aktive/Dezaktive Kamera">
-                    <i class="fas fa-video"></i> <span class="d-none d-md-inline">Video</span>
+
+                <button id="toggleVideo" class="konf-ctrl-btn konf-ctrl-primary" title="Aktive/Dezaktive Kamera">
+                    <i class="fas fa-video"></i> <span>Video</span>
                 </button>
-                
-                <button id="toggleAudio" class="btn btn-primary" title="Aktive/Dezaktive Mikwo">
-                    <i class="fas fa-microphone"></i> <span class="d-none d-md-inline">Odio</span>
+
+                <button id="toggleAudio" class="konf-ctrl-btn konf-ctrl-primary" title="Aktive/Dezaktive Mikwo">
+                    <i class="fas fa-microphone"></i> <span>Odio</span>
                 </button>
 
                 {% if is_owner %}
-                <button id="startRecording" class="btn btn-danger" title="Kòmanse anrejistreman">
-                    <i class="fas fa-circle"></i> <span class="d-none d-md-inline">Anrejistre</span>
+                <button id="startRecording" class="konf-ctrl-btn konf-ctrl-danger" title="Kòmanse anrejistreman">
+                    <i class="fas fa-circle"></i> <span>Anrejistre</span>
                 </button>
-                <button id="stopRecording" class="btn btn-secondary" style="display: none;" title="Sispann anrejistreman">
-                    <i class="fas fa-stop"></i> <span class="d-none d-md-inline">Sispann</span>
+                <button id="stopRecording" class="konf-ctrl-btn konf-ctrl-secondary" style="display: none;" title="Sispann anrejistreman">
+                    <i class="fas fa-stop"></i> <span>Sispann</span>
                 </button>
-                <button id="shareScreen" class="btn btn-info" title="Pataje ekran">
-                    <i class="fas fa-desktop"></i> <span class="d-none d-md-inline">Pataje</span>
+                <button id="shareScreen" class="konf-ctrl-btn konf-ctrl-info" title="Pataje ekran">
+                    <i class="fas fa-desktop"></i> <span>Pataje</span>
                 </button>
                 {% endif %}
 
-                <button id="leaveRoom" class="btn btn-danger ms-auto" title="Kite sal la">
-                    <i class="fas fa-sign-out-alt"></i> <span class="d-none d-md-inline">Kite</span>
+                <button id="leaveRoom" class="konf-ctrl-btn konf-ctrl-danger" style="margin-left: auto;" title="Kite sal la">
+                    <i class="fas fa-sign-out-alt"></i> <span>Kite</span>
                 </button>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card bg-dark text-white border-secondary">
-                <div class="card-header border-secondary bg-secondary bg-opacity-25">
-                    <h5 class="mb-0"><i class="fas fa-comments"></i> Chat</h5>
+        <!-- Sidebar: Chat + Participants -->
+        <div class="konf-sidebar">
+            <!-- Chat Panel -->
+            <div class="konf-chat-panel">
+                <div class="konf-chat-header">
+                    <i class="fas fa-comments"></i> Chat
                 </div>
-                <div class="card-body">
-                    <div id="chatContainer" class="bg-dark text-dark">
-                        <!-- Chat messages will appear here -->
-                    </div>
-                    <div class="input-group mt-3">
-                        <input type="text" id="chatInput" class="form-control" placeholder="Tape mesaj ou...">
-                        <button id="sendChat" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
+                <div class="konf-chat-messages" id="chatContainer">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="konf-chat-input-area">
+                    <input type="text" id="chatInput" class="konf-chat-input" placeholder="Tape mesaj ou...">
+                    <button id="sendChat" class="konf-chat-send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
             </div>
 
-            <div class="card mt-3 bg-dark text-white border-secondary">
-                <div class="card-header border-secondary bg-secondary bg-opacity-25">
-                    <h5 class="mb-0"><i class="fas fa-users"></i> Patisipan yo</h5>
+            <!-- Participants Panel -->
+            <div class="konf-participants">
+                <div class="konf-participants-header">
+                    <i class="fas fa-users"></i> Patisipan yo
                 </div>
-                <div class="card-body p-0">
-                    <ul id="participantsList" class="list-group list-group-flush">
-                        <!-- Participants will be listed here -->
-                    </ul>
+                <div class="konf-participants-list" id="participantsList">
+                    <!-- Participants will be listed here -->
                 </div>
             </div>
         </div>
@@ -236,18 +319,18 @@
     const qualityProfiles = {
         low: {
             video: { width: { ideal: 320, max: 480 }, height: { ideal: 240, max: 360 }, frameRate: { ideal: 15, max: 15 } },
-            label: '<i class="fas fa-signal"></i> Mode Économique activé (Faible débit)',
-            class: 'alert-info'
+            label: '<i class="fas fa-signal"></i> Mode Économique (Faible débit)',
+            class: 'eco'
         },
         hd: {
             video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
             label: '<i class="fas fa-tv"></i> Mode HD (720p)',
-            class: 'alert-primary'
+            class: 'hd'
         },
         uhd: {
             video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
             label: '<i class="fas fa-film"></i> Mode UHD (1080p)',
-            class: 'alert-success'
+            class: 'uhd'
         }
     };
 
@@ -284,7 +367,7 @@
             // Update Status Indicator
             const statusDiv = document.getElementById('qualityStatus');
             if (statusDiv) {
-                statusDiv.className = `alert ${profile.class} py-1 px-2 mb-0`;
+                statusDiv.className = `konf-status-badge ${profile.class}`;
                 statusDiv.innerHTML = profile.label;
             }
 
@@ -395,7 +478,7 @@
         if (document.getElementById(`video-${id}`)) return;
 
         const wrapper = document.createElement('div');
-        wrapper.className = 'video-wrapper';
+        wrapper.className = 'konf-video-wrapper';
         wrapper.id = `video-${id}`;
 
         const video = document.createElement('video');
@@ -405,7 +488,7 @@
         if (id === 'local') video.muted = true;
 
         const label = document.createElement('div');
-        label.className = 'video-label';
+        label.className = 'konf-video-label';
         label.innerText = name;
 
         wrapper.appendChild(video);
@@ -421,21 +504,29 @@
     function updateParticipantsList(participants) {
         participantsList.innerHTML = '';
         participants.forEach(p => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item bg-dark text-white border-secondary';
-            li.innerHTML = `<i class="fas fa-user-circle me-2"></i> ${p}`;
-            participantsList.appendChild(li);
+            const div = document.createElement('div');
+            div.className = 'konf-participant-item';
+            const initial = p.charAt(0).toUpperCase();
+            div.innerHTML = `
+                <div class="konf-participant-avatar">${initial}</div>
+                <span class="konf-participant-name">${p}</span>
+                <span class="konf-participant-status"></span>
+            `;
+            participantsList.appendChild(div);
         });
     }
 
     function addChatMessage(sender, msg, isOwn = false, isSystem = false) {
         const div = document.createElement('div');
         if (isSystem) {
-            div.className = 'chat-message system';
+            div.className = 'konf-chat-bubble konf-chat-system';
             div.innerText = msg;
+        } else if (isOwn) {
+            div.className = 'konf-chat-bubble konf-chat-own';
+            div.innerHTML = `<div class="konf-chat-sender">${sender}</div>${msg}`;
         } else {
-            div.className = `chat-message ${isOwn ? 'own' : 'other'}`;
-            div.innerHTML = `<strong>${sender}:</strong> ${msg}`;
+            div.className = 'konf-chat-bubble konf-chat-other';
+            div.innerHTML = `<div class="konf-chat-sender">${sender}</div>${msg}`;
         }
         chatContainer.appendChild(div);
         chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -460,17 +551,17 @@
     document.getElementById('toggleVideo').addEventListener('click', function() {
         const track = localStream.getVideoTracks()[0];
         track.enabled = !track.enabled;
-        this.classList.toggle('btn-danger');
-        this.classList.toggle('btn-primary');
-        this.innerHTML = track.enabled ? '<i class="fas fa-video"></i> <span class="d-none d-md-inline">Video</span>' : '<i class="fas fa-video-slash"></i> <span class="d-none d-md-inline">Video</span>';
+        this.classList.toggle('konf-ctrl-danger');
+        this.classList.toggle('konf-ctrl-primary');
+        this.innerHTML = track.enabled ? '<i class="fas fa-video"></i> <span>Video</span>' : '<i class="fas fa-video-slash"></i> <span>Video</span>';
     });
 
     document.getElementById('toggleAudio').addEventListener('click', function() {
         const track = localStream.getAudioTracks()[0];
         track.enabled = !track.enabled;
-        this.classList.toggle('btn-danger');
-        this.classList.toggle('btn-primary');
-        this.innerHTML = track.enabled ? '<i class="fas fa-microphone"></i> <span class="d-none d-md-inline">Odio</span>' : '<i class="fas fa-microphone-slash"></i> <span class="d-none d-md-inline">Odio</span>';
+        this.classList.toggle('konf-ctrl-danger');
+        this.classList.toggle('konf-ctrl-primary');
+        this.innerHTML = track.enabled ? '<i class="fas fa-microphone"></i> <span>Odio</span>' : '<i class="fas fa-microphone-slash"></i> <span>Odio</span>';
     });
 
     document.getElementById('leaveRoom').addEventListener('click', () => {
@@ -511,8 +602,8 @@
             const localVideo = document.querySelector('#video-local video');
             if (localVideo) localVideo.srcObject = screenStream;
 
-            shareScreenBtn.classList.replace('btn-info', 'btn-warning');
-            shareScreenBtn.innerHTML = '<i class="fas fa-stop-circle"></i> <span class="d-none d-md-inline">Sispann</span>';
+            shareScreenBtn.classList.replace('konf-ctrl-info', 'konf-ctrl-danger');
+            shareScreenBtn.innerHTML = '<i class="fas fa-stop-circle"></i> <span>Sispann</span>';
             isScreenSharing = true;
 
             screenTrack.onended = () => stopScreenShare();
@@ -535,10 +626,11 @@
         const localVideo = document.querySelector('#video-local video');
         if (localVideo) localVideo.srcObject = localStream;
 
-        shareScreenBtn.classList.replace('btn-warning', 'btn-info');
-        shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> <span class="d-none d-md-inline">Pataje</span>';
+        shareScreenBtn.classList.replace('konf-ctrl-danger', 'konf-ctrl-info');
+        shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> <span>Pataje</span>';
         isScreenSharing = false;
         screenStream = null;
     }
 </script>
+</body>
 {% endblock %}

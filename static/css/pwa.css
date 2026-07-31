@@ -1,7 +1,7 @@
 /* ============================================
    Glory2YahPub - PWA Install Styles
    Premium glassmorphism design
-   Colors: Royal Blue (#002366), Gold (#FFD700), White
+   Uses unified design system from variables.css
    ============================================ */
 
 /* ===== PWA INSTALL POPUP ===== */
@@ -11,11 +11,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 9999;
+    z-index: var(--g2y-z-toast);
     display: none;
     align-items: flex-end;
     justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    font-family: var(--g2y-font);
 }
 
 .pwa-popup-overlay {
@@ -24,10 +24,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--g2y-overlay);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    animation: pwaFadeIn 0.3s ease;
+    animation: g2y-fadeIn 0.3s ease;
 }
 
 .pwa-popup-container {
@@ -69,7 +69,7 @@
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background: linear-gradient(135deg, #002366 0%, #0B2E8A 100%);
+    background: var(--g2y-gradient-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -80,7 +80,7 @@
 .pwa-popup-logo-img span {
     font-size: 28px;
     font-weight: 800;
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    background: var(--g2y-gradient-gold);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -94,14 +94,14 @@
 .pwa-popup-logo-text h2 {
     font-size: 20px;
     font-weight: 700;
-    color: #002366;
+    color: var(--g2y-primary);
     margin: 0;
     line-height: 1.2;
 }
 
 .pwa-popup-logo-text span {
     font-size: 12px;
-    color: #667eea;
+    color: var(--g2y-primary-light);
     font-weight: 500;
 }
 
@@ -111,13 +111,13 @@
     border-radius: 50%;
     border: none;
     background: rgba(0, 0, 0, 0.05);
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 18px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--g2y-transition-fast);
     flex-shrink: 0;
 }
 
@@ -135,14 +135,14 @@
 .pwa-popup-title {
     font-size: 22px;
     font-weight: 700;
-    color: #002366;
+    color: var(--g2y-primary);
     margin: 0 0 12px 0;
     line-height: 1.3;
 }
 
 .pwa-popup-description {
     font-size: 15px;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     margin: 0 0 8px 0;
     line-height: 1.5;
 }
@@ -163,7 +163,7 @@
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 13px;
-    color: #002366;
+    color: var(--g2y-primary);
     font-weight: 500;
 }
 
@@ -183,7 +183,7 @@
     padding: 16px 24px;
     border: none;
     border-radius: 16px;
-    background: linear-gradient(135deg, #002366 0%, #0B2E8A 100%);
+    background: var(--g2y-gradient-primary);
     color: white;
     font-size: 17px;
     font-weight: 700;
@@ -192,7 +192,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
     box-shadow: 0 4px 20px rgba(0, 35, 102, 0.3);
     position: relative;
     overflow: hidden;
@@ -233,16 +233,16 @@
     border: none;
     border-radius: 12px;
     background: transparent;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--g2y-transition-fast);
 }
 
 .pwa-popup-dismiss-btn:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: #002366;
+    color: var(--g2y-primary);
 }
 
 /* ===== iOS GUIDE POPUP ===== */
@@ -252,11 +252,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 9999;
+    z-index: var(--g2y-z-toast);
     display: none;
     align-items: center;
     justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    font-family: var(--g2y-font);
 }
 
 .pwa-ios-guide-overlay {
@@ -268,7 +268,7 @@
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    animation: pwaFadeIn 0.3s ease;
+    animation: g2y-fadeIn 0.3s ease;
 }
 
 .pwa-ios-guide-container {
@@ -282,7 +282,7 @@
     border-radius: 24px;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
     padding: 32px 24px 24px;
-    animation: pwaScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: g2y-scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
@@ -295,7 +295,7 @@
     width: 72px;
     height: 72px;
     border-radius: 20px;
-    background: linear-gradient(135deg, #002366 0%, #0B2E8A 100%);
+    background: var(--g2y-gradient-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -306,7 +306,7 @@
 .pwa-ios-guide-icon span {
     font-size: 36px;
     font-weight: 800;
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    background: var(--g2y-gradient-gold);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -315,7 +315,7 @@
 .pwa-ios-guide-title {
     font-size: 20px;
     font-weight: 700;
-    color: #002366;
+    color: var(--g2y-primary);
     margin: 0;
 }
 
@@ -340,7 +340,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #002366 0%, #0B2E8A 100%);
+    background: var(--g2y-gradient-primary);
     color: white;
     font-size: 14px;
     font-weight: 700;
@@ -357,7 +357,7 @@
 .pwa-ios-guide-step-content p {
     margin: 0;
     font-size: 14px;
-    color: #1a1a1a;
+    color: var(--g2y-text);
     line-height: 1.5;
 }
 
@@ -369,7 +369,7 @@
     padding: 2px 10px;
     border-radius: 6px;
     font-weight: 600;
-    color: #002366;
+    color: var(--g2y-primary);
     font-size: 13px;
 }
 
@@ -384,12 +384,12 @@
     padding: 16px 24px;
     border: none;
     border-radius: 16px;
-    background: linear-gradient(135deg, #002366 0%, #0B2E8A 100%);
+    background: var(--g2y-gradient-primary);
     color: white;
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--g2y-transition);
     box-shadow: 0 4px 20px rgba(0, 35, 102, 0.3);
 }
 
@@ -404,57 +404,113 @@
     border: none;
     border-radius: 12px;
     background: transparent;
-    color: #65676b;
+    color: var(--g2y-text-secondary);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--g2y-transition-fast);
 }
 
 .pwa-ios-dismiss-btn:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: #002366;
+    color: var(--g2y-primary);
 }
 
 /* ===== ANIMATIONS ===== */
 @keyframes pwaFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes pwaSlideUp {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes pwaScaleIn {
-    from {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes pwaShimmer {
-    0% {
-        background-position: -200% center;
-    }
-    100% {
-        background-position: 200% center;
-    }
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+.dark-mode .pwa-popup-container {
+    background: rgba(28, 28, 30, 0.95);
+    border-color: rgba(255, 215, 0, 0.15);
+}
+
+.dark-mode .pwa-popup-logo-text h2 {
+    color: var(--g2y-gold);
+}
+
+.dark-mode .pwa-popup-logo-text span {
+    color: var(--g2y-primary-light);
+}
+
+.dark-mode .pwa-popup-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--g2y-text-muted);
+}
+
+.dark-mode .pwa-popup-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .pwa-popup-title {
+    color: var(--g2y-gold);
+}
+
+.dark-mode .pwa-popup-description {
+    color: var(--g2y-text-muted);
+}
+
+.dark-mode .pwa-popup-feature {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
+    color: var(--g2y-gold);
+}
+
+.dark-mode .pwa-popup-dismiss-btn {
+    color: var(--g2y-text-muted);
+}
+
+.dark-mode .pwa-popup-dismiss-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--g2y-gold);
+}
+
+.dark-mode .pwa-ios-guide-container {
+    background: rgba(28, 28, 30, 0.98);
+}
+
+.dark-mode .pwa-ios-guide-title {
+    color: var(--g2y-gold);
+}
+
+.dark-mode .pwa-ios-guide-step {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(102, 126, 234, 0.05) 100%);
+    border-color: rgba(255, 215, 0, 0.1);
+}
+
+.dark-mode .pwa-ios-guide-step-content p {
+    color: var(--g2y-text);
+}
+
+.dark-mode .pwa-ios-guide-step-content .pwa-step-highlight {
+    background: rgba(255, 215, 0, 0.15);
+    color: var(--g2y-gold);
+}
+
+.dark-mode .pwa-ios-dismiss-btn {
+    color: var(--g2y-text-muted);
+}
+
+.dark-mode .pwa-ios-dismiss-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--g2y-gold);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -553,84 +609,6 @@
     .pwa-popup-feature {
         font-size: 11px;
         padding: 3px 10px;
-    }
-}
-
-/* ===== DARK MODE SUPPORT ===== */
-@media (prefers-color-scheme: dark) {
-    .pwa-popup-container {
-        background: rgba(28, 28, 30, 0.95);
-        border-color: rgba(255, 215, 0, 0.15);
-    }
-
-    .pwa-popup-logo-text h2 {
-        color: #FFD700;
-    }
-
-    .pwa-popup-logo-text span {
-        color: #667eea;
-    }
-
-    .pwa-popup-close {
-        background: rgba(255, 255, 255, 0.1);
-        color: #989b9e;
-    }
-
-    .pwa-popup-close:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-
-    .pwa-popup-title {
-        color: #FFD700;
-    }
-
-    .pwa-popup-description {
-        color: #989b9e;
-    }
-
-    .pwa-popup-feature {
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
-        color: #FFD700;
-    }
-
-    .pwa-popup-dismiss-btn {
-        color: #989b9e;
-    }
-
-    .pwa-popup-dismiss-btn:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #FFD700;
-    }
-
-    .pwa-ios-guide-container {
-        background: rgba(28, 28, 30, 0.98);
-    }
-
-    .pwa-ios-guide-title {
-        color: #FFD700;
-    }
-
-    .pwa-ios-guide-step {
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(102, 126, 234, 0.05) 100%);
-        border-color: rgba(255, 215, 0, 0.1);
-    }
-
-    .pwa-ios-guide-step-content p {
-        color: #e0e0e0;
-    }
-
-    .pwa-ios-guide-step-content .pwa-step-highlight {
-        background: rgba(255, 215, 0, 0.15);
-        color: #FFD700;
-    }
-
-    .pwa-ios-dismiss-btn {
-        color: #989b9e;
-    }
-
-    .pwa-ios-dismiss-btn:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #FFD700;
     }
 }
 

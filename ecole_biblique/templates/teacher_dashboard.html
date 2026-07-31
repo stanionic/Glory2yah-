@@ -4,7 +4,53 @@
 <div class="fade-in">
     <div class="student-info-panel">
         <h2>👨‍🏫 Tableau de Bord Enseignant</h2>
-        <p class="text-muted">Gérez vos cours et les notes de vos étudiants.</p>
+        <p class="text-muted">Gérez vos cours, les notes de vos étudiants, et animez des classes en direct.</p>
+    </div>
+
+    <!-- Live Class Actions -->
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h3><i class="fas fa-video"></i> 📹 Live Class - Konferans</h3>
+        </div>
+        <div class="card-body">
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+                <a href="{{ url_for('ecole_biblique.teacher_start_live') }}" class="btn btn-success btn-lg">
+                    <i class="fas fa-play-circle"></i> Kòmanse yon Live Class
+                </a>
+                <a href="{{ url_for('ecole_biblique.live_classes') }}" class="btn btn-outline-info btn-lg">
+                    <i class="fas fa-eye"></i> Wè tout Live Classes
+                </a>
+                <a href="/konferans/" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-video"></i> Konferans (Open to all)
+                </a>
+            </div>
+
+            {% if active_rooms %}
+            <hr>
+            <h5>📡 Live Classes aktif yo:</h5>
+            <div class="row mt-3">
+                {% for room in active_rooms %}
+                <div class="col-md-4 mb-2">
+                    <div class="card border-success">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ room.room_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">Kòd: <kbd>{{ room.room_code }}</kbd></small>
+                                </div>
+                                <a href="/konferans/room/{{ room.room_code }}?user_name={{ current_user.full_name }}" 
+                                   class="btn btn-sm btn-success" target="_blank">
+                                    <i class="fas fa-door-open"></i> Antre
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Quick Stats -->

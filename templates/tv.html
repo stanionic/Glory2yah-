@@ -8,7 +8,12 @@
 
 {% block extra_css %}
 <style>
-/* Ensure html and body take full screen */
+/* NAVBAR + TV layout — Header + Bottom Nav are VISIBLE now per user request. */
+:root {
+    --tv-header-h: 64px;
+    --tv-bottom-h: 78px;
+}
+
 html, body {
     width: 100vw !important;
     height: 100vh !important;
@@ -17,24 +22,24 @@ html, body {
     overflow: hidden !important;
 }
 
-/* Hide header, bottom nav, and main content restrictions on GADE MATCH page */
+/* NAVBAR VISIBLE in TV page — user request */
 .g2y-header,
 .modern-bottom-nav,
 #bottomNav {
-    display: none !important;
+    display: flex !important;
 }
 
 .g2y-main {
     padding: 0 !important;
     margin: 0 !important;
-    position: fixed !important;
+    position: relative !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
     z-index: 1 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100vh !important;
 }
 
 .g2y-body {
@@ -46,21 +51,22 @@ html, body {
     height: 100vh !important;
 }
 
+/* TV container = between header top and bottom nav bottom */
 .gadematch-container {
-    position: fixed;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    position: relative;
+    top: var(--tv-header-h);
+    left: 0;
+    right: 0;
+    bottom: var(--tv-bottom-h);
     background-color: black !important;
     display: flex;
     flex-direction: column;
-    z-index: 999999 !important;
+    z-index: 5 !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
     width: 100vw !important;
-    height: 100vh !important;
+    height: calc(100vh - var(--tv-header-h) - var(--tv-bottom-h));
 }
 
 .gadematch-video-container {
@@ -76,8 +82,8 @@ html, body {
 }
 
 .gadematch-video-container iframe {
-    width: 100vw !important;
-    height: 100vh !important;
+    width: 100% !important;
+    height: 100% !important;
     border: none !important;
     position: absolute !important;
     top: 0 !important;
@@ -136,10 +142,10 @@ html, body {
     display: none !important;
 }
 
-/* Fullscreen button */
+/* Buttons repositioned to above bottom-nav, within TV viewport */
 .gadematch-fullscreen-btn {
     position: fixed;
-    bottom: 20px;
+    bottom: calc(var(--tv-bottom-h) + 20px);
     right: 20px;
     background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 100%);
     color: white;
@@ -159,10 +165,9 @@ html, body {
     transform: scale(0.95);
 }
 
-/* Reset button */
 .gadematch-reset-btn {
     position: fixed;
-    bottom: 20px;
+    bottom: calc(var(--tv-bottom-h) + 20px);
     left: 20px;
     background: linear-gradient(135deg, rgba(239,68,68,0.85) 0%, rgba(220,38,38,0.7) 100%);
     color: white;
@@ -181,6 +186,11 @@ html, body {
 
 .gadematch-reset-btn:active {
     transform: scale(0.95);
+}
+
+/* Timer: push under header, inside TV viewport */
+#timerDisplay {
+    top: calc(var(--tv-header-h) + 20px) !important;
 }
 
 /* Auto-rotate support */
@@ -202,6 +212,10 @@ html, body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    :root {
+        --tv-header-h: 58px;
+        --tv-bottom-h: 70px;
+    }
     .gadematch-play-button {
         padding: 25px 40px;
         font-size: 22px;
@@ -215,6 +229,10 @@ html, body {
 }
 
 @media (max-width: 480px) {
+    :root {
+        --tv-header-h: 56px;
+        --tv-bottom-h: 68px;
+    }
     .gadematch-play-button {
         padding: 20px 30px;
         font-size: 18px;
@@ -229,6 +247,10 @@ html, body {
 }
 
 @media (max-height: 600px) {
+    :root {
+        --tv-header-h: 48px;
+        --tv-bottom-h: 62px;
+    }
     .gadematch-play-button {
         padding: 15px 25px;
         font-size: 16px;
@@ -239,6 +261,34 @@ html, body {
         width: 40px;
         height: 40px;
     }
+}
+
+/* FULLSCREEN MODE — when user clicks fullscreen, re-expand to entire viewport */
+:fullscreen .gadematch-container,
+:-webkit-full-screen .gadematch-container,
+:-moz-full-screen .gadematch-container {
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+}
+:fullscreen .g2y-header,
+:fullscreen #bottomNav,
+:-webkit-full-screen .g2y-header,
+:-webkit-full-screen #bottomNav,
+:-moz-full-screen .g2y-header,
+:-moz-full-screen #bottomNav {
+    display: none !important;
+}
+:fullscreen .gadematch-fullscreen-btn,
+:fullscreen .gadematch-reset-btn,
+:-webkit-full-screen .gadematch-fullscreen-btn,
+:-webkit-full-screen .gadematch-reset-btn {
+    bottom: 20px !important;
+}
+:fullscreen #timerDisplay,
+:-webkit-full-screen #timerDisplay,
+:-moz-full-screen #timerDisplay {
+    top: 20px !important;
 }
 </style>
 {% endblock %}
@@ -483,14 +533,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Reset button listener
+    // Reset button listener — P1 B05 FIX: preserve timer (NEVER wipe gadematch_start server/client anchor).
+    // Reset = only unload the stream iframe + UI reset (fullscreen hidden, etc).
     if (resetBtn) {
         resetBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            // Clear localStorage
+            // P1 FIX: DO NOT CLEAR gadematch_start (that's the 45-min limit timer anchor).
+            // DO NOT CLEAR gadematch_src in a way that lets users trivially bypass server-time checks.
             localStorage.removeItem('gadematch_src');
-            localStorage.removeItem('gadematch_start');
+            // localStorage.removeItem('gadematch_start');  // REMOVED — timer must not be resettable by users.
             // Reset iframe
             gadematchIframe.src = '';
             // Show play button
@@ -498,11 +550,8 @@ document.addEventListener('DOMContentLoaded', function() {
             videoPlayerContainer.style.display = 'none';
             fullscreenBtn.style.display = 'none';
             resetBtn.style.display = 'none';
-            // Hide timer
-            timerDisplay.style.display = 'none';
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
+            // NOTE: timer (if running for non-logged-in) stays pinned to original start — no bypass.
+            // If user clicks Play again, startTimer() will read the OLD stored start and resume countdown correctly.
         });
     }
 

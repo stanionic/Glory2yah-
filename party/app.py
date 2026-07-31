@@ -12,8 +12,11 @@ from flask_login import current_user
 
 party_bp = Blueprint('party', __name__)
 
-# Exempt all party routes from CSRF for now
-csrf.exempt(party_bp)
+# P1 FIX V11 — NO MORE csrf.exempt(party_bp) blanket bypass.
+# All party forms now send the CSRF token via {{ csrf_token() }} or
+# fetch() with X-CSRFToken header (base.html meta tag).
+# Webhook-ish endpoints that truly need exemption must be added selectively
+# (none at this time). Blanket exempt = REMOVED.
 
 
 def get_party_models():

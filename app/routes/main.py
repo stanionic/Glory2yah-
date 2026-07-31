@@ -18,6 +18,30 @@ from flask import request as flask_req
 main_bp = Blueprint('main', __name__)
 
 
+@main_bp.route('/search', methods=['GET'])
+def search():
+    """P1 FIX B02 — dispatcher for base.html <form action="/search"> (404 before)"""
+    try:
+        q = (request.args.get('q') or '').strip()
+        category = (request.args.get('category') or '').strip()
+        location = (request.args.get('location') or '').strip()
+        try:
+            return redirect(url_for('marketplace.index', q=q, category=category, location=location))
+        except Exception:
+            posts = []
+            if q:
+                from app.models.ad import Ad
+                like = f"%{q}%"
+                posts = Ad.query.filter(
+                    Ad.admin_status == 'approved',
+                    db.or_(Ad.title.ilike(like), Ad.description.ilike(like))
+                ).order_by(Ad.created_at.desc()).limit(50).all()
+            return render_template('index.html', posts=posts or [], marketplace_ads=[], current_user=current_user)
+    except Exception as e:
+        current_app.logger.error(f"Search error: {e}")
+        return redirect(url_for('main.index'))
+
+
 @main_bp.route('/')
 def index():
     """Homepage with Facebook-style feed and stories - Split layout with posts and ads carousel"""

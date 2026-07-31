@@ -17,6 +17,13 @@ from app.models.party import Party, PartyParticipant
 from app.models.konferans import KonferansRoom, KonferansRecording
 from app.models.charity import CharityDonation, CharityCause
 
+try:
+    from app.models.app_installation import AppInstallation
+    _HAS_APPINSTALL = True
+except Exception:
+    AppInstallation = None
+    _HAS_APPINSTALL = False
+
 __all__ = [
     'BaseModel',
     'User',
@@ -36,15 +43,19 @@ __all__ = [
     'PartyParticipant',
     'KonferansRoom',
     'KonferansRecording',
-    'AppInstallation',
-    'CharityDonation',
-    'CharityCause'
 ]
+
+if _HAS_APPINSTALL:
+    __all__.append('AppInstallation')
+__all__.extend(['CharityDonation', 'CharityCause'])
 
 
 def __getattr__(name):
     """Lazy import for AppInstallation to avoid circular imports"""
     if name == 'AppInstallation':
-        from app.models.app_installation import AppInstallation
-        return AppInstallation
+        try:
+            from app.models.app_installation import AppInstallation
+            return AppInstallation
+        except Exception as exc:
+            raise ImportError(f"AppInstallation unavailable: {exc}") from exc
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
