@@ -1,0 +1,158 @@
+{% extends "ecole_biblique/eb_base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .terms-wrap { max-width: 980px; margin: 0 auto; }
+  .terms-hero {
+    background: linear-gradient(135deg, #4169E1 0%, #6A8AE8 100%);
+    color: #fff;
+    border-radius: 14px;
+    padding: 28px 32px;
+    box-shadow: 0 10px 30px rgba(65,105,225,0.22);
+    margin-bottom: 24px;
+  }
+  .terms-hero h1 { margin: 0 0 8px; font-size: 1.9rem; }
+  .terms-hero p { margin: 0; opacity: 0.96; }
+  .terms-hero .badge-status {
+    display: inline-block; margin-top: 14px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.85rem; font-weight: 700; letter-spacing: 0.2px;
+  }
+  .terms-doc {
+    background: #fff;
+    border: 2px solid #e4ebff;
+    border-radius: 14px;
+    padding: 28px 32px;
+    max-height: 56vh;
+    overflow-y: auto;
+    margin-bottom: 22px;
+  }
+  .terms-doc .terms-section { margin-bottom: 26px; }
+  .terms-doc .terms-section:last-child { margin-bottom: 0; }
+  .terms-doc h3 { color: #4169E1; font-size: 1.2rem; font-weight: 800; margin: 0 0 10px; border-left: 4px solid #4169E1; padding-left: 12px; }
+  .terms-doc h5 { color: #1d2949; font-weight: 700; margin: 14px 0 6px; }
+  .terms-doc p, .terms-doc li { color: #2b3b5e; line-height: 1.75; }
+  .terms-doc ul, .terms-doc ol { padding-left: 22px; margin: 8px 0 14px; }
+  .terms-doc li { margin-bottom: 6px; }
+  .accept-panel {
+    background: linear-gradient(180deg, #f6f9ff 0%, #fff 100%);
+    border: 1px dashed #b4c5f5;
+    border-radius: 14px;
+    padding: 22px 26px;
+    text-align: center;
+  }
+  .accept-panel .form-check { display: flex; align-items: flex-start; justify-content: center; gap: 12px; }
+  .accept-panel label { text-align: left; font-weight: 700; color: #1d2949; font-size: 0.98rem; line-height: 1.55; }
+  .accept-panel input[type=checkbox] { transform: scale(1.2); margin-top: 6px; }
+  .btn-primary { background: #4169E1 !important; border-color: #4169E1 !important; }
+  .btn-primary:hover { background: #2f55c9 !important; }
+  .btn-primary:disabled { background: #b9c5e8 !important; border-color: #b9c5e8 !important; cursor: not-allowed; }
+  .next-steps-card {
+    background: #fffaf2;
+    border-left: 5px solid #d97706;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    color: #7c2d12;
+  }
+  .next-steps-card ol { margin: 6px 0 0; padding-left: 24px; }
+  .next-steps-card li { margin-bottom: 4px; }
+  .signed-banner {
+    background: #dcfce7; border: 2px solid #86efac; color: #14532d;
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;
+  }
+  .signed-banner strong { color: #065f46; }
+</style>
+{% endblock %}
+
+{% block eb_content %}
+<div class="terms-wrap">
+
+  <div class="terms-hero">
+    <h1>📜 Termes & Conditions Générales — École Biblique</h1>
+    <p><strong>{{ school_name }}</strong> en partenariat avec <strong>{{ partner }}</strong></p>
+    <p style="margin-top:10px;font-size:0.9rem;">Version des Conditions : <strong>{{ terms_version }}</strong> · Signature électronique à valeur contractuelle.</p>
+    {% if already_signed %}
+      <span class="badge-status">✅ Vous avez déjà signé ces conditions (v{{ terms_version }}).</span>
+    {% else %}
+      <span class="badge-status">🔒 Signature électronique requise avant accès au Module #1.</span>
+    {% endif %}
+  </div>
+
+  {% if already_signed and registration_completed %}
+  <div class="signed-banner">
+    <strong>✅ Conditions déjà acceptées.</strong> Votre accès au Module #1 est actif.
+    <div class="mt-2">
+      <a href="{{ url_for('ecole_biblique.student_dashboard') }}" class="btn btn-success btn-sm">
+        Retourner au Tableau de Bord
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="next-steps-card">
+    <strong>👉 Étape actuelle dans votre parcours :</strong>
+    <ol>
+      <li><em>(déjà réussi)</em> Test d'admission (score ≥ 70%)</li>
+      <li><strong>⚠️ Vous êtes ici :</strong> Lire &amp; signer électroniquement les présentes conditions.</li>
+      <li>Compléter votre formulaire d'inscription (identité, plan gratuit / payant).</li>
+      <li><strong>Accès immédiat au Module #1 UNIQUEMENT</strong> (débloqués ensuite un par un). Modules #2 &amp; #3 : 100% gratuits après réussite.</li>
+    </ol>
+  </div>
+  {% endif %}
+
+  <h3 style="color:#4169E1;font-weight:800;margin-bottom:12px;">📖 Document officiel — Veuillez faire défiler l'intégralité :</h3>
+  <div class="terms-doc" id="termsBox">
+    {{ terms_html | safe }}
+  </div>
+
+  {% if not already_signed or not registration_completed %}
+  <form method="POST" action="{{ url_for('ecole_biblique.terms_conditions') }}" id="termsForm" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="accept-panel">
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="accept_terms" name="accept_terms" required>
+        <label class="form-check-label" for="accept_terms">
+          J'ai lu attentivement TOUS les articles (1 à 7) des présentes Conditions Générales de l'École Biblique MEGD-Haïti (cycle 2026, version {{ terms_version }}).
+          Je comprends que l'accès est initialement limité au <strong>Module #1 UNIQUEMENT</strong>, et que les modules suivants se débloquent un par un après chaque réussite.
+          Je m'engage à respecter les délais, les frais financiers et les règles disciplinaires exposées.
+        </label>
+      </div>
+      <div class="mt-3">
+        <button type="submit" class="btn btn-primary btn-lg px-5" id="signBtn" disabled>
+          ✍️ Signer électroniquement les Conditions &amp; Continuer
+        </button>
+        <p class="text-muted small mt-2 mb-0">
+          Cochez la case ci-dessus pour débloquer le bouton. Votre signature sera horodatée &amp; liée à votre adresse IP à des fins d'audit légal.
+        </p>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  // Enable button ONLY when checkbox is checked (sécurité double)
+  document.getElementById('accept_terms').addEventListener('change', function() {
+    document.getElementById('signBtn').disabled = !this.checked;
+  });
+  // Prevent submit without checkbox (fallback for browser with novalidate disabled)
+  document.getElementById('termsForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('accept_terms').checked) {
+      e.preventDefault();
+      alert('Vous DEVEZ cocher la case d\'acceptation avant de signer les conditions.');
+    }
+  });
+  // Scroll to top of terms doc first view
+  var box = document.getElementById('termsBox');
+  if (box) {
+    try { box.scrollTo({ top: 0, behavior: 'auto' }); } catch(_) {}
+  }
+</script>
+{% endblock %}

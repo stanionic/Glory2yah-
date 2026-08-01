@@ -120,12 +120,14 @@
 <div class="registration-form">
     <div class="student-info-panel">
         <h2><span class="step-badge">2</span>Compléter votre inscription</h2>
-        <p>Félicitations pour avoir réussi le test d'admission ! 3 étapes rapides : <strong>identité</strong> → <strong>choix gratuit / payant</strong> → <strong>accepter les conditions</strong>. Puis vous commencez immédiatement le <strong>Module #1</strong>.</p>
+        <p>Félicitations pour avoir réussi le test d'admission ! 3 étapes rapides : <strong>identité</strong> → <strong>choix gratuit / payant</strong> → <strong>validation</strong>. Puis vous accédez immédiatement au <strong>Module #1</strong> seulement.</p>
     </div>
 
     <div class="deadline-banner">
         ⏳ <strong>Calendrier officiel du cycle 2026 :</strong>
         Les <strong>3 premiers modules</strong> sont <strong>100 % gratuits</strong> pour tout le monde.
+        Vous commencez par le <strong>Module #1 UNIQUEMENT</strong> dès l'inscription validée.
+        Les Modules #2 et #3 se débloquent successivement après la réussite de chaque module.
         Après le module #3, les modules #4 à #20 se débloquent <strong>2 par 2 en TANDEM</strong> (bloc payant) jusqu'à la fin du cycle.
         Délai final pour terminer <strong>TOUS les examens + solder TOUS les paiements</strong> : <strong>30 Novembre 2026</strong>.
         Graduation : <strong>25 Décembre 2026</strong>.
@@ -217,9 +219,10 @@
                             <h4>Étudiant Gratuit</h4>
                         </div>
                         <div class="plan-price">$0 <small>d'abord</small></div>
-                        <div class="plan-sub">Accès libre. Payez au fur et à mesure par bloc de 2 modules tandem après #3.</div>
+                        <div class="plan-sub">Accès libre. Commencez avec le <strong>Module #1</strong>. Payez au fur et à mesure par bloc de 2 modules tandem après #3.</div>
                         <ul class="plan-perks">
-                            <li><span class="ok">✓</span> Modules <strong>#1, #2, #3</strong> → 100 % gratuits tout de suite</li>
+                            <li><span class="ok">✓</span> Accès immédiat : <strong>Module #1 UNIQUEMENT</strong></li>
+                            <li><span class="ok">✓</span> Modules <strong>#2, #3</strong> → débloqués après chaque réussite (100% gratuits)</li>
                             <li><span class="ok">✓</span> Déblocage TANDEM : <strong>2 modules</strong> par bloc après #3</li>
                             <li><span class="warn">!</span> Frais bloc tandem (Modules 4+) : <strong>$30 USD / 2 modules</strong></li>
                             <li><span class="warn">!</span> Frais de reprise si échec : <strong>$50 USD / module</strong></li>
@@ -237,9 +240,10 @@
                             <h4>Étudiant Payant</h4>
                         </div>
                         <div class="plan-price">$600 <small>total cycle complet</small></div>
-                        <div class="plan-sub">Paiement unique. Tous les modules + Bachelor Degree inclus. Idéal pour engagement total.</div>
+                        <div class="plan-sub">Paiement unique. Commencez par le <strong>Module #1</strong>. Tous les modules + Bachelor Degree inclus. Idéal pour engagement total.</div>
                         <ul class="plan-perks">
-                            <li><span class="ok">✓</span> Modules <strong>#1, #2, #3</strong> → gratuits inclus</li>
+                            <li><span class="ok">✓</span> Accès immédiat : <strong>Module #1 UNIQUEMENT</strong></li>
+                            <li><span class="ok">✓</span> Modules <strong>#2, #3</strong> → débloqués après chaque réussite (gratuits inclus)</li>
                             <li><span class="ok">✓</span> Tous les blocs TANDEM (modules 4 → 20) → <strong>payés d'avance</strong></li>
                             <li><span class="ok">✓</span> <strong>Bachelor Degree</strong> inclus avec le partenaire USA</li>
                             <li><span class="ok">✓</span> Frais de reprise si échec : <strong>$50 USD / module</strong></li>
@@ -258,6 +262,16 @@
         <div class="card mb-4">
             <div class="card-header"><h3><span class="step-badge" style="background:rgba(65,105,225,0.12);color:#4169E1;">3</span> 📜 Conditions de l'École</h3></div>
             <div class="card-body">
+                <div class="alert alert-primary">
+                    <strong>ℹ️ Important :</strong> Les <strong>termes et conditions</strong> complets (document officiel signable) vous sont présentés
+                    <strong>immédiatement après la réussite du test d'admission</strong>, <em>avant</em> d'accéder au Module #1.
+                    Vous pouvez néanmoins les consulter ici à titre d'information, avant de valider votre inscription finale.
+                    <div class="mt-2">
+                        <a href="{{ url_for('ecole_biblique.terms_conditions') }}" class="btn btn-outline-primary btn-sm">
+                            📄 Consulter les Termes & Conditions complets
+                        </a>
+                    </div>
+                </div>
                 <div class="terms-box">
                     <h5>🎯 Conditions Académiques & Financières — Cycle 2026</h5>
                     <p>Veuillez lire attentivement ces conditions avant de cocher la case d'acceptation :</p>
@@ -267,7 +281,8 @@
                         <li>Si la note finale est inférieure à 80 %, le module est considéré comme <strong>échoué</strong>.</li>
                         <li>En cas d'échec, l'étudiant doit payer <strong>$50 USD</strong> de frais de reprise avant de repasser.</li>
                         <li>Le module suivant reste <strong>verrouillé</strong> tant que le module précédent n'est pas réussi.</li>
-                        <li>Les <strong>3 premiers modules</strong> sont <strong>entièrement gratuits</strong> pour tous les étudiants inscrits.</li>
+                        <li>L'étudiant commence par le <strong>Module #1 UNIQUEMENT</strong> après acceptation des termes et conditions.</li>
+                        <li>Les <strong>Modules #2 et #3</strong> se débloquent successivement après chaque réussite (toujours <strong>100 % gratuits</strong>).</li>
                         <li>Après le module #3, l'accès aux modules suivants se fait <strong>par 2 en TANDEM</strong> :
                             les modules #4 et #5 se débloquent ensemble, puis #6 et #7, etc., jusqu'à la fin du cycle.
                         </li>
@@ -299,7 +314,7 @@
 
         <div class="submit-wrap">
             <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn" disabled>
-                🚀 Confirmer & Commencer le Module #1
+                🚀 Valider l'inscription — Accéder au Module #1
             </button>
             <p class="text-muted mt-2 small mb-0">Cochez la case « J'accepte les conditions » pour débloquer le bouton.</p>
         </div>

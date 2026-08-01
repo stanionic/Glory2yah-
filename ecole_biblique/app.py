@@ -33,7 +33,8 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = 'static/uploads/ecole_payments'
 
 # Fee structure — Cycle 2026
-FREE_MODULES = 3                       # 3 premiers modules = 100 % gratuits tout le monde
+FREE_MODULES = 3                       # Modules 1..3 = 100% gratuits pour TOUS, APRÈS acceptation CG
+INITIAL_UNLOCKED_MODULES = 1           # MODULE #1 UNIQUEMENT initialement débloqué (immédiatement après acceptation CG)
 FREE_STUDENT_FEE_PER_BLOCK = 30        # Étudiant gratuit : $30 USD par bloc TANDEM (2 modules) après #3
 FREE_STUDENT_GRADUATION_FEE = 100      # Frais de graduation étudiant gratuit
 PAID_STUDENT_FEE_PER_BLOCK = 0         # Étudiant payant : blocs TANDEM inclus (total $600)
@@ -96,8 +97,16 @@ def init_modules():
     db.session.commit()
 
 
-def init_student_modules(student_id):
-    """Initialize module tracking for a new student"""
+def init_student_modules(student_id, unlock_count=None):
+    """Initialize module tracking for a new student.
+
+    - unlock_count: Nombre de modules à débloquer initialement. Default = INITIAL_UNLOCKED_MODULES (1).
+      Avant Cycle 2026, c'était FREE_MODULES (3). Maintenant c'est MODULE #1 UNIQUEMENT (exigence:
+      termes et conditions acceptés → accès MODULE #1 seulement; les modules 2+ doivent être
+      débloqués explicitement après réussite de #1, ou via paiements blocs tandem).
+    """
+    if unlock_count is None:
+        unlock_count = INITIAL_UNLOCKED_MODULES  # 1 (Module #1 seulement)
     modules = Module.query.order_by(Module.number).all()
     for i, module in enumerate(modules):
         sm = StudentModule.query.filter_by(student_id=student_id, module_id=module.id).first()
@@ -105,14 +114,17 @@ def init_student_modules(student_id):
             sm = StudentModule(
                 student_id=student_id,
                 module_id=module.id,
-                locked=(i >= 3),  # First 3 modules unlocked, rest locked
+                locked=(i >= unlock_count),
                 passed=False
             )
             db.session.add(sm)
-    # Unlock modules 1, 2, 3 (first 3 modules free)
-    unlocked_modules = StudentModule.query.filter_by(student_id=student_id).join(Module).order_by(Module.number).limit(3).all()
-    for sm in unlocked_modules:
-        sm.locked = False
+        else:
+            # Règle de migration: si la personne a déjà fait progresser son cursus (modules passés/
+            # examens corrigés), on ne rétrograde pas. Sinon, applique nouveau verrou: #1 UNIQUEMENT.
+            already_progressed = (sm.passed or sm.final_score is not None or sm.exam_score is not None
+                                  or sm.assignments_score is not None or sm.completed_at is not None)
+            if not already_progressed:
+                sm.locked = (i >= unlock_count)
     db.session.commit()
 
 
@@ -437,7 +449,8 @@ def complete_registration():
                               f'Auto-start Module #1 immediately post-registration (route {student_type})')
 
             flash('Inscription complétée avec succès ! Bienvenue à l\'École Biblique. '
-                  'Vous commencez dès maintenant le Module #1.', 'success')
+                  'Vous accédez dès maintenant au Module #1 (modules 2+ seront débloqués '
+                  'successivement après chaque réussite).', 'success')
             if mod1:
                 return redirect(url_for('ecole_biblique.module_detail', module_id=mod1.id))
             return redirect(url_for('ecole_biblique.student_dashboard'))
@@ -445,6 +458,188 @@ def complete_registration():
     return render_template('complete_registration.html',
                          ecole_user=ecole_user,
                          terms_version=TERMS_VERSION)
+
+
+# ===== TERMES ET CONDITIONS — OBLIGATOIRES APRÈS TEST D'ADMISSION RÉUSSI =====
+
+SCHOOL_TERMS_HTML_FR = """
+<div class="terms-section">
+  <h3>Article 1 — Présentation & Objectifs</h3>
+  <p>L' <strong>École Biblique MEGD-Haïti</strong>, en partenariat officiel avec le <strong>GLOBAL CONNEXION NETWORK BIBLE SCHOOL (Alabama, États-Unis)</strong>, est un établissement d'enseignement supérieur théologique ouvert à tous les chrétiens engagés désireux de approfondir leur connaissance de la Parole de Dieu et de se préparer au service dans l'Église locale ou dans la mission.</p>
+  <p>Le cycle complet est structuré en <strong>20 modules académiques progressifs</strong>, validés par des épreuves écrites (examens) et des devoirs d'application pratique, sous la supervision de professeurs qualifiés et agréés par la direction académique.</p>
+</div>
+<div class="terms-section">
+  <h3>Article 2 — Parcours Pédagogique & Déblocage des Modules</h3>
+  <ol>
+    <li><strong>Étape 0 — Test d'admission :</strong> Tout postulant doit réussir un test d'admission interne (seuil minimum de <strong>70 %</strong> de bonnes réponses) avant de pouvoir accéder au reste du cursus.</li>
+    <li><strong>Étape 1 — Signature électronique des présentes :</strong> Une fois le test d'admission réussi, le postulant doit lire et accepter explicitement ces <strong>Conditions Générales de l'École</strong> (présente page). Aucun module ne sera accessible tant que cette étape n'est pas validée.</li>
+    <li><strong>Étape 2 — Module #1 UNIQUEMENT :</strong> Immédiatement après acceptation des conditions, l'étudiant accède au <strong>Module #1 seul</strong> : <em>Introduction à la Bible (Religion)</em>. Les modules #2 à #20 restent <strong>verrouillés</strong> tant que le module #1 n'est pas réussi.</li>
+    <li><strong>Étape 3 — Progression séquentielle modules #2 et #3 gratuits :</strong>
+      Chaque module #n (n ≥ 1) doit être réussi avant que le module #n+1 ne soit débloqué. Les modules #2 et #3 restent <strong>100 % gratuits</strong> pour tous les étudiants et sont débloqués un par un après chaque réussite.
+    </li>
+    <li><strong>Étape 4 — Blocs TANDEM payants à partir de #4 :</strong> Après le module #3, l'accès aux modules 4 → 20 se fait par <strong>blocs de 2 modules dits « blocs TANDEM »</strong> : #4 &amp; #5, #6 &amp; #7, ..., #20. L'étudiant paye UNE SEULE FOIS le frais du bloc pour débloquer les 2 modules. Les deux modules d'un bloc tandem se débloquent <em>simultanément</em> au paiement, et doivent ensuite être validés successivement (#4 → #5 → #6 → #7, etc.).</li>
+  </ol>
+</div>
+<div class="terms-section">
+  <h3>Article 3 — Évaluation, Moyenne & Reprises</h3>
+  <ul>
+    <li>Pour chaque module, la note finale est calculée selon la formule : <strong>Note Finale = (Examen × 70 %) + (Devoirs × 30 %)</strong>.</li>
+    <li>Le <strong>seuil de réussite</strong> est fixé à <strong>80 / 100</strong>. Toute note finale inférieure à 80 est considérée comme un <em>échec</em>.</li>
+    <li>En cas d'échec, l'étudiant doit s'acquitter de <strong>frais de reprise de $50 USD par module</strong> avant de pouvoir repasser les épreuves. Le module suivant reste impérativement <em>verrouillé</em> tant que le module courant n'est pas réussi.</li>
+    <li>Toute fraude, tentative de triche, ou plagiat avéré lors d'un devoir ou d'un examen entraine <strong>l'exclusion immédiate et définitive</strong> de l'étudiant, sans aucun remboursement de frais déjà versés.</li>
+  </ul>
+</div>
+<div class="terms-section">
+  <h3>Article 4 — Frais &amp; Paiements (Cycle 2026)</h3>
+  <h5>4.1 Plan « Étudiant GRATUIT »</h5>
+  <ul>
+    <li>Frais d'inscription initial : <strong>$0 USD</strong></li>
+    <li>Modules #1, #2, #3 : <strong>100 % gratuits</strong> (débloqués un par un après chaque réussite)</li>
+    <li>Chaque bloc TANDEM à partir de #4 : <strong>$30 USD / bloc de 2 modules</strong></li>
+    <li>Frais de reprise en cas d'échec : <strong>$50 USD / module</strong></li>
+    <li>Frais de graduation (cérémonie + certificat officiel) : <strong>$100 USD</strong> (en fin de cycle, modules 1→20 tous réussis)</li>
+  </ul>
+  <h5>4.2 Plan « Étudiant PAYANT » (RECOMMANDÉ)</h5>
+  <ul>
+    <li>Paiement unique d'engagement total : <strong>$600 USD</strong> (acquitté à l'inscription, ou en 1 seule transaction)</li>
+    <li>Inclut : Modules #1→#20 (tous blocs TANDEM payés d'avance) + <strong>Bachelor Degree</strong> délivré par le partenaire américain GLOBAL CONNEXION NETWORK BIBLE SCHOOL + Frais de cérémonie de graduation INCLUS.</li>
+    <li>Frais de reprise en cas d'échec : <strong>$50 USD / module</strong> (même règle que plan gratuit)</li>
+  </ul>
+  <h5>4.3 Moyens de paiement acceptés</h5>
+  <p>Les paiements peuvent être effectués par :
+    <strong>GKach</strong> (système interne de Glory2Yah, zéro frais, approbation instantanée),
+    <strong>Wise</strong> (transfert international, approbation sous 24–48h sur présentation d'une preuve),
+    ou <strong>paiement manuel</strong> (espèces, Mobile Money, chèque — approbation administrative après vérification).
+    Les reçus de paiement sont conservés dans le tableau de bord étudiant et sont téléchargeables à tout moment.</p>
+</div>
+<div class="terms-section">
+  <h3>Article 5 — Calendrier Officiel Cycle 2026</h3>
+  <ol>
+    <li>Date limite <strong>impérative et non prorogeable</strong> pour terminer <em>TOUS</em> les examens (modules 1→20) : <strong>30 Novembre 2026, 23h59, heure locale Port-au-Prince</strong>.</li>
+    <li>Date limite <strong>impérative et non prorogeable</strong> pour solder <em>TOUS</em> les paiements en attente (blocs TANDEM, reprises, frais de graduation) : <strong>30 Novembre 2026</strong>.</li>
+    <li>Au-delà du 30 Novembre 2026 : <em>accès aux examens fermé, scores gelés, aucun paiement ne sera plus accepté pour le cycle 2026</em>. Tout étudiant n'ayant pas terminé son cursus dans les délais devra se réinscrire au cycle suivant.</li>
+    <li><strong>Cérémonie de GRADUATION 2026</strong> : <strong>25 Décembre 2026</strong>, Église MEGD. Seuls les étudiants admissibles (modules 1→20 réussis, soldes financiers à zéro) seront autorisés à monter sur scène et à recevoir leurs diplômes/certificats officiels.</li>
+  </ol>
+</div>
+<div class="terms-section">
+  <h3>Article 6 — Propriété Intellectuelle &amp; Confidentialité</h3>
+  <p>Les supports de cours (PDF, vidéos, notes, questions d'examen, devoirs corrigés) sont la <strong>propriété exclusive</strong> de l'École Biblique MEGD-Haïti et de ses enseignants. Toute diffusion, revente, partage public, ou reproduction partielle ou totale, sans autorisation écrite préalable de la direction, est strictement interdite et pourra donner lieu à des poursuites disciplinaires ou judiciaires, ainsi qu'à l'exclusion immédiate sans remboursement.</p>
+  <p>Les données personnelles des étudiants (nom, prénom, WhatsApp, notes, paiements) sont conservées dans le respect strict de la politique interne de confidentialité et ne sont jamais vendues ni partagées à des tiers commerciaux.</p>
+</div>
+<div class="terms-section">
+  <h3>Article 7 — Engagement Personnel de l'Étudiant</h3>
+  <p>En cochant la case ci-dessous, l'étudiant déclare explicitement :
+    <br>1) Avoir lu <em>dans son intégralité</em> les 7 Articles des présentes Conditions Générales ;
+    <br>2) Accepter sans réserve <em>toutes</em> les clauses académiques, financières et disciplinaires du cycle 2026 ;
+    <br>3) S'engager personnellement à respecter les délais impératifs du 30 Novembre 2026 pour les examens et les paiements ;
+    <br>4) S'engager à travailler sérieusement chaque module, sans fraude ni plagiat ;
+    <br>5) Accepter le principe de déblocage séquentiel : <strong>Module #1 UNIQUEMENT après signature</strong>, puis #2 après réussite de #1, #3 après réussite de #2, puis blocs TANDEM payants 2 par 2 à partir de #4.
+  </p>
+  <p class="text-muted small"><em>Document Version : TERMS_VERSION_PLACEHOLDER — École Biblique MEGD-Haïti © 2026.</em></p>
+</div>
+""".replace('TERMS_VERSION_PLACEHOLDER', str(TERMS_VERSION))
+
+
+@ecole_biblique_bp.route('/terms_conditions', methods=['GET', 'POST'])
+@login_required
+def terms_conditions():
+    """Page officielle des Termes & Conditions.
+
+    Accessible SEULEMENT si :
+      - l'étudiant a RÉUSSI le test d'admission (seuil 70%, AdmissionTest.passed=True)
+      - ET (pas encore accepté les CG) OU (consultation libre après acceptation)
+
+    SUR POST (acceptation CG) :
+      - enregistre TermsAcceptance + marque terms_accepted / terms_version / ip / date dans EcoleUser
+      - (pas encore de registration_completed = True, car on a pas encore de first_name/last_name etc.,
+         ça viendra sur /complete_registration ensuite, qui exige déjà la CG acceptée via son garde-fou)
+      - SI l'étudiant a déjà COMPLÉTÉ l'inscription finale, on force aussi le déverrouillage MODULE #1 seulement
+        (compatibilité anciens comptes)
+      - Redirection : si inscription finalisée → Module #1 detail ; sinon → Complete Registration (formulaire identité)
+    """
+    ecole_user = get_ecole_user()
+    if not ecole_user or ecole_user.role != 'student':
+        flash('Accès réservé aux étudiants ayant un compte.', 'error')
+        return redirect(url_for('ecole_biblique.index'))
+
+    # Garde : doit avoir passé (admis) le test admission AVANT de lire/voir CG
+    passed_test = AdmissionTest.query.filter_by(
+        user_id=ecole_user.id, passed=True, completed=True
+    ).first()
+    if not passed_test:
+        flash('Vous devez d\'abord réussir le test d\'admission (seuil 70%) avant de consulter '
+              'les conditions de l\'École.', 'warning')
+        return redirect(url_for('ecole_biblique.admission_test'))
+
+    if request.method == 'POST':
+        accept = request.form.get('accept_terms') == 'on'
+        if not accept:
+            flash('Vous devez cocher la case d\'acceptation pour continuer.', 'error')
+            return redirect(url_for('ecole_biblique.terms_conditions'))
+
+        # --- Enregistrement signature CG ---
+        ecole_user.terms_accepted = True
+        ecole_user.terms_accepted_at = datetime.utcnow()
+        ecole_user.terms_accepted_ip = request.remote_addr
+        ecole_user.terms_version = TERMS_VERSION
+
+        # log du TermsAcceptance (audit légal)
+        ta = TermsAcceptance.query.filter_by(user_id=ecole_user.id, terms_version=TERMS_VERSION).first()
+        if not ta:
+            ta = TermsAcceptance(user_id=ecole_user.id, terms_version=TERMS_VERSION,
+                                 ip_address=request.remote_addr)
+            db.session.add(ta)
+
+        # --- SÉCURITÉ initiale MODULE #1 UNIQUEMENT ---
+        init_modules()
+        init_student_modules(ecole_user.id, unlock_count=INITIAL_UNLOCKED_MODULES)
+        # Force déverrouillage #1 (garantie) + verrouillage #2..#20 (si pas encore commencé)
+        all_sm = (StudentModule.query.filter_by(student_id=ecole_user.id)
+                  .join(Module).order_by(Module.number).all())
+        for sm in all_sm:
+            already_progressed = (sm.passed or sm.final_score is not None or sm.exam_score is not None
+                                  or sm.assignments_score is not None or sm.completed_at is not None)
+            if sm.module and sm.module.number == 1:
+                # Mod #1 toujours unlocked (même si ancien étudiant on préserve pas l'état si passé)
+                if not already_progressed:
+                    sm.locked = False
+                if not sm.started_at:
+                    sm.started_at = datetime.utcnow()
+            elif sm.module and sm.module.number >= 2 and not already_progressed:
+                # Verrouiller #2+ (on ne touche pas aux modules déjà travaillés par des anciens étudiants)
+                sm.locked = True
+
+        db.session.commit()
+        log_audit(ecole_user.id, 'terms_accepted',
+                  f'Acceptation CG v{TERMS_VERSION}. MODULE #1 UNIQUEMENT initialisé. '
+                  f'registration_completed={ecole_user.registration_completed}')
+
+        # -- Redirection post-acceptation CG --
+        if ecole_user.registration_completed:
+            # Ancien compte (ou déjà complété) → Module #1 directement
+            flash('Termes et Conditions acceptés ! Bienvenue — vous accédez maintenant au Module #1.', 'success')
+            mod1 = Module.query.filter_by(number=1).first()
+            if mod1:
+                return redirect(url_for('ecole_biblique.module_detail', module_id=mod1.id))
+            return redirect(url_for('ecole_biblique.student_dashboard'))
+        else:
+            # Nouveau postulant → formulaire d'inscription identité (complete_registration)
+            flash('Termes et Conditions acceptés ! Complétez maintenant votre identité (étape finale) '
+                  'pour accéder au Module #1.', 'success')
+            return redirect(url_for('ecole_biblique.complete_registration'))
+
+    # GET : affiche CG
+    already_signed = bool(ecole_user.terms_accepted and ecole_user.terms_version == TERMS_VERSION)
+
+    return render_template(
+        'terms_conditions.html',
+        terms_html=SCHOOL_TERMS_HTML_FR,
+        terms_version=TERMS_VERSION,
+        already_signed=already_signed,
+        school_name='École Biblique MEGD-Haïti',
+        partner='GLOBAL CONNEXION NETWORK BIBLE SCHOOL – Alabama, USA',
+        registration_completed=bool(ecole_user.registration_completed),
+    )
 
 
 # ===== ADMISSION TEST (Existing + Redirect to Registration) =====
@@ -544,6 +739,12 @@ def admission_test_submit():
 
     session.pop('admission_question_ids', None)
     log_audit(ecole_user.id, 'admission_test_completed', f'Score: {score}% - {"Passed" if passed else "Failed"}')
+
+    if passed and not ecole_user.registration_completed:
+        flash('Bravo ! Vous avez réussi le test d\'admission. Consultez vos résultats '
+              'puis acceptez les termes et conditions de l\'École Biblique avant d\'accéder '
+              'au Module #1.', 'success')
+        return redirect(url_for('ecole_biblique.admission_result', test_id=current_test.id))
 
     return redirect(url_for('ecole_biblique.admission_result', test_id=current_test.id))
 
