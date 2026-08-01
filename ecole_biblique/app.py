@@ -62,9 +62,54 @@ def log_audit(user_id, action, details=None):
 
 
 def init_modules():
-    """Initialize all 20 modules from the COURS folder if they don't exist"""
+    """Initialize all 20 modules from the COURS folder if they don't exist.
+
+    BUG FIX (Render Linux case-sensitive FS):
+    Utilise le NOM RÉEL des fichiers PDF présents dans COURS/ (MODULE 1…, Module 2…)
+    plutôt qu'un nom statique fictif qui peut ne pas exister (Module 1… vs MODULE 1…).
+    """
+    import os as _os
+    import re as _re
+
+    here = _os.path.dirname(_os.path.abspath(__file__))
+    cours_dir = _os.path.join(here, 'COURS')
+    real_pdfs = []
+    try:
+        real_pdfs = [f for f in _os.listdir(cours_dir) if f.lower().endswith('.pdf')]
+    except OSError:
+        real_pdfs = []
+
+    def _find_pdf_for_module(n, fallback_guess):
+        """Cherche un fichier PDF correspondant au module N.
+        Priorité:
+          1) filename == fallback_guess (exact match)
+          2) normalized match: case+whitespace+accents folded vs fallback_guess
+          3) starts with (MODULE|Module) N (e.g. MODULE 1… , Module 2 …)
+          4) sinon fallback_guess original (même si pas présent = course_file cohérent avec get_course_url)
+        """
+        if fallback_guess and fallback_guess in real_pdfs:
+            return fallback_guess
+        def _fold(s):
+            import unicodedata as _ud
+            s = _ud.normalize('NFKD', s).encode('ascii', 'ignore').decode('ascii')
+            return _re.sub(r'\s+', '', s).lower()
+        if fallback_guess:
+            fb_folded = _fold(fallback_guess)
+            for f in real_pdfs:
+                if _fold(f) == fb_folded:
+                    return f
+            fb_noext = _fold(fallback_guess[:-4]) if fallback_guess.endswith('.pdf') else fb_folded
+            for f in real_pdfs:
+                if _fold(f[:-4]) == fb_noext:
+                    return f
+        pat_start = _re.compile(r'^(?:MODULE|Module)\s*' + str(int(n)) + r'(?![0-9])', _re.IGNORECASE)
+        for f in sorted(real_pdfs):
+            if pat_start.match(f):
+                return f
+        return fallback_guess  # garde valeur de départ même si fichier absent
+
     module_definitions = [
-        (1, "Introduction à la Bible (Religion)", "Module 1: Introduction à la Bible (Religion)", "Module 1(RELIGION).pdf"),
+        (1, "Introduction à la Bible (Religion)", "Module 1: Introduction à la Bible (Religion)", "MODULE 1(RELIGION).pdf"),
         (2, "Le Premier Être", "Module 2: Le Premier Être", "Module 2 (Le Premier Etre.pdf"),
         (3, "Théologie", "Module 3: Théologie", "Module 3(Theologie).pdf"),
         (4, "Christologie", "Module 4: Christologie", "Module 4(CHRISTOLOGIE).pdf"),
@@ -86,14 +131,19 @@ def init_modules():
         (20, "Théologie", "Module 20: Théologie", "THEOLOGIE.pdf"),
     ]
     for number, name, description, course_file in module_definitions:
+        resolved_course_file = _find_pdf_for_module(number, course_file)
         module = Module.query.filter_by(number=number).first()
         if not module:
-            module = Module(number=number, name=name, description=description, course_file=course_file)
+            module = Module(number=number, name=name, description=description, course_file=resolved_course_file)
             db.session.add(module)
         else:
-            # Update course_file if not set
             if not module.course_file:
-                module.course_file = course_file
+                module.course_file = resolved_course_file
+            # Mise à jour vers nom réel si l'ancien ne correspond à AUCUN fichier (safe idempotent)
+            else:
+                old_exists = (module.course_file in real_pdfs) if real_pdfs else False
+                if not old_exists and resolved_course_file and resolved_course_file in real_pdfs:
+                    module.course_file = resolved_course_file
     db.session.commit()
 
 
@@ -1682,20 +1732,72 @@ def admin_admission_results():
 
 @ecole_biblique_bp.route('/cours/<path:filename>')
 def serve_course_file(filename):
-    """Serve PDF course files from the COURS directory"""
+    """Serve PDF course files from the COURS directory.
+
+    Robustesse anti-bug Render/Linux FS case-sensitive:
+    - Les noms de fichiers COURS ont une casse mélangée (MODULE 1…, Module 2…, etc.)
+      et les DB course_file utilisent parfois 'Module 1(RELIGION).pdf' alors que
+      le fichier réel s'appelle 'MODULE 1(RELIGION).pdf' → 404 → Error.
+    - Fallbacks:
+        1) exact match (OS sensitive)
+        2) case-insensitive + accents/whitespace folded match sur COURS/*
+        3) par numéro de module: extrait N depuis "Module N(...)" ou "MODULE N(...)"
+           → premier fichier PDF COURS dont nom match "^(MODULE|Module)\s*N"
+    """
     import os
-    from flask import send_from_directory, abort
-    
-    # Get the COURS directory path (relative to this blueprint)
+    import re
+    import unicodedata
+    from flask import send_from_directory, abort, current_app
+
     cours_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'COURS')
-    
-    # Security: ensure the file exists and is a PDF
+    if not os.path.isdir(cours_dir):
+        current_app.logger.warning('COURS dir missing: %s', cours_dir)
+        abort(404)
+
+    # Only PDF allowed (404 silent otherwise — same as original behavior)
     if not filename.lower().endswith('.pdf'):
         abort(404)
-    
-    # Check if file exists
-    filepath = os.path.join(cours_dir, filename)
-    if not os.path.exists(filepath):
-        abort(404)
-    
-    return send_from_directory(cours_dir, filename)
+
+    def _fold(s):
+        s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode('ascii')
+        s = re.sub(r'\s+', '', s).lower()
+        return s
+
+    # 1) exact match
+    exact = os.path.join(cours_dir, filename)
+    if os.path.isfile(exact):
+        return send_from_directory(cours_dir, filename)
+
+    # List available PDF files in COURS
+    try:
+        available = [f for f in os.listdir(cours_dir) if f.lower().endswith('.pdf')]
+    except OSError:
+        available = []
+
+    req_folded = _fold(filename)
+
+    # 2) exact-folded match
+    for f in available:
+        if _fold(f) == req_folded:
+            return send_from_directory(cours_dir, f)
+
+    # 3) prefix-folded match (sans extension .pdf)
+    req_noext = _fold(filename[:-4])
+    for f in available:
+        if _fold(f[:-4]) == req_noext:
+            return send_from_directory(cours_dir, f)
+
+    # 4) module number fallback: extrait N depuis /Module N( | MODULE N(
+    m = re.search(r'(?:MODULE|Module)\s*([0-9]{1,2})', filename, re.IGNORECASE)
+    if m:
+        n = int(m.group(1))
+        pattern = re.compile(r'^(?:MODULE|Module)\s*' + str(n) + r'(?![0-9])', re.IGNORECASE)
+        for f in sorted(available):
+            if pattern.match(f):
+                return send_from_directory(cours_dir, f)
+
+    current_app.logger.warning(
+        'serve_course_file 404: requested=%s available=%s',
+        filename, available,
+    )
+    abort(404)
