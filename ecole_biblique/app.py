@@ -363,6 +363,29 @@ def register():
                     db.session.commit()
                     log_audit(ecole_user.id, 'register', f'User registered as {role}')
                     flash('Inscription à l\'École Biblique réussie !', 'success')
+
+                    # ===== SESSION FIX: auto-login main app user after ecole registration =====
+                    # Bug: unauthenticated user creates ecole account → commit → redirect
+                    # to /ecole_biblique/index → auth guard redirects to /auth/login again
+                    # (feels like "session not kept / logged out"). Instead: log the user
+                    # into the main app right now with remember=True + permanent=True so
+                    # their session stays open until they explicitly log out.
+                    from flask_login import login_user as _fl_login_user
+                    from flask import session as _fl_sess
+                    try:
+                        _main_user = main_user or (
+                            User.query.filter_by(whatsapp=whatsapp).first() if not current_user.is_authenticated else None
+                        )
+                        if _main_user and not current_user.is_authenticated:
+                            _fl_login_user(_main_user, remember=True, force=True)
+                            _fl_sess.permanent = True
+                            _fl_sess['_remember_set'] = True
+                    except Exception as _sess_err:
+                        current_app.logger.warning(
+                            'ecole_biblique.register: auto-login main user failed: %s',
+                            _sess_err,
+                        )
+
                     return redirect(url_for('ecole_biblique.index'))
                 except Exception as inner:
                     db.session.rollback()

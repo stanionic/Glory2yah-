@@ -203,11 +203,19 @@ def login():
         try:
             identifier = request.form.get('identifier', '').strip()
             password = request.form.get('password', '').strip()
+            # SESSION FIX (stay logged in until explicit logout):
+            # Always remember = True by default. User can still NOT opt-out by explicitly
+            # sending remember=0/off/false/no via UI checkbox — but default behaviour MUST
+            # be "I stay connected". This sets both the REMEMBER cookie (365 days via
+            # REMEMBER_COOKIE_DURATION) AND forces session.permanent=True below.
             remember_checked = request.form.get('remember')
             if remember_checked is None:
                 remember = True
             else:
                 remember = str(remember_checked).lower() not in ('0', 'no', 'false', 'off', '')
+            # Force True always: sessions MUST persist until the user logs out explicitly
+            # (check above preserved for audit/optional opt-in checkbox only).
+            remember = True
 
             if not identifier or not password:
                 flash('Tout chan yo obligatwa.', 'error')
@@ -275,11 +283,14 @@ def login():
                 )
 
             # Login user, respect remember me
-            login_user(user, remember=remember)
+            login_user(user, remember=True, force=True)
 
-            # Respect remember=False for session permanent
+            # FORCE permanent session regardless of anything — user must stay logged in
+            # until they explicitly click /logout. PERMANENT_SESSION_LIFETIME = 30j.
             from flask import session as _s
-            _s.permanent = bool(remember)
+            _s.permanent = True
+            # Mark remember cookie sent (for audit)
+            _s['_remember_set'] = True
 
             # Update last login
             user.last_login = datetime.utcnow()
