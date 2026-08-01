@@ -94,10 +94,14 @@
         {% endfor %}
 
         <div class="text-center mt-4 mb-5">
+            {% if test.passed %}
+            <a href="{{ url_for('ecole_biblique.terms_conditions') }}" class="btn btn-primary btn-lg">
+                📜 Accepter les Termes & Conditions — Accéder au Module #1
+            </a>
+            {% else %}
             <a href="{{ url_for('ecole_biblique.student_dashboard') }}" class="btn btn-primary btn-lg">
                 Retour au Tableau de Bord
             </a>
-            {% if not test.passed %}
             <a href="{{ url_for('ecole_biblique.admission_test') }}" class="btn btn-warning btn-lg ml-2">
                 Réessayer le Test
             </a>
