@@ -44,8 +44,8 @@ class BaseModel(db.Model):
     
     @classmethod
     def get_by_id(cls, id):
-        """Get model by ID"""
-        return cls.query.get(id)
+        """Get model by ID (SQLAlchemy 2.0 style — modern db.session.get, no deprecation warning)"""
+        return db.session.get(cls, id)
     
     @classmethod
     def get_all(cls):

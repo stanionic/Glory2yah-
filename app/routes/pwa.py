@@ -59,7 +59,7 @@ def analytics():
         })
     except Exception as e:
         current_app.logger.error(f"PWA analytics error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': 'Erè nan anrejistreman done analiz PWA a.'}), 500
 
 
 @pwa_bp.route('/api/settings', methods=['GET'])
@@ -98,7 +98,7 @@ def update_settings():
         return jsonify({'success': True})
     except Exception as e:
         current_app.logger.error(f"PWA settings update error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': 'Erè nan mete ajou paramèt PWA yo.'}), 500
 
 
 @pwa_bp.route('/api/stats', methods=['GET'])
