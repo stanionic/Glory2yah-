@@ -1823,4 +1823,29 @@ def serve_course_file(filename):
         'serve_course_file 404: requested=%s available=%s',
         filename, available,
     )
-    abort(404)
+
+    # Fallback FINAL — au lieu d'une page "Error / Go Home" minimale,
+    # on redirige l'utilisateur vers la liste des modules de l'école
+    # avec un message explicatif (ou login page si non authentifié).
+    from flask import url_for as _uf, redirect as _rd, flash as _fl
+    from flask_login import current_user as _cu, login_required as _lr
+    try:
+        from unicodedata import normalize as _norm
+        _msg = (
+            "❌ Fichier du cours introuvable : \"" +
+            _norm('NFKD', filename).encode('ascii','ignore').decode('ascii')[:60] +
+            "\". Retournez à la liste des modules pour choisir un autre cours."
+        )
+    except Exception:
+        _msg = ("❌ Fichye kou a pa jwenn. "
+                "Retounen nan lis modil yo pou chwazi yon lòt kou.")
+    try:
+        _fl(_msg, 'error')
+    except Exception:
+        pass
+    try:
+        if _cu and _cu.is_authenticated:
+            return _rd(_uf('ecole_biblique.student_dashboard'))
+        return _rd(_uf('ecole_biblique.index'))
+    except Exception:
+        return _rd(_uf('main.index'))

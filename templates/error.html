@@ -1,18 +1,74 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Error</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-        .error-box { background: white; padding: 40px; border-radius: 8px; max-width: 500px; margin: 0 auto; }
-        h1 { color: #e74c3c; }
-    </style>
-</head>
-<body>
-    <div class="error-box">
-        <h1>⚠️ Error</h1>
-        <p>{{ error }}</p>
-        <a href="/">Go Home</a>
+{% extends "base.html" %}
+
+{% block title %}Erè - Glory2YahPub{% endblock %}
+
+{% block content %}
+<style>
+.err-page {
+    min-height: 60vh;
+    display: flex; justify-content: center; align-items: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #fef3f2 0%, #fff 60%, #eef4ff 100%);
+}
+.err-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 40px 32px;
+    max-width: 520px; width: 100%;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.08);
+    text-align: center;
+    border: 1px solid #f1f5f9;
+}
+.err-icon {
+    font-size: 56px; line-height: 1; margin-bottom: 12px;
+    width: 96px; height: 96px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #fee2e2, #dbeafe);
+}
+.err-title { font-size: 26px; font-weight: 800; color: #0f172a; margin: 14px 0 8px; }
+.err-code  { display: inline-block; padding: 4px 12px; border-radius: 999px;
+             background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700;
+             letter-spacing: 0.5px; margin-bottom: 16px; }
+.err-msg   { color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 28px; }
+.err-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.err-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px; border-radius: 14px; font-weight: 700; font-size: 14px;
+    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.err-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08); }
+.err-btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+.err-btn-outline { background: #fff; color: #334155; border: 1.5px solid #e2e8f0; }
+</style>
+
+<section class="err-page">
+    <div class="err-card">
+        <div class="err-icon">{% if error_code == 404 %}🔍{% elif error_code == 500 %}🛠️{% else %}⚠️{% endif %}</div>
+        <div class="err-code">ERÈ {{ error_code or '—' }}</div>
+        <h1 class="err-title">
+            {% if error_code == 404 %}Paj sa a pa egziste{% elif error_code == 500 %}Gen yon ti pwoblèm nan sèvè a{% else %}Yon erè te fèt{% endif %}
+        </h1>
+        <p class="err-msg">
+            {% if error and error != 'Not Found' and error != 'Internal Server Error' %}
+                {{ error }}
+            {% elif error_code == 404 %}
+                Paj ou t ap chache a pa disponib oswa li te deplase. Vérifye URL la oswa retounen nan paj dakèil la.
+            {% elif error_code == 500 %}
+                Gen yon erè entèn nan aplikasyon an. Nou te fè yon notifikasyon ekip la. Tanpri eseye ankò nan kèk minit.
+            {% else %}
+                Yon erè sanz atann te fèt. Tanpri eseye ankò.
+            {% endif %}
+        </p>
+        <div class="err-actions">
+            <a href="{{ url_for('main.index') }}" class="err-btn err-btn-primary">🏠 Dakèil</a>
+            {% if current_user and current_user.is_authenticated %}
+            <a href="{{ url_for('auth.profile') }}" class="err-btn err-btn-outline">👤 Pwofil mwen</a>
+            <a href="/ecole_biblique/dashboard" class="err-btn err-btn-outline">📘 Lòt Ekol</a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="err-btn err-btn-outline">🔐 Konekte</a>
+            {% endif %}
+            <button type="button" onclick="history.back()" class="err-btn err-btn-outline">← Retounen</button>
+        </div>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}
