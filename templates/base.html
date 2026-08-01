@@ -34,7 +34,7 @@
             <div class="g2y-search-wrap">
                 <form action="/search" method="GET" class="g2y-search-form">
                     <span class="g2y-search-icon">🔍</span>
-                    <input type="text" name="q" placeholder="Chèche..." class="g2y-search-input" value="{{ request.args.get('q','') }}">
+                    <input type="text" name="q" placeholder="Chèche" class="g2y-search-input" value="{{ request.args.get('q','') }}">
                 </form>
             </div>
 
@@ -86,12 +86,18 @@
     </main>
 
     <!-- ═══ MODERN STICKY BOTTOM NAV (TikTok/Facebook style) ═══ -->
+    {# — ⚠️ request.endpoint is None during 404/500 handling (before route match).
+       Wrap all substring checks with `(request.endpoint or '')` to prevent
+       `TypeError: argument of type 'NoneType' is not iterable` in error.html pages
+       that extend base.html (defensive — image ① "Error/Go Home minimal card" fix
+       root cause was exactly this TypeError inside nav render). #}
+    {% set _ep = request.endpoint or '' %}
     <nav class="modern-bottom-nav" id="bottomNav">
-        <a href="{{ url_for('main.index') }}" class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}" data-label="Akèy">
+        <a href="{{ url_for('main.index') }}" class="nav-item {% if _ep == 'main.index' %}active{% endif %}" data-label="Akèy">
             <span class="nav-icon">🏠</span>
             <span class="nav-label">Akèy</span>
         </a>
-        <a href="{{ url_for('marketplace.index') }}" class="nav-item {% if 'marketplace' in request.endpoint %}active{% endif %}" data-label="Mache">
+        <a href="{{ url_for('marketplace.index') }}" class="nav-item {% if 'marketplace' in _ep %}active{% endif %}" data-label="Mache">
             <span class="nav-icon">🛒</span>
             <span class="nav-label">Mache</span>
         </a>
@@ -99,14 +105,14 @@
             <span class="nav-icon">🚀</span>
             <span class="nav-label">Sèvis</span>
         </button>
-        <a href="{{ url_for('cart.index') }}" class="nav-item {% if 'cart' in request.endpoint %}active{% endif %}" data-label="Panyen">
+        <a href="{{ url_for('cart.index') }}" class="nav-item {% if 'cart' in _ep %}active{% endif %}" data-label="Panyen">
             <span class="nav-icon">🛍️</span>
             <span class="nav-label">Panyen</span>
             {% if cart_count and cart_count > 0 %}
             <span class="notification-badge" id="cartBadge">{{ cart_count }}</span>
             {% endif %}
         </a>
-        <a href="{{ url_for('auth.profile') }}" class="nav-item {% if 'auth' in request.endpoint or 'gkach' in request.endpoint %}active{% endif %}" data-label="Pwofil">
+        <a href="{{ url_for('auth.profile') }}" class="nav-item {% if 'auth' in _ep or 'gkach' in _ep %}active{% endif %}" data-label="Pwofil">
             <span class="nav-icon">👤</span>
             <span class="nav-label">Pwofil</span>
         </a>

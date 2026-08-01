@@ -195,31 +195,82 @@ def register():
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login():
-    """User login"""
+    """User login — P1 bugfixes:
+    - PRESERVE the `next` query param across GET → POST → FAIL redirect → success redirect.
+      Before: `next` only in request.args but form action posted to bare /auth/login → lost.
+    - PRESERVE the `identifier` submitted after FAIL redirect so user doesn't retype it.
+    - Fix lost deep-link (from /ecole_biblique/module/1 → login → module1) forever.
+    - Forbid open-redirect (url_has_allowed_host_and_scheme already used).
+    """
     if current_user.is_authenticated:
+        n = request.args.get('next')
+        def _safe_top(u):
+            if not u or not u.startswith('/') or u.startswith('//') or '://' in u:
+                return False
+            try:
+                from werkzeug.urls import url_has_allowed_host_and_scheme as _uh
+                return bool(_uh(u, request.host))
+            except Exception:
+                try:
+                    from werkzeug.security import url_has_allowed_host_and_scheme as _uh
+                    return bool(_uh(u, request.host))
+                except Exception:
+                    return ('javascript:' not in u.lower() and '<' not in u)
+        if _safe_top(n):
+            return redirect(n)
         return redirect(url_for('main.index'))
+
+    # Resolve deep-link `next` from GET-args OR POST-form. Lasts across redirects.
+    def _safe_next(u):
+        """Check URL safe (open-redirect protection).
+        Defensive import: werkzeug 2.x/3.x moved `url_has_allowed_host_and_scheme`
+        to werkzeug.urls (NOT werkzeug.security). Fallback to basic heuristic on
+        any ImportError (start with /, no //, no ://, no <script).
+        """
+        if not u:
+            return False
+        try:
+            from werkzeug.urls import url_has_allowed_host_and_scheme as _uh
+            return bool(_uh(u, request.host))
+        except Exception:
+            pass
+        try:
+            from werkzeug.security import url_has_allowed_host_and_scheme as _uh
+            return bool(_uh(u, request.host))
+        except Exception:
+            pass
+        return bool(
+            u.startswith('/') and
+            not u.startswith('//') and
+            '://' not in u and
+            'javascript:' not in u.lower() and
+            '<' not in u
+        )
+
+    def _get_next():
+        n = request.args.get('next') or request.form.get('next') or ''
+        return n if _safe_next(n) else ''
+
+    def _redirect_back_with_params(**extra):
+        # Re-compose /auth/login?next=..&last_identifier=.. on every FAIL redirect.
+        # Preserves deep-link + re-populates identifier after 302.
+        q = {}
+        nx = _get_next()
+        if nx:
+            q['next'] = nx
+        q.update(extra)
+        target = url_for('auth.login', **q) if q else url_for('auth.login')
+        return redirect(target)
 
     if request.method == 'POST':
         try:
             identifier = request.form.get('identifier', '').strip()
             password = request.form.get('password', '').strip()
-            # SESSION FIX (stay logged in until explicit logout):
-            # Always remember = True by default. User can still NOT opt-out by explicitly
-            # sending remember=0/off/false/no via UI checkbox — but default behaviour MUST
-            # be "I stay connected". This sets both the REMEMBER cookie (365 days via
-            # REMEMBER_COOKIE_DURATION) AND forces session.permanent=True below.
-            remember_checked = request.form.get('remember')
-            if remember_checked is None:
-                remember = True
-            else:
-                remember = str(remember_checked).lower() not in ('0', 'no', 'false', 'off', '')
-            # Force True always: sessions MUST persist until the user logs out explicitly
-            # (check above preserved for audit/optional opt-in checkbox only).
-            remember = True
+            remember = True  # SESSION FIX: always remember; session permanent=True below
 
             if not identifier or not password:
                 flash('Tout chan yo obligatwa.', 'error')
-                return redirect(url_for('auth.login'))
+                return _redirect_back_with_params(last_identifier=identifier)
 
             # Per-identifier brute force rate-limit: max 5 failed in 5 minutes
             if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
@@ -227,10 +278,10 @@ def login():
                     "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
                 )
                 flash(
-                    'Twa (5) esè koneksyon invalide. Tanpri tann 5 minit epi eseye ankò.',
+                    '5 esè koneksyon invalide yo te pase. Tanpri tann 5 minit epi eseye ankò.',
                     'error',
                 )
-                return redirect(url_for('auth.login'))
+                return _redirect_back_with_params(last_identifier=identifier)
 
             # Strict match only — NO substring LIKE (prevent takeover)
             user = _find_user_by_identifier(identifier)
@@ -241,10 +292,11 @@ def login():
                     identifier[:8] + "***",
                 )
                 flash(
-                    'Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.',
+                    '❌ WhatsApp oswa pseudo ou pa egziste, oswa modpas ou pa bon. '
+                    'Tanpri tcheke yo oswa klike sou "Oubliye modpas?".',
                     'error',
                 )
-                return redirect(url_for('auth.login'))
+                return _redirect_back_with_params(last_identifier=identifier)
 
             # Check password OR valid temporary forgot-password token
             password_ok = False
@@ -262,19 +314,21 @@ def login():
                     user.id, user.pseudo,
                 )
                 flash(
-                    'Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.',
+                    '❌ Modpas ou pa koresponn ak kont sa a. '
+                    'Tanpri eseye ankò oswa itilize "Oubliye modpas?" pou resèt.',
                     'error',
                 )
-                return redirect(url_for('auth.login'))
+                return _redirect_back_with_params(last_identifier=identifier)
 
             if not user.is_active:
-                flash('Kont ou an dezaktive.', 'error')
-                return redirect(url_for('auth.login'))
+                flash('Kont ou an dezaktive. Kontakte administrateur a.', 'error')
+                return _redirect_back_with_params(last_identifier=identifier)
 
             # If user used temp forgot pw, clear it so single-use only
             if _check_forgot_temp_password(user.id, password):
                 try:
-                    if cache: cache.delete(_FORGOT_KEY.format(user.id))
+                    if cache:
+                        cache.delete(_FORGOT_KEY.format(user.id))
                 except Exception:
                     pass
                 flash(
@@ -282,38 +336,27 @@ def login():
                     "warning",
                 )
 
-            # Login user, respect remember me
+            # Login user, remember=always, force=True (bypass inactive check — already validated above)
             login_user(user, remember=True, force=True)
 
-            # FORCE permanent session regardless of anything — user must stay logged in
-            # until they explicitly click /logout. PERMANENT_SESSION_LIFETIME = 30j.
             from flask import session as _s
             _s.permanent = True
-            # Mark remember cookie sent (for audit)
             _s['_remember_set'] = True
 
-            # Update last login
             user.last_login = datetime.utcnow()
             db.session.commit()
 
-            flash(f'Byenveni, {user.pseudo}!', 'success')
+            flash(f'✅ Byenveni, {user.pseudo}! Ou konekte avèk siksè.', 'success')
 
-            next_page = request.args.get('next')
+            next_page = _get_next()
             if next_page:
-                from werkzeug.security import url_has_allowed_host_and_scheme
-                allowed = False
-                try:
-                    allowed = url_has_allowed_host_and_scheme(next_page, request.host)
-                except Exception:
-                    allowed = False
-                if allowed:
-                    return redirect(next_page)
+                return redirect(next_page)
             return redirect(url_for('main.index'))
 
         except ValidationError as e:
             current_app.logger.warning("Login validation error: %s", e)
             flash(str(e), 'error')
-            return redirect(url_for('auth.login'))
+            return _redirect_back_with_params()
         except Exception as e:
             import traceback
             current_app.logger.error(
@@ -321,9 +364,16 @@ def login():
             )
             db.session.rollback()
             flash('Erè nan koneksyon. Tanpri eseye ankò.', 'error')
-            return redirect(url_for('auth.login'))
+            return _redirect_back_with_params()
 
-    return render_template('auth/login.html')
+    # GET: expose next_value + last_identifier_value to template for hidden input + pre-fill
+    next_value = _get_next()
+    last_identifier = request.args.get('last_identifier', '').strip() or ''
+    return render_template(
+        'auth/login.html',
+        next_value=next_value,
+        last_identifier=last_identifier,
+    )
 
 
 @auth_bp.route('/logout')

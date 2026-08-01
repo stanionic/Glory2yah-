@@ -327,9 +327,87 @@ def create_app(config_name=None):
         except Exception as e:
             app.logger.warning(f"Could not create test user (opt-in): {e}")
             db.session.rollback()
-    
+
+        # =================================================================
+        # DEFECT #6 FIX: Demo account that matches the YELLOW HINT shown on
+        # /auth/login ("Modpas ka: 123456 oswa pass123" + "Pseudo demo: StanD").
+        # Without this, users follow the UI hint → type "StanD / pass123" →
+        # account doesn't exist → FAIL → red borders (image ③) — infinite loop.
+        # Behaviour:
+        #  - NEVER run on production Render (safety gate: config_name != production)
+        #    OR: override by env FORCE_CREATE_STAND_DEMO=1 (for non-prod debugging)
+        #  - Idempotent: if StanD pseudo already exists, DO NOT overwrite existing
+        #    password (may have been changed by owner); only ensure is_active=True
+        #    and if password is NOT set (broken account), set default to pass123.
+        # =================================================================
+        try:
+            import os as __os_stand
+            _force = (__os_stand.environ.get('FORCE_CREATE_STAND_DEMO', '0') == '1')
+            _prod_ok = (config_name != 'production') or _force
+            if _prod_ok:
+                _pseudo = 'StanD'
+                _default_pw = 'pass123'
+                _whatsapp = __os_stand.environ.get(
+                    'STAND_WHATSAPP', '+15557826391'
+                )
+                u = User.query.filter(User.pseudo.ilike(_pseudo)).first()
+                if not u:
+                    u = User.query.filter_by(whatsapp=_whatsapp).first()
+                if not u:
+                    u = User(
+                        whatsapp=_whatsapp,
+                        pseudo=_pseudo,
+                        name='StanD (Demo)',
+                        auth_provider='password',
+                        is_active=True,
+                        is_admin=False,
+                    )
+                    u.set_password(_default_pw)
+                    db.session.add(u)
+                    db.session.flush()
+                    try:
+                        from app.models.user_gkach import UserGkach as _UG
+                        if not _UG.query.filter_by(user_whatsapp=u.whatsapp).first():
+                            db.session.add(_UG(user_id=u.id, user_whatsapp=u.whatsapp, gkach_balance=0))
+                    except Exception:
+                        pass
+                    db.session.commit()
+                    app.logger.info(
+                        'Created demo login account pseudo=%s (password="%s") to match UI hint.',
+                        _pseudo, _default_pw,
+                    )
+                else:
+                    changed = False
+                    if not u.is_active:
+                        u.is_active = True
+                        changed = True
+                    _no_pw = (not getattr(u, 'password_hash', None))
+                    need_pw_reset = False
+                    try:
+                        from werkzeug.security import check_password_hash as _cph
+                        if _no_pw:
+                            need_pw_reset = True
+                    except Exception:
+                        if _no_pw:
+                            need_pw_reset = True
+                    if need_pw_reset:
+                        u.set_password(_default_pw)
+                        changed = True
+                    if changed:
+                        db.session.commit()
+                        app.logger.info(
+                            'Demo login account pseudo=%s repaired (is_active / password set).',
+                            _pseudo,
+                        )
+        except Exception as _e:
+            app.logger.warning(f'StanD demo-account bootstrap skipped: {_e}')
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+
     app.logger.info(f'Glory2YahPub started in {config_name} mode')
-    
+
     return app
 
 
@@ -443,7 +521,7 @@ def register_error_handlers(app):
 
     @app.errorhandler(404)
     def not_found(e):
-        return render_template('error.html'), 404
+        return render_template('error.html', error=str(getattr(e, 'description', e)), error_code=404), 404
 
     @app.errorhandler(500)
     def internal_error(e):
@@ -451,7 +529,7 @@ def register_error_handlers(app):
             db.session.rollback()
         except Exception:
             pass
-        return render_template('error.html'), 500
+        return render_template('error.html', error=str(getattr(e, 'description', e)), error_code=500), 500
 
     @app.errorhandler(CSRFError)
     def csrf_error(e):
