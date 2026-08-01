@@ -140,7 +140,8 @@ def create_app(config_name=None):
         from app.models.user import User
         try:
             user_id_int = int(user_id)
-            user = User.query.get(user_id_int)
+            # P2 FIX: replace deprecated legacy User.query.get() with modern db.session.get()
+            user = db.session.get(User, user_id_int)
             if user and user.is_active:
                 return user
             return None
