@@ -523,7 +523,8 @@ def view_ad(ad_id):
             current_user=current_user
         )
     except Exception as e:
-        flash(f'Piblisite pa jwenn: {str(e)}', 'error')
+        current_app.logger.error(f"view_ad failed for ad_id={ad_id}: {e}")
+        flash('Piblisite sa a pa jwenn.', 'error')
         return render_template('index.html', posts=[], marketplace_ads=[], current_user=current_user)
 
 
@@ -596,8 +597,8 @@ def submit_ad():
         except ValidationError as e:
             flash(str(e), 'error')
         except Exception as e:
-            current_app.logger.error(f"Error submitting ad: {e}")
-            flash(f'Erè pandan soumèt piblisite a: {str(e)}', 'error')
+            current_app.logger.error(f"submit_ad failed: {e}")
+            flash('Erè pandan soumèt piblisite a.', 'error')
     
     return render_template('submit_ad.html')
 

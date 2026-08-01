@@ -2,7 +2,7 @@
 Delivery Routes Blueprint
 Delivery tracking and negotiation
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.services.delivery_service import DeliveryService, Delivery
 from app.utils.validators import ValidationError
@@ -84,6 +84,7 @@ def set_cost(delivery_id):
         flash(str(e), 'error')
         return redirect(url_for('delivery.view', delivery_id=delivery_id))
     except Exception as e:
+        current_app.logger.error(f"Delivery set_cost failed delivery={delivery_id} seller={current_user.whatsapp}: {e}")
         flash('Erè nan mete pri livrezon.', 'error')
         return redirect(url_for('delivery.view', delivery_id=delivery_id))
 
@@ -100,6 +101,7 @@ def confirm(delivery_id):
         flash(str(e), 'error')
         return redirect(url_for('delivery.view', delivery_id=delivery_id))
     except Exception as e:
+        current_app.logger.error(f"Delivery confirm failed delivery={delivery_id} buyer={current_user.whatsapp}: {e}")
         flash('Erè nan konfime livrezon. Verifye balans ou.', 'error')
         return redirect(url_for('delivery.view', delivery_id=delivery_id))
 
@@ -147,4 +149,5 @@ def message(delivery_id):
     except ValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
+        current_app.logger.error(f"Delivery chat add failed delivery={delivery_id} user={current_user.whatsapp}: {e}")
         return jsonify({'success': False, 'message': 'Erè nan anrejistre mesaj la.'}), 500

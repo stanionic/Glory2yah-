@@ -2,7 +2,7 @@
 Admin Routes Blueprint
 Management of ads, users, batches, and transactions
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from app import db
 import uuid
@@ -172,7 +172,8 @@ def ad_detail(ad_id):
         ad = AdService.get_ad(ad_id)
         AdService.increment_views(ad_id)
     except Exception as e:
-        flash(f'Ad not found: {str(e)}', 'error')
+        current_app.logger.error(f"Admin ad_detail failed for ad_id={ad_id}: {e}")
+        flash('Piblisite sa a pa jwenn.', 'error')
         return redirect(url_for('admin.manage_ads'))
     
     return render_template(
@@ -192,7 +193,8 @@ def approve_ad(ad_id):
         flash('Piblisite apwouve!', 'success')
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 400
+        current_app.logger.error(f"Admin approve_ad failed for ad_id={ad_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan apwouve piblisite a.'}), 400
 
 
 @admin_bp.route('/ads/reject/<ad_id>', methods=['POST'])
@@ -207,8 +209,11 @@ def reject_ad(ad_id):
         AdService.reject_ad(ad_id, reason)
         flash('Piblisite rejete.', 'info')
         return jsonify({'success': True})
-    except Exception as e:
+    except ValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Admin reject_ad failed for ad_id={ad_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan rejete piblisite a.'}), 400
 
 
 @admin_bp.route('/gkach/manage', methods=['GET', 'POST'])
@@ -316,7 +321,8 @@ def create_batch():
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Erè nan kreyasyon pakèt: {str(e)}', 'error')
+        current_app.logger.error(f"Admin create_batch failed: {e}")
+        flash('Erè pandan kreyasyon pakèt piblisite a.', 'error')
 
     return redirect(url_for('admin.dashboard'))
 
@@ -394,7 +400,8 @@ def admin_delete_ad(ad_id):
         AdService.delete_ad(ad_id=ad_id)
         flash('Piblisite efase avèk siksè!', 'success')
     except Exception as e:
-        flash(f'Erè nan efase piblisite: {str(e)}', 'error')
+        current_app.logger.error(f"Admin delete_ad failed for ad_id={ad_id}: {e}")
+        flash('Erè pandan efase piblisite a.', 'error')
     return redirect(url_for('admin.dashboard'))
 
 
@@ -563,7 +570,8 @@ def mobile_config_update():
         
         flash('Configuration aplikasyon mobil mete ajou avèk siksè!', 'success')
     except Exception as e:
-        flash(f'Erè nan konfigirasyon: {str(e)}', 'error')
+        current_app.logger.error(f"Admin mobile_config_update failed: {e}")
+        flash('Erè pandan konfigirasyon aplikasyon mobil la.', 'error')
     
     return redirect(url_for('admin.mobile_config'))
 
@@ -656,7 +664,8 @@ def add_charity_cause():
         flash(f'Kòz "{name}" kreye avèk siksè!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erè nan kreye kòz: {str(e)}', 'error')
+        current_app.logger.error(f"Admin add_charity_cause failed cause={name!r}: {e}")
+        flash('Erè pandan kreyasyon kòz charite a.', 'error')
     
     return redirect(url_for('admin.charity_donations'))
 
@@ -680,7 +689,8 @@ def toggle_charity_cause():
         flash(f'Kòz "{cause.name}" {"aktive" if cause.is_active else "deaktive"} avèk siksè!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erè nan modifikasyon: {str(e)}', 'error')
+        current_app.logger.error(f"Admin toggle_charity_cause failed cause_id={cause_id!r}: {e}")
+        flash('Erè pandan modifikasyon kòz charite a.', 'error')
     
     return redirect(url_for('admin.charity_donations'))
 
@@ -704,7 +714,8 @@ def delete_charity_cause():
         flash(f'Kòz "{cause.name}" efase avèk siksè!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erè nan efase: {str(e)}', 'error')
+        current_app.logger.error(f"Admin delete_charity_cause failed cause_id={cause_id!r}: {e}")
+        flash('Erè pandan efase kòz charite a.', 'error')
     
     return redirect(url_for('admin.charity_donations'))
 

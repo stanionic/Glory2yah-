@@ -2,7 +2,7 @@
 Cart Routes Blueprint
 Shopping cart management
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.services.cart_service import CartService, CartItem
 from app.utils.validators import ValidationError
@@ -68,8 +68,11 @@ def update(item_id):
         quantity = int(request.form.get('quantity', 1))
         CartService.update_quantity(current_user.id, item_id, quantity)
         return jsonify({'success': True})
-    except Exception as e:
+    except ValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Cart update failed user={current_user.id} item={item_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan mete ajou kantite atik la.'}), 400
 
 
 @cart_bp.route('/remove/<int:item_id>', methods=['POST'])
@@ -79,8 +82,11 @@ def remove(item_id):
     try:
         CartService.remove_item(current_user.id, item_id)
         return jsonify({'success': True})
-    except Exception as e:
+    except ValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Cart remove failed user={current_user.id} item={item_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan retire atik nan panier a.'}), 400
 
 
 @cart_bp.route('/checkout', methods=['GET', 'POST'])
@@ -173,10 +179,14 @@ def checkout():
                 CartService.clear_cart(current_user.id)
                 db.session.commit()
                 return jsonify({'success': True, 'donation': donation_amount > 0})
+            except ValidationError as e:
+                db.session.rollback()
+                return jsonify({'success': False, 'error': str(e)}), 400
             except Exception as e:
                 db.session.rollback()
                 any_error = e
-                return jsonify({'success': False, 'error': str(any_error)}), 500
+                current_app.logger.error(f"Cart AJAX checkout failed user={current_user.id}: {any_error}")
+                return jsonify({'success': False, 'error': 'Erè pandan peyman panier la. Tanpri eseye ankò oswa kontakte admin.'}), 500
 
         # Regular form submission — P1 FIX: correct endpoint name my_deliveries
         flash('Kòmand voye bay vandè yo!', 'success')
