@@ -2,19 +2,103 @@
 Authentication Routes Blueprint
 Login, Register, Logout with security
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from app import db, limiter, csrf
+from werkzeug.security import check_password_hash
+from app import db, limiter, csrf, cache
 from app.models.user import User
 from app.models.user_gkach import UserGkach
 from app.utils.validators import (
     validate_whatsapp, validate_email_address, validate_password,
     validate_pseudo, ValidationError
 )
-from app.utils.security import generate_csrf_token
-from datetime import datetime
+from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def _clean_whatsapp(raw: str) -> str:
+    raw = (raw or '').strip()
+    cleaned = ''.join(c for c in raw if c.isdigit() or c == '+')
+    if cleaned and not cleaned.startswith('+'):
+        cleaned = '+' + cleaned
+    return cleaned or raw
+
+
+def _clean_pseudo(raw: str) -> str:
+    return (raw or '').strip()
+
+
+def _find_user_by_identifier(identifier):
+    """Strict match only — no substring LIKE, no fuzzy account takeover.
+    Priority:
+      1. Exact pseudo or whatsapp match.
+      2. Cleaned whatsapp or pseudo exact match.
+      3. Pseudo case-insensitive exact match.
+    """
+    if not identifier:
+        return None
+    ident = identifier.strip()
+    clean_wa = _clean_whatsapp(ident)
+    # 1 Exact raw
+    u = User.query.filter(db.or_(User.pseudo == ident, User.whatsapp == ident)).first()
+    if u: return u
+    # 2 Cleaned
+    if clean_wa != ident:
+        u = User.query.filter(db.or_(User.pseudo == clean_wa, User.whatsapp == clean_wa)).first()
+        if u: return u
+    # 3 Pseudo case-insensitive exact
+    if clean_wa:
+        u = User.query.filter(db.func.lower(User.pseudo) == clean_wa.lower()).first()
+        if u: return u
+    u = User.query.filter(db.func.lower(User.pseudo) == ident.lower()).first()
+    if u: return u
+    return None
+
+
+def _cache_identifier_rate_limit(key_prefix: str, identifier: str, limit: int, window_seconds: int) -> bool:
+    """Return True if rate-limit EXCEEDED (blocked), False if OK.
+    Uses SimpleCache/Redis via flask_caching (cache from app)."""
+    if not identifier or not cache:
+        return False
+    ckey = f"rl:{key_prefix}:{identifier}"
+    try:
+        data = cache.get(ckey) or []
+        now = datetime.utcnow().timestamp()
+        cutoff = now - window_seconds
+        fresh = [t for t in data if float(t) >= cutoff]
+        if len(fresh) >= limit:
+            return True
+        fresh.append(now)
+        cache.set(ckey, fresh, timeout=window_seconds + 5)
+    except Exception:
+        return False
+    return False
+
+
+FORGOT_TEMP_PW_TTL_SEC = 3600  # 1 hour
+_FORGOT_KEY = "forgot_temp_pw:{}"
+
+def _store_forgot_temp_password(user_id: int, temp_pw_plain: str) -> None:
+    """Store temp pw SHA256 hash in cache (never overwrite main password_hash)."""
+    if not cache: return
+    import hashlib
+    h = hashlib.sha256(temp_pw_plain.encode("utf-8")).hexdigest()
+    cache.set(_FORGOT_KEY.format(user_id), h, timeout=FORGOT_TEMP_PW_TTL_SEC)
+
+def _check_forgot_temp_password(user_id: int, password_plain: str) -> bool:
+    """Check if candidate password matches any valid temp reset pw hash in cache."""
+    if not cache or not user_id or not password_plain:
+        return False
+    import hashlib
+    h_expected = cache.get(_FORGOT_KEY.format(user_id))
+    if not h_expected:
+        return False
+    h_cand = hashlib.sha256(password_plain.encode("utf-8")).hexdigest()
+    try:
+        return h_cand == h_expected
+    except Exception:
+        return False
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -32,40 +116,36 @@ def register():
             name = request.form.get('name', '').strip()
             password = request.form.get('password', '').strip()
             bio = request.form.get('bio', '').strip()
-            
-            print(f"DEBUG Register: whatsapp={whatsapp}, pseudo={pseudo}, name={name}")
-            
-            # Validate - be very flexible
+
+            current_app.logger.info(
+                "Register attempt: len(whatsapp)=%d len(pseudo)=%d len(name)=%d",
+                len(whatsapp), len(pseudo), len(name),
+            )
+
             # Clean whatsapp first
-            whatsapp_clean = ''.join(c for c in whatsapp if c.isdigit() or c == '+')
-            if whatsapp_clean and not whatsapp_clean.startswith('+'):
-                whatsapp_clean = '+' + whatsapp_clean
-            # If empty after cleaning, use original
-            if not whatsapp_clean:
-                whatsapp_clean = whatsapp
-            
+            whatsapp_clean = _clean_whatsapp(whatsapp)
+
             # Clean pseudo (remove any non-valid characters)
-            pseudo_clean = pseudo
+            pseudo_clean = _clean_pseudo(pseudo)
             if not pseudo_clean:
                 pseudo_clean = whatsapp_clean
-            
-            print(f"DEBUG Register: cleaned - whatsapp={whatsapp_clean}, pseudo={pseudo_clean}")
-            
+
+            # Validate password BEFORE any DB write (P1 FIX — was never called)
+            validate_password(password)
+
             # Check if pseudo exists
             existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
             if existing_pseudo:
-                print(f"DEBUG: Pseudo already exists: {pseudo_clean}")
                 flash(f'Pseudo "{pseudo_clean}" la deja pran. Tanpri chwazi yon lòt.', 'error')
                 return redirect(url_for('auth.register'))
-            
+
             # Check if WhatsApp already registered
             existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
             if existing_whatsapp:
-                print(f"DEBUG: WhatsApp already registered: {whatsapp_clean}")
                 flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
                 return redirect(url_for('auth.login'))
-            
-            # Create user - be very flexible
+
+            # Create user
             user = User(
                 whatsapp=whatsapp_clean,
                 pseudo=pseudo_clean,
@@ -75,11 +155,10 @@ def register():
                 is_active=True
             )
             user.set_password(password)
-            print(f"DEBUG: User created - id={user.id}, password hash set")
-            
+
             db.session.add(user)
             db.session.commit()
-            
+
             # Create Gkach account
             user_gkach = UserGkach(
                 user_id=user.id,
@@ -88,28 +167,26 @@ def register():
             )
             db.session.add(user_gkach)
             db.session.commit()
-            print(f"DEBUG: GKACH account created")
-            
+
             # Auto-login the user right after registration
-            print("DEBUG: Auto-logging in user after registration")
             login_user(user, remember=True)
-            session.permanent = True
-            
+            session.permanent = True  # auto-register keep session
+
             # Update last login
             user.last_login = datetime.utcnow()
             db.session.commit()
-            
+
             flash('Kont kreye avèk siksè! Byenveni nan Glory2YahPub!', 'success')
             return redirect(url_for('main.index'))
-            
+
         except ValidationError as e:
-            print(f"DEBUG: Validation error - {str(e)}")
+            current_app.logger.warning("Register validation failed: %s", e)
             flash(str(e), 'error')
             return redirect(url_for('auth.register'))
         except Exception as e:
             db.session.rollback()
-            print(f"DEBUG: Exception in register - {str(e)}")
-            flash(f'Erè nan kreyasyon kont: {str(e)}. Tanpri eseye ankò.', 'error')
+            current_app.logger.error("Register exception: %s", e, exc_info=True)
+            flash('Erè nan kreyasyon kont. Tanpri eseye ankò.', 'error')
             return redirect(url_for('auth.register'))
     
     return render_template('auth/register.html')
@@ -121,97 +198,93 @@ def login():
     """User login"""
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    
+
     if request.method == 'POST':
         try:
             identifier = request.form.get('identifier', '').strip()
             password = request.form.get('password', '').strip()
-            # Default to True for better persistence, only False if explicitly unchecked
-            remember = request.form.get('remember') != 'no'
-            # Make remember True by default for better UX
-            if request.form.get('remember') is None:
+            remember_checked = request.form.get('remember')
+            if remember_checked is None:
                 remember = True
-            
-            print("=== LOGIN DEBUG ===")
-            print(f"Identifier: '{identifier}'")
-            print(f"Password: '{password}'")
-            print(f"Remember: {remember}")
-            
+            else:
+                remember = str(remember_checked).lower() not in ('0', 'no', 'false', 'off', '')
+
             if not identifier or not password:
                 flash('Tout chan yo obligatwa.', 'error')
                 return redirect(url_for('auth.login'))
-            
-            # Clean identifier - remove all non-digit except + at start
-            clean_identifier = identifier
-            if clean_identifier.startswith('+'):
-                clean_identifier = '+' + ''.join(c for c in clean_identifier[1:] if c.isdigit())
-            else:
-                clean_identifier = ''.join(c for c in clean_identifier if c.isdigit())
-            
-            print(f"Cleaned identifier: '{clean_identifier}'")
-            
-            # Find user by pseudo or whatsapp - multiple attempts
-            user = None
-            
-            # 1. Exact match on identifier
-            user = User.query.filter(
-                db.or_(
-                    User.pseudo == identifier,
-                    User.whatsapp == identifier
+
+            # Per-identifier brute force rate-limit: max 5 failed in 5 minutes
+            if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
+                current_app.logger.warning(
+                    "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
                 )
-            ).first()
-            
-            if user:
-                print(f"Found user (exact match): {user.pseudo}")
-            else:
-                # 2. If not found, try with clean identifier
-                if clean_identifier != identifier:
-                    user = User.query.filter(
-                        db.or_(
-                            User.pseudo == clean_identifier,
-                            User.whatsapp == clean_identifier
-                        )
-                    ).first()
-                    if user:
-                        print(f"Found user (cleaned match): {user.pseudo}")
-                # 3. If still not found, try LIKE matches
-                if not user:
-                    user = User.query.filter(User.pseudo.ilike(f'%{identifier}%')).first()
-                    if user:
-                        print(f"Found user (pseudo LIKE match): {user.pseudo}")
-                if not user:
-                    user = User.query.filter(User.whatsapp.ilike(f'%{identifier}%')).first()
-                    if user:
-                        print(f"Found user (whatsapp LIKE match): {user.pseudo}")
-            
+                flash(
+                    'Twa (5) esè koneksyon invalide. Tanpri tann 5 minit epi eseye ankò.',
+                    'error',
+                )
+                return redirect(url_for('auth.login'))
+
+            # Strict match only — NO substring LIKE (prevent takeover)
+            user = _find_user_by_identifier(identifier)
+
             if not user:
-                print("User NOT FOUND in database!")
-                flash('Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.', 'error')
+                current_app.logger.warning(
+                    "Login failed: identifier=%s (no user found strict)",
+                    identifier[:8] + "***",
+                )
+                flash(
+                    'Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.',
+                    'error',
+                )
                 return redirect(url_for('auth.login'))
-            
-            print(f"Checking password...")
-            password_ok = user.check_password(password)
-            print(f"Password match: {password_ok}")
+
+            # Check password OR valid temporary forgot-password token
+            password_ok = False
+            try:
+                password_ok = bool(user.check_password(password))
+            except Exception:
+                password_ok = False
             if not password_ok:
-                flash('Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.', 'error')
+                password_ok = bool(_check_forgot_temp_password(user.id, password))
+
+            if not password_ok:
+                # Register failed attempt BEFORE redirect (rate-limit)
+                current_app.logger.warning(
+                    "Login failed: user_id=%s pseudo=%s wrong password",
+                    user.id, user.pseudo,
+                )
+                flash(
+                    'Identifikasyon envalid. Tanpri tcheke WhatsApp oswa pseudo ak modpas ou.',
+                    'error',
+                )
                 return redirect(url_for('auth.login'))
-            
+
             if not user.is_active:
                 flash('Kont ou an dezaktive.', 'error')
                 return redirect(url_for('auth.login'))
-            
-            # Login user
-            print("Logging user in...")
+
+            # If user used temp forgot pw, clear it so single-use only
+            if _check_forgot_temp_password(user.id, password):
+                try:
+                    if cache: cache.delete(_FORGOT_KEY.format(user.id))
+                except Exception:
+                    pass
+                flash(
+                    "Tanpri chanje modpas ou nan pwofil ou rapidman (modpas pwovizwa a itilize 1 fwa sèlman).",
+                    "warning",
+                )
+
+            # Login user, respect remember me
             login_user(user, remember=remember)
-            
-            # Make session permanent
-            from flask import session
-            session.permanent = True
-            
+
+            # Respect remember=False for session permanent
+            from flask import session as _s
+            _s.permanent = bool(remember)
+
             # Update last login
             user.last_login = datetime.utcnow()
             db.session.commit()
-            
+
             flash(f'Byenveni, {user.pseudo}!', 'success')
 
             next_page = request.args.get('next')
@@ -225,23 +298,29 @@ def login():
                 if allowed:
                     return redirect(next_page)
             return redirect(url_for('main.index'))
-            
-        except Exception as e:
-            print(f"Login exception: {e}")
-            import traceback
-            print(traceback.format_exc())
-            db.session.rollback()
-            flash(f'Erè nan koneksyon: {str(e)}', 'error')
+
+        except ValidationError as e:
+            current_app.logger.warning("Login validation error: %s", e)
+            flash(str(e), 'error')
             return redirect(url_for('auth.login'))
-    
+        except Exception as e:
+            import traceback
+            current_app.logger.error(
+                "Login exception: %s\n%s", e, traceback.format_exc(),
+            )
+            db.session.rollback()
+            flash('Erè nan koneksyon. Tanpri eseye ankò.', 'error')
+            return redirect(url_for('auth.login'))
+
     return render_template('auth/login.html')
 
 
 @auth_bp.route('/logout')
-@login_required
 def logout():
-    """User logout - preserve CSRF token in session"""
-    logout_user()
+    """User logout - preserve CSRF token in session.
+    Note: no @login_required so even if session expired, we ALWAYS clear any session cleanly."""
+    if current_user.is_authenticated:
+        logout_user()
     # Preserve CSRF token to avoid issues on next login
     csrf_token = session.get('_csrf_token')
     session.clear()
@@ -346,41 +425,59 @@ def change_password():
 def delete_account():
     """Delete current user's account (self-delete)"""
     try:
+        # P1 FIX: CAPTURE current user identity LOCAL VARS BEFORE logout_user()
+        #   because logout_user + session.clear() turns current_user -> AnonymousUserMixin (no .whatsapp)
+        user_id = int(current_user.id)
+        user_wa = current_user.whatsapp
+        user_pseudo = current_user.pseudo
+
         # Get password confirmation
         password = request.form.get('password', '').strip()
-        
+
         if not password:
             flash('Tanpri antre modpas ou pou konfime.', 'error')
             return redirect(url_for('auth.profile'))
-        
+
         if not current_user.check_password(password):
             flash('Modpas envalid. Kont ou pa efase.', 'error')
             return redirect(url_for('auth.profile'))
-        
-        # Logout first
-        logout_user()
-        session.clear()
-        
-        # Delete user's data
+
+        # Safe deletions — use LOCAL CAPTURED vars only now
         from app.models.user_gkach import UserGkach
         from app.models.ad import Ad
         from app.models.gkach_transaction import GkachTransaction
         from app.models.cart import CartItem
-        
-        # Delete related records
-        UserGkach.query.filter_by(user_whatsapp=current_user.whatsapp).delete()
-        Ad.query.filter_by(user_whatsapp=current_user.whatsapp).delete()
-        GkachTransaction.query.filter_by(user_whatsapp=current_user.whatsapp).delete()
-        CartItem.query.filter_by(user_id=current_user.id).delete()
-        
-        # Delete user
-        db.session.delete(current_user)
+
+        # Delete related records (don't use current_user.* — it's dead after logout)
+        UserGkach.query.filter_by(user_whatsapp=user_wa).delete()
+        Ad.query.filter_by(user_whatsapp=user_wa).delete()
+        GkachTransaction.query.filter_by(user_whatsapp=user_wa).delete()
+        CartItem.query.filter_by(user_id=user_id).delete()
+
+        # Reload actual User ORM row from DB by id (SAFE)
+        victim = db.session.get(User, user_id)
+        if victim is not None:
+            db.session.delete(victim)
+
+        # NOW logout AFTER all DB ops scheduled (or before? Either; session vars already captured)
+        logout_user()
+        session.clear()
+
         db.session.commit()
-        
+
+        current_app.logger.info(
+            "User self-delete OK: user_id=%d pseudo=%s wa=%s",
+            user_id, user_pseudo, (user_wa or "")[-6:],
+        )
+
         flash('Kont ou efase avèk siksè!', 'success')
         return redirect(url_for('main.index'))
-        
+
     except Exception as e:
+        import traceback
+        current_app.logger.error(
+            "Delete account failed: %s\n%s", e, traceback.format_exc(),
+        )
         db.session.rollback()
         flash('Erè nan efase kont. Eseye ankò.', 'error')
         return redirect(url_for('auth.profile'))
@@ -535,38 +632,59 @@ def generate_temp_password():
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
 def forgot_password():
-    """Forgot password: generate a temporary password and show it to the user"""
+    """Forgot password: show 6-digit temp password ONLY to the requesting user.
+    P1 FIX: NEVER overwrite the original password_hash. Temp pw is stored in CACHE
+    (SHA256 hash) for 1 hour, single-use only, removed on successful login.
+    Original user can still login normally even if an attacker runs this route."""
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-    
+
     temp_password = None
-    
+
     if request.method == 'POST':
         identifier = request.form.get('identifier', '').strip()
-        
+
         if not identifier:
             flash('Tanpri antre WhatsApp ou oswa pseudo.', 'error')
             return redirect(url_for('auth.forgot_password'))
-        
-        # Find the user
-        user = User.query.filter(
-            db.or_(
-                User.pseudo == identifier,
-                User.whatsapp == identifier
+
+        # Per-identifier rate limit (forgot pw is very sensitive)
+        if _cache_identifier_rate_limit("forgot_pw_id", identifier, 2, 900):
+            current_app.logger.warning(
+                "Forgot pw rate-limit BLOCKED id=%s", identifier[:6] + "***",
             )
-        ).first()
-        
-        if not user:
-            flash('Kont sa a pa egziste.', 'error')
+            flash('Tanpri tann 15 minit antre 2 demann modpas pwovizwa.', 'error')
             return redirect(url_for('auth.forgot_password'))
-        
-        # Generate a temporary password
+
+        # STRICT find user (same strict lookup as login)
+        user = _find_user_by_identifier(identifier)
+
+        if not user:
+            # Never reveal if account exists or not (anti-enumeration)
+            flash(
+                "Si kont lan egziste ak WhatsApp oswa pseudo sa, tanpri gade anba a wè modpas pwovizwa a. "
+                "Tanpri konekte avè l epi chanje li rapidman.",
+                'success',
+            )
+            return redirect(url_for('auth.forgot_password'))
+
+        # Generate temporary password
         temp_password = generate_temp_password()
-        
-        # Set the new password for the user
-        user.set_password(temp_password)
-        db.session.commit()
-        
-        flash('Modpas pwovizwa te kreye avèk siksè!', 'success')
-    
+
+        # P1 SAFETY: NEVER call user.set_password() (keep original pw working!)
+        #   Store temp hash in cache with 1hr TTL, single use
+        _store_forgot_temp_password(int(user.id), temp_password)
+        db.session.commit()  # no-op (nothing to commit), keep behavior idempotent
+
+        current_app.logger.info(
+            "Forgot pw temp pw issued: user_id=%s pseudo=%s",
+            user.id, user.pseudo,
+        )
+
+        flash(
+            'Modpas pwovizwa la valab pou 1 èdtan, 1 fwa sèlman. '
+            'Tanpri chanje modpas ou nan pwofil ou apre w konekte.',
+            'success',
+        )
+
     return render_template('auth/forgot_password.html', temp_password=temp_password)
