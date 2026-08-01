@@ -94,9 +94,31 @@ def create_app(config_name=None):
     # Configure login_manager settings
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Ou dwe konekte pou aksede paj sa a.'
-    login_manager.session_protection = 'strong'  # P1 FIX V18 — protect against session fixation (dev: use 'basic' if mobile IP flips cause logout)
+    # SESSION FIX: session_protection='strong' invalidates session on mobile IP/UA variations
+    # (WiFi → 4G, browser minor updates) → user gets logged out randomly.
+    # 'basic' only regenerates sid on login and doesn't invalidate on IP changes.
+    login_manager.session_protection = 'basic'
     login_manager.needs_refresh_message = (u"Tanpri rekonfim modpas ou pou kontinye.")
     login_manager.needs_refresh_message_category = "info"
+
+    # ===== PERSISTENT SESSION GLOBAL FIX — keep logged in until explicit logout =====
+    #
+    # Issue: flask-login session.permanent defaults to False → browser close = logout.
+    # Requirement: session STAYS OPEN until user clicks logout (explicit action).
+    # Fix: on every request, when a user IS authenticated, force session.permanent=True.
+    # This also protects against routes forgetting to set permanent=True on login.
+    # PERMANENT_SESSION_LIFETIME is already 30 days (line ~74).
+    @app.before_request
+    def _ensure_permanent_session_when_authenticated():
+        from flask import session as _flask_sess
+        try:
+            from flask_login import current_user as _cu
+            if _cu and _cu.is_authenticated:
+                if not _flask_sess.get('_permanent'):
+                    _flask_sess.permanent = True
+        except Exception:
+            # Never let session hooks break a request
+            pass
 
     csrf.init_app(app)
     limiter.init_app(app)
