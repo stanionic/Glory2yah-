@@ -1,181 +1,154 @@
 {% extends "base.html" %}
-
-{% block title %}Bank - Glory2YahPub{% endblock %}
-
+{% block title %}Bank · Dashboard - Glory2YahPub{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">🏦 Bank Glory2YahPub</h1>
-            <p class="lead">Jere prè ak envestisman ou yo</p>
-        </div>
-    </div>
+<style>
+.bk-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#f5f2ff 0%,#e9dffb 100%); }
+.bk-card { background:#fff; border-radius:24px; padding:24px 26px; box-shadow:0 14px 44px rgba(58,38,128,.12); max-width:1060px; margin:0 auto }
+.bk-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:18px }
+.bk-ttl { margin:0; font-size:26px; font-weight:800; color:#1a133a; display:flex; align-items:center; gap:10px }
+.bk-ttl::before { content:"🏦"; font-size:28px }
+.bk-sub { color:#6b5ba8; font-size:13px }
+.bk-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:18px 0 22px }
+.bk-stat { background:linear-gradient(135deg,#fff,#fbf6ff); border:1.5px solid #ece0ff; border-radius:18px; padding:16px 18px }
+.bk-stat .bk-lbl { font-size:12px; color:#6b5ba8; font-weight:700; letter-spacing:.2px; text-transform:uppercase }
+.bk-stat .bk-val { font-size:26px; font-weight:800; color:#3a2680; margin-top:4px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.bk-stat.bk-green { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-color:#a7f3d0 }
+.bk-stat.bk-green .bk-val { color:#059669 }
+.bk-stat.bk-warn { background:linear-gradient(135deg,#fff7ed,#fee2c2); border-color:#fed7aa }
+.bk-stat.bk-warn .bk-val { color:#c2410c }
+.bk-actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px }
+.bk-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.bk-btn-prim { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; box-shadow:0 8px 22px rgba(58,38,128,.3) }
+.bk-btn-prim:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(58,38,128,.4) }
+.bk-btn-green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 8px 22px rgba(16,185,129,.3) }
+.bk-btn-green:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(16,185,129,.42) }
+.bk-btn-ghost { background:#f3eefe; color:#3a2680 }
+.bk-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+.bk-section { margin-top:20px }
+.bk-h { font-size:17px; font-weight:800; color:#1a133a; margin:0 0 10px; display:flex; align-items:center; gap:8px }
+.bk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px }
+.bk-row { background:#fbf9ff; border:1.5px solid #ece0ff; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; gap:6px }
+.bk-row-head { display:flex; justify-content:space-between; align-items:center; gap:8px }
+.bk-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:800 }
+.bk-chip-pending  { background:#fff7ed; color:#9a3412; border:1px solid #fdba74 }
+.bk-chip-active   { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-chip-completed{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe }
+.bk-chip-rejected { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.bk-kv { display:flex; justify-content:space-between; font-size:13px; color:#312860 }
+.bk-kv b { color:#1a133a; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.bk-empty { padding:22px; background:#faf7ff; border:1.5px dashed #e3d8ff; border-radius:14px; color:#6b5ba8; font-size:14px; font-weight:600; text-align:center }
+.bk-flash { margin:10px 0 16px }
+.bk-msg { padding:10px 14px; border-radius:12px; margin-bottom:8px; font-size:13.5px; font-weight:700 }
+.bk-msg.success { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-msg.error   { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.bk-form-inline { display:inline-flex; gap:8px; flex-wrap:wrap; align-items:center }
+.bk-input { padding:9px 12px; border-radius:10px; border:1.5px solid #e2d8ff; background:#fbf9ff; font-size:14px; font-weight:700; color:#1a133a; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; max-width:140px }
+.bk-input:focus { outline:none; border-color:#7e42bf; background:#fff; box-shadow:0 0 0 3px rgba(126,66,191,.14) }
+.bk-sub { font-size:12px; color:#6b5ba8 }
+</style>
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">💰 Balans Gkach</h5>
-                    <h3 class="mb-0">{{ gkach_balance }} Gkach</h3>
-                    <a href="{{ url_for('achte_gkach') }}" class="btn btn-light btn-sm mt-2">Achte Gkach</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <h5 class="card-title">📋 Dèt Prè</h5>
-                    <h3 class="mb-0">{{ total_loan_due }} Gkach</h3>
-                    <a href="{{ url_for('loan_list') }}" class="btn btn-dark btn-sm mt-2">Gere Prè</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">📈 Envestisman</h5>
-                    <h3 class="mb-0">{{ total_invested }} Gkach</h3>
-                    <a href="{{ url_for('investment_products') }}" class="btn btn-light btn-sm mt-2">Envesti</a>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="bk-wrap">
+<div class="bk-card">
 
-    <!-- Active Loans -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">📋 Prè Aktif</h5>
-                    <a href="{{ url_for('loan_list') }}" class="btn btn-primary btn-sm">Nouvo Prè</a>
-                </div>
-                <div class="card-body">
-                    {% if active_loans %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Pwodwi</th>
-                                    <th>Kantite</th>
-                                    <th>Enterè</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Dat Echèans</th>
-                                    <th>Aksyon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for loan in active_loans %}
-                                <tr>
-                                    <td>{{ loan.loan_id[:8] }}...</td>
-                                    <td>{{ loan.product.name }}</td>
-                                    <td>{{ loan.amount }} Gkach</td>
-                                    <td>{{ loan.interest_amount }} Gkach</td>
-                                    <td>{{ loan.total_due }} Gkach</td>
-                                    <td>
-                                        {% if loan.status == 'pending' %}
-                                        <span class="badge bg-warning">An atant</span>
-                                        {% elif loan.status == 'active' %}
-                                        <span class="badge bg-success">Aktif</span>
-                                        {% elif loan.status == 'completed' %}
-                                        <span class="badge bg-info">Konplè</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ loan.due_date.strftime('%d/%m/%Y') if loan.due_date else 'N/A' }}</td>
-                                    <td>
-                                        {% if loan.status == 'active' %}
-                                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#repayModal{{ loan.id }}">Rembouse</button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">Ou pa gen prè aktif. <a href="{{ url_for('loan_list') }}">Fè yon demann prè</a></p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+  <div class="bk-head">
+    <div>
+      <h1 class="bk-ttl">Bank Dashboard</h1>
+      <div class="bk-sub">Solde · Prêts actifs · Investissements actifs — Glory2Yah Pub</div>
     </div>
+    <div class="bk-actions">
+      {% if current_user.is_admin %}
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.admin_bank') }}">⚙️ Admin Bank</a>
+      {% endif %}
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('main.index') }}">← Dakèil</a>
+    </div>
+  </div>
 
-    <!-- Active Investments -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">📈 Envestisman Aktif</h5>
-                    <a href="{{ url_for('investment_products') }}" class="btn btn-success btn-sm">Nouvo Envestisman</a>
-                </div>
-                <div class="card-body">
-                    {% if active_investments %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Pwodwi</th>
-                                    <th>Kantite</th>
-                                    <th>Retou Atann</th>
-                                    <th>Dat Matirite</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for inv in active_investments %}
-                                <tr>
-                                    <td>{{ inv.investment_id[:8] }}...</td>
-                                    <td>{{ inv.product.name }}</td>
-                                    <td>{{ inv.amount }} Gkach</td>
-                                    <td>{{ inv.expected_return }} Gkach</td>
-                                    <td>{{ inv.matures_at.strftime('%d/%m/%Y') }}</td>
-                                    <td><span class="badge bg-success">Aktif</span></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">Ou pa gen envestisman aktif. <a href="{{ url_for('investment_products') }}">Kòmanse envesti</a></p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="bk-flash">
+    {% for cat, m in messages %}
+    <div class="bk-msg {{ cat if cat in ('success','error') else 'error' }}">{{ m }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <div class="bk-stats">
+    <div class="bk-stat bk-green">
+      <div class="bk-lbl">💚 Solde Gkach</div>
+      <div class="bk-val">{{ gkach_balance | default(0) }}</div>
     </div>
+    <div class="bk-stat bk-warn">
+      <div class="bk-lbl">📌 Montan prêt rete peye</div>
+      <div class="bk-val">{{ total_loan_due | default(0) }}</div>
+    </div>
+    <div class="bk-stat">
+      <div class="bk-lbl">💼 Montan envesti</div>
+      <div class="bk-val">{{ total_invested | default(0) }}</div>
+    </div>
+    <div class="bk-stat">
+      <div class="bk-lbl">📊 Prêts Actifs</div>
+      <div class="bk-val">{{ active_loans | default([]) | length }}</div>
+    </div>
+  </div>
+
+  <div class="bk-actions">
+    <a class="bk-btn bk-btn-prim" href="{{ url_for('bank.loan_list') }}">💰 Voir Prêts &amp; Fòm</a>
+    <a class="bk-btn bk-btn-green" href="{{ url_for('bank.investment_products') }}">📈 Envesti</a>
+    <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.my_investments') }}">🧾 Mes Envestisman</a>
+  </div>
+
+  <div class="bk-section">
+    <h2 class="bk-h">💳 Mes prêts actifs</h2>
+    {% if active_loans %}
+    <div class="bk-grid">
+      {% for loan in active_loans %}
+      <div class="bk-row">
+        <div class="bk-row-head">
+          <strong style="color:#1a133a">Prè #{{ loan.loan_id[:8] }}</strong>
+          <span class="bk-chip bk-chip-{{ loan.status }}">{{ loan.status | upper }}</span>
+        </div>
+        <div class="bk-kv"><span>🏷️ Pwodwi</span><b>{{ loan.product.name if loan.product else 'N/C' }}</b></div>
+        <div class="bk-kv"><span>💵 Montan</span><b>{{ loan.amount }}</b></div>
+        <div class="bk-kv"><span>💸 Total rete</span><b>{{ loan.total_due }}</b></div>
+        <div class="bk-kv"><span>📅 Echeans</span><b>{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date else '—' }}</b></div>
+        <form class="bk-form-inline" method="POST" action="{{ url_for('bank.loan_repay', loan_id=loan.loan_id) }}">
+          <input class="bk-input" name="amount" type="number" min="1" placeholder="Montan peye" required>
+          <button class="bk-btn bk-btn-green" type="submit">Peye</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bk-empty">✅ Ok. Ou pa gen okenn prêt aktif kounye a. <a href="{{ url_for('bank.loan_list') }}" style="color:#3a2680;font-weight:800">Fè yon demann prêt →</a></div>
+    {% endif %}
+  </div>
+
+  <div class="bk-section">
+    <h2 class="bk-h">📈 Mes envestisman aktifs</h2>
+    {% if active_investments %}
+    <div class="bk-grid">
+      {% for inv in active_investments %}
+      <div class="bk-row">
+        <div class="bk-row-head">
+          <strong style="color:#1a133a">Env. #{{ inv.investment_id[:8] }}</strong>
+          <span class="bk-chip bk-chip-active">{{ inv.status | upper }}</span>
+        </div>
+        <div class="bk-kv"><span>🏷️ Pwodwi</span><b>{{ inv.product.name if inv.product else 'N/C' }}</b></div>
+        <div class="bk-kv"><span>💵 Montan envesti</span><b>{{ inv.amount }}</b></div>
+        <div class="bk-kv"><span>🎁 Retou atann</span><b>{{ inv.expected_return }}</b></div>
+        <div class="bk-kv"><span>📅 Matirite</span><b>{{ inv.matures_at.strftime('%Y-%m-%d') if inv.matures_at else '—' }}</b></div>
+        <form class="bk-form-inline" method="POST" action="{{ url_for('bank.withdraw_investment', investment_id=inv.investment_id) }}" onsubmit="return confirm('Retranche bonè ? Penalite: {{ inv.product.early_withdrawal_penalty if inv.product else 10 }}%');">
+          <button class="bk-btn bk-btn-ghost" type="submit">Retranche (bonè)</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bk-empty">💼 Aucun envestisman aktif. <a href="{{ url_for('bank.investment_products') }}" style="color:#059669;font-weight:800">Voir pwodwi envestisman →</a></div>
+    {% endif %}
+  </div>
+
 </div>
-
-<!-- Repayment Modals -->
-{% for loan in active_loans %}
-{% if loan.status == 'active' %}
-<div class="modal fade" id="repayModal{{ loan.id }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Rembouse Prè</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="{{ url_for('loan_repay', loan_id=loan.loan_id) }}">
-                <div class="modal-body">
-                    <p>Prè: {{ loan.product.name }}</p>
-                    <p>Total dwe: {{ loan.total_due }} Gkach</p>
-                    <p>Deja peye: {{ loan.repayments|sum(attribute='amount') }} Gkach</p>
-                    <p>Res ki rete: {{ loan.total_due - (loan.repayments|sum(attribute='amount')) }} Gkach</p>
-                    <div class="mb-3">
-                        <label for="amount{{ loan.id }}" class="form-label">Kantite pou peye</label>
-                        <input type="number" class="form-control" id="amount{{ loan.id }}" name="amount" min="1" max="{{ loan.total_due - (loan.repayments|sum(attribute='amount')) }}" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anile</button>
-                    <button type="submit" class="btn btn-success">Konfime Peyman</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
-{% endif %}
-{% endfor %}
 {% endblock %}

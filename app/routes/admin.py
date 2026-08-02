@@ -21,36 +21,101 @@ admin_bp = Blueprint('admin', __name__)
 
 
 # ============================================================================
-# ADMIN QR CODE (endpoint & pretty page) — launches /admin/login page directly
+# ADMIN QR CODE SIGNED URL (HMAC-SHA256 + SECRET_KEY, 7-day expiry)
+# Stores credentials securely (server-signed, cannot be tampered) inside QR.
+# Scanning QR → opens /admin/login?qra=<token> → fields auto-filled + green
+# CTA "Se connecter maintenant (QR)".
 # ============================================================================
 
-def _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128)):
-    """Return PNG bytes for a QR code linking to the /admin/login page.
+_QRA_VALID_SECONDS = 7 * 24 * 3600  # 7 days (re-print each week for PROD)
 
-    - Try `segno` (pure-Python) first.
-    - If segno is missing → fallback: render a client-side QR via the pretty
-      page (`admin_qr_page()`) only. PNG endpoint will return a small stub.
-    """
-    admin_login_url = url_for('admin.admin_login', _external=True)
+def _qra_get_creds_from_config():
+    """Return (identifier, password) tuple for admin. Never None (fallbacks)."""
+    cfg = current_app.config
+    _id = (cfg.get('ADMIN_PSEUDO')
+           or cfg.get('ADMIN_WHATSAPP')
+           or '+50942882076')
+    _pw = (cfg.get('ADMIN_PASSWORD')
+           or 'StanGlory2YahPub1986')
+    return str(_id), str(_pw)
+
+
+def _qra_signing_key():
+    """Derive a stable signing key from SECRET_KEY (salted)."""
+    sk = current_app.config.get('SECRET_KEY') or 'glory2yah-dev-fallback-secret-key-change-in-prod'
+    salt = 'g2yah-qrauth-v1|'
+    return (salt + str(sk)).encode('utf-8')
+
+
+def _qra_make_signed_url(_external=True):
+    """Build `/admin/login?qra=<signed>` URL. HMAC of (id, pw, exp_utc)."""
+    import hmac as _hm, hashlib as _hl, base64 as _b64, json as _js, time as _tm
+    admin_id, admin_pw = _qra_get_creds_from_config()
+    exp = int(_tm.time()) + _QRA_VALID_SECONDS
+    payload = {
+        'v': 1,
+        'id': admin_id,
+        'pw': admin_pw,
+        'e': exp,
+    }
+    msg_b = _js.dumps(payload, separators=(',', ':')).encode('utf-8')
+    sig = _hm.new(_qra_signing_key(), msg_b, _hl.sha256).digest()
+    # Bundle: b64(msg_b) . b64(sig)  (URL-safe base64, no padding)
+    def _b64u(b):
+        return _b64.urlsafe_b64encode(b).rstrip(b'=').decode('ascii')
+    token = _b64u(msg_b) + '.' + _b64u(sig)
+    return url_for('admin.admin_login', qra=token, _external=_external)
+
+
+def _qra_verify_signed(token):
+    """Verify ?qra= token. Returns dict {id, pw, exp} on success, else None."""
+    import hmac as _hm, hashlib as _hl, base64 as _b64, json as _js, time as _tm
+    if not token or '.' not in token:
+        return None
+    try:
+        msg_part, sig_part = str(token).split('.', 1)
+        def _b64ud(s):
+            pad = '=' * (-len(s) % 4)
+            return _b64.urlsafe_b64decode(s + pad)
+        msg_b = _b64ud(msg_part)
+        sig = _b64ud(sig_part)
+        # constant-time compare
+        expected = _hm.new(_qra_signing_key(), msg_b, _hl.sha256).digest()
+        if not _hm.compare_digest(expected, sig):
+            return None
+        data = _js.loads(msg_b.decode('utf-8'))
+        if int(data.get('v', 0)) != 1:
+            return None
+        if int(data.get('e', 0)) < int(_tm.time()):
+            return None
+        if not data.get('id') or not data.get('pw'):
+            return None
+        return {'id': str(data['id']), 'pw': str(data['pw']), 'exp': int(data['e'])}
+    except Exception:
+        return None
+
+
+def _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128)):
+    """Return PNG bytes for a QR code linking to the SIGNED /admin/login?qra=
+    URL (credentials embedded + HMAC-signed, 7-day expiry)."""
+    admin_signed_url = _qra_make_signed_url(_external=True)
     try:
         import segno  # type: ignore
-        qr = segno.make(admin_login_url, error='M')
+        qr = segno.make(admin_signed_url, error='M')
         buf = _io.BytesIO()
         qr.save(buf, kind='png', scale=scale, dark=dark, light=(255, 255, 255), border=2)
         return buf.getvalue()
     except Exception:
-        # segno not installed → generate a tiny placeholder PNG 1x1 (stub)
-        # real scan uses admin_qr_page.html endpoint anyway with JS qrcode
         return b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xff\xff?\x03\x00\x06\x05\x02\xfe\xc7\xe5\x8d\xa4\x00\x00\x00\x00IEND\xaeB`\x82'
 
 
 @admin_bp.route('/qr.png')
 def admin_qr_png():
-    """PNG endpoint: GET /admin/qr.png → 302-sized admin QR code (cache 1 min)."""
+    """PNG endpoint: GET /admin/qr.png → admin QR SIGNED URL (cache 1 min)."""
     data = _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128))
     resp = make_response(data)
     resp.headers['Content-Type'] = 'image/png'
-    resp.headers['Content-Disposition'] = 'inline; filename="admin_login_qr.png"'
+    resp.headers['Content-Disposition'] = 'inline; filename="admin_login_qr_signed.png"'
     resp.headers['Cache-Control'] = 'public, max-age=60'
     resp.headers['Content-Length'] = str(len(data))
     return resp
@@ -58,19 +123,31 @@ def admin_qr_png():
 
 @admin_bp.route('/qr')
 def admin_qr_page():
-    """Pretty page: GET /admin/qr → card (gradient) with QR PNG + quick-actions."""
-    admin_login_url = url_for('admin.admin_login', _external=True)
+    """Pretty card with signed QR + embedded creds + 1-click test link."""
+    admin_signed_url = _qra_make_signed_url(_external=True)
+    admin_login_plain_url = url_for('admin.admin_login', _external=True)
+    admin_id, admin_pw = _qra_get_creds_from_config()
     return render_template(
         'admin_qr.html',
-        admin_login_url=admin_login_url,
-        admin_pseudo=current_app.config.get('ADMIN_PSEUDO') or current_app.config.get('ADMIN_WHATSAPP') or '+50942882076',
-        admin_whatsapp=current_app.config.get('ADMIN_WHATSAPP') or '+50942882076',
+        admin_login_url=admin_signed_url,
+        admin_login_plain_url=admin_login_plain_url,
+        admin_pseudo=admin_id,
+        admin_whatsapp=current_app.config.get('ADMIN_WHATSAPP') or admin_id,
+        admin_password=admin_pw,
+        qr_signed=True,
+        qr_valid_days=(_QRA_VALID_SECONDS // (24 * 3600)),
     )
 
 
 @admin_bp.route('/login', methods=['GET', 'POST'])
 def admin_login():
-    """Dedicated admin login page"""
+    """Dedicated admin login page.
+
+    Supports QR-signed deep link via ?qra=<HMAC-signed-token>:
+      - HMAC verified + not expired → identifier & password pre-filled,
+        badge "🛡️ QR Credentials chargés" shown, green CTA button enabled.
+      - Otherwise → regular empty login form (backwards-compatible).
+    """
     from flask_login import login_user, current_user
     if current_user.is_authenticated and current_user.is_admin:
         return redirect(url_for('admin.dashboard'))
@@ -87,7 +164,28 @@ def admin_login():
             return redirect(url_for('admin.dashboard'))
         flash('Pseudo oswa modpas envalid.', 'error')
 
-    return render_template('admin_login.html')
+    # GET: handle ?qra= signed token → auto-fill (silent on invalid)
+    auto_id = ''
+    auto_pw = ''
+    qr_valid = False
+    qr_exp = None
+    qra_token = request.args.get('qra', '') or request.form.get('qra', '')
+    if qra_token:
+        v = _qra_verify_signed(qra_token)
+        if v:
+            auto_id = v['id']
+            auto_pw = v['pw']
+            qr_valid = True
+            qr_exp = v['exp']
+
+    return render_template(
+        'admin_login.html',
+        auto_id=auto_id,
+        auto_pw=auto_pw,
+        qr_valid=qr_valid,
+        qr_exp=qr_exp,
+        qra_token=qra_token,
+    )
 
 
 @admin_bp.route('/')

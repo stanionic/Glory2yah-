@@ -1,110 +1,143 @@
 {% extends "base.html" %}
-
-{% block title %}Admin Bank - Glory2YahPub{% endblock %}
-
+{% block title %}Admin · Bank Glory2YahPub{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">🏦 Admin Bank</h1>
-            <p class="lead">Jere sistèm prè ak envestisman</p>
-        </div>
-    </div>
+<style>
+.bk-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#1e1b4b 0%,#3a2680 40%,#5a2e9f 100%); }
+.bk-card { background:#fff; border-radius:24px; padding:24px 26px; box-shadow:0 28px 90px rgba(0,0,0,.25); max-width:1200px; margin:0 auto }
+.bk-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:16px }
+.bk-ttl { margin:0; font-size:26px; font-weight:800; color:#1a133a; display:flex; align-items:center; gap:10px }
+.bk-ttl::before { content:"⚙️"; font-size:28px }
+.bk-sub { color:#6b5ba8; font-size:13px }
+.bk-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.bk-btn-prim { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; box-shadow:0 8px 22px rgba(58,38,128,.3) }
+.bk-btn-prim:hover { transform:translateY(-2px) }
+.bk-btn-ghost { background:#f3eefe; color:#3a2680 }
+.bk-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+.bk-btn-danger { background:linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; box-shadow:0 8px 22px rgba(220,38,38,.3) }
+.bk-btn-danger:hover { transform:translateY(-2px) }
+.bk-btn-green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 8px 22px rgba(16,185,129,.3) }
+.bk-btn-green:hover { transform:translateY(-2px) }
+.bk-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:10px 0 22px }
+.bk-stat { background:linear-gradient(135deg,#fff,#fbf6ff); border:1.5px solid #ece0ff; border-radius:18px; padding:16px 18px }
+.bk-stat .bk-lbl { font-size:12px; color:#6b5ba8; font-weight:700; letter-spacing:.2px; text-transform:uppercase }
+.bk-stat .bk-val { font-size:26px; font-weight:800; color:#3a2680; margin-top:4px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.bk-stat.bk-orange { background:linear-gradient(135deg,#fff7ed,#fee2c2); border-color:#fed7aa }
+.bk-stat.bk-orange .bk-val { color:#c2410c }
+.bk-stat.bk-green { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-color:#a7f3d0 }
+.bk-stat.bk-green .bk-val { color:#059669 }
+.bk-h { font-size:18px; font-weight:800; color:#1a133a; margin:18px 0 10px; display:flex; align-items:center; gap:8px }
+.bk-table { width:100%; border-collapse:separate; border-spacing:0; background:#fbf9ff; border:1.5px solid #ece0ff; border-radius:16px; overflow:hidden }
+.bk-table th, .bk-table td { padding:12px 14px; text-align:left; font-size:13.5px; border-bottom:1px solid #e8dcff }
+.bk-table thead th { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; font-weight:800; letter-spacing:.2px }
+.bk-table tbody tr:last-child td { border-bottom:none }
+.bk-table tbody tr:hover td { background:#f4eeff }
+.bk-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:800 }
+.bk-chip-pending  { background:#fff7ed; color:#9a3412; border:1px solid #fdba74 }
+.bk-chip-active   { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-chip-completed{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe }
+.bk-chip-rejected { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.bk-flash { margin:10px 0 18px }
+.bk-msg { padding:10px 14px; border-radius:12px; margin-bottom:8px; font-size:13.5px; font-weight:700 }
+.bk-msg.success { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-msg.error   { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.bk-empty { padding:22px; background:#faf7ff; border:1.5px dashed #e3d8ff; border-radius:14px; color:#6b5ba8; font-size:14px; font-weight:600; text-align:center }
+@media(max-width:720px){
+  .bk-table thead{display:none}
+  .bk-table tr{display:block; padding:10px 12px; border-bottom:1px solid #e8dcff}
+  .bk-table td{display:flex; justify-content:space-between; padding:6px 0; border:none; font-size:13px}
+  .bk-table td::before{content:attr(data-label); font-weight:800; color:#6b5ba8; margin-right:12px}
+}
+</style>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <h5 class="card-title">⏳ Prè An Atant</h5>
-                    <h3 class="mb-0">{{ pending_loans }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">✅ Prè Aktif</h5>
-                    <h3 class="mb-0">{{ active_loans }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">📈 Envestisman Aktif</h5>
-                    <h3 class="mb-0">{{ total_investments }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="bk-wrap">
+<div class="bk-card">
 
-    <!-- Recent Loan Applications -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">📋 Dènye Demann Prè</h5>
-                </div>
-                <div class="card-body">
-                    {% if recent_loans %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Dat</th>
-                                    <th>Itilizatè</th>
-                                    <th>Pwodwi</th>
-                                    <th>Kantite</th>
-                                    <th>Rezon</th>
-                                    <th>Status</th>
-                                    <th>Aksyon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for loan in recent_loans %}
-                                <tr>
-                                    <td>{{ loan.created_at.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ loan.user.pseudo or loan.user.whatsapp }}</td>
-                                    <td>{{ loan.product.name }}</td>
-                                    <td>{{ loan.amount }} Gkach</td>
-                                    <td>{{ loan.purpose[:50] }}...</td>
-                                    <td>
-                                        {% if loan.status == 'pending' %}
-                                        <span class="badge bg-warning">An atant</span>
-                                        {% elif loan.status == 'active' %}
-                                        <span class="badge bg-success">Aktif</span>
-                                        {% elif loan.status == 'rejected' %}
-                                        <span class="badge bg-danger">Rejte</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if loan.status == 'pending' %}
-                                        <form method="POST" action="{{ url_for('admin_approve_loan', loan_id=loan.loan_id) }}" class="d-inline">
-                                            <button type="submit" class="btn btn-success btn-sm">Apwouve</button>
-                                        </form>
-                                        <form method="POST" action="{{ url_for('admin_reject_loan', loan_id=loan.loan_id) }}" class="d-inline">
-                                            <button type="submit" class="btn btn-danger btn-sm">Rejte</button>
-                                        </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">Pa gen demann prè resan.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+  <div class="bk-head">
+    <div>
+      <h1 class="bk-ttl">Admin Bank Glory2Yah</h1>
+      <div class="bk-sub">Apwouve prêt · rejete prêt · swiv envestisman</div>
     </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.dashboard') }}">🏦 Bank User</a>
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('admin.dashboard') }}">← Admin Général</a>
+    </div>
+  </div>
 
-    <div class="row mt-4">
-        <div class="col-12">
-            <a href="{{ url_for('admin') }}" class="btn btn-secondary">← Retounen nan Admin</a>
-        </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="bk-flash">
+    {% for cat, m in messages %}
+    <div class="bk-msg {{ cat if cat in ('success','error') else 'error' }}">{{ m }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <div class="bk-stats">
+    <div class="bk-stat bk-orange">
+      <div class="bk-lbl">⏳ Prèt annatant apwobasyon</div>
+      <div class="bk-val">{{ pending_loans | default(0) }}</div>
     </div>
+    <div class="bk-stat bk-green">
+      <div class="bk-lbl">💳 Prèt aktifs</div>
+      <div class="bk-val">{{ active_loans | default(0) }}</div>
+    </div>
+    <div class="bk-stat">
+      <div class="bk-lbl">📈 Envestisman aktifs</div>
+      <div class="bk-val">{{ total_investments | default(0) }}</div>
+    </div>
+    <div class="bk-stat">
+      <div class="bk-lbl">📚 Demann prêt récent (10)</div>
+      <div class="bk-val">{{ (recent_loans | default([]) | length) }}</div>
+    </div>
+  </div>
+
+  <h2 class="bk-h">📚 10 dènye demann prêt yo</h2>
+  {% if recent_loans %}
+  <div style="overflow:auto; border-radius:16px">
+  <table class="bk-table">
+    <thead>
+      <tr>
+        <th># ID</th><th>Pwodwi</th><th>Itilizate</th><th>Montan</th><th>Total Due</th>
+        <th>Estati</th><th>Kreye</th><th>Echeans</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for loan in recent_loans %}
+      <tr>
+        <td data-label="ID">{{ loan.loan_id[:8] }}</td>
+        <td data-label="Pwodwi">{{ loan.product.name if loan.product else 'N/C' }}</td>
+        <td data-label="Itilizate">
+          {% if loan.user %}
+            <strong style="color:#1a133a">{{ loan.user.pseudo or 'N/C' }}</strong> · <span style="color:#6b5ba8">{{ loan.user.whatsapp }}</span>
+          {% else %}<span style="color:#9ca3af">N/C</span>{% endif %}
+        </td>
+        <td data-label="Montan"><b style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace">{{ loan.amount }} Gk</b></td>
+        <td data-label="Due"><b style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace">{{ loan.total_due }} Gk</b></td>
+        <td data-label="Estati"><span class="bk-chip bk-chip-{{ loan.status }}">{{ loan.status | upper }}</span></td>
+        <td data-label="Kreye">{{ loan.created_at.strftime('%Y-%m-%d %H:%M') if loan.created_at else '—' }}</td>
+        <td data-label="Echeans">{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date else '—' }}</td>
+        <td data-label="Action" style="display:flex; gap:6px; flex-wrap:wrap">
+          {% if loan.status == 'pending' %}
+          <form method="POST" action="{{ url_for('bank.admin_approve_loan', loan_id=loan.loan_id) }}">
+            <button class="bk-btn bk-btn-green" type="submit" style="padding:7px 12px; font-size:12.5px">✓ Apwouve</button>
+          </form>
+          <form method="POST" action="{{ url_for('bank.admin_reject_loan', loan_id=loan.loan_id) }}">
+            <button class="bk-btn bk-btn-danger" type="submit" style="padding:7px 12px; font-size:12.5px" onclick="return confirm('Rejete prè '+{{ loan.loan_id[:8]|tojson }}+' ?')">✗ Rejte</button>
+          </form>
+          {% else %}
+          <span style="color:#9ca3af; font-weight:700; font-size:12px">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="bk-empty">📚 Aucun prêt récent.</div>
+  {% endif %}
+
+</div>
 </div>
 {% endblock %}

@@ -1,118 +1,92 @@
 {% extends "base.html" %}
-
-{% block title %}Envestisman Mwen - Glory2YahPub{% endblock %}
-
+{% block title %}Bank · Mes envestisman - Glory2YahPub{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">📈 Envestisman Mwen Yo</h1>
-        </div>
-    </div>
+<style>
+.bk-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#f5f2ff 0%,#e9dffb 100%); }
+.bk-card { background:#fff; border-radius:24px; padding:24px 26px; box-shadow:0 14px 44px rgba(58,38,128,.12); max-width:1100px; margin:0 auto }
+.bk-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px }
+.bk-ttl { margin:0; font-size:26px; font-weight:800; color:#1a133a; display:flex; align-items:center; gap:10px }
+.bk-ttl::before { content:"🧾"; font-size:28px }
+.bk-sub { color:#6b5ba8; font-size:13px }
+.bk-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.bk-btn-prim { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; box-shadow:0 8px 22px rgba(58,38,128,.3) }
+.bk-btn-prim:hover { transform:translateY(-2px) }
+.bk-btn-green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 8px 22px rgba(16,185,129,.3) }
+.bk-btn-green:hover { transform:translateY(-2px) }
+.bk-btn-ghost { background:#f3eefe; color:#3a2680 }
+.bk-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+.bk-h { font-size:18px; font-weight:800; color:#1a133a; margin:18px 0 10px }
+.bk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px }
+.bk-row { background:#fbf9ff; border:1.5px solid #ece0ff; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; gap:6px }
+.bk-row-head { display:flex; justify-content:space-between; align-items:center; gap:8px }
+.bk-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:800 }
+.bk-chip-active       { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-chip-completed    { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe }
+.bk-chip-withdrawn_early { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.bk-kvline { display:flex; justify-content:space-between; font-size:13px; color:#312860 }
+.bk-kvline b { color:#1a133a; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.bk-empty { padding:22px; background:#faf7ff; border:1.5px dashed #e3d8ff; border-radius:14px; color:#6b5ba8; font-size:14px; font-weight:600; text-align:center }
+.bk-flash { margin:10px 0 18px }
+.bk-msg { padding:10px 14px; border-radius:12px; margin-bottom:8px; font-size:13.5px; font-weight:700 }
+.bk-msg.success { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-msg.error   { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+</style>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Lis Envestisman</h5>
-                    <a href="{{ url_for('investment_products') }}" class="btn btn-success btn-sm">+ Nouvo Envestisman</a>
-                </div>
-                <div class="card-body">
-                    {% if investments %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Dat</th>
-                                    <th>Pwodwi</th>
-                                    <th>Kantite</th>
-                                    <th>Retou Atann</th>
-                                    <th>Dat Matirite</th>
-                                    <th>Renouvle Oto</th>
-                                    <th>Status</th>
-                                    <th>Aksyon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for inv in investments %}
-                                <tr>
-                                    <td>{{ inv.started_at.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ inv.product.name }}</td>
-                                    <td>{{ inv.amount }} Gkach</td>
-                                    <td>{{ inv.expected_return }} Gkach</td>
-                                    <td>{{ inv.matures_at.strftime('%d/%m/%Y') }}</td>
-                                    <td>
-                                        {% if inv.auto_renew %}
-                                        <span class="badge bg-info">Wi</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Non</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if inv.status == 'active' %}
-                                        <span class="badge bg-success">Aktif</span>
-                                        {% elif inv.status == 'completed' %}
-                                        <span class="badge bg-info">Konplè</span>
-                                        {% elif inv.status == 'withdrawn_early' %}
-                                        <span class="badge bg-warning">Retire Bonè</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if inv.status == 'active' %}
-                                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#withdrawModal{{ inv.id }}">Retire</button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">Ou pa gen envestisman ankò. <a href="{{ url_for('investment_products') }}">Kòmanse envesti</a></p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="bk-wrap">
+<div class="bk-card">
 
-    <div class="row mt-4">
-        <div class="col-12">
-            <a href="{{ url_for('bank_dashboard') }}" class="btn btn-secondary">← Retounen nan Bank</a>
-        </div>
+  <div class="bk-head">
+    <div>
+      <h1 class="bk-ttl">Liste envestisman ou yo</h1>
+      <div class="bk-sub">Istwa, retrè matirite · retrè bonè (penalite)</div>
     </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <a class="bk-btn bk-btn-green" href="{{ url_for('bank.investment_products') }}">📈 Nouvo envestisman</a>
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.dashboard') }}">🏦 Dashboard</a>
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('main.index') }}">← Dakèil</a>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="bk-flash">
+    {% for cat, m in messages %}
+    <div class="bk-msg {{ cat if cat in ('success','error') else 'error' }}">{{ m }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <h2 class="bk-h">💼 Tous envestisman</h2>
+  {% if investments %}
+  <div class="bk-grid">
+    {% for inv in investments %}
+    <div class="bk-row">
+      <div class="bk-row-head">
+        <strong style="color:#1a133a">Env. #{{ inv.investment_id[:8] }}</strong>
+        <span class="bk-chip bk-chip-{{ inv.status }}">{{ inv.status | upper }}</span>
+      </div>
+      <div class="bk-kvline"><span>🏷️ Pwodwi</span><b>{{ inv.product.name if inv.product else 'N/C' }}</b></div>
+      <div class="bk-kvline"><span>💵 Montan</span><b>{{ inv.amount }} Gk</b></div>
+      <div class="bk-kvline"><span>🎁 Retou atann</span><b>{{ inv.expected_return }} Gk</b></div>
+      <div class="bk-kvline"><span>🔁 Renouvèl</span><b>{{ 'Wi' if inv.auto_renew else 'Non' }}</b></div>
+      <div class="bk-kvline"><span>📅 Kòmanse</span><b>{{ inv.started_at.strftime('%Y-%m-%d') if inv.started_at else '—' }}</b></div>
+      <div class="bk-kvline"><span>📅 Matirite</span><b>{{ inv.matures_at.strftime('%Y-%m-%d') if inv.matures_at else '—' }}</b></div>
+      {% if inv.withdrawn_at %}
+      <div class="bk-kvline"><span>📅 Retranche nan</span><b>{{ inv.withdrawn_at.strftime('%Y-%m-%d %H:%M') if inv.withdrawn_at else '—' }}</b></div>
+      {% endif %}
+      {% if inv.status == 'active' %}
+      <form method="POST" action="{{ url_for('bank.withdraw_investment', investment_id=inv.investment_id) }}" onsubmit="return confirm('Retranche bonè ? Penalite: {{ inv.product.early_withdrawal_penalty if inv.product else 10 }}%. Ok ?')">
+        <button class="bk-btn bk-btn-ghost" type="submit" style="width:100%;justify-content:center">⏳ Retranche (bonè)</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bk-empty">📂 Aucun envestisman enregistré pou ou. <a href="{{ url_for('bank.investment_products') }}" style="color:#059669;font-weight:800">Kòmanse premye envestisman ou →</a></div>
+  {% endif %}
+
 </div>
-
-<!-- Withdraw Modals -->
-{% for inv in investments %}
-{% if inv.status == 'active' %}
-<div class="modal fade" id="withdrawModal{{ inv.id }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Retire Envestisman</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="{{ url_for('withdraw_investment', investment_id=inv.investment_id) }}">
-                <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <h6>⚠️ Atansyon!</h6>
-                        <p>Retire envestisman ou anvan dat matirite ap lakoz yon penalite {{ inv.product.early_withdrawal_penalty }}%.</p>
-                        <ul>
-                            <li>Kantite Envesti: {{ inv.amount }} Gkach</li>
-                            <li>Penalite: {{ (inv.amount * inv.product.early_withdrawal_penalty / 100)|int }} Gkach</li>
-                            <li>W ap Resevwa: {{ inv.amount - (inv.amount * inv.product.early_withdrawal_penalty / 100)|int }} Gkach</li>
-                        </ul>
-                    </div>
-                    <p>Èske ou sèten ou vle kontinye?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anile</button>
-                    <button type="submit" class="btn btn-warning">Konfime Retrè</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
-{% endif %}
-{% endfor %}
 {% endblock %}

@@ -35,7 +35,15 @@
     margin-bottom: 14px;
 }
 .aqr-title { margin: 0 0 6px; font-size: 28px; font-weight: 800; color: #1a1a1a }
-.aqr-subtitle { margin: 0 0 24px; color: #65676b; font-size: 15px }
+.aqr-subtitle { margin: 0 0 12px; color: #65676b; font-size: 15px }
+.aqr-sign-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #059669, #14b8a6);
+    color: #fff; padding: 7px 14px; border-radius: 999px;
+    font-weight: 800; font-size: 12.5px; letter-spacing: .1px;
+    box-shadow: 0 6px 20px rgba(16,185,129,.28);
+    margin: 0 0 20px;
+}
 .aqr-iframe-wrap {
     background: #fff; border-radius: 22px; padding: 18px;
     display: inline-block; box-shadow: 0 10px 30px rgba(58,38,128,.12);
@@ -85,14 +93,18 @@
 
 <div class="aqr-page">
     <div class="aqr-card">
-        <div class="aqr-badge">🛡️  ADMIN ACCESS</div>
+        <div class="aqr-badge">🛡️  ADMIN ACCESS · CREDENTIALS INTÉGRÉS</div>
         <h1 class="aqr-title">QR Code Administration</h1>
-        <p class="aqr-subtitle">Scannez ce code pour ouvrir la page de connexion Admin</p>
+        <p class="aqr-subtitle">Scannez → les champs se remplissent <strong>automatiquement</strong> · bouton 1-clic vert</p>
+
+        <div class="aqr-sign-pill">
+            ✅ Identifiants inclus · HMAC-SHA256 signé · Valide {{ qr_valid_days if qr_valid_days else 7 }} jours
+        </div>
 
         <div class="aqr-iframe-wrap">
             <img
                 src="{{ url_for('admin.admin_qr_png') }}"
-                alt="QR Code Admin Login Glory2YahPub"
+                alt="QR Code Admin Login Glory2YahPub (signed)"
                 id="aqrPng"
                 loading="eager"
             >
@@ -100,7 +112,11 @@
 
         <div class="aqr-url" id="aqrUrl">{{ admin_login_url }}</div>
 
-        <div class="aqr-creds" aria-label="Identifiants Admin">
+        <div class="aqr-creds" aria-label="Identifiants Admin intégrés au QR Code">
+            <div class="aqr-creds-row" style="padding-bottom:8px;margin-bottom:4px;border-bottom:1px dashed #e3d8ff;">
+                <span class="aqr-creds-k">📦 Stockés dans le QR</span>
+                <span class="aqr-creds-v" style="color:#059669">OUI (signés)</span>
+            </div>
             <div class="aqr-creds-row">
                 <span class="aqr-creds-k">👤 Identifiant</span>
                 <span class="aqr-creds-v" id="aqrPseudo">{{ admin_pseudo }}</span>
@@ -111,25 +127,29 @@
             </div>
             <div class="aqr-creds-row">
                 <span class="aqr-creds-k">🔒 Mot de passe</span>
-                <span class="aqr-creds-v">StanGlory2YahPub1986</span>
+                <span class="aqr-creds-v" id="aqrPw">{{ admin_password }}</span>
             </div>
         </div>
 
         <div class="aqr-actions">
-            <a href="{{ admin_login_url }}" class="aqr-btn aqr-btn-primary" target="_blank" rel="noopener">
-                🔑 Ouvrir Admin Login
+            <a href="{{ admin_login_url }}" class="aqr-btn aqr-btn-primary" target="_blank" rel="noopener" style="background:linear-gradient(135deg,#059669,#10b981 50%,#14b8a6);box-shadow:0 10px 30px rgba(16,185,129,.36)">
+                🚀 Tester 1-Clic (pré-rempli)
+            </a>
+            <a href="{{ admin_login_plain_url }}" class="aqr-btn aqr-btn-ghost" target="_blank" rel="noopener">
+                🔑 Login vierge
             </a>
             <button class="aqr-btn aqr-btn-ghost" onclick="aqrDownload()" type="button">
                 💾 Télécharger PNG
             </button>
             <button class="aqr-btn aqr-btn-ghost" onclick="aqrCopyUrl()" type="button">
-                🔗 Copier URL
+                🔗 Copier URL signée
             </button>
         </div>
 
         <p class="aqr-note">
             💡 Sur mobile&nbsp;: ouvrez l'appareil photo → approchez le code → touchez la notification.
-            <br>Le QR pointe toujours vers la page <code>/admin/login</code> du site courant.
+            <br>Identifiants + mot de passe sont <strong>signés HMAC</strong> (non modifiables) et <strong>pré-remplis automatiquement</strong> sur la page admin.
+            <br>Expire après <strong>{{ qr_valid_days if qr_valid_days else 7 }} jours</strong> — ré-imprimez une nouvelle version depuis <code>/admin/qr</code>.
         </p>
     </div>
 </div>

@@ -1,65 +1,92 @@
 {% extends "base.html" %}
-
-{% block title %}Envestisman - Glory2YahPub{% endblock %}
-
+{% block title %}Bank · Pwodwi Envestisman - Glory2YahPub{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">📈 Envestisman</h1>
-            <p class="lead">Fè lajan ou travay pou ou</p>
-        </div>
-    </div>
+<style>
+.bk-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#ecfdf5 0%,#f5f2ff 100%); }
+.bk-card { background:#fff; border-radius:24px; padding:24px 26px; box-shadow:0 14px 44px rgba(58,38,128,.12); max-width:1100px; margin:0 auto }
+.bk-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px }
+.bk-ttl { margin:0; font-size:26px; font-weight:800; color:#1a133a; display:flex; align-items:center; gap:10px }
+.bk-ttl::before { content:"📈"; font-size:28px }
+.bk-sub { color:#6b5ba8; font-size:13px }
+.bk-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.bk-btn-prim { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; box-shadow:0 8px 22px rgba(58,38,128,.3) }
+.bk-btn-prim:hover { transform:translateY(-2px) }
+.bk-btn-green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 8px 22px rgba(16,185,129,.3) }
+.bk-btn-green:hover { transform:translateY(-2px) }
+.bk-btn-ghost { background:#f3eefe; color:#3a2680 }
+.bk-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+.bk-h { font-size:18px; font-weight:800; color:#1a133a; margin:16px 0 10px }
+.bk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(350px,1fr)); gap:14px }
+.bk-c { background:linear-gradient(135deg,#fff,#f5fff7); border:1.5px solid #bbf7d0; border-radius:20px; padding:18px; display:flex; flex-direction:column; gap:10px }
+.bk-c h3 { margin:0; font-size:17px; font-weight:800; color:#14112a }
+.bk-desc { color:#065f46; font-size:13.5px; line-height:1.5; min-height:44px }
+.bk-kvs { display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; padding:10px 12px; background:#ecfdf5; border-radius:12px }
+.bk-kv { display:flex; justify-content:space-between; font-size:12.5px; color:#312860 }
+.bk-kv span { color:#065f46; font-weight:700 }
+.bk-kv b { color:#047857; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.bk-form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding-top:4px }
+.bk-input { padding:10px 12px; border-radius:12px; border:1.5px solid #a7f3d0; background:#ecfdf5; font-weight:700; color:#065f46; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; width:160px }
+.bk-input:focus { outline:none; border-color:#059669; background:#fff; box-shadow:0 0 0 3px rgba(5,150,105,.15) }
+.bk-checkbox { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ecfdf5; border:1.5px solid #a7f3d0; font-size:13px; font-weight:700; color:#065f46 }
+.bk-empty { padding:22px; background:#faf7ff; border:1.5px dashed #e3d8ff; border-radius:14px; color:#6b5ba8; font-size:14px; font-weight:600; text-align:center }
+.bk-flash { margin:10px 0 18px }
+.bk-msg { padding:10px 14px; border-radius:12px; margin-bottom:8px; font-size:13.5px; font-weight:700 }
+.bk-msg.success { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-msg.error   { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+@media(max-width:640px){ .bk-kvs{grid-template-columns:1fr} }
+</style>
 
-    <div class="row">
-        {% for product in products %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">{{ product.name }}</h5>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">{{ product.description or 'Pa gen deskripsyon' }}</p>
-                    
-                    <div class="mb-3">
-                        <span class="badge bg-success fs-6">{{ product.interest_rate }}% pa ane</span>
-                    </div>
-                    
-                    <ul class="list-group list-group-flush mb-3">
-                        <li class="list-group-item">Min: {{ product.min_amount }} Gkach</li>
-                        <li class="list-group-item">Max: {{ product.max_amount or 'Enlimit' }} Gkach</li>
-                        <li class="list-group-item">Dire: {{ product.duration_days }} jou</li>
-                        <li class="list-group-item">Penalite Retrè: {{ product.early_withdrawal_penalty }}%</li>
-                    </ul>
+<div class="bk-wrap">
+<div class="bk-card">
 
-                    <form method="POST" action="{{ url_for('invest', product_id=product.id) }}">
-                        <div class="mb-3">
-                            <label class="form-label">Kantite Envestisman (Gkach)</label>
-                            <input type="number" class="form-control" name="amount" 
-                                   min="{{ product.min_amount }}" 
-                                   max="{{ product.max_amount or 999999999 }}" required>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="auto_renew{{ product.id }}" name="auto_renew">
-                            <label class="form-check-label" for="auto_renew{{ product.id }}">Renouvle otomatikman</label>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">Envesti Kounye a</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="col-12">
-            <div class="alert alert-info">Pa gen pwodwi envestisman disponib kounye a.</div>
-        </div>
-        {% endfor %}
+  <div class="bk-head">
+    <div>
+      <h1 class="bk-ttl">Pwodwi Envestisman Bank</h1>
+      <div class="bk-sub">Fè lajan ou grandir ak enterè. Chwazi envestisman ou pi pito.</div>
     </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.my_investments') }}">🧾 Mes envestisman</a>
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.dashboard') }}">🏦 Dashboard</a>
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('main.index') }}">← Dakèil</a>
+    </div>
+  </div>
 
-    <div class="row mt-4">
-        <div class="col-12">
-            <a href="{{ url_for('bank_dashboard') }}" class="btn btn-secondary">← Retounen nan Bank</a>
-            <a href="{{ url_for('my_investments') }}" class="btn btn-outline-success ms-2">Gade Envestisman Mwen Yo</a>
-        </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="bk-flash">
+    {% for cat, m in messages %}
+    <div class="bk-msg {{ cat if cat in ('success','error') else 'error' }}">{{ m }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <h2 class="bk-h">💼 Pwodwi disponib kounye a</h2>
+  {% if products %}
+  <div class="bk-grid">
+    {% for p in products %}
+    <div class="bk-c">
+      <h3>{{ p.name }}</h3>
+      <div class="bk-desc">{{ p.description or 'Pa gen deskripsyon' }}</div>
+      <div class="bk-kvs">
+        <div class="bk-kv"><span>Montan Min</span><b>{{ p.min_amount }}</b></div>
+        <div class="bk-kv"><span>Montan Max</span><b>{{ p.max_amount if p.max_amount else 'Pa gen limit' }}</b></div>
+        <div class="bk-kv"><span>Enterè / an</span><b>{{ p.interest_rate }}%</b></div>
+        <div class="bk-kv"><span>Dire</span><b>{{ p.duration_days }} j</b></div>
+        <div class="bk-kv"><span>Penalite retrè bonè</span><b>{{ p.early_withdrawal_penalty }}%</b></div>
+      </div>
+      <form class="bk-form" method="POST" action="{{ url_for('bank.invest', product_id=p.id) }}">
+        <input class="bk-input" name="amount" type="number" min="{{ p.min_amount }}" {% if p.max_amount %}max="{{ p.max_amount }}"{% endif %} placeholder="Montan (Gkach)" required>
+        <label class="bk-checkbox"><input type="checkbox" name="auto_renew"> Renouvèl otomatik</label>
+        <button class="bk-btn bk-btn-green" type="submit" style="flex:1; justify-content:center; min-width:160px">📈 Envesti</button>
+      </form>
     </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bk-empty">🫥 Okenn pwodwi envestisman disponib. Admin dwe kreye pwodwi yo nan /bank/admin.</div>
+  {% endif %}
+
+</div>
 </div>
 {% endblock %}

@@ -1,43 +1,249 @@
 {% extends "base.html" %}
 
-{% block title %}Koneksyon Administratè - Glory2YahPub{% endblock %}
+{% block title %}Connexion Admin - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-sm p-4">
-                <div class="text-center mb-4">
-                    <img src="/static/images/logo.png" alt="Logo" style="height:60px" onerror="this.style.display='none'">
-                    <h4 class="mt-2 fw-bold">⚙️ Koneksyon Administratè</h4>
-                </div>
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label for="pseudo" class="form-label fw-semibold">Pseudo / WhatsApp Admin</label>
-                        <input type="text" class="form-control" id="pseudo" name="pseudo" placeholder="+50942882076" required autofocus>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label fw-semibold">Modpas</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">🔐 Antre</button>
-                </form>
-                <div class="text-center mt-3">
-                    <a href="/" class="text-muted small">← Retounen Akèy</a>
+<style>
+.al-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2d1b66 0%, #3a2680 30%, #6a35b5 65%, #9a55d4 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 20px;
+}
+.al-card {
+    background: rgba(255,255,255,0.985);
+    backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+    border-radius: 30px;
+    box-shadow: 0 28px 90px rgba(0,0,0,0.28);
+    width: 100%; max-width: 460px;
+    padding: 36px 32px 30px;
+    animation: alFade .55s ease both;
+}
+@keyframes alFade { from { opacity:0; transform: translateY(22px) scale(.985) } to { opacity:1; transform:none } }
+.al-hero { display:flex; align-items:center; gap:12px; margin-bottom:18px }
+.al-hero-ico {
+    width: 46px; height: 46px; border-radius: 14px;
+    background: linear-gradient(135deg, #3a2680, #8a4fd6);
+    display: grid; place-items: center; color:#fff; font-size: 22px;
+    box-shadow: 0 8px 24px rgba(58,38,128,.35);
+}
+.al-hero h1 { margin:0; font-size: 24px; font-weight: 800; color:#14112a }
+.al-hero p { margin:2px 0 0; font-size: 13px; color:#6b5ba8 }
+.al-badge-qr {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #0ea5e9, #10b981);
+    color: #fff; padding: 8px 14px; border-radius: 999px;
+    font-weight: 800; font-size: 12.5px; letter-spacing: .1px;
+    box-shadow: 0 6px 20px rgba(16,185,129,.3);
+    margin: 4px 0 18px;
+}
+.al-badge-qr-exp { color:#e0f2fe; font-weight: 700; font-size: 11.5px; opacity:.95 }
+.al-flash-box { margin: 0 0 16px }
+.al-flash {
+    padding: 10px 14px; border-radius: 12px; font-size: 13.5px; font-weight: 600;
+    margin-bottom: 8px;
+}
+.al-flash-success { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0 }
+.al-flash-error   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca }
+
+.al-form { display:flex; flex-direction:column; gap: 14px }
+.al-field { display:flex; flex-direction:column; gap: 6px }
+.al-label { font-size: 13px; font-weight: 700; color: #312860 }
+.al-input {
+    padding: 13px 15px; border-radius: 14px; border: 1.5px solid #e2d8ff;
+    background: #fbf9ff; color:#1a133a; font-size: 15px; font-weight: 600;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.al-input:focus {
+    outline: none; border-color: #7e42bf; background: #fff;
+    box-shadow: 0 0 0 4px rgba(126,66,191,.16);
+}
+.al-input.al-filled-pw,
+.al-input.al-filled-id {
+    border-color: #34d399; background: #ecfdf5;
+    box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+}
+.al-input-pw-wrap { position: relative }
+.al-input-pw-wrap input { padding-right: 46px; width:100%; box-sizing:border-box }
+.al-eye {
+    position:absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    border: none; background: transparent; color:#6b5ba8; cursor: pointer;
+    font-size: 16px; padding: 6px 8px; border-radius: 8px;
+}
+.al-eye:hover { background:#f3eefe; color:#3a2680 }
+
+.al-submits { display:flex; flex-direction:column; gap: 10px; margin-top: 4px }
+.al-btn {
+    padding: 14px 18px; border-radius: 16px; font-weight: 800; font-size: 15.5px;
+    border: none; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease, opacity .2s;
+}
+.al-btn-qr-green {
+    background: linear-gradient(135deg, #059669 0%, #10b981 50%, #14b8a6 100%);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(16,185,129,.38);
+}
+.al-btn-qr-green:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(16,185,129,.5) }
+.al-btn-primary {
+    background: linear-gradient(135deg, #3a2680 0%, #7e42bf 100%);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(58,38,128,.35);
+}
+.al-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(58,38,128,.48) }
+.al-btn-ghost {
+    background: transparent; color:#5b4ea1; border: 1.5px solid #e2d8ff;
+    font-weight: 700; font-size: 14px;
+}
+.al-btn-ghost:hover { background:#f6efff }
+
+.al-foot {
+    margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between;
+    align-items: center; font-size: 12.5px; color: #7b6daf;
+}
+.al-foot a { color: #5b4ea1; text-decoration: none; font-weight: 700 }
+.al-foot a:hover { color: #3a2680; text-decoration: underline }
+
+.al-hint {
+    margin-top: 12px; padding: 10px 12px; background: #fff7ed; color: #9a3412;
+    border-radius: 12px; font-size: 12.5px; font-weight: 600;
+    border: 1px dashed #fdba74;
+}
+.al-hint strong { color: #7c2d12 }
+
+@media (max-width: 480px) {
+    .al-card { padding: 28px 22px 24px; border-radius: 24px }
+    .al-hero h1 { font-size: 21px }
+}
+</style>
+
+<div class="al-page">
+    <div class="al-card">
+        <div class="al-hero">
+            <div class="al-hero-ico">🛡️</div>
+            <div>
+                <h1>Connexion Administration</h1>
+                <p>Glory2YahPub — Espace Sécurisé</p>
+            </div>
+        </div>
+
+        {% if qr_valid %}
+        <div class="al-badge-qr">
+            🛡️ QR Credentials chargés avec succès
+            {% if qr_exp %}
+            <span class="al-badge-qr-exp">· valide jusqu'au {{ qr_exp|string if qr_exp is string else (qr_exp | int) }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="al-flash-box">
+            {% for cat, msg in messages %}
+            <div class="al-flash al-flash-{{ cat if cat in ('success','error') else 'error' }}">
+                {{ msg }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form class="al-form" action="" method="POST" autocomplete="on">
+            {% if qra_token %}<input type="hidden" name="qra" value="{{ qra_token }}">{% endif %}
+
+            <div class="al-field">
+                <label class="al-label" for="pseudo">👤 Pseudo ou WhatsApp (identifiant)</label>
+                <input
+                    type="text"
+                    id="pseudo"
+                    name="pseudo"
+                    class="al-input {% if auto_id %}al-filled-id{% endif %}"
+                    {% if auto_id %}value="{{ auto_id }}"{% endif %}
+                    placeholder="Exemple : +50942882076  ou  Admin"
+                    autocomplete="username"
+                    required
+                    autofocus="{{ 'false' if auto_pw else 'true' }}"
+                >
+            </div>
+
+            <div class="al-field">
+                <label class="al-label" for="password">🔒 Mot de passe</label>
+                <div class="al-input-pw-wrap">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="al-input {% if auto_pw %}al-filled-pw{% endif %}"
+                        {% if auto_pw %}value="{{ auto_pw }}"{% endif %}
+                        placeholder="Entrez votre mot de passe administrateur"
+                        autocomplete="current-password"
+                        required
+                        {% if auto_pw %}autofocus{% endif %}
+                    >
+                    <button type="button" class="al-eye" id="alEye" title="Afficher / masquer" aria-label="Toggle password">👁️</button>
                 </div>
             </div>
+
+            <div class="al-submits">
+                {% if qr_valid and auto_pw %}
+                <button type="submit" class="al-btn al-btn-qr-green" name="qr_mode" value="1">
+                    🚀 Se connecter MAINTENANT (QR)
+                </button>
+                {% endif %}
+
+                <button type="submit" class="al-btn {% if qr_valid %}al-btn-primary{% else %}al-btn-primary{% endif %}">
+                    🔒 {% if qr_valid %}Connexion classique (manuel){% else %}Se connecter{% endif %}
+                </button>
+            </div>
+
+            {% if not qr_valid and not auto_id %}
+            <div class="al-hint">
+                💡 <strong>Tu as un QR Code Admin&nbsp;?</strong> Scanne-le simplement avec l'appareil photo du téléphone — les champs se remplissent <strong>automatiquement</strong> et un bouton vert 1-clic apparaît.
+            </div>
+            {% endif %}
+        </form>
+
+        <div class="al-foot">
+            <a href="{{ url_for('main.index') }}">← Retour à l'accueil</a>
+            <a href="{{ url_for('admin.admin_qr_page') }}">📱 Obtenir le QR Admin</a>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    // Toggle password visibility
+    const p = document.getElementById('password');
+    const eye = document.getElementById('alEye');
+    if (p && eye) {
+        eye.addEventListener('click', () => {
+            const isPw = p.type === 'password';
+            p.type = isPw ? 'text' : 'password';
+            eye.textContent = isPw ? '🙈' : '👁️';
+        });
+    }
+
+    // Auto-focus sur bouton vert si QR chargé (gain de temps 1 clic)
+    {% if qr_valid and auto_pw %}
+    const btnGreen = document.querySelector('.al-btn-qr-green');
+    if (btnGreen) {
+        setTimeout(() => { try { btnGreen.focus({ preventScroll: true }); } catch(e){} }, 150);
+    }
+    {% endif %}
+
+    // Si qr_valid et password auto-filled — soumission au Enter (n'importe où)
+    {% if qr_valid and auto_pw %}
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const t = e.target;
+            // éviter si focus dans un textarea inexistant ici
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON')) return; // comportement natif
+            const g = document.querySelector('.al-btn-qr-green');
+            if (g) { e.preventDefault(); g.click(); }
+        }
+    });
+    {% endif %}
+})();
+</script>
 {% endblock %}

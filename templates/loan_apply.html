@@ -1,53 +1,137 @@
 {% extends "base.html" %}
-
-{% block title %}Demann Prè - Glory2YahPub{% endblock %}
-
+{% block title %}Bank · Demann prêt - Glory2YahPub{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">📋 Demann Prè: {{ product.name }}</h4>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <h5>Detay Pwodwi:</h5>
-                        <ul class="mb-0">
-                            <li>Kantite Minimòm: {{ product.min_amount }} Gkach</li>
-                            <li>Kantite Maksimòm: {{ product.max_amount }} Gkach</li>
-                            <li>Enterè: {{ product.interest_rate }}% pa ane</li>
-                            <li>Dire: {{ product.duration_days }} jou</li>
-                        </ul>
-                    </div>
+<style>
+.bk-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#f5f2ff 0%,#e9dffb 100%); }
+.bk-card { background:#fff; border-radius:24px; padding:28px 28px 26px; box-shadow:0 14px 44px rgba(58,38,128,.12); max-width:720px; margin:0 auto }
+.bk-ttl { margin:0 0 6px; font-size:26px; font-weight:800; color:#1a133a; display:flex; align-items:center; gap:10px }
+.bk-ttl::before { content:"📝"; font-size:28px }
+.bk-sub { color:#6b5ba8; font-size:13px; margin-bottom:14px }
+.bk-prod-box { background:linear-gradient(135deg,#fff,#fbf6ff); border:1.5px solid #ece0ff; border-radius:16px; padding:16px 18px; margin-bottom:18px }
+.bk-prod-head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px }
+.bk-prod-name { font-size:18px; color:#1a133a; font-weight:800 }
+.bk-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:800; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.bk-kvs { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin:6px 0 6px }
+.bk-kv { display:flex; justify-content:space-between; font-size:13px; color:#312860 }
+.bk-kv span { color:#6b5ba8; font-weight:700 }
+.bk-kv b { color:#3a2680; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.bk-prod-desc { color:#5b4ea1; font-size:13.5px; line-height:1.5; margin-top:6px }
+.bk-form { display:flex; flex-direction:column; gap:14px }
+.bk-field { display:flex; flex-direction:column; gap:6px }
+.bk-label { font-size:13px; font-weight:700; color:#312860 }
+.bk-input, .bk-textarea {
+  padding:13px 15px; border-radius:14px; border:1.5px solid #e2d8ff; background:#fbf9ff; color:#1a133a; font-size:15px; font-weight:700;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+  font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.bk-textarea { resize: vertical; min-height:100px; font-family:inherit; font-weight:600 }
+.bk-input:focus, .bk-textarea:focus {
+  outline: none; border-color:#7e42bf; background:#fff; box-shadow:0 0 0 4px rgba(126,66,191,.16)
+}
+.bk-est-box {
+  background:linear-gradient(135deg,#ecfdf5,#d1fae5); border:1.5px solid #a7f3d0; border-radius:16px; padding:16px 18px;
+  display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin:2px 0 4px
+}
+.bk-est-row { display:flex; justify-content:space-between; font-size:13px }
+.bk-est-row span { color:#065f46; font-weight:700 }
+.bk-est-row b { color:#065f46; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:14.5px }
+.bk-btn-row { display:flex; gap:10px; flex-wrap:wrap }
+.bk-btn { padding:13px 18px; border-radius:16px; text-decoration:none; font-weight:800; font-size:15px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; justify-content:center; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.bk-btn-green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 10px 26px rgba(16,185,129,.34) }
+.bk-btn-green:hover { transform:translateY(-2px); box-shadow:0 14px 34px rgba(16,185,129,.44) }
+.bk-btn-ghost { background:#f3eefe; color:#3a2680 }
+.bk-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+.bk-flash { margin:10px 0 18px }
+.bk-msg { padding:10px 14px; border-radius:12px; margin-bottom:8px; font-size:13.5px; font-weight:700 }
+.bk-msg.error { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.bk-msg.success { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+@media(max-width:640px){
+  .bk-kvs,.bk-est-box{grid-template-columns:1fr}
+}
+</style>
 
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label for="amount" class="form-label">Kantite Prè (Gkach)</label>
-                            <input type="number" class="form-control" id="amount" name="amount" 
-                                   min="{{ product.min_amount }}" max="{{ product.max_amount }}" required>
-                            <div class="form-text">Antre yon kantite ant {{ product.min_amount }} ak {{ product.max_amount }} Gkach</div>
-                        </div>
+<div class="bk-wrap">
+<div class="bk-card">
 
-                        <div class="mb-3">
-                            <label for="purpose" class="form-label">Rezon pou Prè a</label>
-                            <textarea class="form-control" id="purpose" name="purpose" rows="3" 
-                                      placeholder="Eksplike poukisa ou bezwen prè sa a..." required></textarea>
-                        </div>
+  <h1 class="bk-ttl">Fòmilè demann prêt</h1>
+  <p class="bk-sub">Ranpli fòmilè la · Admin ap revize demann ou nan /bank/admin.</p>
 
-                        <div class="alert alert-warning">
-                            <h6>Kalkil Enterè:</h6>
-                            <p class="mb-0">Enterè ap kalkile otomatikman sou baz {{ product.interest_rate }}% pa ane pou {{ product.duration_days }} jou.</p>
-                        </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="bk-flash">
+    {% for cat, m in messages %}
+    <div class="bk-msg {{ cat if cat in ('success','error') else 'error' }}">{{ m }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Soumèt Demann</button>
-                            <a href="{{ url_for('loan_list') }}" class="btn btn-secondary">Anile</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+  <div class="bk-prod-box">
+    <div class="bk-prod-head">
+      <div class="bk-prod-name">{{ product.name }}</div>
+      <span class="bk-pill">● Akitf</span>
     </div>
+    <div class="bk-kvs">
+      <div class="bk-kv"><span>Montan Min</span><b>{{ product.min_amount }}</b></div>
+      <div class="bk-kv"><span>Montan Max</span><b>{{ product.max_amount }}</b></div>
+      <div class="bk-kv"><span>Enterè / an</span><b>{{ product.interest_rate }}%</b></div>
+      <div class="bk-kv"><span>Dire</span><b>{{ product.duration_days }} j</b></div>
+    </div>
+    <div class="bk-prod-desc">{{ product.description or '' }}</div>
+  </div>
+
+  <form class="bk-form" method="POST" action="">
+
+    <div class="bk-field">
+      <label class="bk-label" for="amount">💵 Kantite prêt ou vle an Gkach&nbsp;—&nbsp;<strong>{{ product.min_amount }} — {{ product.max_amount }}</strong></label>
+      <input class="bk-input" id="amount" name="amount" type="number" min="{{ product.min_amount }}" max="{{ product.max_amount }}" value="{{ product.min_amount }}" required oninput="bkCalcEstimate()">
+    </div>
+
+    <div class="bk-est-box" id="bkEstBox">
+      <div class="bk-est-row"><span>📊 Montan mande</span><b id="eAmount">—</b></div>
+      <div class="bk-est-row"><span>💸 Enterè estime</span><b id="eInterest">—</b></div>
+      <div class="bk-est-row"><span>🔢 Total peye</span><b id="eDue">—</b></div>
+      <div class="bk-est-row"><span>📅 Echeans</span><b id="eDueDate">—</b></div>
+    </div>
+
+    <div class="bk-field">
+      <label class="bk-label" for="purpose">💡 Rezon / Objektif prêt la (eg. Biznis · Faktè · Lajan kòz)</label>
+      <textarea class="bk-textarea" id="purpose" name="purpose" placeholder="Ekri byen klè rezon pwò ou bezwen prêt la a..." required></textarea>
+    </div>
+
+    <div class="bk-btn-row">
+      <button class="bk-btn bk-btn-green" type="submit" style="flex:1; min-width:220px">✅ Voye demann prêt la</button>
+      <a class="bk-btn bk-btn-ghost" href="{{ url_for('bank.loan_list') }}">← Retounen lis prêts</a>
+    </div>
+  </form>
+
 </div>
+</div>
+
+<script>
+(function() {
+  const MIN = +{{ product.min_amount }};
+  const MAX = +{{ product.max_amount }};
+  const RATE = +{{ product.interest_rate }};
+  const DAYS = +{{ product.duration_days }};
+  const amount = document.getElementById('amount');
+  const eA = document.getElementById('eAmount');
+  const eI = document.getElementById('eInterest');
+  const eD = document.getElementById('eDue');
+  const eDD = document.getElementById('eDueDate');
+  function fmt(n){ return Math.round(n).toLocaleString(); }
+  function dueDate(){ const d=new Date(); d.setDate(d.getDate()+DAYS); return d.toISOString().slice(0,10); }
+  window.bkCalcEstimate = function(){
+    let a = parseInt(amount.value || '0', 10);
+    if (!a || a<MIN) a=MIN; if (a>MAX) a=MAX;
+    const interest = Math.round(a * RATE / 100 * DAYS / 365);
+    const due = a + interest;
+    eA.textContent = fmt(a) + ' Gk';
+    eI.textContent = fmt(interest) + ' Gk';
+    eD.textContent = fmt(due) + ' Gk';
+    eDD.textContent = dueDate();
+  };
+  bkCalcEstimate();
+})();
+</script>
 {% endblock %}

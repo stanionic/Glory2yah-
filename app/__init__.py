@@ -498,6 +498,68 @@ def create_app(config_name=None):
             except Exception:
                 pass
 
+        # =====================================================================
+        # Bank blueprints seed: default LoanProducts + InvestmentProducts.
+        # Idempotent: skip if ANY existing rows for that table.
+        # (Admin can edit / deactivate them later from /bank/admin)
+        # =====================================================================
+        try:
+            from app.models.bank import (
+                LoanProduct as _LP,
+                InvestmentProduct as _IP,
+            )
+            # ---- Loans (2 defaults) ----
+            if _LP.query.count() == 0:
+                _lp_defaults = [
+                    _LP(
+                        name='Prè Kout Tèm (Express)',
+                        description='Prè kout tèm pou biznis oswa bezwen imedya. 5%/an, rann nan 30 jou.',
+                        min_amount=500, max_amount=50000,
+                        interest_rate=5.0, duration_days=30, is_active=True,
+                    ),
+                    _LP(
+                        name='Prè Konsomatè (Long)',
+                        description='Prè konsomatè plis gwo montan. 12%/an, rann nan 180 jou (6 mwa).',
+                        min_amount=10000, max_amount=500000,
+                        interest_rate=12.0, duration_days=180, is_active=True,
+                    ),
+                ]
+                db.session.add_all(_lp_defaults)
+                db.session.commit()
+                app.logger.info(f'Bank: CREATED {len(_lp_defaults)} default LoanProducts')
+            else:
+                app.logger.info(f'Bank: skipped LoanProduct seed ({_LP.query.count()} existing rows)')
+
+            # ---- Investments (2 defaults) ----
+            if _IP.query.count() == 0:
+                _ip_defaults = [
+                    _IP(
+                        name='Epargne Klasik 90 jou',
+                        description='Envestisman ki gen 8%/an. Matirite 3 mwa. Penalite retrè bonè: 10%.',
+                        min_amount=1000, max_amount=500000,
+                        interest_rate=8.0, duration_days=90,
+                        early_withdrawal_penalty=10.0, is_active=True,
+                    ),
+                    _IP(
+                        name='Envestisman Long 12 mwa',
+                        description='Envestisman long tèm: 15%/an, matirite 365 jou. Penalite retrè bonè: 20%.',
+                        min_amount=50000, max_amount=None,
+                        interest_rate=15.0, duration_days=365,
+                        early_withdrawal_penalty=20.0, is_active=True,
+                    ),
+                ]
+                db.session.add_all(_ip_defaults)
+                db.session.commit()
+                app.logger.info(f'Bank: CREATED {len(_ip_defaults)} default InvestmentProducts')
+            else:
+                app.logger.info(f'Bank: skipped InvestmentProduct seed ({_IP.query.count()} existing rows)')
+        except Exception as _e:
+            app.logger.warning(f'Bank products seed skipped: {type(_e).__name__}: {_e}')
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+
     app.logger.info(f'Glory2YahPub started in {config_name} mode')
 
     return app
@@ -569,23 +631,45 @@ def register_blueprints(app):
     except:
         pass
     
-    # Register G-Forms blueprint
+    # =====================================================================
+    # Register G-Forms blueprint (LOUD traceback if fails)
+    # Pattern racine package identique a mennem/party/dok/ecole_biblique :
+    #   from gforms.app import gforms_bp
+    # Le package racine `gforms/` est un adaptateur qui re-expose le
+    # blueprint defini dans app.routes.gforms (url_prefix='/forms' est deja
+    # porte par le Blueprint lui-meme — ne PAS le repasser ici : double prefixe).
+    # Les sources React/Vite du module sont dans le dossier `G-Forms/` a la
+    # racine ; si `npm run build` est execute dans G-Forms/, on sert
+    # directement G-Forms/dist/index.html, sinon un placeholder est servi.
+    # =====================================================================
     try:
-        from app.routes.gforms import gforms_bp
+        from gforms.app import gforms_bp
         app.register_blueprint(gforms_bp)
-        app.logger.info("Registered G-Forms blueprint at /forms")
+        app.logger.info("Registered G-Forms blueprint at /forms (from package gforms/)")
     except Exception as e:
-        app.logger.warning(f"Could not register G-Forms blueprint: {e}")
-        pass
-    
-    # Register Bank blueprint
+        app.logger.error(f"Failed to register G-Forms blueprint: {type(e).__name__}: {str(e)}")
+        import traceback as _tb_gf
+        app.logger.error(_tb_gf.format_exc())
+
+    # =====================================================================
+    # Register Bank blueprint (LOUD traceback if fails)
+    # Pattern racine package identique a mennem/party/dok/ecole_biblique :
+    #   from bank.app import bank_bp
+    # Le package racine `bank/` est un adaptateur qui re-expose bank_bp
+    # defini dans app.routes.bank (url_prefix='/bank' deja dans Blueprint).
+    # Le module d'architecture complet (microservices Node) est dans le
+    # dossier `glory2yah-bank/` a la racine (specs Glory2Yah_Bank_Blueprint.md).
+    # Les templates sont dans templates/ : bank_dashboard / loan_list /
+    # loan_apply / investment_products / my_investments / admin_bank.
+    # =====================================================================
     try:
-        from app.routes.bank import bank_bp
+        from bank.app import bank_bp
         app.register_blueprint(bank_bp)
-        app.logger.info("Registered Bank blueprint at /bank")
+        app.logger.info("Registered Bank blueprint at /bank (from package bank/)")
     except Exception as e:
-        app.logger.warning(f"Could not register Bank blueprint: {e}")
-        pass
+        app.logger.error(f"Failed to register Bank blueprint: {type(e).__name__}: {str(e)}")
+        import traceback as _tb_bk
+        app.logger.error(_tb_bk.format_exc())
 
 
 def register_error_handlers(app):
