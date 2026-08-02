@@ -2,7 +2,7 @@
 Admin Routes Blueprint
 Management of ads, users, batches, and transactions
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app, make_response
 from flask_login import login_required, current_user
 from app import db
 import uuid
@@ -14,9 +14,58 @@ from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
 from app.models.admin_settings import AdminSettings # Import AdminSettings
 from app.utils.security import admin_required
+import io as _io
 
 
 admin_bp = Blueprint('admin', __name__)
+
+
+# ============================================================================
+# ADMIN QR CODE (endpoint & pretty page) — launches /admin/login page directly
+# ============================================================================
+
+def _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128)):
+    """Return PNG bytes for a QR code linking to the /admin/login page.
+
+    - Try `segno` (pure-Python) first.
+    - If segno is missing → fallback: render a client-side QR via the pretty
+      page (`admin_qr_page()`) only. PNG endpoint will return a small stub.
+    """
+    admin_login_url = url_for('admin.admin_login', _external=True)
+    try:
+        import segno  # type: ignore
+        qr = segno.make(admin_login_url, error='M')
+        buf = _io.BytesIO()
+        qr.save(buf, kind='png', scale=scale, dark=dark, light=(255, 255, 255), border=2)
+        return buf.getvalue()
+    except Exception:
+        # segno not installed → generate a tiny placeholder PNG 1x1 (stub)
+        # real scan uses admin_qr_page.html endpoint anyway with JS qrcode
+        return b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xff\xff?\x03\x00\x06\x05\x02\xfe\xc7\xe5\x8d\xa4\x00\x00\x00\x00IEND\xaeB`\x82'
+
+
+@admin_bp.route('/qr.png')
+def admin_qr_png():
+    """PNG endpoint: GET /admin/qr.png → 302-sized admin QR code (cache 1 min)."""
+    data = _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128))
+    resp = make_response(data)
+    resp.headers['Content-Type'] = 'image/png'
+    resp.headers['Content-Disposition'] = 'inline; filename="admin_login_qr.png"'
+    resp.headers['Cache-Control'] = 'public, max-age=60'
+    resp.headers['Content-Length'] = str(len(data))
+    return resp
+
+
+@admin_bp.route('/qr')
+def admin_qr_page():
+    """Pretty page: GET /admin/qr → card (gradient) with QR PNG + quick-actions."""
+    admin_login_url = url_for('admin.admin_login', _external=True)
+    return render_template(
+        'admin_qr.html',
+        admin_login_url=admin_login_url,
+        admin_pseudo=current_app.config.get('ADMIN_PSEUDO') or current_app.config.get('ADMIN_WHATSAPP') or '+50942882076',
+        admin_whatsapp=current_app.config.get('ADMIN_WHATSAPP') or '+50942882076',
+    )
 
 
 @admin_bp.route('/login', methods=['GET', 'POST'])
@@ -79,6 +128,45 @@ def manage_users():
         'admin_users.html',
         users=users,
         current_user=current_user
+    )
+
+
+@admin_bp.route('/audit')
+@login_required
+@admin_required
+def audit_logs():
+    """Show the last 150 audit log entries (Ecole Biblique ecole_audit_logs)."""
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    try:
+        from ecole_biblique.models import AuditLog as EAB
+        q_total = EAB.query.count()
+        entries = (EAB.query
+                   .order_by(EAB.created_at.desc())
+                   .limit(150)
+                   .all())
+        # small pagination
+        start = (page - 1) * per_page
+        end = start + per_page
+        page_rows = entries[start:end]
+        total_pages = max(1, (len(entries) + per_page - 1) // per_page)
+        actions_summary = {}
+        for e in entries:
+            actions_summary[e.action] = actions_summary.get(e.action, 0) + 1
+    except Exception as exc:
+        page_rows = []
+        q_total = 0
+        total_pages = 1
+        actions_summary = {}
+        current_app.logger.warning(f'audit_logs: load failed {type(exc).__name__}: {exc}')
+    return render_template(
+        'admin_audit.html',
+        rows=page_rows,
+        page=page,
+        per_page=per_page,
+        total=q_total,
+        total_pages=total_pages,
+        top_actions=actions_summary,
     )
 
 

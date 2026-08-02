@@ -21,3 +21,4 @@ phonenumbers==8.13.44
 bleach==6.0.0
 Pillow==10.4.0
 imageio==2.35.0
+segno==1.6.1

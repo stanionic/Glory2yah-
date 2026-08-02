@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Admin - Glory2YahPub{% endblock %}
+
+{% block content %}
+<style>
+.aqr-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #3a2680 0%, #5a2e9f 40%, #7e42bf 70%, #9a55d4 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.aqr-card {
+    background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 32px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+    width: 100%;
+    max-width: 460px;
+    padding: 40px 30px 32px;
+    text-align: center;
+    animation: aqrFadeUp .55s ease both;
+}
+@keyframes aqrFadeUp { from { opacity:0; transform: translateY(26px) scale(.98) } to { opacity:1; transform:none } }
+.aqr-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff; padding: 8px 16px; border-radius: 999px;
+    font-weight: 800; font-size: 13px; letter-spacing: .2px;
+    box-shadow: 0 6px 20px rgba(118,75,162,.35);
+    margin-bottom: 14px;
+}
+.aqr-title { margin: 0 0 6px; font-size: 28px; font-weight: 800; color: #1a1a1a }
+.aqr-subtitle { margin: 0 0 24px; color: #65676b; font-size: 15px }
+.aqr-iframe-wrap {
+    background: #fff; border-radius: 22px; padding: 18px;
+    display: inline-block; box-shadow: 0 10px 30px rgba(58,38,128,.12);
+    margin-bottom: 20px;
+}
+.aqr-iframe-wrap img {
+    width: 260px; height: 260px; display: block;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+}
+.aqr-url {
+    font-size: 14px; color: #3a2680; font-weight: 700;
+    word-break: break-all; margin: 12px 0 18px; padding: 12px 14px;
+    background: #f3eefe; border-radius: 14px;
+}
+.aqr-creds {
+    background: #fff; border: 1.5px dashed #b9a5e8;
+    border-radius: 18px; padding: 16px 18px;
+    text-align: left; font-size: 14px; color: #2b1d5c;
+    margin-bottom: 22px;
+}
+.aqr-creds-row { display:flex; justify-content:space-between; gap:12px; padding:4px 0 }
+.aqr-creds-row + .aqr-creds-row { border-top: 1px dashed #e3d8ff; padding-top:8px; margin-top:4px }
+.aqr-creds-k { color:#6b5ba8; font-weight:700 }
+.aqr-creds-v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color:#1a133a; font-weight:800 }
+.aqr-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
+.aqr-btn {
+    padding: 12px 20px; border-radius: 16px; font-weight: 800; font-size: 15px;
+    border: none; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.aqr-btn-primary {
+    background: linear-gradient(135deg, #3a2680, #7e42bf);
+    color: #fff;
+    box-shadow: 0 8px 26px rgba(58,38,128,.35);
+}
+.aqr-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(58,38,128,.45) }
+.aqr-btn-ghost { background:#f3eefe; color:#3a2680 }
+.aqr-btn-ghost:hover { background:#e7dbfb; transform: translateY(-2px) }
+.aqr-note { margin-top: 18px; color:#7b6daf; font-size: 12.5px; line-height:1.5 }
+@media (max-width: 480px) {
+    .aqr-card { padding: 30px 20px 26px; border-radius: 24px }
+    .aqr-title { font-size: 24px }
+    .aqr-iframe-wrap img { width: 210px; height: 210px }
+}
+</style>
+
+<div class="aqr-page">
+    <div class="aqr-card">
+        <div class="aqr-badge">🛡️  ADMIN ACCESS</div>
+        <h1 class="aqr-title">QR Code Administration</h1>
+        <p class="aqr-subtitle">Scannez ce code pour ouvrir la page de connexion Admin</p>
+
+        <div class="aqr-iframe-wrap">
+            <img
+                src="{{ url_for('admin.admin_qr_png') }}"
+                alt="QR Code Admin Login Glory2YahPub"
+                id="aqrPng"
+                loading="eager"
+            >
+        </div>
+
+        <div class="aqr-url" id="aqrUrl">{{ admin_login_url }}</div>
+
+        <div class="aqr-creds" aria-label="Identifiants Admin">
+            <div class="aqr-creds-row">
+                <span class="aqr-creds-k">👤 Identifiant</span>
+                <span class="aqr-creds-v" id="aqrPseudo">{{ admin_pseudo }}</span>
+            </div>
+            <div class="aqr-creds-row">
+                <span class="aqr-creds-k">📱 WhatsApp</span>
+                <span class="aqr-creds-v" id="aqrWa">{{ admin_whatsapp }}</span>
+            </div>
+            <div class="aqr-creds-row">
+                <span class="aqr-creds-k">🔒 Mot de passe</span>
+                <span class="aqr-creds-v">StanGlory2YahPub1986</span>
+            </div>
+        </div>
+
+        <div class="aqr-actions">
+            <a href="{{ admin_login_url }}" class="aqr-btn aqr-btn-primary" target="_blank" rel="noopener">
+                🔑 Ouvrir Admin Login
+            </a>
+            <button class="aqr-btn aqr-btn-ghost" onclick="aqrDownload()" type="button">
+                💾 Télécharger PNG
+            </button>
+            <button class="aqr-btn aqr-btn-ghost" onclick="aqrCopyUrl()" type="button">
+                🔗 Copier URL
+            </button>
+        </div>
+
+        <p class="aqr-note">
+            💡 Sur mobile&nbsp;: ouvrez l'appareil photo → approchez le code → touchez la notification.
+            <br>Le QR pointe toujours vers la page <code>/admin/login</code> du site courant.
+        </p>
+    </div>
+</div>
+
+<script>
+function aqrDownload() {
+    const a = document.createElement('a');
+    a.href = document.getElementById('aqrPng').src;
+    a.download = 'glory2yah_admin_qr.png';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+}
+function aqrCopyUrl() {
+    const url = document.getElementById('aqrUrl').textContent.trim();
+    const done = () => {
+        const btn = event && event.currentTarget;
+        if (btn) { const t = btn.textContent; btn.textContent='✅ Copié !'; setTimeout(() => btn.textContent = t, 1400); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done).catch(() => aqrFallback(url, done));
+    } else {
+        aqrFallback(url, done);
+    }
+}
+function aqrFallback(url, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); cb && cb(); } finally { ta.remove(); }
+}
+</script>
+{% endblock %}

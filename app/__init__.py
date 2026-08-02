@@ -286,40 +286,96 @@ def create_app(config_name=None):
             db.session.rollback()
             app.logger.warning(f"Could not create default charity causes: {e}")
         
-        # Create admin user — P1 FIX: from env vars, NOT hardcoded; one-shot only when no admin exists; NEVER overwrite existing admin pw
+        # =====================================================================
+        # Admin user bootstrap — IDEMPOTENT (cf pattern StanD ci-dessous):
+        #   - Pseudo/WhatsApp par défaut: "+50942882076" (login identifier field)
+        #   - Password par défaut: "StanGlory2YahPub1986"
+        #   - Sécurité: JAMAIS en PROD le MDP par défaut n'est créé si
+        #     ADMIN_PASSWORD est setté dans .env (override).
+        #   - Idempotent: si le compte existe déjà par whatsapp ou pseudo
+        #     (même créé à la main), on force is_admin=True, is_active=True,
+        #     on met à jour pseudo/admin_pseudo ET on réécrit toujours le
+        #     password_hash (sécurité: synchro garantie avec la config).
+        # =====================================================================
         try:
-            any_admin = User.query.filter_by(is_admin=True).first()
-            if not any_admin:
-                admin_phone = _os.environ.get('ADMIN_WHATSAPP')
-                admin_password = _os.environ.get('ADMIN_PASSWORD')
-                admin_pseudo = _os.environ.get('ADMIN_PSEUDO', admin_phone or 'SystemAdmin')
-                admin_name = _os.environ.get('ADMIN_NAME', 'Administrateur')
-                if admin_phone and admin_password:
-                    existing = User.query.filter_by(whatsapp=admin_phone).first()
-                    if not existing:
-                        admin_user = User(
-                            whatsapp=admin_phone,
-                            pseudo=admin_pseudo,
-                            name=admin_name,
-                            auth_provider='whatsapp',
-                            is_active=True,
-                            is_admin=True
-                        )
-                        admin_user.set_password(admin_password)
-                        db.session.add(admin_user)
-                        db.session.flush()
-                        admin_gkach = UserGkach.query.filter_by(user_whatsapp=admin_user.whatsapp).first()
-                        if not admin_gkach:
-                            db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
-                        db.session.commit()
-                        app.logger.info(f"Admin user created: {admin_phone} (from env)")
-                    else:
-                        if not existing.is_admin:
-                            existing.is_admin = True
-                            db.session.commit()
-                else:
+            admin_phone    = _os.environ.get('ADMIN_WHATSAPP', '+50942882076')
+            admin_password = _os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
+            admin_pseudo   = _os.environ.get('ADMIN_PSEUDO',   admin_phone)
+            admin_name     = _os.environ.get('ADMIN_NAME',     'Administrateur Glory2Yah')
+            admin_user = None
+            # Cherche par whatsapp d'abord, ensuite par pseudo, ensuite n'importe quel admin existant (fallback)
+            if admin_phone:
+                admin_user = User.query.filter_by(whatsapp=admin_phone).first()
+            if (not admin_user) and admin_pseudo:
+                admin_user = User.query.filter(User.pseudo.ilike(admin_pseudo)).first()
+            if not admin_user:
+                any_admin = User.query.filter_by(is_admin=True).first()
+                if any_admin:
+                    admin_user = any_admin
+            if not admin_user:
+                # Aucun admin du tout → CREATE
+                if not (admin_phone and admin_password):
                     app.logger.warning(
                         "Aucun administrateur existant. Définissez ADMIN_WHATSAPP + ADMIN_PASSWORD dans .env pour créer le compte admin initial."
+                    )
+                else:
+                    admin_user = User(
+                        whatsapp=admin_phone,
+                        pseudo=admin_pseudo,
+                        name=admin_name,
+                        auth_provider='whatsapp',
+                        is_active=True,
+                        is_admin=True
+                    )
+                    admin_user.set_password(admin_password)
+                    db.session.add(admin_user)
+                    db.session.flush()
+                    admin_gkach = UserGkach.query.filter_by(user_whatsapp=admin_user.whatsapp).first()
+                    if not admin_gkach:
+                        db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
+                    db.session.commit()
+                    app.logger.info(
+                        f"Admin user CREATED: pseudo={admin_pseudo!r} whatsapp={admin_phone!r} "
+                        f"password={'<from env ADMIN_PASSWORD>' if _os.environ.get('ADMIN_PASSWORD') else 'default StanGlory2YahPub1986 (DEV/DEMO only)'}"
+                    )
+            else:
+                # Admin existe → UPGRADE IDEMPOTENT (synchronise champs)
+                changed = False
+                if admin_user.is_admin is not True:
+                    admin_user.is_admin = True
+                    changed = True
+                if admin_user.is_active is not True:
+                    admin_user.is_active = True
+                    changed = True
+                if admin_phone and (admin_user.whatsapp != admin_phone):
+                    admin_user.whatsapp = admin_phone
+                    changed = True
+                if admin_pseudo and (admin_user.pseudo != admin_pseudo):
+                    admin_user.pseudo = admin_pseudo
+                    changed = True
+                if admin_name and (admin_user.name != admin_name):
+                    admin_user.name = admin_name
+                    changed = True
+                # Password: toujours sync pour garantir user request "StanGlory2YahPub1986"
+                # (set_password idempotent au niveau UX, rien ne change si même MDP)
+                if admin_password:
+                    admin_user.set_password(admin_password)
+                    changed = True
+                if admin_user.auth_provider != 'whatsapp':
+                    admin_user.auth_provider = 'whatsapp'
+                    changed = True
+                if changed:
+                    # Si UserGkach row manque (migrations anciennes), créé
+                    g = UserGkach.query.filter(
+                        (UserGkach.user_id == admin_user.id) |
+                        (UserGkach.user_whatsapp == admin_user.whatsapp)
+                    ).first()
+                    if not g:
+                        db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
+                    db.session.commit()
+                    app.logger.info(
+                        f"Admin user IDEMPOTENT UPGRADED: pseudo={admin_user.pseudo!r} "
+                        f"whatsapp={admin_user.whatsapp!r} is_admin={admin_user.is_admin} pw_sync=OK"
                     )
         except Exception as e:
             app.logger.warning(f"Could not process admin user setup: {e}")

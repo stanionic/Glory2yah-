@@ -88,9 +88,13 @@ class Config:
     CELERY_BROKER_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/3'
     CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') or 'redis://localhost:6379/4'
     
-    # Admin
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'glory2yahpub2024')
+    # Admin (defaults DEV/DEMO: override via .env in PRODUCTION)
+    #   Pseudo / WhatsApp = +50942882076   (login identifier: "+50942882076" dans champ `identifier`)
+    #   Password          = StanGlory2YahPub1986
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
     ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
+    ADMIN_PSEUDO   = os.environ.get('ADMIN_PSEUDO',   ADMIN_WHATSAPP)
+    ADMIN_NAME     = os.environ.get('ADMIN_NAME',     'Administrateur Glory2Yah')
     
     # OAuth
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')

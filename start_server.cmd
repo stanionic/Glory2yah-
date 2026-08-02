@@ -10,7 +10,9 @@ echo.
 cd /d "%~dp0"
 
 set SECRET_KEY=glory2yah_secret_key_2024_secure_token_32chars_long
-set ADMIN_PASSWORD=admin123456
+set ADMIN_WHATSAPP=+50942882076
+set ADMIN_PSEUDO=+50942882076
+set ADMIN_PASSWORD=StanGlory2YahPub1986
 set FLASK_ENV=development
 
 echo [INFO] Working directory: %cd%
