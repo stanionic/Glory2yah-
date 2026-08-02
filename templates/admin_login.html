@@ -160,7 +160,7 @@
                     name="pseudo"
                     class="al-input {% if auto_id %}al-filled-id{% endif %}"
                     {% if auto_id %}value="{{ auto_id }}"{% endif %}
-                    placeholder="Exemple : +50942882076  ou  Admin"
+                    placeholder="Exemple : Pseudo ou Admin"
                     autocomplete="username"
                     required
                     autofocus="{{ 'false' if auto_pw else 'true' }}"
@@ -206,7 +206,6 @@
 
         <div class="al-foot">
             <a href="{{ url_for('main.index') }}">← Retour à l'accueil</a>
-            <a href="{{ url_for('admin.admin_qr_page') }}">📱 Obtenir le QR Admin</a>
         </div>
     </div>
 </div>
