@@ -22,21 +22,20 @@ def setup_admin():
     
     with app.app_context():
         # Check if admin already exists
-        admin = User.query.filter_by(pseudo="+50942882076").first()
+        admin = User.query.filter_by(is_admin=True).first()
         
         if admin:
             print("Updating existing admin user...")
+            admin.pseudo = "Admin509"
             admin.set_password("StanGlory2YahPub1986")
             admin.is_admin = True
             admin.is_active = True
-            admin.whatsapp = "+50942882076"
-            admin.name = "Stan Admin"
         else:
             print("Creating new admin user...")
             admin = User(
-                pseudo="+50942882076",
+                pseudo="Admin509",
                 whatsapp="+50942882076",
-                name="Stan Admin",
+                name="Admin509",
                 is_admin=True,
                 is_active=True
             )
@@ -44,12 +43,11 @@ def setup_admin():
             db.session.add(admin)
         
         db.session.commit()
-        print("\n✅ Admin user setup complete!")
+        print("\nAdmin user setup complete!")
         print("=" * 50)
-        print(f"📱 Pseudo: +50942882076")
-        print(f"🔑 Password: StanGlory2YahPub1986")
-        print(f"📧 WhatsApp: +50942882076")
-        print(f"⚡ Admin: Yes")
+        print("Pseudo: Admin509")
+        print("Password: StanGlory2YahPub1986")
+        print("Admin: Yes")
         print("=" * 50)
 
 if __name__ == '__main__':

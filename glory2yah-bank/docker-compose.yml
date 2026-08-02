@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  gkach-core:
+    build: ./gkach-core
+    ports: ["4000:4000"]
+    environment:
+      - PORT=4000
+
+  accounts-service:
+    build: ./services/accounts
+    ports: ["4100:4100"]
+    environment:
+      - PORT=4100
+      - GKACH_URL=http://gkach-core:4000
+    depends_on: [gkach-core]
+
+  savings-service:
+    build: ./services/savings
+    ports: ["4200:4200"]
+    environment:
+      - PORT=4200
+      - GKACH_URL=http://gkach-core:4000
+    depends_on: [gkach-core]
+
+  investments-service:
+    build: ./services/investments
+    ports: ["4300:4300"]
+    environment:
+      - PORT=4300
+      - GKACH_URL=http://gkach-core:4000
+    depends_on: [gkach-core]
+
+  loans-service:
+    build: ./services/loans
+    ports: ["4400:4400"]
+    environment:
+      - PORT=4400
+      - GKACH_URL=http://gkach-core:4000
+      - AI_SERVICE_URL=http://ai-engine:4600
+    depends_on: [gkach-core, ai-engine]
+
+  crowdlending-service:
+    build: ./services/crowdlending
+    ports: ["4500:4500"]
+    environment:
+      - PORT=4500
+      - GKACH_URL=http://gkach-core:4000
+    depends_on: [gkach-core]
+
+  ai-engine:
+    build: ./services/credit-score
+    ports: ["4600:4600"]
+    environment:
+      - PORT=4600
+
+  admin-service:
+    build: ./services/admin
+    ports: ["4700:4700"]
+    environment:
+      - PORT=4700
+
+  notification-service:
+    build: ./services/notification
+    ports: ["4800:4800"]
+    environment:
+      - PORT=4800
+
+  api-gateway:
+    build: ./api-gateway
+    ports: ["8080:8080"]
+    environment:
+      - PORT=8080
+      - JWT_SECRET=change-me-in-production
+      - GKACH_URL=http://gkach-core:4000
+      - ACCOUNTS_URL=http://accounts-service:4100
+      - SAVINGS_URL=http://savings-service:4200
+      - INVESTMENTS_URL=http://investments-service:4300
+      - LOANS_URL=http://loans-service:4400
+      - CROWDLENDING_URL=http://crowdlending-service:4500
+      - AI_URL=http://ai-engine:4600
+      - ADMIN_URL=http://admin-service:4700
+      - NOTIFICATION_URL=http://notification-service:4800
+    depends_on:
+      - gkach-core
+      - accounts-service
+      - savings-service
+      - investments-service
+      - loans-service
+      - crowdlending-service
+      - ai-engine
+      - admin-service
+      - notification-service

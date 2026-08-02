@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Glory2YahPub Forms{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4 p-5">
+                <div class="display-1 mb-3">📋</div>
+                <h1 class="h3 mb-3">Glory2YahPub Forms</h1>
+                <p class="text-muted mb-4">
+                    Kreyasyon fòmilè enskripsyon pou evènman ou yo.
+                    <br>
+                    <small>Le module G-Forms n'est pas encore construit. Exécutez <code>npm run build</code> dans le dossier <code>G-Forms/</code>.</small>
+                </p>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg rounded-pill px-4">
+                    Retounen nan paj prensipal
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -222,7 +222,43 @@ def create_app(config_name=None):
         from ecole_biblique.models import EcoleUser, Course, EcoleStudent, Grade, AdmissionTest, AdmissionAnswer, Module, StudentModule, Payment, TermsAcceptance, AuditLog
         # Import charity models
         from app.models.charity import CharityDonation, CharityCause
+        # Import bank models
+        from app.models.bank import LoanProduct, Loan, LoanRepayment, InvestmentProduct, Investment
         db.create_all()
+        
+        # Create default loan products if they don't exist
+        try:
+            default_loan_products = [
+                {'name': 'Prè Pèsonèl', 'description': 'Prè pou bezwen pèsonèl', 'min_amount': 100, 'max_amount': 5000, 'interest_rate': 5.0, 'duration_days': 30},
+                {'name': 'Prè Biznis', 'description': 'Prè pou ti biznis', 'min_amount': 500, 'max_amount': 20000, 'interest_rate': 7.0, 'duration_days': 90},
+                {'name': 'Prè Edikasyon', 'description': 'Prè pou edikasyon', 'min_amount': 200, 'max_amount': 10000, 'interest_rate': 3.0, 'duration_days': 60},
+            ]
+            for product_data in default_loan_products:
+                existing = LoanProduct.query.filter_by(name=product_data['name']).first()
+                if not existing:
+                    product = LoanProduct(**product_data)
+                    db.session.add(product)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            app.logger.warning(f"Could not create default loan products: {e}")
+        
+        # Create default investment products if they don't exist
+        try:
+            default_investment_products = [
+                {'name': 'Envestisman Kout Tèm', 'description': 'Envestisman pou 30 jou', 'min_amount': 100, 'max_amount': 5000, 'interest_rate': 5.0, 'duration_days': 30, 'early_withdrawal_penalty': 10.0},
+                {'name': 'Envestisman Mwayen Tèm', 'description': 'Envestisman pou 90 jou', 'min_amount': 500, 'max_amount': 20000, 'interest_rate': 8.0, 'duration_days': 90, 'early_withdrawal_penalty': 8.0},
+                {'name': 'Envestisman Long Tèm', 'description': 'Envestisman pou 180 jou', 'min_amount': 1000, 'max_amount': 50000, 'interest_rate': 12.0, 'duration_days': 180, 'early_withdrawal_penalty': 5.0},
+            ]
+            for product_data in default_investment_products:
+                existing = InvestmentProduct.query.filter_by(name=product_data['name']).first()
+                if not existing:
+                    product = InvestmentProduct(**product_data)
+                    db.session.add(product)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            app.logger.warning(f"Could not create default investment products: {e}")
         
         # Create default charity causes if they don't exist
         try:
@@ -475,6 +511,24 @@ def register_blueprints(app):
         from dok.app import dok_bp
         app.register_blueprint(dok_bp)
     except:
+        pass
+    
+    # Register G-Forms blueprint
+    try:
+        from app.routes.gforms import gforms_bp
+        app.register_blueprint(gforms_bp)
+        app.logger.info("Registered G-Forms blueprint at /forms")
+    except Exception as e:
+        app.logger.warning(f"Could not register G-Forms blueprint: {e}")
+        pass
+    
+    # Register Bank blueprint
+    try:
+        from app.routes.bank import bank_bp
+        app.register_blueprint(bank_bp)
+        app.logger.info("Registered Bank blueprint at /bank")
+    except Exception as e:
+        app.logger.warning(f"Could not register Bank blueprint: {e}")
         pass
 
 

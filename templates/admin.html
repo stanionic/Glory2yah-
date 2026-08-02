@@ -277,6 +277,20 @@
         </div>
     </div>
 
+    <!-- Admin Credentials QR Code Section -->
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+            <h3 class="mb-0">QR Code - Enfòmasyon Koneksyon Admin</h3>
+        </div>
+        <div class="card-body text-center">
+            <p class="text-muted mb-3">Skane QR code sa a pou wè enfòmasyon koneksyon admin yo.</p>
+            <div id="admin-qr" class="d-inline-block p-3 bg-white rounded shadow"></div>
+            <div class="mt-3">
+                <button onclick="downloadQR()" class="btn btn-dark"><i class="fas fa-download"></i> Telechaje QR Code</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Popup Configuration Section -->
     <div class="card mt-4">
         <div class="card-header bg-info text-dark">
@@ -311,7 +325,25 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+new QRCode(document.getElementById('admin-qr'), {
+    text: 'Glory2YahPub Admin\nURL: ' + window.location.origin + '/admin/login\nPseudo: Admin509\nPassword: StanGlory2YahPub1986',
+    width: 200,
+    height: 200,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+});
+
+function downloadQR() {
+    const canvas = document.querySelector('#admin-qr canvas');
+    const link = document.createElement('a');
+    link.download = 'admin-qr.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
 function copyBatchLink(batchId) {
     const batchUrl = `${window.location.origin}/batch/${batchId}`;
     navigator.clipboard.writeText(batchUrl).then(() => {
