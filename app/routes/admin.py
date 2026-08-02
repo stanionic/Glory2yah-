@@ -110,30 +110,31 @@ def _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128)):
 
 
 @admin_bp.route('/qr.png')
+@login_required
+@admin_required
 def admin_qr_png():
-    """PNG endpoint: GET /admin/qr.png → admin QR SIGNED URL (cache 1 min)."""
+    """PNG endpoint: GET /admin/qr.png → admin QR SIGNED URL (cache 1 min).
+    ACCESS: Admin authenticated ONLY. Returns 302 to login for anon + 403 for non-admin users."""
     data = _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128))
     resp = make_response(data)
     resp.headers['Content-Type'] = 'image/png'
     resp.headers['Content-Disposition'] = 'inline; filename="admin_login_qr_signed.png"'
-    resp.headers['Cache-Control'] = 'public, max-age=60'
+    resp.headers['Cache-Control'] = 'private, max-age=60'
     resp.headers['Content-Length'] = str(len(data))
     return resp
 
 
 @admin_bp.route('/qr')
+@login_required
+@admin_required
 def admin_qr_page():
-    """Pretty card with signed QR + embedded creds + 1-click test link."""
+    """Pretty card with signed QR.
+    ACCESS: Admin authenticated ONLY. No credentials leaked publicly.
+    Shows QR image + download copy controls; never shows id/pw strings in HTML."""
     admin_signed_url = _qra_make_signed_url(_external=True)
-    admin_login_plain_url = url_for('admin.admin_login', _external=True)
-    admin_id, admin_pw = _qra_get_creds_from_config()
     return render_template(
         'admin_qr.html',
         admin_login_url=admin_signed_url,
-        admin_login_plain_url=admin_login_plain_url,
-        admin_pseudo=admin_id,
-        admin_whatsapp=current_app.config.get('ADMIN_WHATSAPP') or admin_id,
-        admin_password=admin_pw,
         qr_signed=True,
         qr_valid_days=(_QRA_VALID_SECONDS // (24 * 3600)),
     )

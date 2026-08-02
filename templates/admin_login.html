@@ -105,13 +105,6 @@
 .al-foot a { color: #5b4ea1; text-decoration: none; font-weight: 700 }
 .al-foot a:hover { color: #3a2680; text-decoration: underline }
 
-.al-hint {
-    margin-top: 12px; padding: 10px 12px; background: #fff7ed; color: #9a3412;
-    border-radius: 12px; font-size: 12.5px; font-weight: 600;
-    border: 1px dashed #fdba74;
-}
-.al-hint strong { color: #7c2d12 }
-
 @media (max-width: 480px) {
     .al-card { padding: 28px 22px 24px; border-radius: 24px }
     .al-hero h1 { font-size: 21px }
@@ -196,12 +189,6 @@
                     🔒 {% if qr_valid %}Connexion classique (manuel){% else %}Se connecter{% endif %}
                 </button>
             </div>
-
-            {% if not qr_valid and not auto_id %}
-            <div class="al-hint">
-                💡 <strong>Tu as un QR Code Admin&nbsp;?</strong> Scanne-le simplement avec l'appareil photo du téléphone — les champs se remplissent <strong>automatiquement</strong> et un bouton vert 1-clic apparaît.
-            </div>
-            {% endif %}
         </form>
 
         <div class="al-foot">

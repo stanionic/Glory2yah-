@@ -35,39 +35,16 @@
     margin-bottom: 14px;
 }
 .aqr-title { margin: 0 0 6px; font-size: 28px; font-weight: 800; color: #1a1a1a }
-.aqr-subtitle { margin: 0 0 12px; color: #65676b; font-size: 15px }
-.aqr-sign-pill {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: linear-gradient(135deg, #059669, #14b8a6);
-    color: #fff; padding: 7px 14px; border-radius: 999px;
-    font-weight: 800; font-size: 12.5px; letter-spacing: .1px;
-    box-shadow: 0 6px 20px rgba(16,185,129,.28);
-    margin: 0 0 20px;
-}
+.aqr-subtitle { margin: 0 0 24px; color: #65676b; font-size: 15px }
 .aqr-iframe-wrap {
     background: #fff; border-radius: 22px; padding: 18px;
     display: inline-block; box-shadow: 0 10px 30px rgba(58,38,128,.12);
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 .aqr-iframe-wrap img {
     width: 260px; height: 260px; display: block;
     image-rendering: pixelated; image-rendering: crisp-edges;
 }
-.aqr-url {
-    font-size: 14px; color: #3a2680; font-weight: 700;
-    word-break: break-all; margin: 12px 0 18px; padding: 12px 14px;
-    background: #f3eefe; border-radius: 14px;
-}
-.aqr-creds {
-    background: #fff; border: 1.5px dashed #b9a5e8;
-    border-radius: 18px; padding: 16px 18px;
-    text-align: left; font-size: 14px; color: #2b1d5c;
-    margin-bottom: 22px;
-}
-.aqr-creds-row { display:flex; justify-content:space-between; gap:12px; padding:4px 0 }
-.aqr-creds-row + .aqr-creds-row { border-top: 1px dashed #e3d8ff; padding-top:8px; margin-top:4px }
-.aqr-creds-k { color:#6b5ba8; font-weight:700 }
-.aqr-creds-v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color:#1a133a; font-weight:800 }
 .aqr-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
 .aqr-btn {
     padding: 12px 20px; border-radius: 16px; font-weight: 800; font-size: 15px;
@@ -83,7 +60,7 @@
 .aqr-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(58,38,128,.45) }
 .aqr-btn-ghost { background:#f3eefe; color:#3a2680 }
 .aqr-btn-ghost:hover { background:#e7dbfb; transform: translateY(-2px) }
-.aqr-note { margin-top: 18px; color:#7b6daf; font-size: 12.5px; line-height:1.5 }
+.aqr-note { margin-top: 22px; color:#d9ccfb; font-size: 12.5px; line-height:1.5; text-align:center; max-width: 460px }
 @media (max-width: 480px) {
     .aqr-card { padding: 30px 20px 26px; border-radius: 24px }
     .aqr-title { font-size: 24px }
@@ -93,93 +70,45 @@
 
 <div class="aqr-page">
     <div class="aqr-card">
-        <div class="aqr-badge">🛡️  ADMIN ACCESS · CREDENTIALS INTÉGRÉS</div>
-        <h1 class="aqr-title">QR Code Administration</h1>
-        <p class="aqr-subtitle">Scannez → les champs se remplissent <strong>automatiquement</strong> · bouton 1-clic vert</p>
-
-        <div class="aqr-sign-pill">
-            ✅ Identifiants inclus · HMAC-SHA256 signé · Valide {{ qr_valid_days if qr_valid_days else 7 }} jours
-        </div>
+        <div class="aqr-badge">🛡️  ADMIN ACCESS · ACCES KONTWOLE</div>
+        <h1 class="aqr-title">QR Koneksyon Admin</h1>
+        <p class="aqr-subtitle">Skane avèk kamera telefòn ou → paj Admin lan ouvri otomatikman.</p>
 
         <div class="aqr-iframe-wrap">
             <img
                 src="{{ url_for('admin.admin_qr_png') }}"
-                alt="QR Code Admin Login Glory2YahPub (signed)"
+                alt="QR Code Admin Login Glory2YahPub"
                 id="aqrPng"
                 loading="eager"
             >
         </div>
 
-        <div class="aqr-url" id="aqrUrl">{{ admin_login_url }}</div>
-
-        <div class="aqr-creds" aria-label="Identifiants Admin intégrés au QR Code">
-            <div class="aqr-creds-row" style="padding-bottom:8px;margin-bottom:4px;border-bottom:1px dashed #e3d8ff;">
-                <span class="aqr-creds-k">📦 Stockés dans le QR</span>
-                <span class="aqr-creds-v" style="color:#059669">OUI (signés)</span>
-            </div>
-            <div class="aqr-creds-row">
-                <span class="aqr-creds-k">👤 Identifiant</span>
-                <span class="aqr-creds-v" id="aqrPseudo">{{ admin_pseudo }}</span>
-            </div>
-            <div class="aqr-creds-row">
-                <span class="aqr-creds-k">📱 WhatsApp</span>
-                <span class="aqr-creds-v" id="aqrWa">{{ admin_whatsapp }}</span>
-            </div>
-            <div class="aqr-creds-row">
-                <span class="aqr-creds-k">🔒 Mot de passe</span>
-                <span class="aqr-creds-v" id="aqrPw">{{ admin_password }}</span>
-            </div>
-        </div>
-
         <div class="aqr-actions">
-            <a href="{{ admin_login_url }}" class="aqr-btn aqr-btn-primary" target="_blank" rel="noopener" style="background:linear-gradient(135deg,#059669,#10b981 50%,#14b8a6);box-shadow:0 10px 30px rgba(16,185,129,.36)">
-                🚀 Tester 1-Clic (pré-rempli)
+            <a href="{{ url_for('admin.admin_login') }}" class="aqr-btn aqr-btn-ghost" target="_blank" rel="noopener">
+                🔑 Al nan paj Login
             </a>
-            <a href="{{ admin_login_plain_url }}" class="aqr-btn aqr-btn-ghost" target="_blank" rel="noopener">
-                🔑 Login vierge
+            <button class="aqr-btn aqr-btn-primary" onclick="aqrDownload()" type="button">
+                💾 Telechaje PNG
+            </button>
+            <a href="{{ url_for('admin.dashboard') }}" class="aqr-btn aqr-btn-ghost">
+                ← Retounen nan Dashboard
             </a>
-            <button class="aqr-btn aqr-btn-ghost" onclick="aqrDownload()" type="button">
-                💾 Télécharger PNG
-            </button>
-            <button class="aqr-btn aqr-btn-ghost" onclick="aqrCopyUrl()" type="button">
-                🔗 Copier URL signée
-            </button>
         </div>
-
-        <p class="aqr-note">
-            💡 Sur mobile&nbsp;: ouvrez l'appareil photo → approchez le code → touchez la notification.
-            <br>Identifiants + mot de passe sont <strong>signés HMAC</strong> (non modifiables) et <strong>pré-remplis automatiquement</strong> sur la page admin.
-            <br>Expire après <strong>{{ qr_valid_days if qr_valid_days else 7 }} jours</strong> — ré-imprimez une nouvelle version depuis <code>/admin/qr</code>.
-        </p>
     </div>
+
+    <p class="aqr-note">
+        🔐 Siyasyon HMAC-SHA256 &middot; Validite {{ qr_valid_days if qr_valid_days else 7 }} jou &middot; Cache prive 60s &middot; Pa pataje foto sa a ak okenn moun ki pa Admin.
+    </p>
 </div>
 
 <script>
 function aqrDownload() {
     const a = document.createElement('a');
     a.href = document.getElementById('aqrPng').src;
-    a.download = 'glory2yah_admin_qr.png';
+    a.download = 'glory2yah_admin_qr_login.png';
     document.body.appendChild(a);
     a.click();
     setTimeout(() => a.remove(), 0);
-}
-function aqrCopyUrl() {
-    const url = document.getElementById('aqrUrl').textContent.trim();
-    const done = () => {
-        const btn = event && event.currentTarget;
-        if (btn) { const t = btn.textContent; btn.textContent='✅ Copié !'; setTimeout(() => btn.textContent = t, 1400); }
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(done).catch(() => aqrFallback(url, done));
-    } else {
-        aqrFallback(url, done);
-    }
-}
-function aqrFallback(url, cb) {
-    const ta = document.createElement('textarea');
-    ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); cb && cb(); } finally { ta.remove(); }
 }
 </script>
 {% endblock %}
