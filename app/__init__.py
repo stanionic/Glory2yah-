@@ -485,10 +485,48 @@ def create_app(config_name=None):
                     if need_pw_reset:
                         u.set_password(_default_pw)
                         changed = True
+                    # ----------------------------------------------------------
+                    # ADS LOADING FIX (validate_whatsapp corrupted prefix):
+                    # If StanD exists from OLDER buggy bootstrap with a garbage
+                    # whatsapp like "+509STAN" (letters + digits), the old
+                    # validator silently stripped letters → "+509" country-only,
+                    # causing all Ad.user_whatsapp for this user to be stored
+                    # under wrong identity → "can't load my ADS".
+                    # Strict fix (>=7 numeric digits): replace with clean
+                    # _whatsapp = +15557826391 (or env STAND_WHATSAPP).
+                    # ----------------------------------------------------------
+                    import re as __re_stand
+                    _digits = __re_stand.sub(r'\D', '', u.whatsapp or '')
+                    _invalid_len = (len(_digits) < 7)
+                    _has_letters = bool(__re_stand.search(r'[A-Za-z]', u.whatsapp or ''))
+                    if _invalid_len or _has_letters:
+                        app.logger.info(
+                            'StanD repair: CORRUPTED whatsapp=%r (digits=%d letters=%s) '
+                            '→ upgrading to %r (identity-safe for ADS / Gkach rows).',
+                            u.whatsapp, len(_digits), _has_letters, _whatsapp,
+                        )
+                        old_whatsapp = u.whatsapp
+                        u.whatsapp = _whatsapp
+                        changed = True
+                        # Cascade: UserGkach.user_whatsapp must keep balance.
+                        try:
+                            from app.models.user_gkach import UserGkach as _UG2
+                            ug = _UG2.query.filter_by(user_id=u.id).first()
+                            if ug:
+                                ug.user_whatsapp = _whatsapp
+                                app.logger.info(
+                                    '  → UserGkach.user_whatsapp also updated (balance preserved).',
+                                )
+                        except Exception as _ug_err:
+                            app.logger.warning('  → UserGkach cascade skipped: %s', _ug_err)
+                        # NOTE: orphan Ad rows stored under old corrupted
+                        # user_whatsapp (e.g. "+509") cannot be safely re-mapped
+                        # because the old validator destroyed identity info.
+                        # New ads will be stored under the NEW clean value.
                     if changed:
                         db.session.commit()
                         app.logger.info(
-                            'Demo login account pseudo=%s repaired (is_active / password set).',
+                            'Demo login account pseudo=%s repaired (is_active / password / whatsapp set).',
                             _pseudo,
                         )
         except Exception as _e:

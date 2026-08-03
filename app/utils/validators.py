@@ -17,34 +17,54 @@ class ValidationError(Exception):
 def validate_whatsapp(phone):
     """
     Validate and format WhatsApp number
-    Returns: formatted number or raises ValidationError
+    Returns: formatted E.164 number or raises ValidationError
+
+    STRICT GUARD (fixes ADS loading corruption bug):
+      - Minimum 7 digits of subscriber number after country prefix
+      - Inputs like '+509STAN' or '+1' are rejected (not silently truncated)
+      - Returns phonenumbers E164 for valid internationals
     """
     if not phone:
         raise ValidationError("Numéro WhatsApp obligatwa")
-    
-    # Remove spaces and special characters
-    phone = re.sub(r'[^\d+]', '', phone)
-    
-    # If it's just digits without +, assume it's fine (store as-is)
-    if phone.isdigit():
-        return phone
-    
-    # Ensure + prefix
-    if not phone.startswith('+'):
-        phone = '+' + phone
-    
+
+    original = phone
+    cleaned = re.sub(r'[^\d+]', '', phone)
+
+    # Normalize + prefix placement (allow "+509xxx" or "509xxx" with implied +)
+    digits_only = cleaned.replace('+', '')
+
+    # Safety: require at least 7 numeric digits for a real subscriber number
+    if len(digits_only) < 7:
+        raise ValidationError(
+            "Nimewo WhatsAapp ou tro kout: min 7 chif. Ou mete: %r" % original
+        )
+
+    # If it's pure digits, prepend + for next step (will be normalized)
+    if cleaned.isdigit():
+        candidate = '+' + cleaned
+    elif cleaned.startswith('+'):
+        candidate = cleaned
+    else:
+        candidate = '+' + cleaned
+
     try:
-        parsed = phonenumbers.parse(phone, None)
-        if not phonenumbers.is_valid_number(parsed):
-            # If not valid international, just return the input as-is
-            # to be flexible
-            return re.sub(r'[^\d+]', '', phone)
-        
-        # Format to E164
-        return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+        parsed = phonenumbers.parse(candidate, None)
+        if phonenumbers.is_valid_number(parsed):
+            return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
     except phonenumbers.NumberParseException:
-        # If parsing fails, just return cleaned input
-        return re.sub(r'[^\d+]', '', phone)
+        pass
+
+    # Not E164-valid: still ACCEPT if the raw digits look long enough (>= 7 digits)
+    # This keeps flexibility for unusual local formats while rejecting garbage
+    if len(digits_only) >= 7:
+        # Preserve the + at the start if user had it, else plain digits
+        if candidate.startswith('+'):
+            return candidate
+        return digits_only
+
+    raise ValidationError(
+        "Nimewo WhatsApp invalide (%r). Tanpri antre yon nimewo valid ak 7+ chif." % original
+    )
 
 
 def validate_email_address(email):

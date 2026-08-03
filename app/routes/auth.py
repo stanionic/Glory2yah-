@@ -549,7 +549,19 @@ def delete_account():
 def my_ads():
     """View all ads belonging to the current user"""
     from app.services.ad_service import AdService
-    ads = AdService.get_user_ads(current_user.whatsapp)
+    from app.utils.validators import ValidationError
+    try:
+        ads = AdService.get_user_ads(current_user.whatsapp)
+    except ValidationError as e:
+        flash(
+            "Nimewo WhatsApp kont ou pa konfigire byen: %s. Kontakte admin yo pou repare." % str(e),
+            "error",
+        )
+        ads = []
+    except Exception as e:
+        current_app.logger.error("my_ads unexpected error for user %s: %s", current_user.id, e)
+        flash("Erè nan chaj piblisite ou yo.", "error")
+        ads = []
     return render_template('auth/my_ads.html', ads=ads)
 
 
