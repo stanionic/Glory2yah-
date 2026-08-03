@@ -537,6 +537,74 @@ def create_app(config_name=None):
                 pass
 
         # =====================================================================
+        # GLOBAL "ALL USERS" WhatsApp integrity repair (for ADS loading).
+        # Runs AFTER the specific Admin / StanD blocks (which handle known
+        # identities). Purpose: catch any other legacy user whose `whatsapp`
+        # column was corrupted by the OLD buggy validate_whatsapp which
+        # silently stripped letters (e.g. "+509CHARITY" → "+509"), causing
+        #   AdService.get_user_ads(current_user.whatsapp) → EMPTY or WRONG rows
+        # because the WHERE clause uses an identity NOT associated with their rows.
+        # Idempotent (safe to re-run every startup):
+        #   - Skip rows that already pass the strict validator guard (>=7 digits
+        #     and zero letters) — no-op for clean users.
+        #   - Repair target: deterministic pseudo-phone "+509" + (10_000_000+id)
+        #     → unique per user, 11 digits (passes E.164 validator guard).
+        #   - Cascade to UserGkach.user_whatsapp (balance preserved).
+        #   - Cascade to Ad.user_whatsapp (moves ALL ads under the old corrupted
+        #     phone back to the new deterministic phone; preserves ownership).
+        #   - NEVER overwrites a non-empty password_hash on real accounts (security).
+        # =====================================================================
+        try:
+            import re as __re_all_wa
+            def __safe_repair_whatsapp(uid):
+                return "+509" + str(10_000_000 + int(uid))
+            _any_global = False
+            for _u in User.query.order_by(User.id.asc()).all():
+                _raw = _u.whatsapp or ''
+                _d = __re_all_wa.sub(r'\D', '', _raw)
+                _L = bool(__re_all_wa.search(r'[A-Za-z]', _raw))
+                _bad = (len(_d) < 7) or _L
+                if not _bad:
+                    continue
+                _old = _u.whatsapp
+                _new = __safe_repair_whatsapp(_u.id)
+                app.logger.info(
+                    'User whatsapp repair #%d pseudo=%r %r -> %r '
+                    '(digits=%d letters=%s — identity-safe for ADS loading).',
+                    _u.id, _u.pseudo, _old, _new, len(_d), _L,
+                )
+                _u.whatsapp = _new
+                try:
+                    from app.models.user_gkach import UserGkach as _UG3
+                    ug = _UG3.query.filter_by(user_id=_u.id).first()
+                    if ug is None:
+                        db.session.add(_UG3(user_id=_u.id, user_whatsapp=_new, gkach_balance=0))
+                        app.logger.info('  → created missing UserGkach row (balance=0).')
+                    elif ug.user_whatsapp != _new:
+                        ug.user_whatsapp = _new
+                        app.logger.info('  → UserGkach.user_whatsapp fixed (balance %d preserved).', ug.gkach_balance)
+                except Exception as _x:
+                    app.logger.warning('  → UserGkach cascade skipped: %s', _x)
+                try:
+                    from app.models.ad import Ad as _A
+                    if _old:
+                        _mv = _A.query.filter_by(user_whatsapp=_old).update(
+                            {_A.user_whatsapp: _new}, synchronize_session='fetch'
+                        )
+                        if _mv:
+                            app.logger.info('  → Ad rows moved (old %r → new %r): %d rows.', _old, _new, _mv)
+                except Exception as _x:
+                    app.logger.warning('  → Ad cascade skipped: %s', _x)
+                _any_global = True
+            if _any_global:
+                db.session.commit()
+                app.logger.info('Global user-whatsapp integrity repair complete (committed).')
+        except Exception as _e:
+            app.logger.warning(f'Global user-whatsapp integrity repair skipped: {_e}')
+            try: db.session.rollback()
+            except Exception: pass
+
+        # =====================================================================
         # Bank blueprints seed: default LoanProducts + InvestmentProducts.
         # Idempotent: skip if ANY existing rows for that table.
         # (Admin can edit / deactivate them later from /bank/admin)
