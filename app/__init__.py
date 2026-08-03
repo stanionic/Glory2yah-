@@ -440,7 +440,7 @@ def create_app(config_name=None):
                 _pseudo = 'StanD'
                 _default_pw = 'pass123'
                 _whatsapp = __os_stand.environ.get(
-                    'STAND_WHATSAPP', '+15557826391'
+                    'STAND_WHATSAPP', '+50948592888'
                 )
                 u = User.query.filter(User.pseudo.ilike(_pseudo)).first()
                 if not u:
