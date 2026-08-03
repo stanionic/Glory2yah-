@@ -1,24 +1,37 @@
 {% extends "base.html" %}
-
-{% block title %}Glory2YahPub Forms{% endblock %}
-
+{% block title %}G-Forms · Fòmilè - Glory2YahPub{% endblock %}
 {% block content %}
-<div class="container py-5 text-center">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0 rounded-4 p-5">
-                <div class="display-1 mb-3">📋</div>
-                <h1 class="h3 mb-3">Glory2YahPub Forms</h1>
-                <p class="text-muted mb-4">
-                    Kreyasyon fòmilè enskripsyon pou evènman ou yo.
-                    <br>
-                    <small>Le module G-Forms n'est pas encore construit. Exécutez <code>npm run build</code> dans le dossier <code>G-Forms/</code>.</small>
-                </p>
-                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg rounded-pill px-4">
-                    Retounen nan paj prensipal
-                </a>
-            </div>
-        </div>
+<style>
+.gf-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#f5f2ff 0%,#e9dffb 100%); }
+.gf-card { background:#fff; border-radius:24px; padding:40px 32px; box-shadow:0 14px 44px rgba(58,38,128,.12); max-width:680px; margin:0 auto; text-align:center }
+.gf-icon { font-size:72px; margin-bottom:8px }
+.gf-ttl { margin:0 0 10px; font-size:28px; font-weight:800; color:#1a133a }
+.gf-sub { color:#6b5ba8; font-size:14.5px; line-height:1.6; margin-bottom:24px }
+.gf-code { display:inline-block; padding:6px 12px; background:#f3eefe; color:#3a2680; border-radius:10px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; font-weight:700; margin:0 4px }
+.gf-btn { padding:13px 22px; border-radius:16px; text-decoration:none; font-weight:800; font-size:15px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; justify-content:center; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.gf-btn-prim { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; box-shadow:0 10px 26px rgba(58,38,128,.34) }
+.gf-btn-prim:hover { transform:translateY(-2px); box-shadow:0 14px 34px rgba(58,38,128,.44) }
+.gf-btn-ghost { background:#f3eefe; color:#3a2680 }
+.gf-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+.gf-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
+</style>
+
+<div class="gf-wrap">
+  <div class="gf-card">
+    <div class="gf-icon">📋</div>
+    <h1 class="gf-ttl">Glory2YahPub G-Forms</h1>
+    <p class="gf-sub">
+      Kreyasyon fòmilè enskripsyon pou evènman ou yo · sondaj · enskripsyon ekolè · andedan Glory2Yah Pub.
+      <br><br>
+      <small style="color:#8b7ac0">
+        Modil G-Forms pa poko konstwi. Nan folder <span class="gf-code">G-Forms/</span> ekri:
+        <span class="gf-code">npm install</span> apre sa <span class="gf-code">npm run build</span>.
+      </small>
+    </p>
+    <div class="gf-actions">
+      <a class="gf-btn gf-btn-prim" href="{{ url_for('main.index') }}">🏠 Retounen Akèy</a>
+      <a class="gf-btn gf-btn-ghost" href="{{ url_for('bank.dashboard') }}">🏦 Bank Dashboard</a>
     </div>
+  </div>
 </div>
 {% endblock %}

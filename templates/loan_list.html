@@ -108,6 +108,7 @@
       <div class="bk-kvline"><span>Echeans</span><b>{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date else '—' }}</b></div>
       {% if loan.status == 'active' %}
       <form method="POST" action="{{ url_for('bank.loan_repay', loan_id=loan.loan_id) }}" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input name="amount" type="number" min="1" placeholder="Montan peye" required style="padding:10px 12px; border-radius:12px; border:1.5px solid #e2d8ff; background:#fbf9ff; font-weight:700; color:#1a133a; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; width:160px">
         <button class="bk-btn bk-btn-green" type="submit">Peye</button>
       </form>

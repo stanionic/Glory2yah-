@@ -76,6 +76,7 @@
         <div class="bk-kv"><span>Penalite retrè bonè</span><b>{{ p.early_withdrawal_penalty }}%</b></div>
       </div>
       <form class="bk-form" method="POST" action="{{ url_for('bank.invest', product_id=p.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input class="bk-input" name="amount" type="number" min="{{ p.min_amount }}" {% if p.max_amount %}max="{{ p.max_amount }}"{% endif %} placeholder="Montan (Gkach)" required>
         <label class="bk-checkbox"><input type="checkbox" name="auto_renew"> Renouvèl otomatik</label>
         <button class="bk-btn bk-btn-green" type="submit" style="flex:1; justify-content:center; min-width:160px">📈 Envesti</button>

@@ -113,6 +113,7 @@
         <div class="bk-kv"><span>💸 Total rete</span><b>{{ loan.total_due }}</b></div>
         <div class="bk-kv"><span>📅 Echeans</span><b>{{ loan.due_date.strftime('%Y-%m-%d') if loan.due_date else '—' }}</b></div>
         <form class="bk-form-inline" method="POST" action="{{ url_for('bank.loan_repay', loan_id=loan.loan_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input class="bk-input" name="amount" type="number" min="1" placeholder="Montan peye" required>
           <button class="bk-btn bk-btn-green" type="submit">Peye</button>
         </form>
@@ -139,6 +140,7 @@
         <div class="bk-kv"><span>🎁 Retou atann</span><b>{{ inv.expected_return }}</b></div>
         <div class="bk-kv"><span>📅 Matirite</span><b>{{ inv.matures_at.strftime('%Y-%m-%d') if inv.matures_at else '—' }}</b></div>
         <form class="bk-form-inline" method="POST" action="{{ url_for('bank.withdraw_investment', investment_id=inv.investment_id) }}" onsubmit="return confirm('Retranche bonè ? Penalite: {{ inv.product.early_withdrawal_penalty if inv.product else 10 }}%');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bk-btn bk-btn-ghost" type="submit">Retranche (bonè)</button>
         </form>
       </div>

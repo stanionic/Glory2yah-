@@ -77,6 +77,7 @@
       {% endif %}
       {% if inv.status == 'active' %}
       <form method="POST" action="{{ url_for('bank.withdraw_investment', investment_id=inv.investment_id) }}" onsubmit="return confirm('Retranche bonè ? Penalite: {{ inv.product.early_withdrawal_penalty if inv.product else 10 }}%. Ok ?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="bk-btn bk-btn-ghost" type="submit" style="width:100%;justify-content:center">⏳ Retranche (bonè)</button>
       </form>
       {% endif %}

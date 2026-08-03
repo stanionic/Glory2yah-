@@ -120,9 +120,11 @@
         <td data-label="Action" style="display:flex; gap:6px; flex-wrap:wrap">
           {% if loan.status == 'pending' %}
           <form method="POST" action="{{ url_for('bank.admin_approve_loan', loan_id=loan.loan_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="bk-btn bk-btn-green" type="submit" style="padding:7px 12px; font-size:12.5px">✓ Apwouve</button>
           </form>
           <form method="POST" action="{{ url_for('bank.admin_reject_loan', loan_id=loan.loan_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="bk-btn bk-btn-danger" type="submit" style="padding:7px 12px; font-size:12.5px" onclick="return confirm('Rejete prè '+{{ loan.loan_id[:8]|tojson }}+' ?')">✗ Rejte</button>
           </form>
           {% else %}

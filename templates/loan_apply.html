@@ -81,6 +81,7 @@
   </div>
 
   <form class="bk-form" method="POST" action="">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <div class="bk-field">
       <label class="bk-label" for="amount">💵 Kantite prêt ou vle an Gkach&nbsp;—&nbsp;<strong>{{ product.min_amount }} — {{ product.max_amount }}</strong></label>
