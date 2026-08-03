@@ -66,9 +66,10 @@ with app.app_context():
             pending_ads = Ad.query.filter_by(admin_status='under_review').all()
             for ad in pending_ads:
                 ad.admin_status = 'approved'
-                # Also approve payment if needed
+                # Also complete payment if needed (valid value is 'completed'
+                # — 'approved' was never a valid payment_status in the codebase)
                 if ad.payment_status == 'pending':
-                    ad.payment_status = 'approved'
+                    ad.payment_status = 'completed'
             
             db.session.commit()
             print(f"\n[SUCCESS] Approved {len(pending_ads)} ads!")

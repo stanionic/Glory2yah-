@@ -26,6 +26,9 @@ class Ad(BaseModel):
     # Type & Pricing
     ad_type = db.Column(db.String(10), nullable=False, default='sell')  # publish, sell
     price_gkach = db.Column(db.Integer, default=0)
+
+    # Category (marketplace browsing) — default 'other'
+    category = db.Column(db.String(50), default='other', index=True)
     
     # Status
     admin_status = db.Column(db.String(20), default='under_review', index=True)
@@ -120,6 +123,7 @@ class Ad(BaseModel):
             'embed_url': embed_url,
             'ad_type': self.ad_type,
             'price_gkach': self.price_gkach,
+            'category': self.category or 'other',
             'admin_status': self.admin_status,
             'like_count': self.like_count,
             'star_count': self.star_count,

@@ -15,7 +15,7 @@ class AdService:
     
     @staticmethod
     def create_ad(user_whatsapp, title, description, media_type, images=None, 
-                  video=None, ad_type='sell', price_gkach=0):
+                  video=None, ad_type='sell', price_gkach=0, category='other'):
         """Create new ad"""
         user_whatsapp = validate_whatsapp(user_whatsapp)
         
@@ -28,10 +28,24 @@ class AdService:
         if media_type not in ['images', 'video', 'text', 'url']:
             raise ValidationError("Tip medya envalid")
         
+        # BUGFIX: validate ad_type strictly (was silently accepting any string)
+        if ad_type not in ('sell', 'publish'):
+            raise ValidationError("Tip piblisite envalid (dwe 'sell' oswa 'publish')")
+        
         if ad_type == 'sell':
             price_gkach = validate_amount(price_gkach, min_amount=1)
         else:
             price_gkach = 0
+        
+        # Validate category against known list (fallback 'other')
+        from app.utils.validators import sanitize_text
+        valid_categories = {
+            'electronics', 'fashion', 'home', 'beauty', 'sports',
+            'food', 'books', 'toys', 'automotive', 'other'
+        }
+        category = sanitize_text(category, max_length=50) or 'other'
+        if category not in valid_categories:
+            category = 'other'
         
         ad = Ad(
             ad_id=str(uuid.uuid4()),
@@ -43,6 +57,7 @@ class AdService:
             video=video,
             ad_type=ad_type,
             price_gkach=price_gkach,
+            category=category or 'other',
             admin_status='under_review',
             payment_status='pending'
         )

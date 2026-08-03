@@ -226,6 +226,26 @@ def create_app(config_name=None):
         from app.models.bank import LoanProduct, Loan, LoanRepayment, InvestmentProduct, Investment
         db.create_all()
         
+        # =====================================================================
+        # ADS MIGRATION: add `category` column to existing `ads` table.
+        # SQLAlchemy create_all() does NOT alter existing tables — on databases
+        # created before the category column existed, queries filter_by(category=..)
+        # would raise "no such column: ads.category". This idempotent patch
+        # inspects the live schema and ALTERs only if the column is missing.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect
+            from sqlalchemy import text as _sa_text
+            _insp = _sa_inspect(db.engine)
+            _ads_cols = {c['name'] for c in _insp.get_columns('ads')} if _insp.has_table('ads') else set()
+            if 'category' not in _ads_cols:
+                db.session.execute(_sa_text('ALTER TABLE ads ADD COLUMN category VARCHAR(50) DEFAULT "other"'))
+                db.session.commit()
+                app.logger.info('ADS MIGRATION: added ads.category column (default "other")')
+        except Exception as _e:
+            db.session.rollback()
+            app.logger.warning(f"ADS MIGRATION: could not add ads.category column: {_e}")
+        
         # Create default loan products if they don't exist
         try:
             default_loan_products = [
@@ -288,7 +308,8 @@ def create_app(config_name=None):
         
         # =====================================================================
         # Admin user bootstrap — IDEMPOTENT (cf pattern StanD ci-dessous):
-        #   - Pseudo/WhatsApp par défaut: "+50942882076" (login identifier field)
+        #   - Pseudo/WhatsApp par défaut: pseudo="Admin509" whatsapp="+50942882076"
+        #     (User feedback: connexion par pseudo Admin509 attendue, pas le numéro.)
         #   - Password par défaut: "StanGlory2YahPub1986"
         #   - Sécurité: JAMAIS en PROD le MDP par défaut n'est créé si
         #     ADMIN_PASSWORD est setté dans .env (override).
@@ -300,14 +321,15 @@ def create_app(config_name=None):
         try:
             admin_phone    = _os.environ.get('ADMIN_WHATSAPP', '+50942882076')
             admin_password = _os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
-            admin_pseudo   = _os.environ.get('ADMIN_PSEUDO',   admin_phone)
+            admin_pseudo   = _os.environ.get('ADMIN_PSEUDO',   'Admin509')
             admin_name     = _os.environ.get('ADMIN_NAME',     'Administrateur Glory2Yah')
             admin_user = None
-            # Cherche par whatsapp d'abord, ensuite par pseudo, ensuite n'importe quel admin existant (fallback)
-            if admin_phone:
-                admin_user = User.query.filter_by(whatsapp=admin_phone).first()
-            if (not admin_user) and admin_pseudo:
+            # Recherche : d'abord par pseudo (Admin509 — cas nominal),
+            # ensuite par whatsapp (compatibilité legacy), puis n'importe quel admin existant.
+            if admin_pseudo:
                 admin_user = User.query.filter(User.pseudo.ilike(admin_pseudo)).first()
+            if (not admin_user) and admin_phone:
+                admin_user = User.query.filter_by(whatsapp=admin_phone).first()
             if not admin_user:
                 any_admin = User.query.filter_by(is_admin=True).first()
                 if any_admin:

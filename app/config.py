@@ -89,11 +89,11 @@ class Config:
     CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') or 'redis://localhost:6379/4'
     
     # Admin (defaults DEV/DEMO: override via .env in PRODUCTION)
-    #   Pseudo / WhatsApp = +50942882076   (login identifier: "+50942882076" dans champ `identifier`)
-    #   Password          = StanGlory2YahPub1986
+    #   Pseudo = Admin509   (login identifier: "Admin509" dans champ `identifier`)
+    #   Password = StanGlory2YahPub1986
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
     ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
-    ADMIN_PSEUDO   = os.environ.get('ADMIN_PSEUDO',   ADMIN_WHATSAPP)
+    ADMIN_PSEUDO   = os.environ.get('ADMIN_PSEUDO',   'Admin509')
     ADMIN_NAME     = os.environ.get('ADMIN_NAME',     'Administrateur Glory2Yah')
     
     # OAuth
@@ -141,6 +141,10 @@ class DevelopmentConfig(Config):
     # Fallback to simple cache when Redis not available
     CACHE_TYPE = 'simple'
     RATELIMIT_STORAGE_URL = 'memory://'
+
+    # Allow tests/scripts to disable IP-based rate limiting via env var
+    # (e.g. RATELIMIT_ENABLED=0 python test_login_fixes.py)
+    RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', '1') not in ('0', 'false', 'False', 'no', 'off')
 
 
 class TestingConfig(Config):

@@ -29,20 +29,22 @@ def index():
         if sort_by not in allowed_sorts:
             sort_by = 'recent' # Default to recent if invalid
 
-        # Get approved ads for marketplace
-        ads = AdService.get_approved_ads(page=page, per_page=per_page)
-        
-        # Filter by category if specified
+        # BUGFIX: only 'sell' ads appear in the marketplace product grid
+        # (social publish posts were polluting the grid with price-0 items).
+        from app.models.ad import Ad
+        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
         if category != 'all':
-            ads = [ad for ad in ads if ad.get('category') == category]
-        
-        # Sort products
+            query = query.filter_by(category=category)
         if sort_by == 'price_low':
-            ads = sorted(ads, key=lambda x: x.get('price_gkach', 0))
+            query = query.order_by(Ad.price_gkach.asc())
         elif sort_by == 'price_high':
-            ads = sorted(ads, key=lambda x: x.get('price_gkach', 0), reverse=True)
+            query = query.order_by(Ad.price_gkach.desc())
         elif sort_by == 'popular':
-            ads = sorted(ads, key=lambda x: x.get('view_count', 0), reverse=True)
+            query = query.order_by(Ad.view_count.desc())
+        else:
+            query = query.order_by(Ad.created_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        ads = [ad.to_dict() for ad in pagination.items]
         
         return render_template(
             'marketplace/index.html',
@@ -80,10 +82,14 @@ def api_products():
         
         category = request.args.get('category', 'all')
         
-        ads = AdService.get_approved_ads(page=page, per_page=per_page)
-        
+        # BUGFIX: only 'sell' ads in marketplace API (same as index())
+        from app.models.ad import Ad
+        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
         if category != 'all':
-            ads = [ad for ad in ads if ad.get('category') == category]
+            query = query.filter_by(category=category)
+        query = query.order_by(Ad.created_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        ads = [ad.to_dict() for ad in pagination.items]
         
         return jsonify({
             'success': True,

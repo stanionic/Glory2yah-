@@ -515,8 +515,11 @@ def api_gkach_rate():
 def view_ad(ad_id):
     """View individual ad details (public route)"""
     try:
-        ad = AdService.get_ad(ad_id)
+        # BUGFIX: increment views FIRST, then read the fresh dict so the page
+        # shows the updated count (previously the stale pre-increment count was
+        # rendered because get_ad() was called before increment_views()).
         AdService.increment_views(ad_id)
+        ad = AdService.get_ad(ad_id)
         return render_template(
             'ad_detail.html',
             ad=ad,
@@ -550,6 +553,7 @@ def submit_ad():
             title = sanitize_text(request.form.get('title', ''))
             description = sanitize_text(request.form.get('description', ''))
             price_gkach = int(request.form.get('price_gkach', 0) or 0)
+            category = sanitize_text(request.form.get('category', '')) or 'other'
 
             # Resolve absolute upload folder path
             upload_folder = os.path.join(current_app.root_path, '..', current_app.config['UPLOAD_FOLDER'])
@@ -588,7 +592,8 @@ def submit_ad():
                 images=','.join(images) if images else None,
                 video=video,
                 ad_type=ad_type,
-                price_gkach=price_gkach
+                price_gkach=price_gkach,
+                category=category
             )
 
             flash('Piblisite soumèt avèk siksè! Li ap revize pa admin yo.', 'success')

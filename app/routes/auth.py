@@ -47,10 +47,9 @@ def _find_user_by_identifier(identifier):
     if clean_wa != ident:
         u = User.query.filter(db.or_(User.pseudo == clean_wa, User.whatsapp == clean_wa)).first()
         if u: return u
-    # 3 Pseudo case-insensitive exact
-    if clean_wa:
-        u = User.query.filter(db.func.lower(User.pseudo) == clean_wa.lower()).first()
-        if u: return u
+    # 3 Pseudo case-insensitive exact (compare ident only — the old code compared
+    #   pseudo against clean_wa, which is the *cleaned whatsapp* not the pseudo;
+    #   that redundant step could never match a real user and is removed).
     u = User.query.filter(db.func.lower(User.pseudo) == ident.lower()).first()
     if u: return u
     return None
@@ -122,13 +121,20 @@ def register():
                 len(whatsapp), len(pseudo), len(name),
             )
 
-            # Clean whatsapp first
-            whatsapp_clean = _clean_whatsapp(whatsapp)
+            # Validate & clean whatsapp FIRST (P1 FIX — validate_whatsapp was never called,
+            # which allowed corrupted accounts like "+509" or "+509ABC" to be created,
+            # and those accounts could never log in properly).
+            whatsapp_clean = validate_whatsapp(whatsapp)
 
             # Clean pseudo (remove any non-valid characters)
             pseudo_clean = _clean_pseudo(pseudo)
             if not pseudo_clean:
-                pseudo_clean = whatsapp_clean
+                # Fallback: derive pseudo from phone; strip '+' because phone format
+                # (+509...) is not a valid pseudo (letters/digits/_/- only).
+                pseudo_clean = whatsapp_clean.replace('+', '')
+
+            # Validate pseudo (P1 FIX — was never called)
+            validate_pseudo(pseudo_clean)
 
             # Validate password BEFORE any DB write (P1 FIX — was never called)
             validate_password(password)
@@ -192,8 +198,13 @@ def register():
     return render_template('auth/register.html')
 
 
+# IP-level limiter: relatively generous because it counts EVERY page view (GET)
+# + attempts (POST) per IP. Behind a shared proxy (Render/Heroku), many users
+# share one IP, so a tight limit (e.g. "10 per minute") falsely locks everyone out.
+# Real brute-force protection is handled by the per-identifier custom limiter
+# (5 failed logins / 5 min) inside this route.
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("30 per minute")
 def login():
     """User login — P1 bugfixes:
     - PRESERVE the `next` query param across GET → POST → FAIL redirect → success redirect.
@@ -272,21 +283,23 @@ def login():
                 flash('Tout chan yo obligatwa.', 'error')
                 return _redirect_back_with_params(last_identifier=identifier)
 
-            # Per-identifier brute force rate-limit: max 5 failed in 5 minutes
-            if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
-                current_app.logger.warning(
-                    "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
-                )
-                flash(
-                    '5 esè koneksyon invalide yo te pase. Tanpri tann 5 minit epi eseye ankò.',
-                    'error',
-                )
-                return _redirect_back_with_params(last_identifier=identifier)
-
             # Strict match only — NO substring LIKE (prevent takeover)
             user = _find_user_by_identifier(identifier)
 
             if not user:
+                # BUGFIX: rate-limit ONLY on actual failure (was counting successful logins).
+                # _cache_identifier_rate_limit() both checks AND records in one call:
+                #   returns True  → limit already reached (BLOCK, nothing recorded)
+                #   returns False → attempt recorded, allow (with error message)
+                if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
+                    current_app.logger.warning(
+                        "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
+                    )
+                    flash(
+                        '5 esè koneksyon invalide yo te pase. Tanpri tann 5 minit epi eseye ankò.',
+                        'error',
+                    )
+                    return _redirect_back_with_params(last_identifier=identifier)
                 current_app.logger.warning(
                     "Login failed: identifier=%s (no user found strict)",
                     identifier[:8] + "***",
@@ -308,7 +321,16 @@ def login():
                 password_ok = bool(_check_forgot_temp_password(user.id, password))
 
             if not password_ok:
-                # Register failed attempt BEFORE redirect (rate-limit)
+                # BUGFIX: rate-limit ONLY on actual failure (was counting successful logins).
+                if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
+                    current_app.logger.warning(
+                        "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
+                    )
+                    flash(
+                        '5 esè koneksyon invalide yo te pase. Tanpri tann 5 minit epi eseye ankò.',
+                        'error',
+                    )
+                    return _redirect_back_with_params(last_identifier=identifier)
                 current_app.logger.warning(
                     "Login failed: user_id=%s pseudo=%s wrong password",
                     user.id, user.pseudo,
@@ -335,6 +357,13 @@ def login():
                     "Tanpri chanje modpas ou nan pwofil ou rapidman (modpas pwovizwa a itilize 1 fwa sèlman).",
                     "warning",
                 )
+
+            # BUGFIX: successful login — CLEAR the per-identifier failure counter
+            try:
+                if cache:
+                    cache.delete(f"rl:login_fail_id:{identifier}")
+            except Exception:
+                pass
 
             # Login user, remember=always, force=True (bypass inactive check — already validated above)
             login_user(user, remember=True, force=True)
