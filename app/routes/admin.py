@@ -170,14 +170,54 @@ def admin_login():
     if request.method == 'POST':
         pseudo = request.form.get('pseudo', '').strip()
         password = request.form.get('password', '').strip()
-        user = User.query.filter(
-            db.or_(User.pseudo == pseudo, User.whatsapp == pseudo)
-        ).first()
-        if user and user.is_admin and user.check_password(password):
+
+        # Robust 4-tier identifier lookup (exact parity with /auth/login _find_user_by_identifier).
+        # Supports: pseudo / WhatsApp with-or-without + / pseudo case-insensitive (Admin509/admin509/ADMIN509).
+        def _clean_wa(raw: str) -> str:
+            raw = (raw or '').strip()
+            cleaned = ''.join(c for c in raw if c.isdigit() or c == '+')
+            if cleaned and not cleaned.startswith('+'):
+                cleaned = '+' + cleaned
+            return cleaned or raw
+
+        user = None
+        ident = pseudo or ''
+        clean_wa = _clean_wa(ident)
+        # 1 exact raw (pseudo == ident OR whatsapp == ident)
+        if ident:
+            user = User.query.filter(
+                db.or_(User.pseudo == ident, User.whatsapp == ident)
+            ).first()
+        # 2 cleaned (different from raw, i.e. user typed spaces/letters -> WA-like number)
+        if (not user) and clean_wa != ident and clean_wa:
+            user = User.query.filter(
+                db.or_(User.pseudo == clean_wa, User.whatsapp == clean_wa)
+            ).first()
+        # 3 pseudo case-insensitive (using cleaned_wa if looks WA-like)
+        if (not user) and clean_wa:
+            user = User.query.filter(
+                db.func.lower(User.pseudo) == clean_wa.lower()
+            ).first()
+        # 4 pseudo case-insensitive (using RAW identifier — catches ADMIN509/admin509
+        #   whenever _clean_wa stripped letters from a text pseudo!)
+        if (not user) and ident:
+            user = User.query.filter(
+                db.func.lower(User.pseudo) == ident.lower()
+            ).first()
+
+        if not user:
+            flash('Pseudo oswa modpas envalid.', 'error')
+        elif not getattr(user, 'is_active', True):
+            # Mirror /auth/login guard: blocked (is_active=False) users CANNOT login even via admin portal
+            flash('Kont itilizatè sa a dezaktive / bloke. Kontakte admin yo.', 'error')
+        elif not user.is_admin:
+            flash('Kont sa a pa yon kont administrateur.', 'error')
+        elif user.check_password(password):
             login_user(user)
             flash('Byenveni Administratè!', 'success')
             return redirect(url_for('admin.dashboard'))
-        flash('Pseudo oswa modpas envalid.', 'error')
+        else:
+            flash('Pseudo oswa modpas envalid.', 'error')
 
     # GET: handle ?qra= signed token → auto-fill (silent on invalid)
     auto_id = ''

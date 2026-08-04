@@ -143,6 +143,7 @@
         {% endwith %}
 
         <form class="al-form" action="" method="POST" autocomplete="on">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if qra_token %}<input type="hidden" name="qra" value="{{ qra_token }}">{% endif %}
 
             <div class="al-field">
