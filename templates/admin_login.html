@@ -109,6 +109,60 @@
     .al-card { padding: 28px 22px 24px; border-radius: 24px }
     .al-hero h1 { font-size: 21px }
 }
+
+/* Modern interactive extras */
+.al-page::before {
+    content: '';
+    position: fixed; inset: -20%;
+    background:
+        radial-gradient(600px 400px at 15% 15%, rgba(139,92,246,.25), transparent 60%),
+        radial-gradient(700px 500px at 85% 20%, rgba(16,185,129,.18), transparent 60%),
+        radial-gradient(800px 600px at 50% 95%, rgba(236,72,153,.15), transparent 60%);
+    animation: alBgShift 18s ease-in-out infinite alternate;
+    pointer-events: none; z-index: 0;
+}
+@keyframes alBgShift {
+    0%   { transform: translate3d(-1%, -1%, 0) rotate(-0.4deg); opacity: .9; }
+    50%  { transform: translate3d(1%, 1.5%, 0) rotate(0.3deg);  opacity: 1;  }
+    100% { transform: translate3d(-1.5%, 1%, 0) rotate(-0.2deg); opacity: .95; }
+}
+.al-page > * { position: relative; z-index: 1; }
+
+.al-card:hover { box-shadow: 0 36px 120px rgba(0,0,0,0.34); }
+.al-hero-ico { animation: alIcoFloat 5.5s ease-in-out infinite; }
+@keyframes alIcoFloat { 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(-4px)} }
+
+/* Shine effect on primary/QR buttons */
+.al-btn { position: relative; overflow: hidden; }
+.al-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -85%;
+    width: 55%; height: 100%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.55) 50%, transparent 100%);
+    transform: skewX(-22deg);
+    transition: left .95s ease;
+    opacity: .9;
+}
+.al-btn:hover::before { left: 130%; }
+.al-btn:active { transform: translateY(0) scale(.985) !important; }
+
+/* Subtle ripple focus ring (keyboard accessible) */
+.al-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255,255,255,.25), 0 10px 30px rgba(58,38,128,.5);
+}
+.al-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(126,66,191,.16) !important;
+}
+
+/* Badge pulse when QR valid */
+@keyframes alPulse {
+    0%,100% { box-shadow: 0 6px 20px rgba(16,185,129,.3); }
+    50%     { box-shadow: 0 10px 32px rgba(16,185,129,.55); transform: translateY(-1px); }
+}
+.al-badge-qr { animation: alPulse 2.8s ease-in-out infinite; }
 </style>
 
 <div class="al-page">

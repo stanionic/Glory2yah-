@@ -1,306 +1,137 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="admin-users-container">
+<div class="admin-page">
+    <div class="admin-container" style="max-width: 1280px; margin: 0 auto;">
         <div class="admin-header">
-            <h2>👥 Jere Itilizatè yo</h2>
-            <p class="subtitle">Gere tout kont itilizatè sou platfòm nan</p>
+            <div>
+                <h2>👥 Jere Itilizatè yo</h2>
+                <p class="subtitle">Gere tout kont itilizatè sou platfòm nan</p>
+            </div>
         </div>
 
         <div class="admin-stats">
-            <div class="stat-card">
-                <div class="stat-value">{{ users|length }}</div>
-                <div class="stat-label">Total Itilizatè</div>
+            <div class="admin-stat-card gradient-blue">
+                <div class="admin-stat-value">{{ users|length }}</div>
+                <div class="admin-stat-label">Total Itilizatè</div>
             </div>
-            <div class="stat-card active">
-                <div class="stat-value">{{ users|selectattr('is_active', 'equalto', true)|list|length }}</div>
-                <div class="stat-label">Aktif</div>
+            <div class="admin-stat-card gradient-green">
+                <div class="admin-stat-value">{{ users|selectattr('is_active', 'equalto', true)|list|length }}</div>
+                <div class="admin-stat-label">Aktif</div>
             </div>
-            <div class="stat-card inactive">
-                <div class="stat-value">{{ users|selectattr('is_active', 'equalto', false)|list|length }}</div>
-                <div class="stat-label">Dezaktive</div>
+            <div class="admin-stat-card gradient-pink">
+                <div class="admin-stat-value">{{ users|selectattr('is_active', 'equalto', false)|list|length }}</div>
+                <div class="admin-stat-label">Dezaktive / Bloke</div>
+            </div>
+            <div class="admin-stat-card gradient-gold">
+                <div class="admin-stat-value">{{ users|selectattr('is_admin', 'equalto', true)|list|length }}</div>
+                <div class="admin-stat-label">Administratè</div>
             </div>
         </div>
 
-        <div class="block-by-pseudo">
-            <h3>🔒 Bloke kont pa pseudo</h3>
-            <p class="block-hint">Antre pseudo itilizatè a (nan baz done) pou bloke kont li imedyatman.</p>
-            <form method="POST" action="{{ url_for('admin.block_user_by_pseudo') }}" class="block-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="pseudo" id="blockPseudo" placeholder="Egz: janpi (pseudo itilizatè a)" required>
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-ban"></i> Bloke Kont
-                </button>
-            </form>
+        <div class="admin-card" style="border: none; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);">
+            <div class="admin-card-body" style="padding: 24px;">
+                <h3 style="margin: 0 0 8px 0; color: #9a3412; font-weight: 800; font-size: 18px;">🔒 Bloke kont pa pseudo</h3>
+                <p style="margin: 0 0 16px 0; color: #c2410c; font-size: 14px;">Antre pseudo itilizatè a (nan baz done) pou bloke kont li imedyatman.</p>
+                <form method="POST" action="{{ url_for('admin.block_user_by_pseudo') }}" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="pseudo" id="blockPseudo" placeholder="Egz: janpi (pseudo itilizatè a)" required style="flex: 1 1 240px; padding: 12px 14px; border: 2px solid #fed7aa; border-radius: 14px; font-size: 15px; background: #fff; transition: border-color .15s, box-shadow .15s, transform .15s;" onfocus="this.style.borderColor='#f97316';this.style.boxShadow='0 0 0 4px rgba(249,115,22,.14)';this.style.transform='translateY(-1px)'" onblur="this.style.borderColor='#fed7aa';this.style.boxShadow='none';this.style.transform='none'">
+                    <button type="submit" class="admin-btn admin-btn-danger" style="padding: 12px 22px; font-weight: 800;">
+                        <i class="fas fa-ban"></i> Bloke Kont
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div class="search-filter">
-            <input type="text" id="searchUsers" placeholder="🔍 Chèche itilizatè..." onkeyup="filterUsers()">
-        </div>
+        <div class="admin-card">
+            <div class="admin-card-body" style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <h4 style="margin: 0; font-weight: 800; font-size: 1.1rem; color: var(--g2y-text);">📋 Lis Itilizatè yo</h4>
+                    <input type="text" id="searchUsers" placeholder="🔍 Chèche itilizatè..." onkeyup="filterUsers()" style="flex: 0 1 380px; padding: 11px 14px; border: 2px solid var(--g2y-border); border-radius: 12px; font-size: 15px; background: var(--g2y-bg-alt); transition: border-color .15s, box-shadow .15s;" onfocus="this.style.borderColor='var(--g2y-primary-light)';this.style.boxShadow='0 0 0 3px rgba(74,111,199,.12)'" onblur="this.style.borderColor='var(--g2y-border)';this.style.boxShadow='none'">
+                </div>
 
-        <div class="users-table-container">
-            <table class="users-table" id="usersTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Pseudo</th>
-                        <th>Non</th>
-                        <th>WhatsApp</th>
-                        <th>Estati</th>
-                        <th>Kreye</th>
-                        <th>Aksyon</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.id }}</td>
-                        <td>
-                            <strong>{{ user.pseudo }}</strong>
-                            {% if user.profile_photo %}
-                                <i class="fas fa-camera" title="Gen foto pwofil"></i>
-                            {% endif %}
-                        </td>
-                        <td>{{ user.name or 'N/A' }}</td>
-                        <td>{{ user.whatsapp }}</td>
-                        <td>
-                            <span class="status-badge {% if user.is_active %}active{% else %}inactive{% endif %}">
-                                {% if user.is_active %}Aktif{% else %}Dezaktive{% endif %}
-                            </span>
-                        </td>
-                        <td>{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</td>
-                        <td class="actions">
-                    <a href="{{ url_for('admin.admin_view_user', user_id=user.id) }}" class="btn btn-sm btn-info" title="Wè detay">
-                        <i class="fas fa-eye"></i>
+                <div class="admin-table-container">
+                    <table class="admin-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Pseudo</th>
+                                <th>Non</th>
+                                <th>WhatsApp</th>
+                                <th>Wòl</th>
+                                <th>Estati</th>
+                                <th>Kreye</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td><strong>{{ user.id }}</strong></td>
+                                <td>
+                                    <strong style="color: var(--g2y-text);">{{ user.pseudo }}</strong>
+                                    {% if user.profile_photo %}
+                                        <i class="fas fa-camera" style="margin-left: 6px; color: #0ea5e9;" title="Gen foto pwofil"></i>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.name or '—' }}</td>
+                                <td>{{ user.whatsapp }}</td>
+                                <td>
+                                    {% if user.is_admin %}
+                                        <span class="admin-badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-weight: 700;">Admin</span>
+                                    {% else %}
+                                        <span class="admin-badge" style="background: #e0e7ff; color: #4338ca; font-weight: 700;">Itilizatè</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="admin-badge {% if user.is_active %}active{% else %}inactive{% endif %}">
+                                        {% if user.is_active %}Aktif{% else %}Dezaktive{% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</td>
+                                <td style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <a href="{{ url_for('admin.admin_view_user', user_id=user.id) }}" class="admin-btn admin-btn-info admin-btn-sm" title="Wè detay">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" class="admin-btn admin-btn-warning admin-btn-sm" title="Modifye">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user.id != current_user.id %}
+                                    <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="d-inline" onsubmit="return confirmToggle('{{ user.pseudo }}', {{ 'false' if user.is_active else 'true' }})">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="admin-btn admin-btn-sm {% if user.is_active %}admin-btn-danger{% else %}admin-btn-success{% endif %}" title="{% if user.is_active %}Bloke kont{% else %}Debloke kont{% endif %}">
+                                            {% if user.is_active %}<i class="fas fa-ban"></i> Bloke{% else %}<i class="fas fa-check-circle"></i> Debloke{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('admin.admin_delete_user', user_id=user.id) }}" class="d-inline" onsubmit="return confirmDelete()">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="admin-btn admin-btn-danger admin-btn-sm" title="Efase">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-muted text-center py-4" style="padding: 40px;">
+                                    📭 Pa gen itilizatè ankò
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ url_for('admin.dashboard') }}" class="admin-btn admin-btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Retounen nan Panno Admin
                     </a>
-                    <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning" title="Modifye">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    {% if user.id != current_user.id %}
-                    <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="delete-form" onsubmit="return confirmToggle('{{ user.pseudo }}', {{ 'false' if user.is_active else 'true' }})">
-                        <button type="submit" class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}" title="{% if user.is_active %}Bloke kont{% else %}Debloke kont{% endif %}">
-                            {% if user.is_active %}<i class="fas fa-ban"></i> Bloke{% else %}<i class="fas fa-check-circle"></i> Debloke{% endif %}
-                        </button>
-                    </form>
-                    <form method="POST" action="{{ url_for('admin.admin_delete_user', user_id=user.id) }}" class="delete-form" onsubmit="return confirmDelete()">
-                        <button type="submit" class="btn btn-sm btn-danger" title="Efase">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </form>
-                    {% endif %}
-                </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" class="no-data">Pa gen itilizatè ankò</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="admin-actions">
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Retounen nan Admin
-            </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<style>
-.admin-users-container {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 30px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-}
-
-.admin-header h2 {
-    margin: 0 0 10px 0;
-    color: #333;
-}
-
-.subtitle {
-    color: #666;
-    margin-bottom: 30px;
-}
-
-.admin-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.stat-card {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.stat-card.active {
-    background: #d4edda;
-    color: #155724;
-}
-
-.stat-card.inactive {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.stat-value {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 14px;
-}
-
-.block-by-pseudo {
-    background: #fff3cd;
-    border: 1px solid #ffeeba;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 25px;
-}
-
-.block-by-pseudo h3 {
-    margin: 0 0 8px 0;
-    color: #856404;
-    font-size: 18px;
-}
-
-.block-hint {
-    margin: 0 0 12px 0;
-    color: #856404;
-    font-size: 14px;
-}
-
-.block-form {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.block-form input {
-    flex: 1;
-    min-width: 200px;
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 15px;
-}
-
-.block-form input:focus {
-    outline: none;
-    border-color: #dc3545;
-}
-
-.search-filter {
-    margin-bottom: 20px;
-}
-
-.search-filter input {
-    width: 100%;
-    max-width: 400px;
-    padding: 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 16px;
-}
-
-.users-table-container {
-    overflow-x: auto;
-}
-
-.users-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 30px;
-}
-
-.users-table th,
-.users-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.users-table th {
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #333;
-}
-
-.users-table tr:hover {
-    background: #f8f9fa;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.status-badge.active {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-badge.inactive {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.actions {
-    display: flex;
-    gap: 8px;
-}
-
-.btn-sm {
-    padding: 6px 10px;
-    font-size: 14px;
-}
-
-.delete-form {
-    display: inline;
-}
-
-.no-data {
-    text-align: center;
-    color: #666;
-    padding: 40px;
-}
-
-.admin-actions {
-    margin-top: 20px;
-}
-
-@media (max-width: 768px) {
-    .admin-users-container {
-        margin: 20px;
-        padding: 20px;
-    }
-
-    .users-table th,
-    .users-table td {
-        padding: 8px;
-        font-size: 14px;
-    }
-
-    .actions {
-        flex-wrap: wrap;
-    }
-}
-</style>
 
 <script>
 function confirmToggle(pseudo, isActive) {
@@ -317,7 +148,6 @@ function filterUsers() {
     for (let i = 1; i < tr.length; i++) {
         const td = tr[i].getElementsByTagName('td');
         let found = false;
-        
         for (let j = 0; j < td.length; j++) {
             if (td[j]) {
                 const txtValue = td[j].textContent || td[j].innerText;
@@ -327,7 +157,6 @@ function filterUsers() {
                 }
             }
         }
-        
         tr[i].style.display = found ? '' : 'none';
     }
 }
