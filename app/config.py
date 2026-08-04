@@ -94,7 +94,7 @@ class Config:
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
     ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
     ADMIN_PSEUDO   = os.environ.get('ADMIN_PSEUDO',   'Admin509')
-    ADMIN_NAME     = os.environ.get('ADMIN_NAME',     'Administrateur Glory2Yah')
+    ADMIN_NAME     = os.environ.get('ADMIN_NAME',     'Glory2YahPub')
     
     # OAuth
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')

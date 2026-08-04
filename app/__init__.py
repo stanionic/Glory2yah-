@@ -322,7 +322,7 @@ def create_app(config_name=None):
             admin_phone    = _os.environ.get('ADMIN_WHATSAPP', '+50942882076')
             admin_password = _os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
             admin_pseudo   = _os.environ.get('ADMIN_PSEUDO',   'Admin509')
-            admin_name     = _os.environ.get('ADMIN_NAME',     'Administrateur Glory2Yah')
+            admin_name     = _os.environ.get('ADMIN_NAME',     'Glory2YahPub')
             admin_user = None
             # Recherche : d'abord par pseudo (Admin509 — cas nominal),
             # ensuite par whatsapp (compatibilité legacy), puis n'importe quel admin existant.

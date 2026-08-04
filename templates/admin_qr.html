@@ -61,6 +61,31 @@
 .aqr-btn-ghost { background:#f3eefe; color:#3a2680 }
 .aqr-btn-ghost:hover { background:#e7dbfb; transform: translateY(-2px) }
 .aqr-note { margin-top: 22px; color:#d9ccfb; font-size: 12.5px; line-height:1.5; text-align:center; max-width: 460px }
+.aqr-creds {
+    background: linear-gradient(135deg, #f3eefe, #ede4ff);
+    border: 1.5px solid #e2d8ff;
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin: 0 auto 18px;
+    max-width: 100%;
+    text-align: left;
+    box-shadow: 0 6px 20px rgba(58,38,128,.08);
+}
+.aqr-creds-title {
+    font-size: 14px; font-weight: 800; color: #3a2680;
+    margin-bottom: 10px; text-align: center; letter-spacing: .2px;
+}
+.aqr-creds-table { width: 100%; border-collapse: collapse; font-size: 14px }
+.aqr-creds-table tr + tr td { border-top: 1px solid #e2d8ff }
+.aqr-creds-label {
+    padding: 8px 10px 8px 0; font-weight: 700; color: #6b5ba8;
+    white-space: nowrap; width: 1%;
+}
+.aqr-creds-value {
+    padding: 8px 0; font-weight: 800; color: #1a133a;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+}
 @media (max-width: 480px) {
     .aqr-card { padding: 30px 20px 26px; border-radius: 24px }
     .aqr-title { font-size: 24px }
@@ -82,6 +107,30 @@
                 loading="eager"
             >
         </div>
+
+        {% if admin_creds %}
+        <div class="aqr-creds">
+            <div class="aqr-creds-title">🔐 Kredansyal ADMIN</div>
+            <table class="aqr-creds-table">
+                <tr>
+                    <td class="aqr-creds-label">👤 Non:</td>
+                    <td class="aqr-creds-value">{{ admin_creds.name }}</td>
+                </tr>
+                <tr>
+                    <td class="aqr-creds-label">📱 WhatsApp:</td>
+                    <td class="aqr-creds-value">{{ admin_creds.whatsapp }}</td>
+                </tr>
+                <tr>
+                    <td class="aqr-creds-label">🆔 Pseudo:</td>
+                    <td class="aqr-creds-value">{{ admin_creds.pseudo }}</td>
+                </tr>
+                <tr>
+                    <td class="aqr-creds-label">🔑 Modpas:</td>
+                    <td class="aqr-creds-value">{{ admin_creds.password }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
 
         <div class="aqr-actions">
             <a href="{{ url_for('admin.admin_login') }}" class="aqr-btn aqr-btn-ghost" target="_blank" rel="noopener">

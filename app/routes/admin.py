@@ -40,6 +40,18 @@ def _qra_get_creds_from_config():
     return str(_id), str(_pw)
 
 
+def _qra_get_admin_creds_full():
+    """Return dict with all admin credentials for display. Never None (fallbacks)."""
+    cfg = current_app.config
+    _id, _pw = _qra_get_creds_from_config()
+    return {
+        'name': str(cfg.get('ADMIN_NAME') or 'Glory2YahPub'),
+        'whatsapp': str(cfg.get('ADMIN_WHATSAPP') or '+50942882076'),
+        'pseudo': _id,
+        'password': _pw,
+    }
+
+
 def _qra_signing_key():
     """Derive a stable signing key from SECRET_KEY (salted)."""
     sk = current_app.config.get('SECRET_KEY') or 'glory2yah-dev-fallback-secret-key-change-in-prod'
@@ -132,11 +144,13 @@ def admin_qr_page():
     ACCESS: Admin authenticated ONLY. No credentials leaked publicly.
     Shows QR image + download copy controls; never shows id/pw strings in HTML."""
     admin_signed_url = _qra_make_signed_url(_external=True)
+    admin_creds = _qra_get_admin_creds_full()
     return render_template(
         'admin_qr.html',
         admin_login_url=admin_signed_url,
         qr_signed=True,
         qr_valid_days=(_QRA_VALID_SECONDS // (24 * 3600)),
+        admin_creds=admin_creds,
     )
 
 

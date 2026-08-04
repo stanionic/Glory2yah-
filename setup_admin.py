@@ -43,7 +43,7 @@ def _resolve_admin_values(app):
     name = (
         os.environ.get('ADMIN_NAME')
         or cfg.get('ADMIN_NAME')
-        or 'Administrateur Glory2Yah'
+        or 'Glory2YahPub'
     )
     password = (
         os.environ.get('ADMIN_PASSWORD')
