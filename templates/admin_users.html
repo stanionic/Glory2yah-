@@ -23,6 +23,18 @@
             </div>
         </div>
 
+        <div class="block-by-pseudo">
+            <h3>🔒 Bloke kont pa pseudo</h3>
+            <p class="block-hint">Antre pseudo itilizatè a (nan baz done) pou bloke kont li imedyatman.</p>
+            <form method="POST" action="{{ url_for('admin.block_user_by_pseudo') }}" class="block-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="pseudo" id="blockPseudo" placeholder="Egz: janpi (pseudo itilizatè a)" required>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-ban"></i> Bloke Kont
+                </button>
+            </form>
+        </div>
+
         <div class="search-filter">
             <input type="text" id="searchUsers" placeholder="🔍 Chèche itilizatè..." onkeyup="filterUsers()">
         </div>
@@ -66,6 +78,11 @@
                         <i class="fas fa-edit"></i>
                     </a>
                     {% if user.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="delete-form" onsubmit="return confirmToggle('{{ user.pseudo }}', {{ 'false' if user.is_active else 'true' }})">
+                        <button type="submit" class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}" title="{% if user.is_active %}Bloke kont{% else %}Debloke kont{% endif %}">
+                            {% if user.is_active %}<i class="fas fa-ban"></i> Bloke{% else %}<i class="fas fa-check-circle"></i> Debloke{% endif %}
+                        </button>
+                    </form>
                     <form method="POST" action="{{ url_for('admin.admin_delete_user', user_id=user.id) }}" class="delete-form" onsubmit="return confirmDelete()">
                         <button type="submit" class="btn btn-sm btn-danger" title="Efase">
                             <i class="fas fa-trash"></i>
@@ -143,6 +160,46 @@
 
 .stat-label {
     font-size: 14px;
+}
+
+.block-by-pseudo {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.block-by-pseudo h3 {
+    margin: 0 0 8px 0;
+    color: #856404;
+    font-size: 18px;
+}
+
+.block-hint {
+    margin: 0 0 12px 0;
+    color: #856404;
+    font-size: 14px;
+}
+
+.block-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.block-form input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.block-form input:focus {
+    outline: none;
+    border-color: #dc3545;
 }
 
 .search-filter {
@@ -246,6 +303,11 @@
 </style>
 
 <script>
+function confirmToggle(pseudo, isActive) {
+    const action = isActive ? 'bloke' : 'debloke';
+    return confirm('⚠️ Èske ou sèten ou vle ' + action + ' kont "' + pseudo + '" sa a?');
+}
+
 function filterUsers() {
     const input = document.getElementById('searchUsers');
     const filter = input.value.toLowerCase();

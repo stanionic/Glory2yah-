@@ -348,6 +348,58 @@ def admin_delete_user(user_id):
     return redirect(url_for('admin.manage_users'))
 
 
+@admin_bp.route('/users/<int:user_id>/toggle', methods=['POST'])
+@login_required
+@admin_required
+def toggle_user_status(user_id):
+    """Toggle is_active for a user (Block/Unblock in 1 click).
+    Admin cannot block/unblock themselves."""
+    user = User.query.get_or_404(user_id)
+
+    if user.id == current_user.id:
+        flash('Ou pa ka bloke oswa debloke tèt ou menm!', 'error')
+        return redirect(url_for('admin.manage_users'))
+
+    user.is_active = not user.is_active
+    db.session.commit()
+
+    action = 'bloke' if not user.is_active else 'debloke'
+    flash(f'Kont "{user.pseudo or user.whatsapp}" {action} avèk siksè!', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+
+@admin_bp.route('/users/block-by-pseudo', methods=['POST'])
+@login_required
+@admin_required
+def block_user_by_pseudo():
+    """Block a user account by their pseudo (from the DB).
+    Pseudo search is case-insensitive. Safely blocks the account."""
+    pseudo = request.form.get('pseudo', '').strip()
+
+    if not pseudo:
+        flash('Tanpri antre yon pseudo pou bloke.', 'error')
+        return redirect(url_for('admin.manage_users'))
+
+    user = User.query.filter(User.pseudo.ilike(pseudo)).first()
+
+    if not user:
+        flash(f'Pseudo "{pseudo}" pa jwenn nan baz done a.', 'error')
+        return redirect(url_for('admin.manage_users'))
+
+    if user.id == current_user.id:
+        flash('Ou pa ka bloke tèt ou menm!', 'error')
+        return redirect(url_for('admin.manage_users'))
+
+    if not user.is_active:
+        flash(f'Kont "{user.pseudo}" deja bloke.', 'info')
+        return redirect(url_for('admin.manage_users'))
+
+    user.is_active = False
+    db.session.commit()
+    flash(f'Kont "{user.pseudo}" bloke avèk siksè! Li pa ka konekte ankò.', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+
 @admin_bp.route('/ads')
 @login_required
 @admin_required
