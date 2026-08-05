@@ -533,10 +533,22 @@ def view_ad(ad_id):
 
 @main_bp.route('/submit_ad', methods=['GET', 'POST'])
 def submit_ad():
-    """Submit a new ad/post"""
+    """Submit a new ad/post.
+
+    Frontend (submit_ad.html) provides:
+      - `price_gourdes` : the HTG value the user types in (if ad_type == 'sell')
+      - `price_gkach`   : a hidden input, updated from HTG by client-side JS
+                          (falls back to `0` if JS is disabled / errors / client
+                          rate-mismatch).
+    Backend therefore MUST recompute `price_gkach` from `price_gourdes`
+    using the authoritative app rate GKACH_TO_HTG_RATE whenever ad_type=sell
+    and the hidden input is still zero. Also enforces required-field guards
+    that match the HTML5 `required` attributes so submit never fails silently
+    when someone bypasses client-side validation.
+    """
     from flask_login import login_required, current_user
     from app.services.ad_service import AdService
-    from app.utils.validators import validate_whatsapp, sanitize_text, ValidationError
+    from app.utils.validators import sanitize_text, ValidationError
     import os
     import uuid
     from flask import flash, redirect, url_for
@@ -552,11 +564,45 @@ def submit_ad():
             ad_type = request.form.get('ad_type', 'publish')
             title = sanitize_text(request.form.get('title', ''))
             description = sanitize_text(request.form.get('description', ''))
-            price_gkach = int(request.form.get('price_gkach', 0) or 0)
+
+            # Price handling: prefer the server-computed value so we don't
+            # depend on the client-side hidden-input update.
+            price_gourdes_raw = (request.form.get('price_gourdes') or '').strip() or '0'
+            try:
+                price_gourdes = float(price_gourdes_raw) if ad_type == 'sell' else 0.0
+            except (ValueError, TypeError):
+                price_gourdes = 0.0
+            price_gkach_form = (request.form.get('price_gkach') or '').strip() or '0'
+            try:
+                price_gkach = int(price_gkach_form)
+            except (ValueError, TypeError):
+                price_gkach = 0
+            if ad_type == 'sell' and price_gkach <= 0 and price_gourdes > 0:
+                rate = float(current_app.config.get('GKACH_TO_HTG_RATE', 1.2) or 1.2)
+                try:
+                    price_gkach = int(round(float(price_gourdes) / rate))
+                except Exception:
+                    price_gkach = 0
+
             category = sanitize_text(request.form.get('category', '')) or 'other'
 
-            # Resolve absolute upload folder path
-            upload_folder = os.path.join(current_app.root_path, '..', current_app.config['UPLOAD_FOLDER'])
+            # Back-end required-field guards (matches the HTML5 `required`).
+            if not title or not title.strip():
+                raise ValidationError('Tanpri ekri yon tit pou piblisite w la.')
+            if not description or not description.strip():
+                raise ValidationError('Tanpri ekri yon deskripsyon pou piblisite w la.')
+            if ad_type == 'sell' and price_gkach <= 0:
+                raise ValidationError('Tanpri mete yon pri val pou piblisite sa a (VANN bezwen pri).')
+            accept_terms = request.form.get('accept_terms', '')
+            if str(accept_terms).lower() not in ('on', 'true', '1', 'yes', 'oui'):
+                raise ValidationError(
+                    "Ou dwe li epi aksepte Kondisyon ak Règleman anvan ou soumèt."
+                )
+
+            # Upload folder: resolve relative to instance dir robustly.
+            upload_folder = os.path.join(
+                current_app.root_path, '..', current_app.config['UPLOAD_FOLDER']
+            )
             upload_folder = os.path.abspath(upload_folder)
             os.makedirs(upload_folder, exist_ok=True)
 
@@ -567,9 +613,13 @@ def submit_ad():
                 for i in range(1, 4):
                     file = request.files.get(f'image_{i}')
                     if file and file.filename:
-                        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'jpg'
+                        ext = (
+                            file.filename.rsplit('.', 1)[-1].lower()
+                            if '.' in file.filename else 'jpg'
+                        )
                         filename = f'{uuid.uuid4().hex}.{ext}'
-                        file.save(os.path.join(upload_folder, filename))
+                        dest = os.path.join(upload_folder, filename)
+                        file.save(dest)
                         images.append(filename)
                 if not images:
                     raise ValidationError('Tanpri telechaje omwen yon imaj.')
@@ -577,7 +627,10 @@ def submit_ad():
             elif media_type == 'video':
                 file = request.files.get('video')
                 if file and file.filename:
-                    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'mp4'
+                    ext = (
+                        file.filename.rsplit('.', 1)[-1].lower()
+                        if '.' in file.filename else 'mp4'
+                    )
                     filename = f'{uuid.uuid4().hex}.{ext}'
                     file.save(os.path.join(upload_folder, filename))
                     video = filename
