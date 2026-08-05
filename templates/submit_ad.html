@@ -4,7 +4,7 @@
 <div class="container">
     <h2>Fè Piblisite W</h2>
     
-    <form method="POST" enctype="multipart/form-data" class="ad-form">
+    <form method="POST" enctype="multipart/form-data" class="ad-form" novalidate id="submitAdForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="form-group">
@@ -114,12 +114,12 @@
 
         <div class="form-group">
             <div class="terms-checkbox">
-                <input type="checkbox" id="accept_terms" name="accept_terms" required>
+                <input type="checkbox" id="accept_terms" name="accept_terms" checked>
                 <label for="accept_terms">Mwen li epi mwen aksepte <a href="#" onclick="showTermsModal()">Kondisyon ak Règleman</a> pou soumisyon piblisite ak itilizasyon Gkach</label>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-gold">Soumèt Piblisite</button>
+        <button type="submit" class="btn btn-gold" id="submitAdBtn">Soumèt Piblisite</button>
     </form>
 </div>
 
@@ -201,6 +201,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
     adTypeRadios.forEach(radio => radio.addEventListener('change', togglePriceSection));
     togglePriceSection();
+
+    // ===== Enable "Soumèt Piblisite" button: UX feedback + explicit Creole alerts =====
+    // (form has novalidate so HTML5 browser bubbles no longer silently block clicks)
+    const form = document.getElementById('submitAdForm');
+    const submitBtn = document.getElementById('submitAdBtn');
+    let submitting = false;
+
+    form.addEventListener('submit', function(e){
+        if (submitting) { e.preventDefault(); return; }
+        const missing = [];
+        const mediaType = (document.querySelector('input[name="media_type"]:checked') || {}).value;
+        if (mediaType === 'images') {
+            const img1 = document.querySelector('input[name="image_1"]');
+            if (!img1 || !(img1.files && img1.files.length > 0)) {
+                missing.push("Imaj 1 obliigatwa");
+            }
+        } else {
+            const v = document.querySelector('input[name="video"]');
+            if (!v || !(v.files && v.files.length > 0)) {
+                missing.push("Videyo obliigatwa");
+            }
+        }
+        const title = (document.getElementById('title') || {}).value || '';
+        if (!title.trim()) missing.push("Tit piblisite obliigatwa");
+        const desc = (document.getElementById('description') || {}).value || '';
+        if (!desc.trim()) missing.push("Deskripsyon obliigatwa");
+
+        const adType = (document.querySelector('input[name="ad_type"]:checked') || {}).value;
+        if (adType === 'sell') {
+            const pr = parseFloat((document.getElementById('price_gourdes') || {}).value || '0');
+            if (!pr || pr <= 0) missing.push("Pri HTG obliigatwa pou VANN");
+            const qty = parseInt((document.getElementById('quantity') || {}).value || '0', 10);
+            if (!qty || qty < 1) missing.push("Kantite (estòk) obliigatwa pou VANN");
+        }
+
+        const termsChecked = document.getElementById('accept_terms').checked;
+        if (!termsChecked) missing.push("Ou dwe aksepte Kondisyon ak Règleman");
+
+        if (missing.length > 0) {
+            e.preventDefault();
+            alert("Tanpri ranpli sa yo anvan ou soumèt:\n\n - " + missing.join("\n - "));
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return false;
+        }
+
+        submitting = true;
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Soumèt k ap fèt... tann yon ti moman";
+        submitBtn.style.opacity = 0.7;
+        submitBtn.style.cursor = "progress";
+        return true;
+    });
 });
 </script>
 
