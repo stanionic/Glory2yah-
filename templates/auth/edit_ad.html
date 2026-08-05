@@ -3,46 +3,142 @@
 {% block title %}Modifye Piblisite - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-8">
-    <div class="flex items-center justify-between mb-6">
+<style>
+    .editad-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#fef3c7 0%,#ede9fe 100%); }
+    .editad-card { background:#fff; border-radius:24px; padding:28px 30px; box-shadow:0 14px 44px rgba(58,38,128,.12); max-width:820px; margin:0 auto }
+    .editad-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:20px }
+    .editad-ttl { margin:0; font-size:26px; font-weight:800; color:#1a133a; display:flex; align-items:center; gap:10px }
+    .editad-ttl::before { content:"✏️"; font-size:26px }
+    .editad-sub { color:#6b5ba8; font-size:13px }
+    .editad-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+    .editad-btn-prim { background:linear-gradient(135deg,#3a2680,#7e42bf); color:#fff; box-shadow:0 8px 22px rgba(58,38,128,.3); width:100%; justify-content:center; padding:14px 16px; border-radius:16px }
+    .editad-btn-prim:hover { transform:translateY(-2px) }
+    .editad-btn-ghost { background:#f3eefe; color:#3a2680 }
+    .editad-btn-ghost:hover { background:#e7dbfb; transform:translateY(-2px) }
+    .editad-btn-rose { background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3 }
+    .editad-btn-rose:hover { background:#fecdd3; transform:translateY(-2px) }
+
+    .editad-label { display:block; font-weight:800; color:#1a133a; font-size:13.5px; margin:14px 0 8px }
+    .editad-label-sm { font-weight:600; font-size:12px; color:#6b5ba8; margin-top:4px; display:block }
+    .editad-input, .editad-textarea, .editad-number {
+        width:100%; padding:14px 16px; border-radius:16px;
+        border:2px solid #e9dffb; background:#fbf9ff; color:#1a133a;
+        font-size:15px; font-weight:600; transition:all .15s ease;
+    }
+    .editad-textarea { resize:vertical; min-height:120px; line-height:1.55 }
+    .editad-input:focus, .editad-textarea:focus, .editad-number:focus {
+        outline:none; border-color:#7e42bf; background:#fff;
+        box-shadow:0 0 0 4px rgba(126,66,191,.12)
+    }
+
+    .editad-status {
+        display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px;
+        font-weight:800; font-size:13px; margin: 10px 0 0 0;
+    }
+    .editad-status.approved { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+    .editad-status.under_review { background:#fffbeb; color:#b45309; border:1px solid #fde68a }
+    .editad-status.rejected { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+    .editad-status.pending { background:#f8fafc; color:#475569; border:1px solid #cbd5e1 }
+    .editad-status::before { content:''; width:8px; height:8px; border-radius:50%;
+        background:currentColor }
+    .editad-status.under_review::before { animation: editad-pulse 1.8s infinite }
+    @keyframes editad-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    .editad-preview {
+        margin-top:20px; padding:18px; border-radius:20px; background:linear-gradient(135deg,#fff7ed,#fef3c7);
+        border:1.5px solid #fed7aa;
+    }
+    .editad-preview h4 { margin:0 0 8px 0; color:#92400e; font-size:15px; font-weight:800 }
+    .editad-imgs { display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px }
+    .editad-img { border-radius:14px; overflow:hidden; aspect-ratio:1/1; background:#fde68a; display:flex; align-items:center; justify-content:center; color:#92400e; font-weight:800; border:1.5px solid #fbbf24 }
+    .editad-img img { width:100%; height:100%; object-fit:cover }
+
+    .editad-actions { display:flex; gap:10px; margin-top:24px; flex-wrap:wrap }
+
+    @media(max-width:640px){ .editad-card { padding:20px 18px } .editad-ttl { font-size:22px } }
+</style>
+
+<div class="editad-wrap">
+<div class="editad-card">
+
+    <div class="editad-head">
         <div>
-            <h1 class="text-2xl font-bold">Modifye Piblisite</h1>
-            <p class="text-sm text-gray-500">Chanje detay piblisite ou a</p>
+            <h1 class="editad-ttl">Modifye Piblisite</h1>
+            <div class="editad-sub">Chanje detay piblisite ou a</div>
+            {% if ad.admin_status %}
+            <span class="editad-status {{ (ad.admin_status or 'pending')|lower|replace(' ', '_') }}">
+                {% if (ad.admin_status or 'pending')|lower == 'approved' %}Apwouve
+                {% elif (ad.admin_status or 'pending')|lower == 'under_review' %}An Revizyon
+                {% elif (ad.admin_status or 'pending')|lower == 'rejected' %}Rejte
+                {% else %}An Atann{% endif %}
+            </span>
+            {% endif %}
         </div>
-        <a href="{{ url_for('auth.my_ads') }}" class="text-sm text-gray-500 hover:text-gray-700">
-            ← Retounen nan lis la
+        <a href="{{ url_for('auth.my_ads') }}" class="editad-btn editad-btn-ghost">
+            <i class="fas fa-arrow-left"></i> Retounen nan lis la
         </a>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Tit</label>
-                <input type="text" name="title" value="{{ ad.title }}" required minlength="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Deskripsyon</label>
-                <textarea name="description" required minlength="10" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">{{ ad.description }}</textarea>
-            </div>
-            
-            {% if ad.ad_type == 'sell' %}
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Pri (Gkach)</label>
-                <input type="number" name="price_gkach" value="{{ ad.price_gkach }}" min="1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-            </div>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label class="editad-label" for="ea-title">Tit piblisite</label>
+        <input id="ea-title" type="text" name="title" value="{{ ad.title or '' }}" required minlength="3" class="editad-input" placeholder="Ekri yon tit ki atrakte...">
+        <span class="editad-label-sm">Maksimòm 100 karaktè, min 3</span>
+
+        <label class="editad-label" for="ea-desc">Deskripsyon</label>
+        <textarea id="ea-desc" name="description" required minlength="10" rows="5" class="editad-textarea" placeholder="Dekri sa w ap vann oswa ofri an detay...">{{ ad.description or '' }}</textarea>
+        <span class="editad-label-sm">Maksimòm 300 karaktè, min 10</span>
+
+        {% if ad.ad_type == 'sell' %}
+        <label class="editad-label" for="ea-price">Pri an Gkach 💰</label>
+        <input id="ea-price" type="number" name="price_gkach" value="{{ ad.price_gkach or 0 }}" min="1" step="1" class="editad-number" placeholder="Pri an Gkach (eg: 1500)">
+        <span class="editad-label-sm">Pri minimòm 1 Gkach. Pa met nonb desimal.</span>
+        {% endif %}
+
+        {% set has_imgs = false %}
+        {% if ad.images %}
+            {% if ad.images is string %}
+                {% set imgs = ad.images.split(',') if ',' in ad.images else [ad.images] %}
+            {% else %}
+                {% set imgs = ad.images %}
             {% endif %}
-            
-            <div class="flex gap-3">
-                <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition">
-                    <i class="fas fa-save mr-2"></i>Sove Chanjman
-                </button>
-                <a href="{{ url_for('auth.my_ads') }}" class="px-6 py-3 bg-gray-50 text-gray-600 rounded-xl font-bold border border-gray-100 hover:bg-gray-100 transition">
-                    Anile
-                </a>
+            {% set imgs_filtered = [] %}
+            {% for im in imgs %}{% if im and im|trim %}{% set _ = imgs_filtered.append(im|trim) %}{% endif %}{% endfor %}
+            {% if imgs_filtered|length > 0 %}{% set has_imgs = true %}{% endif %}
+        {% endif %}
+
+        {% if has_imgs or ad.image_url or ad.video %}
+        <div class="editad-preview">
+            <h4>🖼️ Imaj / Medya aktyèl yo (pa ka modifye isit la)</h4>
+            <div class="editad-imgs">
+                {% if ad.image_url %}
+                <div class="editad-img"><img src="{{ ad.image_url }}" alt="imaj piblisite"></div>
+                {% endif %}
+                {% if has_imgs %}
+                    {% for im in imgs_filtered[:6] %}
+                    <div class="editad-img"><img src="{{ url_for('static', filename='uploads/' + im) }}" alt="imaj {{ loop.index }}"></div>
+                    {% endfor %}
+                {% endif %}
+                {% if ad.video %}
+                <div class="editad-img" style="background:#fce7f3; border-color:#f9a8d4; color:#be185d">
+                    <i class="fas fa-video"></i>
+                </div>
+                {% endif %}
             </div>
-        </form>
-    </div>
+        </div>
+        {% endif %}
+
+        <div class="editad-actions">
+            <button type="submit" class="editad-btn editad-btn-prim">
+                <i class="fas fa-save"></i> Sove Chanjman
+            </button>
+            <a href="{{ url_for('auth.my_ads') }}" class="editad-btn editad-btn-rose" style="flex:1 1 180px; justify-content:center;">
+                <i class="fas fa-times"></i> Anile
+            </a>
+        </div>
+    </form>
+
+</div>
 </div>
 {% endblock %}
