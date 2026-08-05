@@ -69,6 +69,24 @@
     margin-bottom: 20px;
 }
 
+.product-stock {
+    margin: 0 0 18px 0;
+}
+.product-stock span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13.5px;
+    border: 1.5px solid;
+}
+.product-stock .stock-high { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.product-stock .stock-med  { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.product-stock .stock-low  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.product-stock .stock-out  { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
 .product-description {
     line-height: 1.6;
     color: #666;
@@ -237,6 +255,21 @@
             <h1>{{ ad.title }}</h1>
             <div class="product-price">{{ ad.price_gkach }} Gkach</div>
             <div class="product-price-htg">{{ ad.price_gkach|gkach_to_htg|format_htg }}</div>
+            {% if ad.ad_type == 'sell' %}
+            {% set qty_raw = ad.quantity if ad.quantity is defined and ad.quantity is not none and ad.quantity != '' else 1 %}
+            {% set qty_n = qty_raw if qty_raw is number else (qty_raw|default(1)|int) %}
+            <div class="product-stock">
+                {% if qty_n >= 10 %}
+                <span class="stock-high"><i class="fas fa-check-circle"></i> Anpil nan estòk ({{ qty_n }} disponib)</span>
+                {% elif qty_n >= 4 %}
+                <span class="stock-med"><i class="fas fa-boxes"></i> Genyen kèk ({{ qty_n }} disponib)</span>
+                {% elif qty_n >= 1 %}
+                <span class="stock-low"><i class="fas fa-exclamation-triangle"></i> Ti kantite! ({{ qty_n }} sèlman)</span>
+                {% else %}
+                <span class="stock-out"><i class="fas fa-times-circle"></i> Pa disponib kounye a</span>
+                {% endif %}
+            </div>
+            {% endif %}
             <div class="product-description">{{ ad.description }}</div>
 
             <div class="action-buttons">

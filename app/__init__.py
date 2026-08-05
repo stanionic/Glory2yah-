@@ -242,9 +242,13 @@ def create_app(config_name=None):
                 db.session.execute(_sa_text('ALTER TABLE ads ADD COLUMN category VARCHAR(50) DEFAULT "other"'))
                 db.session.commit()
                 app.logger.info('ADS MIGRATION: added ads.category column (default "other")')
+            if 'quantity' not in _ads_cols:
+                db.session.execute(_sa_text('ALTER TABLE ads ADD COLUMN quantity INTEGER DEFAULT 1'))
+                db.session.commit()
+                app.logger.info('ADS MIGRATION: added ads.quantity column (default 1)')
         except Exception as _e:
             db.session.rollback()
-            app.logger.warning(f"ADS MIGRATION: could not add ads.category column: {_e}")
+            app.logger.warning(f"ADS MIGRATION: could not add ads columns: {_e}")
         
         # Create default loan products if they don't exist
         try:

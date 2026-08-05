@@ -169,6 +169,12 @@
                                         <span class="admin-badge {{ t_cls }}"><i class="fas fa-tags"></i> {{ t_label }}</span>
                                         <span class="admin-badge {{ st_cls }}">{{ st_label }}</span>
                                         <span class="admin-badge {{ pay_cls }}">{{ pay_label }}</span>
+                                        {% if ad.ad_type == 'sell' %}
+                                            {% set qty_val = ad.quantity if ad.quantity is defined and ad.quantity is not none else 1 %}
+                                            {% set qty_s = qty_val|string if qty_val is number else (qty_val or '1')|string %}
+                                            {% set q_n = qty_s|int %}
+                                            <span class="admin-badge qty {% if q_n <= 3 %}qty-low{% elif q_n >= 10 %}qty-high{% else %}qty-med{% endif %}" title="Estòk disponib"><i class="fas fa-boxes"></i> {{ q_n }} nan estòk</span>
+                                        {% endif %}
                                         {% if ad.ad_type == 'sell' and ad.price_gkach is defined and ad.price_gkach > 0 %}
                                         <span class="admin-ad-price">{{ ad.price_gkach }} Gkach</span>
                                         {% endif %}

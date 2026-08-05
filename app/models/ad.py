@@ -26,6 +26,7 @@ class Ad(BaseModel):
     # Type & Pricing
     ad_type = db.Column(db.String(10), nullable=False, default='sell')  # publish, sell
     price_gkach = db.Column(db.Integer, default=0)
+    quantity = db.Column(db.Integer, default=1)
 
     # Category (marketplace browsing) — default 'other'
     category = db.Column(db.String(50), default='other', index=True)
@@ -50,6 +51,7 @@ class Ad(BaseModel):
     # Constraints
     __table_args__ = (
         CheckConstraint('price_gkach >= 0', name='check_positive_price'),
+        CheckConstraint('quantity >= 0', name='check_positive_quantity'),
     )
     
     def get_images_list(self):
@@ -123,6 +125,7 @@ class Ad(BaseModel):
             'embed_url': embed_url,
             'ad_type': self.ad_type,
             'price_gkach': self.price_gkach,
+            'quantity': self.quantity if self.quantity is not None else (1 if self.ad_type == 'sell' else 0),
             'category': self.category or 'other',
             'admin_status': self.admin_status,
             'like_count': self.like_count,

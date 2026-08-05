@@ -103,6 +103,13 @@
             </div>
         </div>
 
+        <div class="form-group" id="quantity-section" style="display: none;">
+            <label for="quantity">Kantite Disponib (Estòk) *</label>
+            <input type="number" id="quantity" name="quantity" min="1" step="1" value="1"
+                   placeholder="Egzamp: 10 (konbyen ou genyen nan men w)">
+            <small>Konbyen inividal ou genyen nan estòk. Minimòm 1.</small>
+        </div>
+
         <input type="hidden" id="price_gkach" name="price_gkach" value="0">
 
         <div class="form-group">
@@ -166,19 +173,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const adTypeRadios = document.querySelectorAll('input[name="ad_type"]');
     const priceSection = document.getElementById('price-section');
+    const quantitySection = document.getElementById('quantity-section');
     const priceInput = document.getElementById('price_gourdes');
+    const quantityInput = document.getElementById('quantity');
 
     function togglePriceSection() {
         const selectedAdType = document.querySelector('input[name="ad_type"]:checked').value;
         if (selectedAdType === 'publish') {
             priceSection.style.display = 'none';
+            quantitySection.style.display = 'none';
             priceInput.required = false;
             priceInput.value = '';
+            quantityInput.required = false;
+            quantityInput.value = '1';
             document.getElementById('price_gkach').value = '0';
             document.getElementById('gkach-price').textContent = '0';
         } else {
             priceSection.style.display = 'block';
+            quantitySection.style.display = 'block';
             priceInput.required = true;
+            quantityInput.required = true;
+            if (!quantityInput.value || parseInt(quantityInput.value, 10) < 1) {
+                quantityInput.value = '1';
+            }
         }
     }
 

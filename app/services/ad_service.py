@@ -15,7 +15,8 @@ class AdService:
     
     @staticmethod
     def create_ad(user_whatsapp, title, description, media_type, images=None, 
-                  video=None, ad_type='sell', price_gkach=0, category='other'):
+                  video=None, ad_type='sell', price_gkach=0, category='other',
+                  quantity=None):
         """Create new ad"""
         user_whatsapp = validate_whatsapp(user_whatsapp)
         
@@ -34,8 +35,17 @@ class AdService:
         
         if ad_type == 'sell':
             price_gkach = validate_amount(price_gkach, min_amount=1)
+            # Quantity: normalise for sell ads. Default = 1.
+            try:
+                q = int(quantity) if quantity is not None else 1
+            except (ValueError, TypeError):
+                q = 1
+            if q < 1:
+                q = 1
+            quantity = q
         else:
             price_gkach = 0
+            quantity = 0
         
         # Validate category against known list (fallback 'other')
         from app.utils.validators import sanitize_text
@@ -57,6 +67,7 @@ class AdService:
             video=video,
             ad_type=ad_type,
             price_gkach=price_gkach,
+            quantity=quantity,
             category=category or 'other',
             admin_status='under_review',
             payment_status='pending'
@@ -164,7 +175,7 @@ class AdService:
     
     @staticmethod
     def update_ad(ad_id, user_whatsapp, title=None, description=None, 
-                 price_gkach=None, images=None, video=None):
+                 price_gkach=None, images=None, video=None, quantity=None):
         """Update an existing ad (only owner can do this)"""
         ad = Ad.query.filter_by(ad_id=ad_id, user_whatsapp=user_whatsapp).first()
         if not ad:
@@ -177,6 +188,13 @@ class AdService:
         if price_gkach is not None and ad.ad_type == 'sell':
             price_gkach = validate_amount(price_gkach, min_amount=1)
             ad.price_gkach = price_gkach
+        if quantity is not None and ad.ad_type == 'sell':
+            try:
+                q = int(quantity)
+            except (ValueError, TypeError):
+                q = None
+            if q is not None and q >= 1:
+                ad.quantity = q
         if images is not None:
             ad.images = images
         if video is not None:

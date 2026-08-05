@@ -614,13 +614,20 @@ def edit_ad(ad_id):
             price_gkach = request.form.get('price_gkach', None)
             if price_gkach:
                 price_gkach = int(price_gkach)
-            
+            quantity = request.form.get('quantity', None)
+            if quantity is not None and quantity != '':
+                try:
+                    quantity = int(quantity)
+                except (ValueError, TypeError):
+                    quantity = None
+
             AdService.update_ad(
                 ad_id=ad_id,
                 user_whatsapp=current_user.whatsapp,
                 title=title,
                 description=description,
-                price_gkach=price_gkach
+                price_gkach=price_gkach,
+                quantity=quantity
             )
             
             flash('Piblisite modifye avèk siksè!', 'success')

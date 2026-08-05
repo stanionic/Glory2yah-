@@ -586,6 +586,19 @@ def submit_ad():
 
             category = sanitize_text(request.form.get('category', '')) or 'other'
 
+            # Quantity (inventory) — only meaningful for ad_type == 'sell'.
+            # Enforce server-side: min 1, integer. Fallback 1 if missing/invalid
+            # so JS-bypassed submit still produces a valid sell ad (single item).
+            quantity_raw = (request.form.get('quantity') or '').strip() or '1'
+            try:
+                quantity = int(quantity_raw)
+            except (ValueError, TypeError):
+                quantity = 1
+            if ad_type == 'sell' and quantity < 1:
+                quantity = 1
+            elif ad_type != 'sell':
+                quantity = 0
+
             # Back-end required-field guards (matches the HTML5 `required`).
             if not title or not title.strip():
                 raise ValidationError('Tanpri ekri yon tit pou piblisite w la.')
@@ -593,6 +606,8 @@ def submit_ad():
                 raise ValidationError('Tanpri ekri yon deskripsyon pou piblisite w la.')
             if ad_type == 'sell' and price_gkach <= 0:
                 raise ValidationError('Tanpri mete yon pri val pou piblisite sa a (VANN bezwen pri).')
+            if ad_type == 'sell' and (quantity is None or quantity < 1):
+                raise ValidationError('Tanpri mete kantite ki disponib (minimòm 1).')
             accept_terms = request.form.get('accept_terms', '')
             if str(accept_terms).lower() not in ('on', 'true', '1', 'yes', 'oui'):
                 raise ValidationError(
@@ -646,7 +661,8 @@ def submit_ad():
                 video=video,
                 ad_type=ad_type,
                 price_gkach=price_gkach,
-                category=category
+                category=category,
+                quantity=quantity
             )
 
             flash('Piblisite soumèt avèk siksè! Li ap revize pa admin yo.', 'success')

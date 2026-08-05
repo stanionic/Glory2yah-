@@ -416,6 +416,11 @@
     color: #9d174d;
 }
 
+.admin-badge.qty { background: #eef2ff; color: #3730a3; }
+.admin-badge.qty.qty-high { background: #ecfdf5; color: #047857; }
+.admin-badge.qty.qty-med  { background: #eff6ff; color: #1d4ed8; }
+.admin-badge.qty.qty-low  { background: #fffbeb; color: #b45309; }
+
 .admin-badge.dot::before {
     content: '';
     display: inline-block;

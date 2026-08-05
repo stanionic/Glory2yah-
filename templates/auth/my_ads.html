@@ -57,6 +57,11 @@
         background: linear-gradient(135deg,#ecfdf5,#d1fae5); color: #047857;
         font-weight: 800; font-size: 14px; margin: 0 0 10px 0;
     }
+    .myads-qty {
+        display: inline-block; padding: 5px 11px; border-radius: 10px;
+        background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe;
+        font-weight: 700; font-size: 12.5px; margin: 0 10px 10px 0;
+    }
     .myads-desc {
         color: var(--g2y-text-secondary); font-size: 14.5px; line-height: 1.55;
         margin: 0 0 14px 0; word-break: break-word;
@@ -208,6 +213,14 @@
                         <h3 class="myads-title">{{ ad.title or 'Piblisite' }}</h3>
                         {% if ad.price_gkach and ad.price_gkach > 0 %}
                         <p class="myads-price">💰 {{ ad.price_gkach }} Gkach</p>
+                        {% endif %}
+                        {% if ad.ad_type == 'sell' and ad.quantity is defined and ad.quantity is not none and ad.quantity != '' %}
+                        {% set qty_num = ad.quantity|int if ad.quantity is number else (ad.quantity|default(0)|int) %}
+                        {% if qty_num > 0 %}
+                        <p class="myads-qty">📦 {{ qty_num }} disponib{% if qty_num <= 3 %} <span style="color:#dc2626">(Ti kantite!)</span>{% endif %}</p>
+                        {% else %}
+                        <p class="myads-qty" style="color:#b91c1c">📦 Estòk fini</p>
+                        {% endif %}
                         {% endif %}
                         <p class="myads-desc">
                             {{ ad.description or '' }}

@@ -94,6 +94,10 @@
         <label class="editad-label" for="ea-price">Pri an Gkach 💰</label>
         <input id="ea-price" type="number" name="price_gkach" value="{{ ad.price_gkach or 0 }}" min="1" step="1" class="editad-number" placeholder="Pri an Gkach (eg: 1500)">
         <span class="editad-label-sm">Pri minimòm 1 Gkach. Pa met nonb desimal.</span>
+
+        <label class="editad-label" for="ea-quantity">📦 Kantite Disponib (Estòk)</label>
+        <input id="ea-quantity" type="number" name="quantity" value="{{ ad.quantity if ad.quantity is defined and ad.quantity else 1 }}" min="1" step="1" class="editad-number" placeholder="Konbyen ki disponib (eg: 25)">
+        <span class="editad-label-sm">Kantite ki nan estòk. Minimòm 1.</span>
         {% endif %}
 
         {% set has_imgs = false %}
