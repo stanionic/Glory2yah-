@@ -444,15 +444,22 @@ def block_user_by_pseudo():
 @login_required
 @admin_required
 def manage_ads():
-    """Manage all ads"""
-    page = request.args.get('page', 1, type=int)
-    ads = AdService.get_approved_ads(page=page, per_page=20)
-    
-    return render_template(
-        'admin.html',
-        ads=ads,
-        current_user=current_user
-    )
+    """Manage all ads.
+
+    Redirects to the admin dashboard (/admin/) which already includes:
+    - Full ad review grid (approve/reject/verify payment/delete/contact)
+    - Batch management (create groups of 5 approved ads)
+    - Gkach management, QR admin login, popup settings, Facebook tests, demo video
+
+    The previous implementation rendered admin.html with only `ads` and
+    `current_user`, causing Jinja UndefinedError ('admin_settings' is
+    undefined, 'batches' is undefined, 'users_gkach' is undefined) and
+    therefore HTTP 500 Internal Server Error on Render. Also, the data
+    source was incorrectly limited to *approved* ads only
+    (`AdService.get_approved_ads`), while the dashboard properly uses
+    `Ad.query.all()` so admins can *review* pending ads too.
+    """
+    return redirect(url_for('admin.dashboard'))
 
 
 @admin_bp.route('/ad/<ad_id>')
