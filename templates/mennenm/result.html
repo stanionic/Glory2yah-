@@ -3,49 +3,110 @@
 {% block title %}Chofè ki disponib - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+<style>
+.mn-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 40%,#ffedd5 100%); }
+.mn-card { max-width:940px; margin:0 auto }
+.mn-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; align-items:center; margin-bottom:22px }
+.mn-ttl { margin:0; font-size:24px; font-weight:900; color:#78350f; display:flex; align-items:center; gap:10px }
+.mn-ttl::before { content:"🚕"; font-size:26px }
+.mn-route { color:#b45309; font-size:13px; margin-top:5px; font-weight:700; display:flex; align-items:center; gap:8px }
+.mn-route i { color:#d97706 }
+.mn-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s; justify-content:center }
+.mn-btn-ghost { background:#fef3c7; color:#92400e }
+.mn-btn-ghost:hover { background:#fde68a; transform:translateY(-2px) }
+.mn-btn-primary { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow:0 8px 22px rgba(217,119,6,.3) }
+.mn-btn-primary:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(217,119,6,.4) }
+
+.mn-driver-list { display:flex; flex-direction:column; gap:16px }
+.mn-driver-card { background:linear-gradient(135deg,#fff,#fffbeb); border:1.5px solid #fed7aa; border-radius:24px; padding:22px; box-shadow:0 10px 30px rgba(180,83,9,.08); transition:all .22s ease }
+.mn-driver-card:hover { transform:translateY(-4px); box-shadow:0 18px 44px rgba(180,83,9,.16); border-color:#fdba74 }
+.mn-driver-row { display:flex; gap:18px; align-items:center; flex-wrap:wrap }
+.mn-avatar { flex-shrink:0; width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg,#d97706,#f59e0b); border:3.5px solid #fff; box-shadow:0 10px 26px rgba(217,119,6,.26); display:flex; align-items:center; justify-content:center; font-size:34px }
+.mn-info { flex:1 1 260px; min-width:200px }
+.mn-driver-name { margin:0 0 5px; font-size:19px; font-weight:900; color:#78350f }
+.mn-phone { display:flex; align-items:center; gap:8px; color:#92400e; font-size:13.5px; font-weight:700; margin-bottom:6px }
+.mn-phone i { color:#d97706 }
+.mn-rating { display:flex; align-items:center; gap:6px }
+.mn-stars { color:#f59e0b; display:flex; gap:2px }
+.mn-rating-val { font-size:13.5px; font-weight:800; color:#78350f }
+.mn-action-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:12px }
+.mn-price { font-size:30px; font-weight:900; color:#d97706; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; line-height:1 }
+.mn-price small { font-size:14px; font-weight:700; opacity:.8 }
+.mn-empty { padding:50px 28px; background:linear-gradient(135deg,#fff,#fffbeb); border:2px dashed #fed7aa; border-radius:24px; text-align:center; color:#92400e }
+.mn-empty-icon { font-size:58px; margin-bottom:12px; opacity:.6 }
+.mn-empty h3 { margin:0 0 6px; color:#78350f; font-size:20px; font-weight:800 }
+.mn-empty p { margin:0; font-size:14px; font-weight:600 }
+
+@media(max-width:640px){
+  .mn-avatar { width:64px; height:64px; font-size:28px }
+  .mn-driver-card { padding:18px }
+  .mn-action-wrap { flex-direction:row; justify-content:space-between; align-items:center; width:100% }
+  .mn-price { font-size:24px }
+  .mn-ttl { font-size:20px }
+}
+</style>
+
+<div class="mn-wrap">
+<div class="mn-card">
+
+    <div class="mn-head">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">🚕 Chofè ki disponib</h1>
-            <p class="text-sm text-gray-500 mt-1">Vwayaj: {{ from_location }} → {{ to_location }}</p>
+            <h1 class="mn-ttl">Chofè ki disponib</h1>
+            <div class="mn-route">
+                <i class="fas fa-route"></i>
+                <span><strong>{{ from_location }}</strong> &nbsp;→&nbsp; <strong>{{ to_location }}</strong></span>
+            </div>
         </div>
-        <a href="{{ url_for('mennem.index') }}" class="mt-4 sm:mt-0 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center gap-1">
+        <a href="{{ url_for('mennem.index') }}" class="mn-btn mn-btn-ghost">
             <i class="fas fa-arrow-left"></i> Retounen
         </a>
     </div>
 
-    <div class="grid gap-6">
+    {% if drivers and drivers|length > 0 %}
+    <div class="mn-driver-list">
         {% for driver in drivers %}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-4xl flex-shrink-0 border-2 border-primary/20">
-                    👤
-                </div>
-                <div class="flex-1">
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900">{{ driver.name }}</h3>
-                            <p class="text-gray-600 mt-1 flex items-center gap-2">
-                                <i class="fas fa-phone text-gray-400"></i> {{ driver.phone }}
-                            </p>
-                            <div class="flex items-center gap-2 mt-2">
-                                <div class="flex items-center gap-1 text-yellow-500">
-                                    <i class="fas fa-star"></i>
-                                    <span class="text-sm font-semibold text-gray-700">{{ driver.rating }}</span>
-                                </div>
-                            </div>
+        <div class="mn-driver-card">
+            <div class="mn-driver-row">
+                <div class="mn-avatar">👤</div>
+                <div class="mn-info">
+                    <h3 class="mn-driver-name">{{ driver.name }}</h3>
+                    <div class="mn-phone"><i class="fas fa-phone"></i> {{ driver.phone }}</div>
+                    <div class="mn-rating">
+                        <div class="mn-stars" aria-label="{{ driver.rating }} etwal">
+                            {% set r = driver.rating or 0 %}
+                            {% set full = r|int %}
+                            {% for i in range(5) %}
+                                {% if i < full %}<i class="fas fa-star"></i>
+                                {% elif i == full and r - full >= 0.5 %}<i class="fas fa-star-half-alt"></i>
+                                {% else %}<i class="far fa-star" style="opacity:.3"></i>{% endif %}
+                            {% endfor %}
                         </div>
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <p class="text-3xl font-bold text-primary">{{ driver.price_gkach }} Gkach</p>
-                            <a href="{{ url_for('mennem.book', driver_index=loop.index0, from_loc=from_location, to_loc=to_location) }}" class="inline-flex items-center gap-2 bg-primary text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all duration-200">
-                                <i class="fas fa-check-circle"></i> Rezève Chofè
-                            </a>
-                        </div>
+                        <span class="mn-rating-val">{{ driver.rating }} / 5</span>
                     </div>
+                </div>
+                <div class="mn-action-wrap">
+                    <div class="mn-price">{{ driver.price_gkach }} <small>Gk</small></div>
+                    <a href="{{ url_for('mennem.book', driver_index=loop.index0, from_loc=from_location, to_loc=to_location) }}" class="mn-btn mn-btn-primary">
+                        <i class="fas fa-check-circle"></i> Rezève Chofè
+                    </a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="mn-empty">
+        <div class="mn-empty-icon">🚕</div>
+        <h3>Okenn chofè disponib</h3>
+        <p>Pa gen chofè ki disponib pou wout sa a kounye a. Esaye ankò pita oswa chanjman destinasyon.</p>
+        <div style="margin-top:18px">
+            <a href="{{ url_for('mennem.index') }}" class="mn-btn mn-btn-primary">
+                <i class="fas fa-redo"></i> Chèche Ankò
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
 </div>
 {% endblock %}

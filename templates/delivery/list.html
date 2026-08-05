@@ -3,17 +3,69 @@
 {% block title %}Livrezon mwen yo - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-8">Livrezon mwen yo</h1>
+<style>
+.dlv-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 40%,#e0e7ff 100%); }
+.dlv-card { background:#fff; border-radius:24px; padding:26px 28px; box-shadow:0 14px 44px rgba(30,64,175,.12); max-width:820px; margin:0 auto }
+.dlv-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:20px }
+.dlv-ttl { margin:0; font-size:26px; font-weight:800; color:#1e3a8a; display:flex; align-items:center; gap:10px }
+.dlv-ttl::before { content:"🚚"; font-size:28px }
+.dlv-sub { color:#64748b; font-size:13px }
+.dlv-btn { padding:11px 16px; border-radius:14px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s }
+.dlv-btn-ghost { background:#e0e7ff; color:#3730a3 }
+.dlv-btn-ghost:hover { background:#c7d2fe; transform:translateY(-2px) }
+
+.dlv-list { display:flex; flex-direction:column; gap:14px }
+.dlv-item { display:block; text-decoration:none; background:linear-gradient(135deg,#fff,#f8fafc); border:1.5px solid #e0e7ff; border-radius:20px; padding:18px 20px; transition:all .18s ease; box-shadow:0 2px 10px rgba(30,58,138,.05) }
+.dlv-item:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(30,58,138,.15); border-color:#a5b4fc }
+.dlv-item-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px }
+.dlv-id { font-size:10.5px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:.6px }
+.dlv-item-ttl { font-size:14.5px; font-weight:800; color:#1e293b; margin-top:4px }
+.dlv-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.3px }
+.dlv-chip::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor }
+.dlv-chip.completed { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0 }
+.dlv-chip.negotiating { background:#fffbeb; color:#b45309; border:1px solid #fde68a }
+.dlv-chip.negotiating::before { animation:dlv-pulse 1.6s infinite }
+.dlv-chip.awaiting_delivery { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe }
+.dlv-chip.awaiting_delivery::before { animation:dlv-pulse 1.6s infinite }
+.dlv-chip.cancelled { background:#fef2f2; color:#dc2626; border:1px solid #fecaca }
+.dlv-chip.default { background:#f8fafc; color:#64748b; border:1px solid #cbd5e1 }
+@keyframes dlv-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+.dlv-item-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; padding-top:14px; border-top:1.5px dashed #e2e8f0 }
+.dlv-date { display:flex; align-items:center; gap:7px; color:#64748b; font-size:12px; font-weight:600 }
+.dlv-price { text-align:right }
+.dlv-price-lbl { font-size:10.5px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.4px }
+.dlv-price-val { font-size:16px; font-weight:900; color:#1d4ed8; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+
+.dlv-empty { padding:42px 28px; background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:2px dashed #cbd5e1; border-radius:22px; text-align:center }
+.dlv-empty-icon { width:80px; height:80px; margin:0 auto 18px; background:#e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:36px }
+.dlv-empty h3 { margin:0 0 8px; color:#1e293b; font-size:20px; font-weight:800 }
+.dlv-empty p { margin:0; color:#64748b; font-size:14px; font-weight:600 }
+
+@media(max-width:640px){ .dlv-card { padding:20px 16px } .dlv-ttl { font-size:22px } }
+</style>
+
+<div class="dlv-wrap">
+<div class="dlv-card">
+
+    <div class="dlv-head">
+        <div>
+            <h1 class="dlv-ttl">Livrezon mwen yo</h1>
+            <div class="dlv-sub">Swiv etap tout livrezon ou yo</div>
+        </div>
+        <a href="{{ url_for('main.index') }}" class="dlv-btn dlv-btn-ghost">
+            <i class="fas fa-arrow-left"></i> Dakèil
+        </a>
+    </div>
 
     {% if deliveries %}
-    <div class="space-y-4">
+    <div class="dlv-list">
         {% for delivery in deliveries %}
-        <a href="{{ url_for('delivery.view', delivery_id=delivery.delivery_id) }}" class="block bg-white rounded-2xl p-4 shadow-sm border border-gray-100 tap-scale">
-            <div class="flex justify-between items-start mb-3">
+        <a href="{{ url_for('delivery.view', delivery_id=delivery.delivery_id) }}" class="dlv-item">
+            <div class="dlv-item-head">
                 <div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID: {{ delivery.delivery_id[:8] }}</span>
-                    <h3 class="font-bold text-sm mt-1">
+                    <span class="dlv-id">ID: {{ delivery.delivery_id[:8] }}</span>
+                    <h3 class="dlv-item-ttl">
                         {% if delivery.buyer_whatsapp == current_user.whatsapp %}
                             Acha nan men {{ delivery.seller_whatsapp }}
                         {% else %}
@@ -21,36 +73,39 @@
                         {% endif %}
                     </h3>
                 </div>
-                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase
-                    {% if delivery.status == 'completed' %}bg-green-100 text-green-600
-                    {% elif delivery.status == 'negotiating' %}bg-yellow-100 text-yellow-600
-                    {% elif delivery.status == 'awaiting_delivery' %}bg-blue-100 text-blue-600
-                    {% else %}bg-gray-100 text-gray-600{% endif %}">
-                    {{ delivery.status }}
+                <span class="dlv-chip {{ (delivery.status or 'default')|lower|replace(' ', '_') }}">
+                    {% set s = (delivery.status or 'default')|lower %}
+                    {% if s == 'completed' %}Konplete
+                    {% elif s == 'negotiating' %}Negosyasyon
+                    {% elif s == 'awaiting_delivery' %}An Atann Livrezon
+                    {% elif s == 'cancelled' %}Anile
+                    {% elif s == 'awaiting_buyer_confirmation' %}Atann Konfimasyon
+                    {% else %}Lò{% endif %}
                 </span>
             </div>
-            
-            <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-calendar text-gray-300 text-xs"></i>
-                    <span class="text-xs text-gray-500">{{ delivery.created_at }}</span>
+            <div class="dlv-item-foot">
+                <div class="dlv-date">
+                    <i class="fas fa-calendar"></i>
+                    {% set cd = delivery.created_at %}
+                    {% if cd is string %}{{ cd[:10] }}
+                    {% else %}{{ cd.strftime('%Y-%m-%d') if cd else '—' }}{% endif %}
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] text-gray-400 font-medium">Total</p>
-                    <p class="font-bold text-primary">{{ delivery.total_price + delivery.delivery_cost }} Gkach</p>
+                <div class="dlv-price">
+                    <div class="dlv-price-lbl">Total</div>
+                    <div class="dlv-price-val">{{ (delivery.total_price or 0) + (delivery.delivery_cost or 0) }} Gk</div>
                 </div>
             </div>
         </a>
         {% endfor %}
     </div>
     {% else %}
-    <div class="bg-white rounded-3xl p-12 text-center border border-gray-100">
-        <div class="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200 text-3xl">
-            <i class="fas fa-truck"></i>
-        </div>
-        <h3 class="text-xl font-bold mb-2">Pa gen livrezon</h3>
-        <p class="text-gray-400 text-sm">Ou pa gen okenn livrezon ki ankou kounye a.</p>
+    <div class="dlv-empty">
+        <div class="dlv-empty-icon"><i class="fas fa-truck"></i></div>
+        <h3>Pa gen livrezon</h3>
+        <p>Ou pa gen okenn livrezon ki ankou kounye a.</p>
     </div>
     {% endif %}
+
+</div>
 </div>
 {% endblock %}

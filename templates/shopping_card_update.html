@@ -4,228 +4,240 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mete Ajou Kat Achte - Glory2yahPub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing:border-box }
+        body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+               background:linear-gradient(135deg,#fdf2f8 0%,#fce7f3 40%,#e0e7ff 100%); min-height:100vh; padding:22px; color:#1f2937 }
+        .crt-wrap { max-width:840px; margin:0 auto }
+        .crt-head { text-align:center; margin-bottom:20px }
+        .crt-head h1 { margin:0 0 6px; font-size:26px; font-weight:900; color:#831843; display:inline-flex; gap:10px; align-items:center }
+        .crt-head h1 i { color:#db2777 }
+        .crt-sub { color:#9d174d; font-size:13px; font-weight:600; margin:0 }
+        .crt-alert { padding:12px 16px; border-radius:14px; margin-bottom:10px; font-weight:700; font-size:13.5px; display:flex; gap:10px; align-items:center }
+        .crt-alert.success { background:#ecfdf5; color:#065f46; border:1.5px solid #a7f3d0 }
+        .crt-alert.danger  { background:#fef2f2; color:#991b1b; border:1.5px solid #fecaca }
+        .crt-alert.info    { background:#eff6ff; color:#1e40af; border:1.5px solid #bfdbfe }
+        .crt-alert.warn    { background:#fffbeb; color:#92400e; border:1.5px solid #fed7aa }
+
+        .crt-section { background:#fff; border-radius:22px; padding:22px; margin-bottom:18px; box-shadow:0 14px 40px rgba(131,24,67,.10); border:1.5px solid #fce7f3 }
+        .crt-sec-head { margin:0 0 16px; padding:14px 18px; margin:-22px -22px 18px; border-radius:22px 22px 0 0; font-size:16px; font-weight:900; color:#fff; display:flex; gap:8px; align-items:center }
+        .crt-sec-head.prim { background:linear-gradient(135deg,#be185d,#7c3aed) }
+        .crt-sec-head.warn { background:linear-gradient(135deg,#d97706,#f59e0b); color:#422006 }
+        .crt-sec-head.info { background:linear-gradient(135deg,#2563eb,#6366f1) }
+        .crt-sec-head.ok   { background:linear-gradient(135deg,#059669,#10b981) }
+
+        .crt-item { display:grid; grid-template-columns: 80px 1fr auto; gap:14px; padding:12px 0; border-bottom:1.5px dashed #fce7f3; align-items:center }
+        .crt-item:last-child { border-bottom:none }
+        .crt-img { width:72px; height:72px; border-radius:14px; overflow:hidden; background:#fdf2f8; border:2px solid #fbcfe8; display:flex; align-items:center; justify-content:center; color:#9d174d; font-size:26px }
+        .crt-img img { width:100%; height:100%; object-fit:cover }
+        .crt-info h4 { margin:0 0 4px; font-size:14.5px; font-weight:800; color:#831843 }
+        .crt-info small { font-size:12px; font-weight:700; color:#9d174d }
+        .crt-price { font-size:15px; font-weight:900; color:#059669; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+        .crt-total-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0 }
+        .crt-total-row b { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:900 }
+        .crt-total-row span { font-weight:700; color:#6b7280 }
+        .crt-grand { padding-top:12px; margin-top:10px; border-top:2px solid #fdf2f8 }
+        .crt-grand b { color:#059669; font-size:22px }
+
+        .crt-field { margin-bottom:14px }
+        .crt-label { display:block; font-weight:800; color:#831843; font-size:13.5px; margin-bottom:7px; display:flex; gap:8px; align-items:center }
+        .crt-label small { font-weight:600; color:#be185d; font-size:11.5px; opacity:.9; display:block; margin-top:3px }
+        .crt-input, .crt-textarea {
+          padding:13px 15px; border-radius:14px; border:2px solid #fbcfe8; background:#fdf2f8;
+          color:#831843; font-weight:700; font-size:14.5px; width:100%; transition:all .15s; font-family:inherit;
+        }
+        .crt-textarea { resize:vertical; min-height:90px; line-height:1.55 }
+        .crt-input::placeholder, .crt-textarea::placeholder { color:#db2777; opacity:.55; font-weight:600 }
+        .crt-input:focus, .crt-textarea:focus { outline:none; border-color:#db2777; background:#fff; box-shadow:0 0 0 4px rgba(219,39,119,.12) }
+
+        .crt-check { display:flex; gap:10px; align-items:flex-start; margin:14px 0; padding:12px 14px; background:#fdf2f8; border-radius:14px; border:1.5px solid #fce7f3 }
+        .crt-check input { width:20px; height:20px; accent-color:#be185d; margin-top:2px; cursor:pointer; flex-shrink:0 }
+        .crt-check label { font-weight:700; color:#831843; font-size:13.5px; cursor:pointer }
+        .crt-check label a { color:#be185d }
+
+        .crt-btn { padding:13px 18px; border-radius:16px; border:none; font-weight:800; font-size:14.5px; cursor:pointer; text-decoration:none; display:inline-flex; gap:8px; align-items:center; justify-content:center; transition:transform .18s,box-shadow .18s,background .18s }
+        .crt-btn:hover { transform:translateY(-2px) }
+        .crt-btn-primary { background:linear-gradient(135deg,#be185d,#7c3aed); color:#fff; box-shadow:0 8px 22px rgba(190,24,93,.28); flex:1 }
+        .crt-btn-primary:hover { box-shadow:0 12px 30px rgba(190,24,93,.38) }
+        .crt-btn-success { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 8px 22px rgba(16,185,129,.3); flex:1 }
+        .crt-btn-danger-outline { background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; flex:1 }
+        .crt-btn-danger-outline:hover { background:#fecdd3 }
+        .crt-btn-gray { background:#f3f4f6; color:#374151; padding:12px 18px }
+        .crt-btn-gray:hover { background:#e5e7eb }
+        .crt-btn-block { width:100% }
+        .crt-btn-grid { display:flex; flex-direction:column; gap:10px }
+        .crt-btn-row { display:flex; gap:10px; flex-wrap:wrap }
+
+        .crt-center { text-align:center; padding:16px 6px 6px }
+        .crt-icon-xl { font-size:56px; margin-bottom:14px; color:#3b82f6 }
+        .crt-center h3 { margin:0 0 8px; color:#1e3a8a; font-size:20px; font-weight:900 }
+        .crt-center p { margin:0 0 16px; color:#475569; font-size:14px; font-weight:600 }
+
+        @media(max-width:640px){
+            body { padding:14px }
+            .crt-section { padding:16px }
+            .crt-sec-head { margin:-16px -16px 16px; padding:12px 16px; border-radius:18px 18px 0 0; font-size:14.5px }
+            .crt-item { grid-template-columns:64px 1fr }
+            .crt-img { width:56px; height:56px; font-size:20px }
+            .crt-btn-row { flex-direction:column }
+            .crt-btn-primary, .crt-btn-success, .crt-btn-danger-outline, .crt-btn-gray { width:100% }
+            .crt-head h1 { font-size:22px }
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <!-- Header -->
-                <div class="text-center mb-4">
-                    <h2 class="text-primary">
-                        <i class="fas fa-shopping-cart me-2"></i>
-                        Mete Ajou Kat Achte
-                    </h2>
-                    <p class="text-muted">Finalize demann ou a</p>
-                </div>
+<body>
+    <div class="crt-wrap">
+        <div class="crt-head">
+            <h1><i class="fas fa-shopping-cart"></i> Mete Ajou Kat Achte</h1>
+            <p class="crt-sub">Finalize demann ou a</p>
+        </div>
 
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <!-- Cart Summary -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Atik nan Panier Ou
-                        </h5>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="crt-alert {{ 'danger' if category == 'error' else 'success' }}">
+                        <i class="fas fa-{{ 'triangle-exclamation' if category == 'error' else 'circle-check' }}"></i>
+                        {{ message }}
                     </div>
-                    <div class="card-body">
-                        {% for item in cart_items %}
-                            <div class="row align-items-center mb-3 pb-3 border-bottom">
-                                <div class="col-3">
-                                    {% if item.ad.images %}
-                                        <img src="{{ url_for('static', filename='uploads/' + item.ad.images.split(',')[0]) }}" 
-                                             class="img-fluid rounded" alt="{{ item.ad.title }}">
-                                    {% else %}
-                                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="height: 80px;">
-                                            <i class="fas fa-image fa-2x"></i>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-6">
-                                    <h6 class="mb-1">{{ item.ad.title }}</h6>
-                                    <small class="text-muted">Kantite: {{ item.quantity }}</small>
-                                    <div class="text-success fw-bold">{{ item.subtotal }} Gkach</div>
-                                </div>
-                                <div class="col-3 text-end">
-                                    {% if mode == 'seller_updated' %}
-                                        <small class="text-muted">Livrezon: {{ item.shipping_fee }} Gkach</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-                        <div class="row mt-3">
-                            <div class="col-6">
-                                <strong>Total Pwodwi:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                <strong>{{ total_price }} Gkach</strong>
-                            </div>
-                        </div>
-
-                        {% if mode == 'seller_updated' %}
-                            {% set total_shipping = cart_items|sum(attribute='shipping_fee') %}
-                            <div class="row mt-2">
-                                <div class="col-6">
-                                    <strong>Total Livrezon:</strong>
-                                </div>
-                                <div class="col-6 text-end">
-                                    <strong>{{ total_shipping }} Gkach</strong>
-                                </div>
-                            </div>
-                            <div class="row mt-2 pt-2 border-top">
-                                <div class="col-6">
-                                    <strong>NOUVO PRI TOTAL:</strong>
-                                </div>
-                                <div class="col-6 text-end">
-                                    <strong class="text-success h5">{{ total_price + total_shipping }} Gkach</strong>
-                                </div>
-                            </div>
+        <!-- Cart Summary -->
+        <div class="crt-section">
+            <h2 class="crt-sec-head prim"><i class="fas fa-list"></i> Atik nan Panier Ou</h2>
+            {% for item in cart_items %}
+            <div class="crt-item">
+                <div class="crt-img">
+                    {% set has_image = false %}
+                    {% if item.ad.images %}
+                        {% set imgs = item.ad.images.split(',') if (item.ad.images is string and ',' in item.ad.images) else (item.ad.images if item.ad.images is not string else [item.ad.images]) %}
+                        {% set im0 = imgs[0]|trim if imgs|length > 0 else '' %}
+                        {% if im0 %}{% set has_image = true %}
+                            <img src="{{ url_for('static', filename='uploads/' + im0) }}" alt="{{ item.ad.title }}">
                         {% endif %}
-                    </div>
+                    {% endif %}
+                    {% if not has_image %}<i class="fas fa-image"></i>{% endif %}
                 </div>
-
-                <!-- Forms based on mode -->
-                {% if mode == 'enter_shipping' %}
-                <!-- Buyer: Enter Shipping Details -->
-                <div class="card">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="fas fa-truck me-2"></i>
-                            Ajoute Enfòmasyon Livrezon
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST">
-                            <div class="mb-3">
-                                <label for="delivery_address" class="form-label">
-                                    <i class="fas fa-map-marker-alt me-2"></i>
-                                    Adrès Livrezon Konplè
-                                </label>
-                                <textarea class="form-control" id="delivery_address" name="delivery_address" 
-                                          rows="3" placeholder="Antre adrès kote ou vle resevwa pakè a..." 
-                                          required>{{ delivery_address }}</textarea>
-                                <div class="form-text">Bay adrès konplè kote ou vle resevwa pakè a. Vandè a pral mete pri livrezon an.</div>
-                            </div>
-
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Nòt:</strong> Vandè a pral mete pri livrezon an apre yo resevwa demann ou a. Ou pral resevwa yon notifikasyon WhatsApp ak pri total la.
-                            </div>
-
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="accept_terms" name="accept_terms" required>
-                                <label class="form-check-label" for="accept_terms">
-                                    Mwen aksepte <a href="#" class="text-primary">kondisyon ak règleman yo</a>
-                                </label>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-paper-plane me-2"></i>
-                                    Voye Bay Vandè
-                                </button>
-                                <a href="{% if session.get('user_id') %}{{ url_for('view_cart') }}{% else %}{{ url_for('view_cart', whatsapp=whatsapp) }}{% endif %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Retounen nan Panier
-                                </a>
-                            </div>
-                        </form>
-                    </div>
+                <div class="crt-info">
+                    <h4>{{ item.ad.title }}</h4>
+                    <small>Kantite: {{ item.quantity }}</small>
+                    <div style="margin-top:4px" class="crt-price">{{ item.subtotal }} Gk</div>
                 </div>
-
-                {% elif mode == 'waiting_for_seller' %}
-                <!-- Buyer: Waiting for Seller -->
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-clock me-2"></i>
-                            Ap tann Vandè a
-                        </h5>
-                    </div>
-                    <div class="card-body text-center">
-                        <div class="mb-4">
-                            <i class="fas fa-hourglass-half fa-3x text-info mb-3"></i>
-                            <h4>N ap tann Vandè a mete pri livrezon an</h4>
-                            <p class="text-muted">Vandè a pral kontakte ou sou WhatsApp lè yo fin mete ajou pri livrezon an.</p>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Ou pral resevwa yon mesaj WhatsApp ak nouvo pri total la. Lè sa a, ou ka konfime oswa anile achte a.
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <a href="{{ url_for('achte') }}" class="btn btn-primary">
-                                <i class="fas fa-home me-2"></i>
-                                Retounen nan Magazen an
-                            </a>
-                            <a href="{% if session.get('user_id') %}{{ url_for('view_cart') }}{% else %}{{ url_for('view_cart', whatsapp=whatsapp) }}{% endif %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-shopping-cart me-2"></i>
-                                Tcheke Panier anko
-                            </a>
-                        </div>
-                    </div>
+                <div style="text-align:right">
+                    {% if mode == 'seller_updated' %}
+                        <small style="font-weight:700; color:#be185d">Livrezon: {{ item.shipping_fee or 0 }} Gk</small>
+                    {% endif %}
                 </div>
+            </div>
+            {% endfor %}
 
-                {% elif mode == 'seller_updated' %}
-                <!-- Buyer: Confirm Updated Price -->
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Konfime Achte a
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-success">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Vandè a mete ajou pri livrezon an. Tanpri konfime si ou dakò ak nouvo pri total la.
-                        </div>
-
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Lè ou klike sou "Konfime Achte", ou pral peye ak Gkach ou genyen nan balans ou.
-                        </div>
-
-                        <form method="POST">
-                            <div class="d-grid gap-2">
-                                <button type="submit" name="action" value="confirm" class="btn btn-success btn-lg">
-                                    <i class="fas fa-check me-2"></i>
-                                    Konfime Achte
-                                </button>
-                                <button type="submit" name="action" value="decline" class="btn btn-outline-danger">
-                                    <i class="fas fa-times me-2"></i>
-                                    Anile Achte
-                                </button>
-                            </div>
-                        </form>
-                        
-                        <div class="mt-3 text-center">
-                            <small class="text-muted">
-                                Si ou pa gen ase Gkach, ou ka 
-                                <a href="{{ url_for('achte_gkach') }}" class="text-primary">achtè Gkach la</a>.
-                            </small>
-                        </div>
-                    </div>
-                </div>
+            <div style="margin-top:14px; padding:14px 16px; background:#fdf2f8; border-radius:16px; border:1.5px solid #fce7f3">
+                <div class="crt-total-row"><span>Total Pwodwi:</span><b style="color:#831843">{{ total_price or 0 }} Gk</b></div>
+                {% if mode == 'seller_updated' %}
+                    {% set total_shipping = 0 %}
+                    {% for item in cart_items %}{% set total_shipping = total_shipping + (item.shipping_fee or 0) %}{% endfor %}
+                    <div class="crt-total-row"><span>Total Livrezon:</span><b style="color:#be185d">{{ total_shipping }} Gk</b></div>
+                    <div class="crt-total-row crt-grand"><span>NOUVO PRI TOTAL:</span><b>{{ (total_price or 0) + total_shipping }} Gk</b></div>
                 {% endif %}
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        {% if mode == 'enter_shipping' %}
+        <!-- Buyer: Enter Shipping Details -->
+        <div class="crt-section">
+            <h2 class="crt-sec-head warn"><i class="fas fa-truck"></i> Ajoute Enfòmasyon Livrezon</h2>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="crt-field">
+                    <label class="crt-label" for="delivery_address">
+                        <i class="fas fa-map-marker-alt" style="color:#d97706"></i>
+                        Adrès Livrezon Konplè
+                        <small>Bay adrès konplè kote ou vle resevwa pakè a. Vandè a pral mete pri livrezon an.</small>
+                    </label>
+                    <textarea class="crt-textarea" id="delivery_address" name="delivery_address" rows="3"
+                              placeholder="Antre adrès konplè kote ou vle resevwa pakè a..."
+                              required>{{ delivery_address or '' }}</textarea>
+                </div>
+
+                <div class="crt-alert info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Nòt:</strong> Vandè a pral mete pri livrezon an apre yo resevwa demann ou a. Ou pral resevwa yon notifikasyon WhatsApp ak pri total la.
+                </div>
+
+                <label class="crt-check">
+                    <input type="checkbox" id="accept_terms" name="accept_terms" required>
+                    <span>
+                        <label for="accept_terms" style="margin:0; padding:0; background:none; border:none">Mwen aksepte <a href="#">kondisyon ak règleman yo</a></label>
+                    </span>
+                </label>
+
+                <div class="crt-btn-grid">
+                    <button type="submit" class="crt-btn crt-btn-primary crt-btn-block">
+                        <i class="fas fa-paper-plane"></i> Voye Bay Vandè
+                    </button>
+                    <a href="{% if session.get('user_id') %}{{ url_for('view_cart') }}{% else %}{{ url_for('view_cart', whatsapp=whatsapp) }}{% endif %}"
+                       class="crt-btn crt-btn-gray crt-btn-block" style="justify-content:center">
+                        <i class="fas fa-arrow-left"></i> Retounen nan Panier
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {% elif mode == 'waiting_for_seller' %}
+        <!-- Buyer: Waiting for Seller -->
+        <div class="crt-section">
+            <h2 class="crt-sec-head info"><i class="fas fa-clock"></i> Ap tann Vandè a</h2>
+            <div class="crt-center">
+                <div class="crt-icon-xl"><i class="fas fa-hourglass-half"></i></div>
+                <h3>N ap tann Vandè a mete pri livrezon an</h3>
+                <p>Vandè a pral kontakte ou sou WhatsApp lè yo fin mete ajou pri livrezon an.</p>
+            </div>
+            <div class="crt-alert info">
+                <i class="fas fa-info-circle"></i>
+                Ou pral resevwa yon mesaj WhatsApp ak nouvo pri total la. Lè sa a, ou ka konfime oswa anile achte a.
+            </div>
+            <div class="crt-btn-grid" style="margin-top:16px">
+                <a href="{{ url_for('achte') }}" class="crt-btn crt-btn-primary">
+                    <i class="fas fa-home"></i> Retounen nan Magazen an
+                </a>
+                <a href="{% if session.get('user_id') %}{{ url_for('view_cart') }}{% else %}{{ url_for('view_cart', whatsapp=whatsapp) }}{% endif %}"
+                   class="crt-btn crt-btn-gray" style="justify-content:center">
+                    <i class="fas fa-shopping-cart"></i> Tcheke Panier anko
+                </a>
+            </div>
+        </div>
+
+        {% elif mode == 'seller_updated' %}
+        <!-- Buyer: Confirm Updated Price -->
+        <div class="crt-section">
+            <h2 class="crt-sec-head ok"><i class="fas fa-check-circle"></i> Konfime Achte a</h2>
+            <div class="crt-alert success" style="margin-bottom:10px">
+                <i class="fas fa-info-circle"></i>
+                Vandè a mete ajou pri livrezon an. Tanpri konfime si ou dakò ak nouvo pri total la.
+            </div>
+            <div class="crt-alert warn">
+                <i class="fas fa-exclamation-triangle"></i>
+                Lè ou klike sou <b>Konfime Achte</b>, ou pral peye ak Gkach ou genyen nan balans ou. Sa pa ka anile.
+            </div>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="crt-btn-grid" style="margin-top:14px">
+                    <button type="submit" name="action" value="confirm" class="crt-btn crt-btn-success">
+                        <i class="fas fa-check"></i> Konfime Achte
+                    </button>
+                    <button type="submit" name="action" value="decline" class="crt-btn crt-btn-danger-outline">
+                        <i class="fas fa-times"></i> Anile Achte
+                    </button>
+                </div>
+            </form>
+            <div style="text-align:center; margin-top:16px; font-size:12.5px; color:#6b7280; font-weight:600">
+                Si ou pa gen ase Gkach, ou ka
+                <a href="{{ url_for('achte_gkach') }}" style="color:#be185d; font-weight:800">achtè Gkach la →</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>

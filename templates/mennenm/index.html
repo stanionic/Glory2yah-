@@ -3,86 +3,121 @@
 {% block title %}Mennen M - Glory2YahPub{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+<style>
+.mn-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 40%,#ffedd5 100%); }
+.mn-card { background:#fff; border-radius:26px; padding:28px 30px; box-shadow:0 16px 48px rgba(180,83,9,.12); max-width:900px; margin:0 auto }
+.mn-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; align-items:center; margin-bottom:22px }
+.mn-ttl { margin:0; font-size:28px; font-weight:900; color:#78350f; display:flex; align-items:center; gap:10px }
+.mn-ttl::before { content:"🚕"; font-size:30px }
+.mn-sub { color:#b45309; font-size:13px; margin-top:4px; font-weight:600 }
+.mn-btn { padding:12px 18px; border-radius:16px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s; justify-content:center }
+.mn-btn-primary { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow:0 10px 26px rgba(217,119,6,.32) }
+.mn-btn-primary:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(217,119,6,.42) }
+.mn-btn-ghost { background:#fef3c7; color:#92400e }
+.mn-btn-ghost:hover { background:#fde68a; transform:translateY(-2px) }
+.mn-btn-white { background:#fff; color:#78350f; border:1.5px solid #fed7aa; box-shadow:0 6px 16px rgba(180,83,9,.08) }
+.mn-btn-white:hover { background:#fffbeb; border-color:#fdba74; transform:translateY(-2px); box-shadow:0 10px 24px rgba(180,83,9,.14) }
+
+.mn-form-box { background:linear-gradient(135deg,#fff,#fffbeb); border:1.5px solid #fed7aa; border-radius:22px; padding:26px; margin-bottom:22px; box-shadow:0 8px 28px rgba(180,83,9,.08) }
+.mn-form-ttl { margin:0 0 18px; font-size:17px; font-weight:800; color:#78350f; display:flex; align-items:center; gap:8px }
+.mn-field { margin-bottom:16px }
+.mn-label { display:block; font-size:13px; font-weight:800; color:#78350f; margin-bottom:8px }
+.mn-input { width:100%; padding:15px 17px; border-radius:18px; border:2px solid #fed7aa; background:#fffbeb; color:#78350f; font-size:15px; font-weight:700; transition:all .15s ease }
+.mn-input::placeholder { color:#d97706; opacity:.6; font-weight:600 }
+.mn-input:focus { outline:none; border-color:#d97706; background:#fff; box-shadow:0 0 0 5px rgba(217,119,6,.14) }
+
+.mn-banner { background:linear-gradient(135deg,#3b82f6 0%,#6366f1 100%); border-radius:22px; padding:24px 26px; margin-bottom:22px; color:#fff; text-align:center; box-shadow:0 12px 32px rgba(59,130,246,.28); border:1.5px solid #93c5fd }
+.mn-banner p { margin:0 0 14px; font-size:14.5px; font-weight:700; opacity:.95 }
+
+.mn-guide-box { background:linear-gradient(135deg,#fff,#fffbeb); border:1.5px solid #fed7aa; border-radius:22px; padding:26px; box-shadow:0 8px 28px rgba(180,83,9,.08) }
+.mn-guide-ttl { margin:0 0 20px; font-size:19px; font-weight:900; color:#78350f; display:flex; align-items:center; gap:8px }
+.mn-guide-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px }
+.mn-guide-step { display:flex; gap:14px; align-items:flex-start; padding:14px; border-radius:16px; background:#fffbeb; border:1.5px solid #fef3c7; transition:all .18s }
+.mn-guide-step:hover { transform:translateY(-2px); border-color:#fdba74; box-shadow:0 10px 24px rgba(180,83,9,.1) }
+.mn-step-num { flex-shrink:0; width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:15px; box-shadow:0 6px 16px rgba(217,119,6,.3) }
+.mn-step-body h4 { margin:0 0 5px; font-size:14px; font-weight:800; color:#78350f }
+.mn-step-body p { margin:0; color:#92400e; font-size:13px; line-height:1.5; font-weight:600 }
+
+@media(max-width:640px){
+  .mn-card { padding:20px 16px }
+  .mn-ttl { font-size:22px }
+  .mn-form-box, .mn-banner, .mn-guide-box { padding:20px 16px }
+  .mn-guide-grid { grid-template-columns:1fr }
+}
+</style>
+
+<div class="mn-wrap">
+<div class="mn-card">
+
+    <div class="mn-head">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">🚕 Mennen M</h1>
-            <p class="text-sm text-gray-500 mt-1">Jwenn yon chofè pre ou nan Ayiti</p>
+            <h1 class="mn-ttl">Mennen M</h1>
+            <div class="mn-sub">Jwenn yon chofè pre ou nan tout Ayiti</div>
         </div>
+        <a href="{{ url_for('main.index') }}" class="mn-btn mn-btn-ghost">
+            <i class="fas fa-arrow-left"></i> Dakèil
+        </a>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-        <h2 class="text-lg font-semibold text-gray-900 mb-6">📍 Kote ou vle ale?</h2>
-        
+    <div class="mn-form-box">
+        <h2 class="mn-form-ttl"><i class="fas fa-map-location-dot" style="color:#d97706"></i> Kote ou vle ale?</h2>
         <form method="POST" action="{{ url_for('mennem.find') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="space-y-5 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Depa</label>
-                    <input type="text" name="from" placeholder="Antre kote ou ye (eg: Delmas 32)" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Destinasyon</label>
-                    <input type="text" name="to" placeholder="Antre kote ou vle ale (eg: Pétion-Ville)" required class="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200">
-                </div>
+            <div class="mn-field">
+                <label class="mn-label" for="from">📍 Depa</label>
+                <input type="text" id="from" name="from" placeholder="Antre kote ou ye (eg: Delmas 32)" required class="mn-input">
             </div>
-            
-            <button type="submit" class="w-full bg-primary text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-3">
+            <div class="mn-field">
+                <label class="mn-label" for="to">🎯 Destinasyon</label>
+                <input type="text" id="to" name="to" placeholder="Antre kote ou vle ale (eg: Pétion-Ville)" required class="mn-input">
+            </div>
+            <button type="submit" class="mn-btn mn-btn-primary" style="width:100%; padding:16px; font-size:15px; border-radius:18px;">
                 <i class="fas fa-search text-lg"></i> Chèche Chofè
             </button>
         </form>
     </div>
 
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 text-center border border-blue-100">
-        <p class="text-gray-700 mb-4 font-medium">Ou se yon chofè?</p>
-        <a href="{{ url_for('mennem.register_driver') }}" class="inline-flex items-center gap-2 bg-white text-gray-800 font-bold py-3 px-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200">
+    <div class="mn-banner">
+        <p>Ou se yon chofè? Rejwenn kliyante nan tout Ayiti kounye a! 🚗💨</p>
+        <a href="{{ url_for('mennem.register_driver') }}" class="mn-btn mn-btn-white">
             <i class="fas fa-user-plus"></i> Anrejistre kòm Chofè
         </a>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <i class="fas fa-info-circle text-primary"></i> Kijan li fonksyone?
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="text-primary font-bold">1</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-gray-900">Antre wout ou</p>
-                    <p class="text-gray-600 text-sm">Depi adrès kote ou ye rive nan kote ou vle ale.</p>
+    <div class="mn-guide-box">
+        <h3 class="mn-guide-ttl"><i class="fas fa-circle-info" style="color:#d97706"></i> Kijan li fonksyone?</h3>
+        <div class="mn-guide-grid">
+            <div class="mn-guide-step">
+                <div class="mn-step-num">1</div>
+                <div class="mn-step-body">
+                    <h4>Antre wout ou</h4>
+                    <p>Depi adrès kote ou ye rive nan kote ou vle ale nan tout peyi a.</p>
                 </div>
             </div>
-            <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="text-primary font-bold">2</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-gray-900">Chwazi chofè</p>
-                    <p class="text-gray-600 text-sm">Chwazi nan mitan chofè ki disponib.</p>
+            <div class="mn-guide-step">
+                <div class="mn-step-num">2</div>
+                <div class="mn-step-body">
+                    <h4>Chwazi chofè</h4>
+                    <p>Chwazi nan mitan chofè ki disponib ak pri ki pi avantaje pou ou.</p>
                 </div>
             </div>
-            <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="text-primary font-bold">3</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-gray-900">Peye ak Gkach</p>
-                    <p class="text-gray-600 text-sm">Peye sou platfòm nan sanbleman ak Gkach.</p>
+            <div class="mn-guide-step">
+                <div class="mn-step-num">3</div>
+                <div class="mn-step-body">
+                    <h4>Peye ak Gkach</h4>
+                    <p>Peye sou platfòm nan sanbleman ak Gkach, pa gen risk pou ou.</p>
                 </div>
             </div>
-            <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="text-primary font-bold">4</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-gray-900">Kontakte chofè</p>
-                    <p class="text-gray-600 text-sm">Kontakte chofè a dirèkteman pa WhatsApp.</p>
+            <div class="mn-guide-step">
+                <div class="mn-step-num">4</div>
+                <div class="mn-step-body">
+                    <h4>Kontakte chofè</h4>
+                    <p>Kontakte chofè a dirèkteman pa WhatsApp pou w fin ranje wout la.</p>
                 </div>
             </div>
         </div>
     </div>
+
+</div>
 </div>
 {% endblock %}

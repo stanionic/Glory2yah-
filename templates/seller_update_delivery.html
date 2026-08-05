@@ -1,223 +1,248 @@
 <!DOCTYPE html>
 <html lang="ht">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mete Pri Livrezon - Glory2yahPub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mete Pri Livrezon - Glory2yahPub</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;background:linear-gradient(135deg,#fdf2f8 0%,#f5f3ff 50%,#eff6ff 100%);color:#1f2937;padding:24px 12px}
+  .crt-wrap{max-width:960px;margin:0 auto}
+  .crt-header{text-align:center;margin-bottom:28px}
+  .crt-header h2{font-size:28px;font-weight:700;background:linear-gradient(135deg,#be185d 0%,#7c3aed 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+  .crt-header p{color:#6b7280;font-size:14px}
+  .crt-header i{color:#be185d;margin-right:8px}
+  .crt-flash-list{margin-bottom:20px;display:flex;flex-direction:column;gap:10px}
+  .crt-flash{padding:12px 16px;border-radius:12px;font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  .crt-flash.crt-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+  .crt-flash.crt-ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+  .crt-card{background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.06);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(10px);margin-bottom:20px;overflow:hidden}
+  .crt-card-head{padding:16px 20px;display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;font-size:16px}
+  .crt-card-head.crt-info{background:linear-gradient(135deg,#0284c7 0%,#0ea5e9 100%)}
+  .crt-card-head.crt-prim{background:linear-gradient(135deg,#be185d 0%,#7c3aed 100%)}
+  .crt-card-head.crt-warn{background:linear-gradient(135deg,#b45309 0%,#f59e0b 100%);color:#1f2937}
+  .crt-card-head.crt-sec{background:linear-gradient(135deg,#4b5563 0%,#6b7280 100%)}
+  .crt-card-head.crt-ok{background:linear-gradient(135deg,#047857 0%,#10b981 100%)}
+  .crt-card-head.crt-muted{background:#f3f4f6;color:#374151}
+  .crt-card-body{padding:20px}
+  .crt-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+  .crt-info-item{font-size:14px;color:#374151}
+  .crt-info-item strong{color:#111827}
+  .crt-info-item i{width:18px;color:#6366f1;margin-right:6px}
+  .crt-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600}
+  .crt-badge-warn{background:#fef3c7;color:#92400e}
+  .crt-badge-ok{background:#d1fae5;color:#065f46}
+  .crt-cart-list{display:flex;flex-direction:column;gap:16px}
+  .crt-cart-item{display:grid;grid-template-columns:80px 1fr auto;gap:14px;align-items:center;padding-bottom:14px;border-bottom:1px solid #f3f4f6}
+  .crt-cart-item:last-child{border-bottom:none;padding-bottom:0}
+  .crt-img-wrap{width:80px;height:80px;border-radius:12px;overflow:hidden;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .crt-img-wrap img{width:100%;height:100%;object-fit:cover}
+  .crt-img-wrap i{color:#9ca3af;font-size:24px}
+  .crt-cart-title{font-size:14px;font-weight:600;color:#111827;margin-bottom:4px}
+  .crt-cart-meta{font-size:12px;color:#6b7280}
+  .crt-cart-price{font-size:15px;font-weight:700;color:#059669}
+  .crt-total-row{display:flex;justify-content:space-between;padding-top:16px;margin-top:8px;border-top:2px solid #f3f4f6;font-size:16px;font-weight:700}
+  .crt-total-row strong:last-child{color:#be185d;font-size:18px}
+  .crt-alert{padding:12px 16px;border-radius:12px;margin-bottom:18px;font-size:13px;display:flex;align-items:flex-start;gap:10px}
+  .crt-alert.crt-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+  .crt-alert.crt-warn{background:#fef3c7;border:1px solid #fde68a;color:#92400e}
+  .crt-alert i{margin-top:2px}
+  .crt-form-label{display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:8px}
+  .crt-form-label i{width:18px;color:#7c3aed;margin-right:6px}
+  .crt-input{width:100%;padding:14px 16px;border:2px solid #e5e7eb;border-radius:12px;font-size:16px;background:#fafafa;transition:all .2s}
+  .crt-input:focus{outline:none;border-color:#7c3aed;background:#fff;box-shadow:0 0 0 4px rgba(124,58,237,.1)}
+  .crt-form-hint{font-size:12px;color:#6b7280;margin-top:6px}
+  .crt-summary{background:linear-gradient(135deg,#fdf2f8 0%,#f5f3ff 100%);border-radius:14px;padding:16px;margin-bottom:18px;border:1px solid #fce7f3}
+  .crt-sum-line{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}
+  .crt-sum-line strong{color:#111827}
+  .crt-sum-line.crt-sum-total{border-top:2px solid #e9d5ff;margin-top:8px;padding-top:12px;font-size:18px;font-weight:700}
+  .crt-sum-line.crt-sum-total strong:last-child{color:#be185d}
+  .crt-btn-row{display:flex;flex-direction:column;gap:10px}
+  .crt-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:12px;font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+  .crt-btn i{width:16px}
+  .crt-btn-warn{background:linear-gradient(135deg,#b45309 0%,#f59e0b 100%);color:#fff;box-shadow:0 4px 12px rgba(245,158,11,.25)}
+  .crt-btn-warn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(245,158,11,.35)}
+  .crt-btn-ghost{background:#fff;color:#4b5563;border:2px solid #e5e7eb}
+  .crt-btn-ghost:hover{border-color:#9ca3af;background:#f9fafb}
+  .crt-btn-ok{background:linear-gradient(135deg,#047857 0%,#10b981 100%);color:#fff;box-shadow:0 4px 12px rgba(16,185,129,.25)}
+  .crt-btn-ok:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(16,185,129,.35)}
+  .crt-chat{max-height:300px;overflow-y:auto;padding:4px}
+  .crt-msg{margin-bottom:12px;display:flex}
+  .crt-msg.crt-right{justify-content:flex-end}
+  .crt-bubble{max-width:70%;padding:10px 14px;border-radius:14px;font-size:13px}
+  .crt-left .crt-bubble{background:#f3f4f6;color:#1f2937;border-top-left-radius:4px}
+  .crt-right .crt-bubble{background:linear-gradient(135deg,#be185d 0%,#7c3aed 100%);color:#fff;border-top-right-radius:4px}
+  .crt-msg-sender{font-size:11px;font-weight:700;margin-bottom:4px;opacity:.85}
+  .crt-msg-time{font-size:10px;margin-top:4px;opacity:.7}
+  .crt-cta-text{font-size:13px;color:#4b5563;margin-bottom:12px;line-height:1.5}
+  @media(max-width:640px){
+    body{padding:16px 8px}
+    .crt-header h2{font-size:22px}
+    .crt-info-grid{grid-template-columns:1fr}
+    .crt-cart-item{grid-template-columns:60px 1fr;gap:10px}
+    .crt-cart-price{grid-column:2;justify-self:end}
+    .crt-img-wrap{width:60px;height:60px;border-radius:10px}
+    .crt-card-body{padding:14px}
+    .crt-card-head{padding:12px 16px;font-size:14px}
+    .crt-btn{padding:12px 16px;font-size:14px}
+  }
+</style>
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <!-- Header -->
-                <div class="text-center mb-4">
-                    <h2 class="text-primary">
-                        <i class="fas fa-truck me-2"></i>
-                        Mete Pri Livrezon
-                    </h2>
-                    <p class="text-muted">ID Livrezon: {{ delivery.delivery_id }}</p>
-                </div>
+<body>
+<div class="crt-wrap">
 
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+  <div class="crt-header">
+    <h2><i class="fas fa-truck"></i>Mete Pri Livrezon</h2>
+    <p>ID Livrezon: <strong>{{ delivery.delivery_id }}</strong></p>
+  </div>
 
-                <!-- Delivery Information -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Enfòmasyon Livrezon
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong><i class="fas fa-user me-2"></i>Achte:</strong> {{ delivery.buyer_whatsapp }}</p>
-                                <p><strong><i class="fas fa-map-marker-alt me-2"></i>Adrès:</strong> {{ delivery.delivery_address }}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong><i class="fas fa-box me-2"></i>Pri Pwodwi:</strong> {{ total_product_price }} Gkach</p>
-                                <p><strong><i class="fas fa-clock me-2"></i>Estati:</strong> 
-                                    <span class="badge bg-warning">Tann Pri Livrezon</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Cart Items -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-shopping-cart me-2"></i>
-                            Atik yo nan Panier
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        {% for item in cart_items %}
-                            <div class="row align-items-center mb-3 pb-3 border-bottom">
-                                <div class="col-md-2">
-                                    {% if item.ad.images %}
-                                        <img src="{{ url_for('static', filename='uploads/' + item.ad.images.split(',')[0]) }}" 
-                                             class="img-fluid rounded" alt="{{ item.ad.title }}">
-                                    {% else %}
-                                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" style="height: 80px;">
-                                            <i class="fas fa-image fa-2x"></i>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    <h6 class="mb-1">{{ item.ad.title }}</h6>
-                                    <small class="text-muted">Kantite: {{ item.quantity }}</small>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <div class="text-success fw-bold">{{ item.subtotal }} Gkach</div>
-                                </div>
-                            </div>
-                        {% endfor %}
-
-                        <div class="row mt-3 pt-3 border-top">
-                            <div class="col-6">
-                                <strong>Total Pwodwi:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                <strong class="text-primary">{{ total_product_price }} Gkach</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Set Delivery Cost Form -->
-                <form method="POST">
-                    <div class="card mb-4">
-                        <div class="card-header bg-warning text-dark">
-                            <h5 class="mb-0">
-                                <i class="fas fa-dollar-sign me-2"></i>
-                                Mete Pri Livrezon
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Tanpri mete pri livrezon an pou achte a ka kontinye ak achte a.
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="delivery_cost" class="form-label">
-                                    <i class="fas fa-truck me-2"></i>
-                                    Pri Livrezon (Gkach) *
-                                </label>
-                                <input type="number" class="form-control form-control-lg" 
-                                       id="delivery_cost" name="delivery_cost" 
-                                       min="0" step="1" required
-                                       placeholder="Antre pri livrezon an">
-                                <div class="form-text">Antre pri livrezon total la an Gkach</div>
-                            </div>
-
-                            <div class="card bg-light mb-3">
-                                <div class="card-body">
-                                    <h6 class="card-title">Rezime:</h6>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Pri Pwodwi:</span>
-                                        <strong>{{ total_product_price }} Gkach</strong>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Pri Livrezon:</span>
-                                        <strong id="shipping-display">0 Gkach</strong>
-                                    </div>
-                                    <hr>
-                                    <div class="d-flex justify-content-between">
-                                        <strong>Total:</strong>
-                                        <strong class="text-primary" id="total-display">{{ total_product_price }} Gkach</strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-warning btn-lg">
-                                    <i class="fas fa-arrow-right me-2"></i>
-                                    Kontinye
-                                </button>
-                                <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Retounen
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Messaging Section -->
-                {% if messages %}
-                <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-comments me-2"></i>
-                            Mesaj yo
-                        </h5>
-                    </div>
-                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                        {% for msg in messages %}
-                            <div class="mb-3 {% if msg.sender_whatsapp == delivery.seller_whatsapp %}text-end{% endif %}">
-                                <div class="d-inline-block p-2 rounded {% if msg.sender_whatsapp == delivery.seller_whatsapp %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 70%;">
-                                    <small class="d-block fw-bold">{{ msg.sender_whatsapp }}</small>
-                                    <p class="mb-1">{{ msg.message }}</p>
-                                    <small class="text-muted">{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Contact Buyer -->
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fab fa-whatsapp me-2"></i>
-                            Kontakte Achte a
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Ou ka kontakte achte a dirèkteman sou WhatsApp pou diskite detay livrezon yo.</p>
-                        <a href="https://wa.me/{{ delivery.buyer_whatsapp.replace('+', '') }}" 
-                           class="btn btn-success" target="_blank">
-                            <i class="fab fa-whatsapp me-2"></i>
-                            Kontakte {{ delivery.buyer_whatsapp }}
-                        </a>
-                    </div>
-                </div>
-            </div>
+  {% with flashes = get_flashed_messages(with_categories=true) %}
+    {% if flashes %}
+      <div class="crt-flash-list">
+      {% for cat, msg in flashes %}
+        <div class="crt-flash {% if cat == 'error' %}crt-err{% else %}crt-ok{% endif %}">
+          <i class="fas fa-{% if cat == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+          <span>{{ msg }}</span>
         </div>
-    </div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Update total when delivery cost changes
-        document.addEventListener('DOMContentLoaded', function() {
-            const deliveryCostInput = document.getElementById('delivery_cost');
-            if (deliveryCostInput) {
-                deliveryCostInput.addEventListener('input', function() {
-                    const productPrice = parseFloat('{{ total_product_price }}') || 0;
-                    const deliveryCost = parseFloat(this.value) || 0;
-                    const total = productPrice + deliveryCost;
-                    
-                    document.getElementById('shipping-display').textContent = deliveryCost + ' Gkach';
-                    document.getElementById('total-display').textContent = total + ' Gkach';
-                });
-            }
-        });
-    </script>
+  <div class="crt-card">
+    <div class="crt-card-head crt-info">
+      <i class="fas fa-info-circle"></i>
+      <span>Enfòmasyon Livrezon</span>
+    </div>
+    <div class="crt-card-body">
+      <div class="crt-info-grid">
+        <div class="crt-info-item"><i class="fas fa-user"></i><strong>Achte:</strong> {{ delivery.buyer_whatsapp }}</div>
+        <div class="crt-info-item"><i class="fas fa-box"></i><strong>Pri Pwodwi:</strong> {{ total_product_price }} Gkach</div>
+        <div class="crt-info-item"><i class="fas fa-map-marker-alt"></i><strong>Adrès:</strong> {{ delivery.delivery_address }}</div>
+        <div class="crt-info-item"><i class="fas fa-clock"></i><strong>Estati:</strong> <span class="crt-badge crt-badge-warn"><i class="fas fa-hourglass-half"></i>Tann Pri Livrezon</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="crt-card">
+    <div class="crt-card-head crt-prim">
+      <i class="fas fa-shopping-cart"></i>
+      <span>Atik yo nan Panier</span>
+    </div>
+    <div class="crt-card-body">
+      <div class="crt-cart-list">
+      {% for item in cart_items %}
+        <div class="crt-cart-item">
+          <div class="crt-img-wrap">
+          {% if item.ad.images and item.ad.images is string and item.ad.images|length > 0 %}
+            {% set imgs = item.ad.images.split(',')|select('list') if item.ad.images is iterable and item.ad.images is not string else [item.ad.images] %}
+            {% set first_img = (item.ad.images.split(',')|first) if item.ad.images and ',' in item.ad.images else item.ad.images %}
+            <img src="{{ url_for('static', filename='uploads/' + first_img) }}" alt="{{ item.ad.title }}">
+          {% else %}
+            <i class="fas fa-image"></i>
+          {% endif %}
+          </div>
+          <div>
+            <div class="crt-cart-title">{{ item.ad.title }}</div>
+            <div class="crt-cart-meta">Kantite: {{ item.quantity }}</div>
+          </div>
+          <div class="crt-cart-price">{{ item.subtotal }} Gkach</div>
+        </div>
+      {% endfor %}
+      </div>
+      <div class="crt-total-row">
+        <strong>Total Pwodwi:</strong>
+        <strong>{{ total_product_price }} Gkach</strong>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="crt-card">
+      <div class="crt-card-head crt-warn">
+        <i class="fas fa-dollar-sign"></i>
+        <span>Mete Pri Livrezon</span>
+      </div>
+      <div class="crt-card-body">
+        <div class="crt-alert crt-info">
+          <i class="fas fa-info-circle"></i>
+          <span>Tanpri mete pri livrezon an pou achte a ka kontinye ak achte a.</span>
+        </div>
+
+        <div style="margin-bottom:18px">
+          <label for="delivery_cost" class="crt-form-label"><i class="fas fa-truck"></i>Pri Livrezon (Gkach) *</label>
+          <input type="number" class="crt-input" id="delivery_cost" name="delivery_cost" min="0" step="1" required placeholder="Antre pri livrezon an">
+          <div class="crt-form-hint">Antre pri livrezon total la an Gkach</div>
+        </div>
+
+        <div class="crt-summary">
+          <div class="crt-sum-line"><span>Pri Pwodwi:</span><strong>{{ total_product_price }} Gkach</strong></div>
+          <div class="crt-sum-line"><span>Pri Livrezon:</span><strong id="shipping-display">0 Gkach</strong></div>
+          <div class="crt-sum-line crt-sum-total"><span>Total:</span><strong id="total-display">{{ total_product_price }} Gkach</strong></div>
+        </div>
+
+        <div class="crt-btn-row">
+          <button type="submit" class="crt-btn crt-btn-warn"><i class="fas fa-arrow-right"></i>Kontinye</button>
+          <a href="{{ url_for('admin') }}" class="crt-btn crt-btn-ghost"><i class="fas fa-arrow-left"></i>Retounen</a>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  {% if messages %}
+  <div class="crt-card">
+    <div class="crt-card-head crt-sec">
+      <i class="fas fa-comments"></i>
+      <span>Mesaj yo</span>
+    </div>
+    <div class="crt-card-body">
+      <div class="crt-chat">
+      {% for msg in messages %}
+        <div class="crt-msg {% if msg.sender_whatsapp == delivery.seller_whatsapp %}crt-right{% else %}crt-left{% endif %}">
+          <div class="crt-bubble">
+            <div class="crt-msg-sender">{{ msg.sender_whatsapp }}</div>
+            <div>{{ msg.message }}</div>
+            <div class="crt-msg-time">
+              {% if msg.created_at is string %}{{ msg.created_at[:16] }}{% else %}{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="crt-card">
+    <div class="crt-card-head crt-ok">
+      <i class="fab fa-whatsapp"></i>
+      <span>Kontakte Achte a</span>
+    </div>
+    <div class="crt-card-body">
+      <p class="crt-cta-text">Ou ka kontakte achte a dirèkteman sou WhatsApp pou diskite detay livrezon yo.</p>
+      {% set buyer_clean = delivery.buyer_whatsapp|replace('+', '') %}
+      <a href="https://wa.me/{{ buyer_clean }}" class="crt-btn crt-btn-ok" target="_blank">
+        <i class="fab fa-whatsapp"></i>Kontakte {{ delivery.buyer_whatsapp }}
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const dci = document.getElementById('delivery_cost');
+    if (dci) {
+      dci.addEventListener('input', function() {
+        const pp = parseFloat('{{ total_product_price }}') || 0;
+        const dc = parseFloat(this.value) || 0;
+        document.getElementById('shipping-display').textContent = dc + ' Gkach';
+        document.getElementById('total-display').textContent = (pp + dc) + ' Gkach';
+      });
+    }
+  });
+</script>
 </body>
 </html>

@@ -1,131 +1,137 @@
 <!DOCTYPE html>
 <html lang="ht">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mete Ajou Panier - Glory2yahPub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .form-control {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-        }
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        .product-card {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #e9ecef;
-        }
-        .total-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mete Ajou Panier - Glory2yahPub</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;background:linear-gradient(135deg,#fdf2f8 0%,#f5f3ff 50%,#eff6ff 100%);color:#1f2937;padding:28px 14px}
+  .crt-wrap{max-width:860px;margin:0 auto}
+  .crt-header{text-align:center;margin-bottom:28px;background:#fff;border-radius:20px;padding:28px 20px;box-shadow:0 4px 24px rgba(0,0,0,.06);border:1px solid rgba(255,255,255,.8)}
+  .crt-header h2{font-size:26px;font-weight:700;background:linear-gradient(135deg,#be185d 0%,#7c3aed 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px}
+  .crt-header h2 i{color:#7c3aed;-webkit-text-fill-color:#7c3aed;margin-right:10px}
+  .crt-header p{color:#6b7280;font-size:14px}
+  .crt-header p strong{color:#111827}
+  .crt-prod-list{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
+  .crt-prod-card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f3f4f6;display:grid;grid-template-columns:1fr 200px;gap:16px;align-items:center}
+  .crt-prod-info h5{font-size:15px;font-weight:700;color:#111827;margin-bottom:6px}
+  .crt-prod-info .crt-desc{font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.4}
+  .crt-prod-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:10px}
+  .crt-meta-item{font-size:12px}
+  .crt-meta-label{color:#9ca3af;margin-bottom:3px}
+  .crt-meta-val{font-size:14px;font-weight:700;color:#111827}
+  .crt-meta-val.crt-pri{color:#7c3aed}
+  .crt-shipping-input label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px}
+  .crt-shipping-input input{width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:12px;font-size:15px;background:#fafafa;transition:all .2s}
+  .crt-shipping-input input:focus{outline:none;border-color:#7c3aed;background:#fff;box-shadow:0 0 0 4px rgba(124,58,237,.1)}
+  .crt-total-box{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%);border-radius:20px;padding:24px;color:#fff;box-shadow:0 8px 24px rgba(139,92,246,.35);margin-bottom:22px}
+  .crt-total-box h4{font-size:17px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+  .crt-total-rows{display:flex;flex-direction:column;gap:8px}
+  .crt-tl-row{display:flex;justify-content:space-between;font-size:14px;opacity:.95}
+  .crt-tl-row strong{font-weight:600}
+  .crt-tl-sep{height:1px;background:rgba(255,255,255,.3);margin:6px 0}
+  .crt-tl-row.crt-total-final{font-size:19px;font-weight:700;opacity:1;margin-top:4px}
+  .crt-action{text-align:center}
+  .crt-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 32px;border-radius:999px;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-decoration:none}
+  .crt-btn i{width:16px}
+  .crt-btn-prim{background:linear-gradient(135deg,#be185d 0%,#7c3aed 100%);color:#fff;box-shadow:0 6px 18px rgba(190,24,93,.3)}
+  .crt-btn-prim:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(190,24,93,.4)}
+  .crt-info-note{text-align:center;margin-top:24px;padding:14px;border-radius:12px;background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);color:#6b7280;font-size:13px;line-height:1.5}
+  .crt-info-note i{color:#7c3aed;margin-right:6px}
+  @media(max-width:640px){
+    body{padding:18px 8px}
+    .crt-header{padding:20px 14px}
+    .crt-header h2{font-size:20px}
+    .crt-prod-card{grid-template-columns:1fr;gap:12px}
+    .crt-prod-meta{grid-template-columns:1fr 1fr}
+    .crt-total-box{padding:20px 16px;border-radius:16px}
+    .crt-total-box h4{font-size:15px}
+    .crt-tl-row.crt-total-final{font-size:16px}
+    .crt-btn{padding:12px 24px;font-size:14px;width:100%}
+  }
+</style>
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card p-4">
-                    <div class="text-center mb-4">
-                        <h2 class="mb-3"><i class="fas fa-shopping-cart text-primary"></i> Mete Ajou Panier Achte</h2>
-                        <p class="text-muted">Achte pa: <strong>{{ buyer_whatsapp }}</strong></p>
-                    </div>
+<div class="crt-wrap">
 
-                    <form method="POST">
-                        {% for item in cart_items %}
-                        <div class="product-card">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h5 class="mb-1">{{ item.ad.title }}</h5>
-                                    <p class="text-muted mb-2">{{ item.ad.description[:100] }}...</p>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <small class="text-muted">Pri piblisite:</small>
-                                            <p class="mb-0 fw-bold">{{ item.ad.price_gkach }} Gkach</p>
-                                        </div>
-                                        <div class="col-6">
-                                            <small class="text-muted">Kantite:</small>
-                                            <p class="mb-0 fw-bold">{{ item.quantity }}</p>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">Pri livrezon aktyèl:</small>
-                                    <p class="mb-0 fw-bold text-primary">{{ item.shipping_fee }} Gkach</p>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="shipping_{{ item.id }}" class="form-label fw-bold">Mete pri livrezon (Gkach)</label>
-                                    <input type="number" class="form-control" id="shipping_{{ item.id }}" name="shipping_{{ item.id }}"
-                                           value="{{ item.shipping_fee }}" min="0" step="1" required>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
+  <div class="crt-header">
+    <h2><i class="fas fa-shopping-cart"></i>Mete Ajou Panier Achte</h2>
+    <p>Achte pa: <strong>{{ buyer_whatsapp }}</strong></p>
+  </div>
 
-                        <div class="total-section">
-                            <h4 class="mb-3"><i class="fas fa-calculator"></i> Rezime Total</h4>
-                            <div class="row">
-                                <div class="col-6">
-                                    <p class="mb-1">Pri piblisite total:</p>
-                                    <p class="mb-1">Pri livrezon aktyèl:</p>
-                                    <hr class="my-2">
-                                    <p class="mb-0 fs-5 fw-bold">Total aktyèl:</p>
-                                </div>
-                                <div class="col-6 text-end">
-                                    <p class="mb-1">{{ total_product_price }} Gkach</p>
-                                    <p class="mb-1">{{ current_shipping_total }} Gkach</p>
-                                    <hr class="my-2">
-                                    <p class="mb-0 fs-5 fw-bold">{{ total_current }} Gkach</p>
-                                </div>
-                            </div>
-                        </div>
+  <form method="POST" id="crt-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                        <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-arrow-right"></i> Kontinye
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="text-center mt-4">
-                        <p class="text-muted">
-                            <i class="fas fa-info-circle"></i>
-                            Aprè ou mete pri livrezon an, achete a pral resevwa yon notifikasyon WhatsApp pou konfime achte a.
-                        </p>
-                    </div>
-                </div>
+    <div class="crt-prod-list">
+    {% for item in cart_items %}
+      <div class="crt-prod-card">
+        <div class="crt-prod-info">
+          <h5>{{ item.ad.title }}</h5>
+          <div class="crt-desc">{{ item.ad.description[:100] }}...</div>
+          <div class="crt-prod-meta">
+            <div class="crt-meta-item">
+              <div class="crt-meta-label">Pri piblisite:</div>
+              <div class="crt-meta-val">{{ item.ad.price_gkach }} Gkach</div>
             </div>
+            <div class="crt-meta-item">
+              <div class="crt-meta-label">Kantite:</div>
+              <div class="crt-meta-val">{{ item.quantity }}</div>
+            </div>
+            <div class="crt-meta-item" style="grid-column:1/-1">
+              <div class="crt-meta-label">Pri livrezon aktyèl:</div>
+              <div class="crt-meta-val crt-pri">{{ item.shipping_fee }} Gkach</div>
+            </div>
+          </div>
         </div>
+        <div class="crt-shipping-input">
+          <label for="shipping_{{ item.id }}">Mete pri livrezon (Gkach)</label>
+          <input type="number" id="shipping_{{ item.id }}" name="shipping_{{ item.id }}"
+                 class="crt-ship-input" data-base="{{ item.ad.price_gkach|default(0) }}" data-qty="{{ item.quantity|default(0) }}"
+                 value="{{ item.shipping_fee }}" min="0" step="1" required>
+        </div>
+      </div>
+    {% endfor %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="crt-total-box">
+      <h4><i class="fas fa-calculator"></i>Rezime Total</h4>
+      <div class="crt-total-rows">
+        <div class="crt-tl-row"><span>Pri piblisite total:</span><strong id="crt-sum-prod">{{ total_product_price }} Gkach</strong></div>
+        <div class="crt-tl-row"><span>Pri livrezon aktyèl:</span><strong id="crt-sum-ship">{{ current_shipping_total }} Gkach</strong></div>
+        <div class="crt-tl-sep"></div>
+        <div class="crt-tl-row crt-total-final"><span>Total aktyèl:</span><strong id="crt-sum-total">{{ total_current }} Gkach</strong></div>
+      </div>
+    </div>
+
+    <div class="crt-action">
+      <button type="submit" class="crt-btn crt-btn-prim"><i class="fas fa-arrow-right"></i>Kontinye</button>
+    </div>
+  </form>
+
+  <div class="crt-info-note">
+    <i class="fas fa-info-circle"></i>
+    Aprè ou mete pri livrezon an, achete a pral resevwa yon notifikasyon WhatsApp pou konfime achte a.
+  </div>
+
+</div>
+
+<script>
+  (function(){
+    var baseProd = parseFloat('{{ total_product_price }}') || 0;
+    var inputs = document.querySelectorAll('.crt-ship-input');
+    var elShip = document.getElementById('crt-sum-ship');
+    var elTot = document.getElementById('crt-sum-total');
+    function recalc(){
+      var s = 0;
+      inputs.forEach(function(inp){ s += parseFloat(inp.value) || 0; });
+      elShip.textContent = s.toFixed(0).replace(/\.0$/,'') + ' Gkach';
+      elTot.textContent = (baseProd + s).toFixed(0).replace(/\.0$/,'') + ' Gkach';
+    }
+    inputs.forEach(function(inp){ inp.addEventListener('input', recalc); });
+    recalc();
+  })();
+</script>
 </body>
 </html>
