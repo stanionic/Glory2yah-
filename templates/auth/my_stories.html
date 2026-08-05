@@ -2,81 +2,248 @@
 
 {% block title %}Istwa m yo - Glory2YahPub{% endblock %}
 
+{% block extra_css %}
+<style>
+    .mystories-header {
+        display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;
+        margin-bottom: 28px;
+    }
+    .mystories-header h1 {
+        margin: 0 0 6px 0;
+        font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+        background: linear-gradient(135deg, var(--g2y-primary), #ec4899);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .mystories-header .subtitle { margin: 0; color: var(--g2y-text-secondary); font-size: 14px; }
+    .mystories-back-link {
+        text-decoration: none; font-weight: 700; color: var(--g2y-primary);
+        padding: 10px 16px; border-radius: 12px; border: 2px solid var(--g2y-primary-light);
+        background: var(--g2y-bg-alt); transition: all .2s ease;
+    }
+    .mystories-back-link:hover { background: var(--g2y-primary); color: #fff; border-color: var(--g2y-primary); transform: translateY(-1px); }
+
+    .mystories-card {
+        background: #fff; border-radius: 20px; box-shadow: 0 4px 20px rgba(15,23,42,.06);
+        border: 1px solid var(--g2y-border); overflow: hidden; transition: all .22s ease;
+        display: flex; flex-direction: column;
+    }
+    @media (min-width: 576px) { .mystories-card { flex-direction: row; } }
+    .mystories-card:hover {
+        box-shadow: 0 18px 50px rgba(15,23,42,.13);
+        transform: translateY(-2px);
+        border-color: #f472b6;
+    }
+
+    .mystories-thumb {
+        position: relative; flex-shrink: 0; width: 100%;
+        aspect-ratio: 16 / 10; background: linear-gradient(135deg,#fdf2f8,#fce7f3);
+        overflow: hidden; display: flex; align-items: center; justify-content: center;
+    }
+    @media (min-width: 576px) { .mystories-thumb { width: 210px; aspect-ratio: 1 / 1; } }
+    .mystories-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+    .mystories-card:hover .mystories-thumb img { transform: scale(1.04); }
+    .mystories-thumb-placeholder { color: #f472b6; font-size: 44px; }
+
+    .mystories-body { padding: 20px 22px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .mystories-title-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .mystories-title {
+        font-size: 19px; font-weight: 800; color: var(--g2y-text); margin: 0 0 6px 0; line-height: 1.35;
+        word-break: break-word;
+    }
+    .mystories-price {
+        display: inline-block; padding: 6px 12px; border-radius: 10px;
+        background: linear-gradient(135deg,#fdf2f8,#fce7f3); color: #9d174d;
+        font-weight: 800; font-size: 14px; margin: 0 0 10px 0;
+    }
+    .mystories-desc {
+        color: var(--g2y-text-secondary); font-size: 14.5px; line-height: 1.55;
+        margin: 0 0 14px 0; word-break: break-word;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .mystories-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .mystories-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 12.5px;
+    }
+    .mystories-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
+    .mystories-status.approved   { background:#ecfdf5; color:#059669; }
+    .mystories-status.approved::before   { background: #10b981; box-shadow:0 0 0 4px rgba(16,185,129,.18); }
+    .mystories-status.under_review { background:#fffbeb; color:#b45309; }
+    .mystories-status.under_review::before { background:#f59e0b; box-shadow:0 0 0 4px rgba(245,158,11,.18); animation: ms-pulse 1.8s infinite; }
+    .mystories-status.rejected   { background:#fef2f2; color:#b91c1c; }
+    .mystories-status.rejected::before   { background:#ef4444; box-shadow:0 0 0 4px rgba(239,68,68,.18); }
+    .mystories-status.pending    { background:#f8fafc; color:#475569; }
+    .mystories-status.pending::before    { background:#64748b; }
+    @keyframes ms-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    .mystories-actions {
+        display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto;
+        padding-top: 14px; border-top: 1px dashed var(--g2y-border);
+    }
+    .mystories-btn {
+        display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+        padding: 10px 16px; border-radius: 12px; font-weight: 700;
+        font-size: 14px; border: 2px solid transparent; cursor: pointer; text-decoration: none;
+        transition: transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+        flex: 1 1 auto; min-width: 120px; text-align: center;
+    }
+    .mystories-btn:hover   { transform: translateY(-1px); }
+    .mystories-btn:active  { transform: translateY(0) scale(.98); }
+    .mystories-btn-edit { background: #fff1f2; color: #9d174d; border-color: #fbcfe8; }
+    .mystories-btn-edit:hover { background: #ec4899; border-color: #ec4899; color: #fff; }
+    .mystories-btn-danger { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .mystories-btn-danger:hover { background: #be123c; color: #fff; border-color: #be123c; }
+    .mystories-btn-primary {
+        background: linear-gradient(135deg, var(--g2y-primary), #ec4899);
+        color: #fff; font-weight: 800; box-shadow: 0 10px 30px rgba(236,72,153,.28);
+    }
+    .mystories-btn-primary:hover { box-shadow: 0 14px 38px rgba(236,72,153,.38); }
+
+    .mystories-empty {
+        text-align: center; padding: 56px 24px; background: #fff;
+        border-radius: 22px; border: 2px dashed #fbcfe8;
+    }
+    .mystories-empty-ico {
+        width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 20px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg,#fdf2f8,#fce7f3); color: #ec4899; font-size: 30px;
+    }
+    .mystories-empty h3 { margin: 0 0 6px 0; font-weight: 800; color: var(--g2y-text); font-size: 20px; }
+    .mystories-empty p  { margin: 0 0 20px 0; color: #64748b; font-size: 14.5px; }
+    .mystories-searchbox {
+        display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; align-items: center;
+        justify-content: space-between;
+    }
+    .mystories-searchbox input[type=text] {
+        flex: 1 1 240px; padding: 11px 14px; border-radius: 12px;
+        border: 2px solid var(--g2y-border); background: var(--g2y-bg-alt);
+        font-size: 15px; transition: all .15s ease;
+    }
+    .mystories-searchbox input[type=text]:focus {
+        outline: none; border-color: #f472b6;
+        background: #fff; box-shadow: 0 0 0 4px rgba(244,114,182,.12);
+    }
+    .mystories-stats-mini { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .mystories-chip {
+        padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 13px;
+        background: #fff; border: 1px solid var(--g2y-border); color: #334155;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .mystories-chip strong { color: #ec4899; font-weight: 800; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+<div class="container py-5" style="max-width: 1080px;">
+    <div class="mystories-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Istwa m yo</h1>
-            <p class="text-sm text-gray-500 mt-1">Jere tout istwa ou isit la</p>
+            <h1>✨ Istwa m yo</h1>
+            <p class="subtitle">Jere tout istwa ou sou Glory2YahPub isit la</p>
         </div>
-        <a href="{{ url_for('auth.profile') }}" class="mt-4 sm:mt-0 text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200">
-            ← Retounen nan pwofil
+        <a href="{{ url_for('auth.profile') }}" class="mystories-back-link">
+            <i class="fas fa-arrow-left"></i> Retounen nan pwofil
         </a>
     </div>
 
     {% if stories %}
-    <div class="grid gap-4">
+    <div class="mystories-stats-mini">
+        <span class="mystories-chip">Total: <strong>{{ stories|length }}</strong></span>
+        <span class="mystories-chip">
+            ✅ Apwouve:
+            <strong>{{ stories|selectattr('admin_status', 'equalto', 'approved')|list|length }}</strong>
+        </span>
+        <span class="mystories-chip">
+            ⏳ An Revizyon:
+            <strong>{{ stories|selectattr('admin_status', 'equalto', 'under_review')|list|length
+                    + stories|selectattr('admin_status', 'equalto', 'pending')|list|length }}</strong>
+        </span>
+        <span class="mystories-chip">
+            ❌ Rejte:
+            <strong>{{ stories|selectattr('admin_status', 'equalto', 'rejected')|list|length }}</strong>
+        </span>
+    </div>
+    <div class="mystories-searchbox">
+        <input type="text" id="myStoriesSearch" placeholder="🔍 Chèche nan istwa ou..." onkeyup="msFilter()">
+    </div>
+
+    <div id="myStoriesGrid" style="display:grid; gap: 20px;">
         {% for story in stories %}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-            <div class="flex flex-col sm:flex-row items-start gap-4">
+        <div class="mystories-card" data-mystories-title="{{ story.title|default('', true)|e }} {{ story.description|default('', true)|e }}">
+            <div class="mystories-thumb">
                 {% if story.media %}
-                <div class="w-full h-48 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                    <img src="/static/uploads/{{ story.media }}" class="w-full h-full object-cover">
-                </div>
+                    <img src="{{ url_for('static', filename='uploads/' + story.media) }}" alt="Istwa imaj">
                 {% else %}
-                <div class="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
-                    <i class="fas fa-image text-xl"></i>
-                </div>
+                    <i class="fas fa-image stories-thumb-placeholder"></i>
                 {% endif %}
-                
-                <div class="flex-1">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <h3 class="font-bold text-lg">{{ story.title }}</h3>
-                            {% if story.price_gkach > 0 %}
-                            <p class="text-primary font-bold mt-1">{{ story.price_gkach }} Gkach</p>
-                            {% endif %}
-                            <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ story.description }}</p>
-                            <span class="inline-block mt-2 text-xs font-medium px-3 py-1 rounded-full 
-                                {% if story.admin_status == 'approved' %}
-                                    bg-green-100 text-green-700
-                                {% elif story.admin_status == 'under_review' %}
-                                    bg-yellow-100 text-yellow-700
-                                {% else %}
-                                    bg-red-100 text-red-700
-                                {% endif %}">
-                                {{ story.admin_status }}
-                            </span>
-                        </div>
-                        <div class="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
-                            <a href="{{ url_for('auth.edit_story', story_id=story.story_id) }}" class="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-600 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition text-center">
-                                <i class="fas fa-edit mr-2"></i>Modifye
-                            </a>
-                            <form method="POST" action="{{ url_for('auth.delete_story', story_id=story.story_id) }}" onsubmit="return confirm('Ou sèten ou vle efase istwa sa a?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="w-full sm:w-auto px-4 py-2 text-sm font-bold text-red-600 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition text-center">
-                                    <i class="fas fa-trash mr-2"></i>Efase
-                                </button>
-                            </form>
-                        </div>
+            </div>
+            <div class="mystories-body">
+                <div class="mystories-title-row">
+                    <div style="min-width:0; flex:1;">
+                        <h3 class="mystories-title">{{ story.title or 'Istwa' }}</h3>
+                        {% if story.price_gkach and story.price_gkach > 0 %}
+                        <p class="mystories-price">💖 {{ story.price_gkach }} Gkach</p>
+                        {% endif %}
+                        <p class="mystories-desc">{{ story.description or '' }}</p>
                     </div>
+                </div>
+
+                <div class="mystories-meta">
+                    {% set st = (story.admin_status or 'pending')|lower|replace(' ', '_') %}
+                    <span class="mystories-status {{ st }}">
+                        {% if st == 'approved' %}Apwouve
+                        {% elif st == 'under_review' %}An Revizyon
+                        {% elif st == 'rejected' %}Rejte
+                        {% elif st == 'pending' %}An Atann
+                        {% else %}{{ story.admin_status }}{% endif %}
+                    </span>
+                    {% if story.created_at %}
+                    <span class="mystories-status pending">📅 {% if story.created_at is string %}{{ story.created_at[:10] }}{% else %}{{ story.created_at.strftime('%d/%m/%Y') }}{% endif %}</span>
+                    {% endif %}
+                    {% if story.views is not none and story.views != '' %}
+                    <span class="mystories-status approved">👁️ {{ story.views or 0 }} View</span>
+                    {% endif %}
+                    {% if story.likes is not none and story.likes != '' %}
+                    <span class="mystories-status pending">❤️ {{ story.likes or 0 }} Lyk</span>
+                    {% endif %}
+                </div>
+
+                <div class="mystories-actions">
+                    <a href="{{ url_for('auth.edit_story', story_id=story.story_id) }}" class="mystories-btn mystories-btn-edit">
+                        <i class="fas fa-edit"></i> Modifye
+                    </a>
+                    <form method="POST" action="{{ url_for('auth.delete_story', story_id=story.story_id) }}" onsubmit="return confirm('Ou sèten ou vle efase istwa sa a?');" style="margin:0; display:flex; flex: 1 1 auto;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="mystories-btn mystories-btn-danger" style="width:100%;">
+                            <i class="fas fa-trash"></i> Efase
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+
     {% else %}
-    <div class="bg-white rounded-2xl p-8 sm:p-12 text-center border border-gray-100 border-dashed">
-        <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-2xl">
-            <i class="fas fa-images"></i>
-        </div>
-        <h3 class="text-gray-900 font-bold mb-1 text-xl">Pa gen istwa ankò</h3>
-        <p class="text-gray-400 text-sm mb-6">Kòmanse pataje istwa sou Glory2YahPub kounye a!</p>
-        <a href="#" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors duration-200">
-            <i class="fas fa-plus"></i>
-            Kreye premye istwa w
+    <div class="mystories-empty">
+        <div class="mystories-empty-ico"><i class="fas fa-images"></i></div>
+        <h3>Pa gen istwa ankò</h3>
+        <p>Kòmanse pataje istwa sou Glory2YahPub kounye a!</p>
+        <a href="{{ url_for('auth.profile') }}" class="mystories-btn mystories-btn-primary" style="display:inline-flex;">
+            <i class="fas fa-plus"></i> Kreye premye istwa w
         </a>
     </div>
     {% endif %}
 </div>
+
+<script>
+function msFilter() {
+    const q = (document.getElementById('myStoriesSearch') || { value: '' }).value.trim().toLowerCase();
+    const cards = document.querySelectorAll('#myStoriesGrid .mystories-card');
+    cards.forEach(card => {
+        const txt = (card.dataset.mystoriesTitle || '').toLowerCase();
+        card.style.display = (!q || txt.indexOf(q) !== -1) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}
