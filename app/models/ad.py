@@ -36,6 +36,7 @@ class Ad(BaseModel):
     # Status: under_review, approved, rejected
     payment_status = db.Column(db.String(20), default='pending', index=True)
     payment_proof = db.Column(db.String(255))
+    publish_fee_gkach = db.Column(db.Integer, default=1000)
     
     # Batch
     batch_id = db.Column(db.String(36), index=True)
@@ -126,8 +127,10 @@ class Ad(BaseModel):
             'ad_type': self.ad_type,
             'price_gkach': self.price_gkach,
             'quantity': self.quantity if self.quantity is not None else (1 if self.ad_type == 'sell' else 0),
+            'publish_fee_gkach': self.publish_fee_gkach if self.publish_fee_gkach is not None else 1000,
             'category': self.category or 'other',
             'admin_status': self.admin_status,
+            'payment_status': self.payment_status,
             'like_count': self.like_count,
             'star_count': self.star_count,
             'view_count': self.view_count,

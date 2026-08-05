@@ -674,10 +674,41 @@ def update_ad_status():
         flash('Piblisite pa jwenn.', 'error')
         return redirect(url_for('admin.dashboard'))
     
+    # Publish fee guard: every ad costs 1000 Gkach. Admin cannot approve an
+    # ad whose publish fee has not been paid/verified yet. This prevents
+    # accidental "publish unpaid ads" human errors in the admin panel.
+    #   - payment_status == 'verified'  => user paid, admin says so => ok to approve
+    #   - payment_status == 'completed' => legacy/compat rows from scripts
+    #   - Everything else               => BLOCK approval with a Creole warning,
+    #                                        but admin can still set REJECTED,
+    #                                        or flip payment_status to 'verified'
+    #                                        first then approve in a 2nd click.
+    fee = int(getattr(ad, 'publish_fee_gkach', None) or 1000)
+    pay_ok = (
+        (ad.payment_status or '') in {'verified', 'completed'}
+    )
+    if admin_status == 'approved' and not pay_ok:
+        flash(
+            f'PA KA METE APWOUVE: Itilizatè poko peye frai piblikasyon la '
+            f'({fee} Gkach). Premyman, seleksyone "Pèman Verifye" nan menu '
+            f'payment_status epi Mete Ajou. Aprè ou peye, ou ka klike "Apwouve".',
+            'error'
+        )
+        return redirect(url_for('admin.dashboard'))
+
     if admin_status:
         ad.admin_status = admin_status
     if payment_status:
         ad.payment_status = payment_status
+        # When admin marks the payment as verified/rejected, also stamp the
+        # fee (in case of pre-column legacy rows) so admin panel is consistent.
+        if payment_status in {'verified', 'completed', 'rejected', 'pending'}:
+            if not getattr(ad, 'publish_fee_gkach', None) or ad.publish_fee_gkach <= 0:
+                try:
+                    setattr(ad, 'publish_fee_gkach', 1000)
+                except Exception:
+                    pass
+
     
     db.session.commit()
     

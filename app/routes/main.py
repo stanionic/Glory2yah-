@@ -434,6 +434,123 @@ def achte_gkach():
     return render_template('achte_gkach.html')
 
 
+# =========================================================================
+# ADS PUBLISH PAYMENT FLOW
+# =========================================================================
+# Every published ad costs ADS_PUBLISH_FEE = 1000 Gkach.
+#   - Flow: submit_ad() creates Ad (payment_status='pending')
+#           -> redirects HERE so user uploads Moncash/Netcash proof
+#           -> admin panel sets payment_status='verified'
+#           -> THEN admin can set admin_status='approved'
+#              (guarded in admin.py update_ad_status())
+# =========================================================================
+ADS_PUBLISH_FEE = 1000
+
+
+@main_bp.route('/upload_payment/<ad_id>', methods=['GET', 'POST'])
+@login_required
+def upload_payment(ad_id):
+    """Upload Moncash/Netcash screenshot proof to pay for an ad publication.
+
+    * Always enforces ADS_PUBLISH_FEE (1000 Gkach) regardless of what the
+      client sends.
+    * Owner-only: redirects to my_ads if someone tries to upload proof for
+      an ad that isn't theirs.
+    * After upload: payment_status stays 'pending' (admin must manually
+      mark 'verified' / 'rejected'). This prevents auto-approval scams.
+    """
+    from app import db
+    from app.models.ad import Ad
+    import uuid
+
+    ad = Ad.query.filter_by(ad_id=ad_id).first()
+    if not ad:
+        flash('Piblisite sa a pa egziste.', 'error')
+        return redirect(url_for('auth.my_ads'))
+
+    if ad.user_whatsapp != current_user.whatsapp:
+        flash('Ou pa gen dwa modifye piblisite lòt moun!', 'error')
+        return redirect(url_for('auth.my_ads'))
+
+    # Lock-in the publication fee (always 1000 Gkach) for backwards compat
+    # with rows created before the column existed.
+    if not ad.publish_fee_gkach or ad.publish_fee_gkach <= 0:
+        ad.publish_fee_gkach = ADS_PUBLISH_FEE
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    fee = int(ad.publish_fee_gkach or ADS_PUBLISH_FEE)
+    rate = float(current_app.config.get('GKACH_TO_HTG_RATE', 1.2) or 1.2)
+    fee_htg = round(float(fee) * rate, 2)
+
+    if request.method == 'POST':
+        try:
+            accept_terms = request.form.get('accept_terms', '')
+            if str(accept_terms).lower() not in ('on', 'true', '1', 'yes', 'oui'):
+                raise ValueError(
+                    "Ou dwe li epi aksepte Kondisyon ak Règleman anvan ou voye prèv la."
+                )
+
+            if 'payment_proof' not in request.files:
+                raise ValueError('Tanpri chwazi yon fichye prèv pèman (screenshot).')
+
+            file = request.files['payment_proof']
+            if not file or not file.filename:
+                raise ValueError('Tanpri chwazi yon fichye prèv pèman.')
+
+            ext = (
+                file.filename.rsplit('.', 1)[-1].lower()
+                if '.' in file.filename else 'jpg'
+            )
+            if ext not in {'jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'}:
+                raise ValueError('Fòma fichye pa aksepte. Itilize JPG, PNG, GIF, PDF oswa WEBP.')
+
+            upload_folder = os.path.join(
+                current_app.root_path, '..', current_app.config['UPLOAD_FOLDER']
+            )
+            upload_folder = os.path.abspath(upload_folder)
+            os.makedirs(upload_folder, exist_ok=True)
+
+            filename = f'pay_proof_{uuid.uuid4().hex}.{ext}'
+            dest = os.path.join(upload_folder, filename)
+            file.save(dest)
+
+            ad.payment_proof = filename
+            # Keep 'pending': admin must flip to 'verified' manually.
+            ad.payment_status = 'pending'
+            db.session.commit()
+
+            # Notify admin via notification helper if available.
+            try:
+                from src.notifications import notify_admin_payment_proof_uploaded
+                notify_admin_payment_proof_uploaded(ad.user_whatsapp, ad.ad_id)
+            except Exception:
+                pass
+
+            flash(
+                f'Prèv pèman an resevwa! (FRAI: {fee} Gkach = {fee_htg:.2f} HTG). '
+                f'Administratè a pral verifye l pa WhatsApp epi mete estati piblisite w la ajou.',
+                'success'
+            )
+            return redirect(url_for('auth.my_ads'))
+
+        except ValueError as e:
+            flash(str(e), 'error')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'upload_payment failed ad_id={ad_id}: {e}')
+            flash('Erè pandan w ap telechaje prèv pèman an. Reeseye.', 'error')
+
+    return render_template(
+        'upload_payment.html',
+        ad=ad,
+        fee_gkach=fee,
+        fee_htg=fee_htg,
+    )
+
+
 @main_bp.route('/upload_gkach_approval/<request_id>', methods=['GET', 'POST'])
 def upload_gkach_approval(request_id):
     """Upload payment proof for Gkach request"""
@@ -664,9 +781,23 @@ def submit_ad():
                 category=category,
                 quantity=quantity
             )
+            # Apply fixed publication fee (1000 Gkach) for every new ad so the
+            # admin panel + upload_payment page display it.
+            try:
+                from app import db as _db
+                ad.publish_fee_gkach = ADS_PUBLISH_FEE
+                _db.session.commit()
+            except Exception:
+                from app import db as _db2
+                _db2.session.rollback()
 
-            flash('Piblisite soumèt avèk siksè! Li ap revize pa admin yo.', 'success')
-            return redirect(url_for('auth.my_ads'))
+            flash(
+                f'Piblisite soumèt avèk siksè! Ou dwe PEYE {ADS_PUBLISH_FEE} Gkach '
+                f'(≈ {round(float(ADS_PUBLISH_FEE) * float(current_app.config.get("GKACH_TO_HTG_RATE",1.2) or 1.2), 2):.2f} HTG) '
+                f'pou ADMIN ka aksepte l epi li afiche nan mache a.',
+                'success'
+            )
+            return redirect(url_for('main.upload_payment', ad_id=ad.ad_id))
 
         except ValidationError as e:
             flash(str(e), 'error')

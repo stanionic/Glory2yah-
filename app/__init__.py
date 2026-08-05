@@ -246,6 +246,10 @@ def create_app(config_name=None):
                 db.session.execute(_sa_text('ALTER TABLE ads ADD COLUMN quantity INTEGER DEFAULT 1'))
                 db.session.commit()
                 app.logger.info('ADS MIGRATION: added ads.quantity column (default 1)')
+            if 'publish_fee_gkach' not in _ads_cols:
+                db.session.execute(_sa_text('ALTER TABLE ads ADD COLUMN publish_fee_gkach INTEGER DEFAULT 1000'))
+                db.session.commit()
+                app.logger.info('ADS MIGRATION: added ads.publish_fee_gkach column (default 1000)')
         except Exception as _e:
             db.session.rollback()
             app.logger.warning(f"ADS MIGRATION: could not add ads columns: {_e}")

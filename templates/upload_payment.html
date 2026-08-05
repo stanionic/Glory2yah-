@@ -2,37 +2,125 @@
 
 {% block content %}
 <div class="container">
-    <h2>Telechaje Prèv Pèman w</h2>
-    
+    <h2>💳 Telechaje Prèv Pèman Piblisite w</h2>
+
     <div class="payment-instruction">
+        {% if ad %}
+        <div class="alert alert-info pay-summary" style="padding:18px 22px;border-radius:16px;background:linear-gradient(135deg,#eff6ff,#e0e7ff);border:1.5px solid #bfdbfe;color:#1e3a8a;">
+            <h3 style="margin:0 0 8px 0;color:#1d4ed8;"><i class="fas fa-file-invoice-dollar"></i> Rezime Piblisite a</h3>
+            <p style="margin:6px 0;"><strong>Tit:</strong> {{ ad.title }}</p>
+            <p style="margin:6px 0;"><strong>Tip:</strong>
+                {% if ad.ad_type == 'sell' %}Vann pwodwi{% else %}Pibliye reklame{% endif %}
+            </p>
+            {% if ad.ad_type == 'sell' %}
+            <p style="margin:6px 0;"><strong>Pri pwodwi:</strong> {{ ad.price_gkach }} Gkach &nbsp;|&nbsp;
+                📦 Estòk: {{ ad.quantity if ad.quantity is defined and ad.quantity else 1 }}</p>
+            {% endif %}
+            <p style="margin:10px 0 4px 0;font-size:18px;font-weight:900;color:#7c2d12;background:linear-gradient(135deg,#fef3c7,#fde68a);display:inline-block;padding:8px 14px;border-radius:12px;border:1.5px solid #fbbf24;">
+                💰 FRAI PIBLIKASYON OBLIGATWA: <span style="color:#9a3412;">{{ fee_gkach }} Gkach</span>
+                &nbsp;≈&nbsp; <span>{{ fee_htg }} HTG</span>
+            </p>
+            <p style="margin:10px 0 0 0;font-size:13px;opacity:.9;">
+                <i class="fas fa-exclamation-circle" style="color:#dc2626;"></i>&nbsp;
+                San ou pa peye <strong>{{ fee_gkach }} Gkach</strong> sa a, ADMIN pap ka
+                aksepte piblisite w la, epi li pap janm parèt nan mache Glory2Yah a.
+            </p>
+        </div>
+        {% endif %}
+
         <div class="alert alert-info">
-            <h3>Telechaje PRÈV pÈman pa Moncash oubyen Natcash</h3>
-            <p>Pou piblisite w la afiche, ou dwe telechaje yon screenshot prèv pÈman w.</p>
+            <h3><i class="fas fa-mobile-alt"></i> Telechaje PRÈV pÈman pa Moncash oubyen Netcash</h3>
+            <p>Pou piblisite w la afiche, ou dwe telechaje yon screenshot prèv pÈman w nan montan
+            <strong>{{ fee_gkach }} Gkach = {{ fee_htg }} HTG</strong>.</p>
+            <p>
+                <i class="fab fa-whatsapp" style="color:#10b981;"></i>
+                &nbsp;Whatsapp ADMIN: <strong>+509 42 88 2076</strong> &nbsp;
+                <i class="far fa-clock"></i> Verifye fèt nan lespas 24 èdtan.
+            </p>
         </div>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" class="payment-form">
+    <form method="POST" enctype="multipart/form-data" class="payment-form" novalidate id="payProofForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="form-group">
-            <label for="payment_proof">Screenshot Prèv Pèman *</label>
-            <input type="file" id="payment_proof" name="payment_proof" accept="image/*,.pdf" required>
-            <small>Format pèmèt: JPG, PNG, GIF, PDF</small>
+            <label for="payment_proof">🖼 Screenshot Prèv Pèman (Moncash / Netcash) *</label>
+            <input type="file" id="payment_proof" name="payment_proof"
+                   accept="image/*,image/webp,.pdf" required>
+            <small>Format pèmèt: JPG, PNG, GIF, WEBP, PDF — maksimòm 10MB</small>
         </div>
 
         <div class="form-group">
             <div class="terms-checkbox">
-                <input type="checkbox" id="accept_terms" name="accept_terms" required>
-                <label for="accept_terms">Mwen li epi mwen aksepte <a href="#" onclick="showTermsModal()">Kondisyon ak Règleman</a> pou soumisyon piblisite ak itilizasyon Gkach</label>
+                <input type="checkbox" id="accept_terms" name="accept_terms" checked>
+                <label for="accept_terms">Mwen konfime mwen peye <strong>{{ fee_gkach }} Gkach ({{ fee_htg }} HTG)</strong>
+                nan kont Glory2Yah, epi mwen aksepte <a href="#" onclick="showTermsModal()">Kondisyon ak Règleman</a> an.</label>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-gold">Telechaje Prèv Pèman</button>
+        <button type="submit" class="btn btn-gold" id="paySubmitBtn">
+            <i class="fas fa-upload"></i> Voye Prèv Pèman pou Verifye
+        </button>
     </form>
 
     <div class="whatsapp-help">
         <p>Gen yon pwoblèm? Kontakte nou sou WhatsApp:</p>
-        <a href="https://wa.me/+50942882076?text=Ey%20glory2YahPub" class="btn btn-whatsapp">
+        <a href="https://wa.me/+50942882076?text=Ey%20glory2YahPub%20mwen%20peye%20frai%20piblisite"
+           class="btn btn-whatsapp" target="_blank" rel="noopener">
             📱 Chat ak Administratè
         </a>
     </div>
 </div>
+
+<style>
+.pay-summary h3 i { margin-right: 8px; }
+.btn-gold {
+    width: 100%;
+    padding: 16px 18px;
+    font-size: 17px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+    color: #3f2d00;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(255, 183, 0, .35);
+    transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(255,183,0,.45); }
+.btn-gold[disabled] { opacity: .6; cursor: progress; transform: none; }
+</style>
+
+<script>
+(function(){
+    const form = document.getElementById('payProofForm');
+    const btn  = document.getElementById('paySubmitBtn');
+    if (!form || !btn) return;
+    let submitting = false;
+
+    form.addEventListener('submit', function(e){
+        if (submitting) { e.preventDefault(); return; }
+        const missing = [];
+        const file = document.getElementById('payment_proof');
+        if (!file || !(file.files && file.files.length > 0)) {
+            missing.push("Tanpri chwazi screenshot prèv pèman an (JPG/PNG/PDF)");
+        }
+        const terms = document.getElementById('accept_terms');
+        if (terms && !terms.checked) {
+            missing.push("Ou dwe konfime ou peye frai la epi aksepte kondisyon yo");
+        }
+        if (missing.length > 0) {
+            e.preventDefault();
+            alert("Tanpri ranpli sa yo anvan ou voye prèv la:\n\n - " + missing.join("\n - "));
+            window.scrollTo({top:0, behavior:'smooth'});
+            return false;
+        }
+        submitting = true;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Prèv la ap voye... tann 1 segonn';
+        btn.style.opacity = .7;
+        return true;
+    });
+})();
+</script>
 {% endblock %}
