@@ -660,65 +660,129 @@ def popup_settings():
 @login_required
 @admin_required
 def update_ad_status():
-    """Update ad admin status and payment status"""
-    ad_id = request.form.get('ad_id')
+    """Update ad admin status and payment status.
+
+    Supports three call patterns from the admin panel:
+
+    1. MANUAL COMBO (2 dropdowns + "Mete Ajou" submit button) — legacy:
+          status         = 'under_review' | 'approved' | 'rejected'
+          payment_status = 'pending'      | 'verified' | 'rejected'
+
+    2. ONE-CLICK ✅ "Apwouve Direkman" — most common admin action (2026-08-07):
+          action = 'approve-direct'
+       → Sets BOTH payment_status='verified' AND admin_status='approved' in one click.
+         Also stamps publish_fee_gkach = 1000 (legacy compat for pre-fee rows).
+         The manual fee-guard (needs payment verified) is BYPASSED because the admin
+         explicitly clicked "Approve DIRECT" (= admin confirms payment received OK).
+
+    3. ONE-CLICK ❌ "Rejte Direkman":
+          action = 'reject-direct'
+       → Sets admin_status='rejected' (and a default reason if none supplied).
+    """
+    ad_id        = request.form.get('ad_id')
     admin_status = request.form.get('status')
     payment_status = request.form.get('payment_status')
-    
+    action       = (request.form.get('action') or '').strip().lower()
+    reason       = request.form.get('reason', '') or ''
+
     if not ad_id:
         flash('ID piblisite obligatwa.', 'error')
         return redirect(url_for('admin.dashboard'))
-    
+
     ad = Ad.query.filter_by(ad_id=ad_id).first()
     if not ad:
         flash('Piblisite pa jwenn.', 'error')
         return redirect(url_for('admin.dashboard'))
-    
-    # Publish fee guard: every ad costs 1000 Gkach. Admin cannot approve an
-    # ad whose publish fee has not been paid/verified yet. This prevents
-    # accidental "publish unpaid ads" human errors in the admin panel.
-    #   - payment_status == 'verified'  => user paid, admin says so => ok to approve
-    #   - payment_status == 'completed' => legacy/compat rows from scripts
-    #   - Everything else               => BLOCK approval with a Creole warning,
-    #                                        but admin can still set REJECTED,
-    #                                        or flip payment_status to 'verified'
-    #                                        first then approve in a 2nd click.
+
     fee = int(getattr(ad, 'publish_fee_gkach', None) or 1000)
-    pay_ok = (
-        (ad.payment_status or '') in {'verified', 'completed'}
-    )
-    if admin_status == 'approved' and not pay_ok:
+    skip_fee_guard = False
+
+    # ---------- ONE-CLICK ACTIONS ----------
+    if action == 'approve-direct':
+        # Admin explicitly confirms: this ad is paid for → auto-flip BOTH flags.
+        payment_status = 'verified'
+        admin_status   = 'approved'
+        skip_fee_guard = True
+    elif action == 'reject-direct':
+        payment_status = payment_status or ad.payment_status or 'pending'
+        admin_status   = 'rejected'
+        skip_fee_guard = True
+
+    # ---------- STAMP DEFAULT FEE (legacy compat rows) ----------
+    if not getattr(ad, 'publish_fee_gkach', None) or ad.publish_fee_gkach <= 0:
+        try:
+            setattr(ad, 'publish_fee_gkach', fee)
+        except Exception:
+            pass
+
+    # ---------- FEE GUARD (only for manual "approved" status flip) ----------
+    pay_ok = (ad.payment_status or '') in {'verified', 'completed'}
+    if admin_status == 'approved' and not pay_ok and not skip_fee_guard:
         flash(
-            f'PA KA METE APWOUVE: Itilizatè poko peye frai piblikasyon la '
-            f'({fee} Gkach). Premyman, seleksyone "Pèman Verifye" nan menu '
-            f'payment_status epi Mete Ajou. Aprè ou peye, ou ka klike "Apwouve".',
+            '⚠️  PA KA METE APWOUVE TOUT SEL: Pèman an poko verifye!\n'
+            '  👉 Ou gen 2 opsyon:\n'
+            f'  (A) KLKE BOUTON VERT ✅ "Apwouve Direkman" anba a (pi fasil, 1 klik)\n'
+            '  (B) Oubien manèlman: nan meni "Pèman Verifye" chwazi → klike Mete Ajou → '
+            ' Apre sa, nan meni Estati chwazi "Apwouve" → klike Mete Ajou yon dezyèm fwa.\n'
+            f'  💡 Frai piblikasyon = {fee} Gkach.',
             'error'
         )
         return redirect(url_for('admin.dashboard'))
 
-    if admin_status:
+    # ---------- APPLY CHANGES ----------
+    changed_msg_parts = []
+    if admin_status and ad.admin_status != admin_status:
         ad.admin_status = admin_status
-    if payment_status:
-        ad.payment_status = payment_status
-        # When admin marks the payment as verified/rejected, also stamp the
-        # fee (in case of pre-column legacy rows) so admin panel is consistent.
-        if payment_status in {'verified', 'completed', 'rejected', 'pending'}:
-            if not getattr(ad, 'publish_fee_gkach', None) or ad.publish_fee_gkach <= 0:
-                try:
-                    setattr(ad, 'publish_fee_gkach', 1000)
-                except Exception:
-                    pass
+        label = {'under_review': 'An Revizyon',
+                 'approved':    '✅ Apwouve',
+                 'rejected':    '❌ Rejte'}.get(admin_status, admin_status)
+        changed_msg_parts.append(f'Estati admin → {label}')
 
-    
+    if payment_status and ad.payment_status != payment_status:
+        ad.payment_status = payment_status
+        label = {'pending':   'Pèman an Atann',
+                 'verified':  '💳 Pèman Verifye',
+                 'completed': '💳 Pèman Verifye',
+                 'rejected':  'Pèman Rejte'}.get(payment_status, payment_status)
+        changed_msg_parts.append(f'Estati pèman → {label}')
+
+    if reason:
+        # Save rejection reason onto the ad if column exists (legacy compat ignore)
+        try:
+            if hasattr(ad, 'reject_reason'):
+                ad.reject_reason = reason[:500]
+                if 'Rejte' in label or admin_status == 'rejected':
+                    changed_msg_parts.append(f'Rezon: {reason[:80]}')
+        except Exception:
+            pass
+
     db.session.commit()
-    
-    # Invalidate cache
+
+    # ---------- INVALIDATE CACHE ----------
     from app.services.redis_service import RedisService
     from app import redis_client
-    RedisService(redis_client).invalidate_approved_ads()
-    RedisService(redis_client).cache_delete(f"ad:{ad_id}")
-    
-    flash('Estati piblisite mete ajou avèk siksè!', 'success')
+    try:
+        RedisService(redis_client).invalidate_approved_ads()
+        RedisService(redis_client).cache_delete(f"ad:{ad_id}")
+    except Exception:
+        pass
+
+    # ---------- FLASH USER-FRIENDLY SUMMARY ----------
+    if action == 'approve-direct':
+        flash(
+            f'✅ Piblisite "{(ad.title or ad.ad_id)[:45]}" APWOUVE avèk siksè!\n'
+            f'   • Pèman verifye otomatik ({fee} Gkach)\n'
+            f'   • Kounye a li parèt nan 🛒 Mache si ad_type = VANN\n'
+            f'   • Li parèt tou nan fil d\'aktyalite / feed.',
+            'success'
+        )
+    elif action == 'reject-direct':
+        flash(f'❌ Piblisite "{(ad.title or ad.ad_id)[:45]}" rejete.', 'info')
+    elif changed_msg_parts:
+        flash(f'✓ Estati aktyalize avèk siksè: ' + ' | '.join(changed_msg_parts), 'success')
+    else:
+        flash('Ok — pa gen okenn chanjman detekte.', 'info')
+
     return redirect(url_for('admin.dashboard'))
 
 

@@ -191,6 +191,41 @@
                                     {% endif %}
                                 </div>
                                 <div class="admin-ad-actions">
+                                    {# ===== ONE-CLICK QUICK ACTIONS (NOUVEAU 2026-08-07: évite l'erreur 2 étapes) ===== #}
+                                    {% if ad.admin_status != 'approved' %}
+                                    <form method="POST" action="{{ url_for('admin.update_ad_status') }}"
+                                          onsubmit="return confirm('Apwouve piblisite sa a direkman? Pèman ap verifye otomatik e li parèt nan Mache/Feed imedyatman.')"
+                                          class="mb-2">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="ad_id" value="{{ ad.ad_id }}">
+                                        <input type="hidden" name="action" value="approve-direct">
+                                        <button type="submit"
+                                                class="admin-btn admin-btn-success admin-btn-w-100 admin-btn-sm"
+                                                style="background:linear-gradient(135deg,#10b981,#059669)!important;border:none;font-weight:800;letter-spacing:.02em;">
+                                            ✅ Apwouve Direkman (1 Klik)
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if ad.admin_status != 'rejected' %}
+                                    <form method="POST" action="{{ url_for('admin.update_ad_status') }}"
+                                          onsubmit="return confirm('Èske w sèten w vle rejte piblisite sa a?')"
+                                          class="mb-2">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="ad_id" value="{{ ad.ad_id }}">
+                                        <input type="hidden" name="action" value="reject-direct">
+                                        <button type="submit"
+                                                class="admin-btn admin-btn-danger admin-btn-w-100 admin-btn-sm"
+                                                style="background:linear-gradient(135deg,#ef4444,#b91c1c)!important;border:none;font-weight:800;">
+                                            ❌ Rejte Direkman
+                                        </button>
+                                    </form>
+                                    {% endif %}
+
+                                    <small class="text-muted d-block mb-2" style="font-size:12px;line-height:1.4;color:#5b4a99;">
+                                        ⓘ Konsèy: Sèvi ak bouton vèt ✅ pi wo a pou apwouve vit.
+                                        Meni anba a, se pou ka ranje estati manèlman si w bezwen.
+                                    </small>
+
                                     <form method="POST" action="{{ url_for('admin.update_ad_status') }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="ad_id" value="{{ ad.ad_id }}">
