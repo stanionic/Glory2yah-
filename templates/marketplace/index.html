@@ -30,6 +30,26 @@
                 <span>🍔</span>
                 <span>Manje</span>
             </button>
+            <button class="filter-chip {% if category == 'sports' %}active{% endif %}" onclick="filterCategory('sports')">
+                <span>⚽</span>
+                <span>Espò</span>
+            </button>
+            <button class="filter-chip {% if category == 'books' %}active{% endif %}" onclick="filterCategory('books')">
+                <span>📚</span>
+                <span>Liv</span>
+            </button>
+            <button class="filter-chip {% if category == 'toys' %}active{% endif %}" onclick="filterCategory('toys')">
+                <span>🧸</span>
+                <span>Jwèt</span>
+            </button>
+            <button class="filter-chip {% if category == 'automotive' %}active{% endif %}" onclick="filterCategory('automotive')">
+                <span>🚗</span>
+                <span>Machin</span>
+            </button>
+            <button class="filter-chip {% if category == 'other' %}active{% endif %}" onclick="filterCategory('other')">
+                <span>📦</span>
+                <span>Lòt</span>
+            </button>
         </div>
     </div>
 
