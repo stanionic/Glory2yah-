@@ -188,15 +188,26 @@ def index():
         if sort_by not in allowed_sorts:
             sort_by = 'recent'
 
-        # ALL approved ads appear in MACHE (sell + publish + jobs + services etc.)
-        # BUGFIX 2026-08-06: previously `ad_type='sell'` exclusif was hiding
-        # every approved announcement/publish/job/service ad.
+        # ONLY ADS WITH ad_type='sell' (VANN) and admin_status='approved' are displayed
+        # in MACHE. Annonces 'publish' (PIBLIYE SELMAN) stay in the social feed only.
+        # (Fix 2026-08-07: previously ALL approved ads (sell+publish+services) polluted Mache
+        #  and real sell products got pushed off-screen / hidden.)
         from app.models.ad import Ad
-        query = Ad.query.filter_by(admin_status='approved')
+        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
         # #region debug-point B:check-filter-chain (H2 H5)
-        _dbg_log('B', 'base query built: filter_by(admin_status=approved). about to apply category/sort.',
-                 {'category': category, 'sort_by': sort_by, 'page': page, 'per_page': per_page},
-                 location='marketplace.py:index:pre-filter')
+        from sqlalchemy import func as _sa_func
+        try:
+            total_db_approved = Ad.query.filter_by(admin_status='approved').count() or 0
+            total_db_sell_approved = Ad.query.filter_by(admin_status='approved', ad_type='sell').count() or 0
+            total_db_publish_approved = Ad.query.filter_by(admin_status='approved', ad_type='publish').count() or 0
+        except Exception:
+            total_db_approved = total_db_sell_approved = total_db_publish_approved = -1
+        _dbg_log('B', 'base query: ONLY (admin_status=approved, ad_type=sell). pre-filter chain.',
+                 {'category': category, 'sort_by': sort_by, 'page': page, 'per_page': per_page,
+                  'db_approved_total': total_db_approved,
+                  'db_approved_sell': total_db_sell_approved,
+                  'db_approved_publish': total_db_publish_approved},
+                 location='marketplace.py:index:pre-filter-sell-only')
         # #endregion
         if category != 'all':
             query = query.filter_by(category=category)
@@ -277,9 +288,9 @@ def api_products():
         category_raw = request.args.get('category', 'all') or 'all'
         category = category_raw.strip().lower()
 
-        # ALL approved ads
+        # ONLY ADS SELL+APPROVED go in Mache (publish stays in feed). Same filter as index().
         from app.models.ad import Ad
-        query = Ad.query.filter_by(admin_status='approved')
+        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
         if category != 'all':
             query = query.filter_by(category=category)
         query = query.order_by(Ad.created_at.desc())
