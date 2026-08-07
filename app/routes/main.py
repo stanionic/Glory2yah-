@@ -45,16 +45,100 @@ def search():
 @main_bp.route('/')
 def index():
     """Homepage with Facebook-style feed and stories - Split layout with posts and ads carousel"""
+    # Flush Redis approved-ads cache (prevents stale 'sell-only' cached rows from
+    # pre-200eaea builds hiding all approved 'publish' type ads from carousels/feeds)
     try:
-        # Get posts for left side (social feed)
-        posts = AdService.get_approved_ads(page=1, per_page=10)
-        
+        from app.services.redis_service import RedisService
+        from app import redis_client as _rc
+        _rs = RedisService(_rc)
+        _rs.invalidate_approved_ads()
+    except Exception:
+        pass
+
+    # Robust ad-to-dict helper: NEVER raise on missing columns (legacy SQLite DBs on
+    # Render may skip ALTER TABLE migrations for quantity/publish_fee_gkach causing
+    # AttributeError → empty feed silently)
+    def _safe_ad_to_dict(ad):
+        try:
+            return ad.to_dict()
+        except Exception:
+            import re as _re
+            def _g(attr, default=None):
+                try:
+                    v = getattr(ad, attr, default)
+                    return default if v is None else v
+                except Exception:
+                    return default
+            url = (_g('description', '') or '').strip() if _g('media_type') == 'url' else None
+            video_id = None
+            embed_url = None
+            if url:
+                yt = _re.search(r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
+                if yt:
+                    video_id = yt.group(1)
+                    embed_url = f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1'
+                else:
+                    vm = _re.search(r'(?:vimeo\.com\/)([0-9]+)', url)
+                    if vm:
+                        video_id = vm.group(1)
+                        embed_url = f'https://player.vimeo.com/video/{video_id}?autoplay=1&muted=1&playsinline=1'
+            images_list = []
+            try:
+                imgs = _g('images', '') or ''
+                if imgs:
+                    images_list = [i.strip() for i in str(imgs).split(',') if i and i.strip()]
+            except Exception:
+                pass
+            qty = _g('quantity', None)
+            if qty is None:
+                qty = 1 if _g('ad_type', 'sell') == 'sell' else 0
+            created = None
+            try:
+                if ad.created_at is not None:
+                    created = ad.created_at.isoformat()
+            except Exception:
+                pass
+            return {
+                'id': _g('id'),
+                'ad_id': _g('ad_id', ''),
+                'user_whatsapp': _g('user_whatsapp', ''),
+                'title': _g('title', ''),
+                'description': _g('description', ''),
+                'media_type': _g('media_type', 'images'),
+                'images': images_list,
+                'video': _g('video'),
+                'video_id': video_id,
+                'embed_url': embed_url,
+                'ad_type': _g('ad_type', 'sell'),
+                'price_gkach': _g('price_gkach', 0) or 0,
+                'quantity': qty,
+                'publish_fee_gkach': _g('publish_fee_gkach', 1000) or 1000,
+                'category': _g('category') or 'other',
+                'admin_status': _g('admin_status', 'under_review'),
+                'payment_status': _g('payment_status', 'pending'),
+                'like_count': _g('like_count', 0) or 0,
+                'star_count': _g('star_count', 0) or 0,
+                'view_count': _g('view_count', 0) or 0,
+                'share_count': _g('share_count', 0) or 0,
+                'created_at': created,
+            }
+
+    try:
+        # Get posts for left side (social feed) - wrap safely
+        try:
+            posts = AdService.get_approved_ads(page=1, per_page=10)
+        except Exception as posts_err:
+            current_app.logger.warning(f"main.index AdService.get_approved_ads failed fallback DB query: {posts_err}")
+            from app.models.ad import Ad as _Ad
+            posts_db = _Ad.query.filter_by(admin_status='approved').order_by(_Ad.created_at.desc()).limit(10).all()
+            posts = [_safe_ad_to_dict(a) for a in posts_db]
+
         # Get ALL approved marketplace ads for carousel - ALL approved types (sell + publish)
         # show up in Mache. Approved announcements / services / jobs etc. must be visible.
         from app.models.ad import Ad
         marketplace_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
-        marketplace_ads_dict = [ad.to_dict() for ad in marketplace_ads]
-        
+        marketplace_ads_dict = [_safe_ad_to_dict(ad) for ad in marketplace_ads]
+
         return render_template(
             'index.html',
             posts=posts,
@@ -62,7 +146,8 @@ def index():
             current_user=current_user
         )
     except Exception as e:
-        current_app.logger.error(f"Error in index: {e}")
+        import traceback as _tb
+        current_app.logger.error(f"FATAL main.index exception: {e}\n{_tb.format_exc()}")
         return render_template(
             'index.html',
             posts=[],
