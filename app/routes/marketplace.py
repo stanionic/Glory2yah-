@@ -29,10 +29,11 @@ def index():
         if sort_by not in allowed_sorts:
             sort_by = 'recent' # Default to recent if invalid
 
-        # BUGFIX: only 'sell' ads appear in the marketplace product grid
-        # (social publish posts were polluting the grid with price-0 items).
+        # BUGFIX 2026-08-06: ALL approved ads must appear in MACHE, not just sell.
+        # Excluding ad_type='publish' was hiding approved announcements/jobs/services
+        # that users submitted and admin approved.
         from app.models.ad import Ad
-        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
+        query = Ad.query.filter_by(admin_status='approved')
         if category != 'all':
             query = query.filter_by(category=category)
         if sort_by == 'price_low':
@@ -82,9 +83,9 @@ def api_products():
         
         category = request.args.get('category', 'all')
         
-        # BUGFIX: only 'sell' ads in marketplace API (same as index())
+        # Same fix: ALL approved ads, not just sell
         from app.models.ad import Ad
-        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
+        query = Ad.query.filter_by(admin_status='approved')
         if category != 'all':
             query = query.filter_by(category=category)
         query = query.order_by(Ad.created_at.desc())

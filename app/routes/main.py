@@ -49,9 +49,10 @@ def index():
         # Get posts for left side (social feed)
         posts = AdService.get_approved_ads(page=1, per_page=10)
         
-        # Get ALL approved marketplace ads for carousel on right side
+        # Get ALL approved marketplace ads for carousel - ALL approved types (sell + publish)
+        # show up in Mache. Approved announcements / services / jobs etc. must be visible.
         from app.models.ad import Ad
-        marketplace_ads = Ad.query.filter_by(admin_status='approved', ad_type='sell').order_by(Ad.created_at.desc()).all()
+        marketplace_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
         marketplace_ads_dict = [ad.to_dict() for ad in marketplace_ads]
         
         return render_template(
