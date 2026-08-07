@@ -228,26 +228,35 @@
 <div class="product-detail-container">
     <div class="product-grid">
         <div class="product-gallery">
-            {% if ad.media_type == 'video' %}
-                <video id="mainVideo" class="main-image" controls muted playsinline preload="auto" loop>
-                    <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
+            {% set ad_media_type_var = (ad.media_type if (ad is not mapping) else ad.get('media_type', 'images')) %}
+            {% set ad_desc_var = (ad.description if (ad is not mapping) else ad.get('description','')) %}
+            {% set ad_imgs_var = (ad.get_images_list() if (ad is not mapping and ad.get_images_list is defined) else (ad.get('images', []) or [])) %}
+            {# CASE A: explicit media_type='url' → iframe embed autoplay #}
+            {% set ad_embed_url = (ad_desc_var|get_embed_url) if (ad_media_type_var == 'url' and ad_desc_var) else None %}
+            {# CASE B (screenshot 2026-08-07): Post Teks → images media_type mais images vides + description URL → iframe auto-detect #}
+            {% if not ad_embed_url and ad_media_type_var in (None, 'images', '') and ad_desc_var and (ad_imgs_var|length == 0) %}
+                {% set ad_embed_url = ad_desc_var|get_embed_url %}
+            {% endif %}
+
+            {% if ad_media_type_var == 'video' %}
+                {% set video_upload_name = (ad.video if ad is not mapping else ad.get('video','')) %}
+                {% set video_upload_url = url_for('static', filename='uploads/' ~ video_upload_name) if video_upload_name else None %}
+                {% set main_video_url = (ad.video_url if ad is not mapping else ad.get('video_url')) or video_upload_url %}
+                <video id="mainVideo" class="main-image" controls muted playsinline preload="auto" loop
+                       src="{{ main_video_url }}" style="object-fit: contain; background:#000;">
                 </video>
                 <script>
                     (function(){
                         function tryStartMainVideo(){
                             const mv = document.getElementById('mainVideo');
                             if(!mv) return;
-                            // Mobile policies require muted + playsinline for autoplay
                             mv.setAttribute('muted','');
                             mv.muted = true;
                             try { mv.setAttribute('playsinline',''); mv.playsInline = true; } catch(_){}
                             mv.controls = true;
                             const p = mv.play();
                             if (p && typeof p.catch === 'function') {
-                                p.catch(() => {
-                                    // If autoplay is blocked, show a visible "Play" overlay or ensure controls are shown
-                                    mv.controls = true;
-                                });
+                                p.catch(() => { mv.controls = true; });
                             }
                         }
                         if (document.readyState === 'complete' || document.readyState === 'interactive') {
@@ -257,6 +266,83 @@
                         }
                         window.addEventListener('load', () => setTimeout(tryStartMainVideo, 150));
                     })();
+                </script>
+            {% elif ad_embed_url %}
+                {# EMBED IFRAME (YouTube/Vimeo/TikTok/IG/FB) — autoplay on viewport #}
+                <div style="width:100%; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; margin-bottom:15px; isolation:isolate;">
+                    <iframe
+                        id="mainEmbed"
+                        data-autoplay-src="{{ ad_embed_url }}"
+                        src=""
+                        style="width:100%; height:100%; border:none; background:#000;"
+                        allowfullscreen
+                        loading="eager"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope; display-capture"
+                        data-ad-detail-embed="1"
+                        crossorigin="anonymous"
+                    ></iframe>
+                </div>
+                <script>
+                (function(){
+                    function applyAutoplayParams(hostname, u){
+                        const isYT = hostname.includes('youtube') || hostname === 'youtube-nocookie.com';
+                        const isVM = hostname.includes('vimeo');
+                        const isTT = hostname.includes('tiktok');
+                        const isIG = hostname.includes('instagram');
+                        const isFB = hostname.includes('facebook') || hostname.includes('fb.');
+                        try {
+                            if (isYT) {
+                                u.searchParams.set('autoplay','1'); u.searchParams.set('mute','1');
+                                u.searchParams.set('playsinline','1'); u.searchParams.set('loop','1');
+                                const vid = u.pathname.split('/').filter(Boolean).pop();
+                                if (vid && !u.searchParams.get('playlist')) u.searchParams.set('playlist', vid);
+                                if (!u.searchParams.get('rel')) u.searchParams.set('rel','0');
+                                if (!u.searchParams.get('hl')) u.searchParams.set('hl','ht');
+                                return u.toString();
+                            }
+                            if (isVM) {
+                                u.searchParams.set('autoplay','1'); u.searchParams.set('muted','1');
+                                u.searchParams.set('playsinline','1'); u.searchParams.set('loop','1');
+                                return u.toString();
+                            }
+                            if (isTT||isIG||isFB) {
+                                u.searchParams.set('autoplay','1');
+                                if (isTT) u.searchParams.set('muted','true');
+                                else u.searchParams.set('mute','1');
+                                u.searchParams.set('playsinline','1'); u.searchParams.set('loop','1');
+                                return u.toString();
+                            }
+                            u.searchParams.set('autoplay','1');
+                            u.searchParams.set('mute','1'); u.searchParams.set('playsinline','1');
+                        } catch(_){}
+                        return u.toString();
+                    }
+                    function tryStartEmbed(){
+                        const el = document.getElementById('mainEmbed');
+                        if (!el) return;
+                        const base = el.getAttribute('data-autoplay-src') || el.getAttribute('src') || '';
+                        if (!base) return;
+                        let u;
+                        try { u = new URL(base, window.location.origin); }
+                        catch(_){ return; }
+                        const target = applyAutoplayParams(u.hostname, u);
+                        el.dataset.srcOriginal = target;
+                        el.setAttribute('data-iframe-seen-once','1');
+                        if (target !== el.getAttribute('src')) {
+                            const p = el.parentNode;
+                            if (p) {
+                                const c = el.cloneNode(true);
+                                c.setAttribute('src', target);
+                                if (!c.getAttribute('allow')) c.setAttribute('allow','autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope; display-capture');
+                                p.replaceChild(c, el);
+                            } else { el.setAttribute('src', target); }
+                        }
+                    }
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(tryStartEmbed, 50);
+                    else document.addEventListener('DOMContentLoaded', () => setTimeout(tryStartEmbed, 50));
+                    window.addEventListener('load', () => setTimeout(tryStartEmbed, 150));
+                })();
                 </script>
             {% else %}
                 {% set images = ad.images if ad.images else [] %}

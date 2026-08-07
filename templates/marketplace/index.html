@@ -77,11 +77,34 @@
             {% set p_whatsapp = product.user_whatsapp if product is mapping else product.get('user_whatsapp','') %}
             {% set p_media_type = product.media_type if product is mapping else product.get('media_type','images') %}
             {% set p_video_url = (product.video_url if product is mapping else product.get('video_url')) or (('/static/uploads/' ~ (product.video if product is mapping else product.get('video',''))) if ((product is not mapping and product.video) or (product is mapping and product.get('video'))) else None) %}
+            {% set p_desc = product.description if product is mapping else product.get('description','') %}
+            {# --- Mache URL embed autoplay CASE A: explicit media_type='url' --- #}
+            {% set p_embed_url = (p_desc|get_embed_url) if (p_media_type == 'url' and p_desc) else None %}
+            {# --- Mache URL embed CASE B (screenshot 2026-08-07 fix): Post Teks no image
+                 user accidentally chose "3 Imaj" but uploaded none. Detect YT/TikTok URL. #}
+            {% if not p_embed_url and p_media_type in (None, 'images', '') and p_desc and (not p_images or p_images|length == 0) %}
+                {% set p_embed_url = p_desc|get_embed_url %}
+            {% endif %}
             
             <div class="product-card" data-product-id="{{ p_id }}">
                 <a href="/ad/{{ p_id }}" class="product-link">
                     <div class="product-image">
-                        {% if p_media_type == 'video' and p_video_url %}
+                        {% if p_embed_url %}
+                        <div style="width:100%; height:100%; position:relative; background:#000; overflow:hidden;">
+                            <iframe
+                                data-autoplay-src="{{ p_embed_url }}"
+                                src=""
+                                style="width:100%; height:100%; border:none; background:#000; display:block;"
+                                allowfullscreen
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"
+                                allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope; display-capture"
+                                data-marketplace-embed="1"
+                                crossorigin="anonymous"
+                            ></iframe>
+                            <span style="position:absolute; top:8px; left:8px; z-index:2; background:rgba(245,158,11,0.95); color:#fff; font-weight:800; font-size:11px; padding:3px 8px; border-radius:999px;">▶ URL</span>
+                        </div>
+                        {% elif p_media_type == 'video' and p_video_url %}
                         <video
                             src="{{ p_video_url }}"
                             style="width:100%; height:100%; object-fit: cover; background:#000;"
@@ -662,11 +685,54 @@ function buildProductCard(p) {
     div.dataset.productId = p.ad_id;
     
     const videoUrl = p.video_url || (p.video ? `/static/uploads/${p.video}` : null);
-    let mediaHtml;
-    if (p.media_type === 'video' && videoUrl) {
+    const hasImgs = p.images && Array.isArray(p.images) && p.images.length > 0
+        && p.images.some(s => s && String(s).trim() !== '');
+    let mediaHtml = '';
+
+    // CASE A: explicit media_type url
+    let embedUrl = null;
+    if (p.media_type === 'url' && p.description) {
+        embedUrl = window.__getEmbedUrl ? window.__getEmbedUrl(p.description) : null;
+        if (!embedUrl) {
+            // fallback inline regex matchers (matches index.html getEmbedUrl)
+            const s = String(p.description).trim();
+            const yt = s.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*?&)?v=|shorts\/|embed\/|live\/|v\/)|youtu\.be\/|m\.youtube\.com\/(?:watch\?(?:.*?&)?v=|shorts\/))([A-Za-z0-9_-]{11})/);
+            if (yt) embedUrl = `https://www.youtube-nocookie.com/embed/${yt[1]}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&modestbranding=1&loop=1&playlist=${encodeURIComponent(yt[1])}&hl=ht`;
+            else {
+                const vm = s.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+                if (vm) embedUrl = `https://player.vimeo.com/video/${vm[1]}?autoplay=1&muted=1&playsinline=1&loop=1&title=0&byline=0&portrait=0&transparent=0`;
+            }
+        }
+    }
+    // CASE B (screenshot 2026-08-07 fix): post teks media_type=images no uploads description=YT URL
+    if (!embedUrl && (!p.media_type || p.media_type === 'images') && !hasImgs && p.description) {
+        const s = String(p.description).trim();
+        const yt = s.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*?&)?v=|shorts\/|embed\/|live\/|v\/)|youtu\.be\/|m\.youtube\.com\/(?:watch\?(?:.*?&)?v=|shorts\/))([A-Za-z0-9_-]{11})/);
+        if (yt) embedUrl = `https://www.youtube-nocookie.com/embed/${yt[1]}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&modestbranding=1&loop=1&playlist=${encodeURIComponent(yt[1])}&hl=ht`;
+        else {
+            const vm = s.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+            if (vm) embedUrl = `https://player.vimeo.com/video/${vm[1]}?autoplay=1&muted=1&playsinline=1&loop=1&title=0&byline=0&portrait=0&transparent=0`;
+            else {
+                const tt = s.match(/tiktok\.com\/(?:@[\w.]+\/video|v)\/([0-9A-Za-z]{8,25})/) || s.match(/vm\.tiktok\.com\/([A-Za-z0-9]{3,16})/);
+                if (tt) embedUrl = `https://www.tiktok.com/embed/v2/${tt[1]}?autoplay=1&muted=true&playsinline=1&loop=1&controls=1&enablejsapi=1`;
+            }
+        }
+    }
+
+    if (embedUrl) {
+        mediaHtml = `<div style="width:100%;height:100%;position:relative;background:#000;overflow:hidden;">
+            <iframe data-autoplay-src="${embedUrl}" src=""
+                style="width:100%; height:100%; border:none; background:#000; display:block;"
+                allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope; display-capture"
+                data-marketplace-embed="1" crossorigin="anonymous"></iframe>
+            <span style="position:absolute; top:8px; left:8px; z-index:2; background:rgba(245,158,11,0.95); color:#fff; font-weight:800; font-size:11px; padding:3px 8px; border-radius:999px;">▶ URL</span>
+        </div>`;
+    } else if (p.media_type === 'video' && videoUrl) {
         mediaHtml = `<video src="${videoUrl}" style="width:100%; height:100%; object-fit: cover; background:#000;" muted playsinline loop preload="metadata" poster="" data-marketplace-video="1"></video>`;
-    } else if (p.images && p.images.length > 0) {
-        mediaHtml = `<img src="/static/uploads/${p.images[0]}" alt="${p.title}" loading="lazy">`;
+    } else if (hasImgs) {
+        const first = p.images.find(s => s && String(s).trim() !== '');
+        mediaHtml = `<img src="/static/uploads/${first}" alt="${p.title}" loading="lazy">`;
     } else {
         mediaHtml = '<div class="product-placeholder">📦</div>';
     }
@@ -737,6 +803,121 @@ function buildProductCard(p) {
         observeAll();
         if ('MutationObserver' in window) {
             const mo = new MutationObserver(() => observeAll());
+            mo.observe(document.body, { childList: true, subtree: true });
+        }
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(start, 30);
+    else document.addEventListener('DOMContentLoaded', () => setTimeout(start, 30));
+    window.addEventListener('load', () => setTimeout(start, 120));
+})();
+
+// Viewport autoplay observer for iframe EMBEDS (YT/Vimeo/TikTok/IG/FB) - marketplace grid
+(function(){
+    function start(){
+        if (!('IntersectionObserver' in window)) return;
+        const iframeSelector = [
+            'iframe[data-autoplay-src]','iframe[data-marketplace-embed]',
+            'iframe[src*="youtube.com/embed"]','iframe[src*="youtube-nocookie.com/embed"]',
+            'iframe[src*="player.vimeo.com"]','iframe[src*="tiktok.com/embed"]',
+            'iframe[src*="instagram.com/"]','iframe[src*="facebook.com/plugins"]'
+        ].join(',');
+
+        function applyParams(host, u, mode){
+            const isYT = host.includes('youtube') || host === 'youtube-nocookie.com';
+            const isVM = host.includes('vimeo');
+            const isTT = host.includes('tiktok');
+            const isIG = host.includes('instagram');
+            const isFB = host.includes('facebook') || host.includes('fb.');
+            if (isYT) {
+                if (mode==='pause'){ try { u.searchParams.set('autoplay','0'); } catch(_){} return u.toString(); }
+                try {
+                    u.searchParams.set('autoplay','1'); u.searchParams.set('mute','1');
+                    u.searchParams.set('playsinline','1'); u.searchParams.set('loop','1');
+                    const vid = u.pathname.split('/').filter(Boolean).pop();
+                    if (vid && !u.searchParams.get('playlist')) u.searchParams.set('playlist', vid);
+                    if (!u.searchParams.get('rel')) u.searchParams.set('rel','0');
+                    if (!u.searchParams.get('hl')) u.searchParams.set('hl','ht');
+                } catch(_){}
+                return u.toString();
+            }
+            if (isVM) {
+                if (mode==='pause'){ try { u.searchParams.set('autoplay','0'); } catch(_){} return u.toString(); }
+                try {
+                    u.searchParams.set('autoplay','1'); u.searchParams.set('muted','1');
+                    u.searchParams.set('playsinline','1'); u.searchParams.set('loop','1');
+                } catch(_){}
+                return u.toString();
+            }
+            if (isTT||isIG||isFB) {
+                if (mode==='pause'){ try { u.searchParams.set('autoplay','0'); } catch(_){} return u.toString(); }
+                try {
+                    u.searchParams.set('autoplay','1');
+                    if (isTT) u.searchParams.set('muted','true');
+                    else u.searchParams.set('mute','1');
+                    u.searchParams.set('playsinline','1'); u.searchParams.set('loop','1');
+                } catch(_){}
+                return u.toString();
+            }
+            try {
+                u.searchParams.set('autoplay', mode==='pause' ? '0' : '1');
+                u.searchParams.set('mute','1');
+                u.searchParams.set('playsinline','1');
+            } catch(_){}
+            return u.toString();
+        }
+
+        const obs = new IntersectionObserver((entries)=>{
+            entries.forEach(entry=>{
+                const f = entry.target;
+                const base = f.getAttribute('data-autoplay-src') || f.getAttribute('src') || '';
+                if (!base) return;
+                const seen = f.getAttribute('data-iframe-seen-once') === '1';
+                if (!entry.isIntersecting) {
+                    if (seen && f.src) {
+                        try {
+                            const u = new URL(f.src, window.location.origin);
+                            const next = applyParams(u.hostname, u, 'pause');
+                            if (next !== f.getAttribute('src')) f.setAttribute('src', next);
+                        } catch(_){}
+                    }
+                    return;
+                }
+                try {
+                    let u;
+                    try { u = new URL(base, window.location.origin); }
+                    catch(_){ return; }
+                    const target = applyParams(u.hostname, u, 'play');
+                    if (!f.dataset.srcOriginal) f.dataset.srcOriginal = target;
+                    f.setAttribute('data-iframe-seen-once','1');
+                    if (target !== f.getAttribute('src')) {
+                        const p = f.parentNode;
+                        if (p) {
+                            const c = f.cloneNode(true);
+                            c.setAttribute('src', target);
+                            c.setAttribute('data-iframe-seen-once','1');
+                            c.dataset.srcOriginal = f.dataset.srcOriginal;
+                            if (!c.getAttribute('allow')) c.setAttribute('allow','autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope; display-capture');
+                            p.replaceChild(c, f);
+                        } else { f.setAttribute('src', target); }
+                    }
+                } catch(_){}
+            });
+        }, { threshold: 0.45, rootMargin: '0px 0px -30px 0px' });
+
+        function observeAll(){
+            document.querySelectorAll(iframeSelector).forEach(f=>{
+                if (f.dataset && f.dataset.mpAutoplayObserved) return;
+                try { f.dataset.mpAutoplayObserved = '1'; } catch(_){}
+                try {
+                    if (!f.getAttribute('allow')) f.setAttribute('allow','autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope; display-capture');
+                    if (!f.getAttribute('loading')) f.setAttribute('loading','lazy');
+                } catch(_){}
+                try { obs.observe(f); } catch(_){}
+            });
+        }
+        observeAll();
+        if ('MutationObserver' in window) {
+            const mo = new MutationObserver(()=>observeAll());
             mo.observe(document.body, { childList: true, subtree: true });
         }
     }
