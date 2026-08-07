@@ -41,3 +41,15 @@ static/uploads/
 build/
 dist/
 *.egg-info/
+
+# Local debugging / test artifacts (not for production repo)
+.dbg/
+_dbg_pages/
+_dbg_test/
+*.ndjson
+_mache_sell_test_output.txt
+_debug_http_srv.py
+_dbgrun.py
+_run_flask_20s.py
+_start_flask_debug.py
+debug-*.md
