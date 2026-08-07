@@ -149,12 +149,12 @@ def create_app(config_name=None):
         youtube_match = re.search(youtube_regex, url)
         if youtube_match:
             video_id = youtube_match.group(1)
-            return f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1'
+            return f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&modestbranding=1'
         vimeo_regex = r'(?:vimeo\.com\/)([0-9]+)'
         vimeo_match = re.search(vimeo_regex, url)
         if vimeo_match:
             video_id = vimeo_match.group(1)
-            return f'https://player.vimeo.com/video/{video_id}?autoplay=1&muted=1'
+            return f'https://player.vimeo.com/video/{video_id}?autoplay=1&muted=1&playsinline=1&title=0&byline=0&portrait=0'
         return None
     
     @login_manager.user_loader

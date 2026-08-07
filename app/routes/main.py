@@ -808,25 +808,26 @@ def submit_ad():
     return render_template('submit_ad.html')
 
 
-@main_bp.route('/api/posts/preview-url', methods=['POST'])
+@main_bp.route('/api/posts/preview-url', methods=['GET'])
 def preview_url():
-    """Preview URL metadata for auto-display"""
+    """Preview URL metadata for auto-display (GET + query param = no CSRF / idempotent).
+    YouTube shortcut: returns metadata instantly without external fetch.
+    """
     from app.utils.validators import validate_url, ValidationError, sanitize_text
     import requests
     from bs4 import BeautifulSoup
     import re
-    
+
     try:
-        data = request.get_json()
-        url = data.get('url', '').strip()
-        
+        url = request.args.get('url', '').strip()
+
         # Validate and sanitize URL
         url = validate_url(url)
-        
-        # Check for YouTube URLs
+
+        # Check for YouTube URLs (short-circuit: no external HTTP needed)
         youtube_regex = r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
         youtube_match = re.search(youtube_regex, url)
-        
+
         if youtube_match:
             video_id = youtube_match.group(1)
             return jsonify({
@@ -839,20 +840,20 @@ def preview_url():
                     'url': url,
                     'type': 'youtube',
                     'video_id': video_id,
-                    'embed_url': f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1'
+                    'embed_url': f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&modestbranding=1'
                 }
             })
-        
+
         # Fetch URL content for non-YouTube URLs
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        
-        response = requests.get(url, headers=headers, timeout=10)
+
+        response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
-        
+
         soup = BeautifulSoup(response.content, 'html.parser')
-        
+
         # Extract metadata
         metadata = {
             'title': '',
@@ -862,54 +863,54 @@ def preview_url():
             'url': url,
             'type': 'link'
         }
-        
+
         # Try to get Open Graph tags first
         og_title = soup.find('meta', property='og:title')
         if og_title:
             metadata['title'] = og_title.get('content', '')
-        
+
         og_description = soup.find('meta', property='og:description')
         if og_description:
             metadata['description'] = og_description.get('content', '')
-        
+
         og_image = soup.find('meta', property='og:image')
         if og_image:
             metadata['image'] = og_image.get('content', '')
-        
+
         og_site_name = soup.find('meta', property='og:site_name')
         if og_site_name:
             metadata['site_name'] = og_site_name.get('content', '')
-        
+
         # Fallback to regular tags if no OG tags
         if not metadata['title']:
             title_tag = soup.find('title')
             if title_tag:
                 metadata['title'] = title_tag.get_text()
-        
+
         if not metadata['description']:
             desc_tag = soup.find('meta', attrs={'name': 'description'})
             if desc_tag:
                 metadata['description'] = desc_tag.get('content', '')
-        
+
         # Extract domain for site_name if still missing
         if not metadata['site_name']:
             domain_match = re.search(r'https?://([^/]+)', url)
             if domain_match:
                 metadata['site_name'] = domain_match.group(1)
-        
+
         # Clean up the data
         metadata['title'] = sanitize_text(metadata['title'], max_length=100) or 'Pa gen tit'
         metadata['description'] = sanitize_text(metadata['description'], max_length=200) or 'Pa gen deskripsyon'
-        
+
         return jsonify({
             'success': True,
             'metadata': metadata
         })
-        
+
     except ValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except requests.RequestException as e:
-        return jsonify({'success': False, 'message': 'Pa ka aksede URL la'}), 400
+        return jsonify({'success': False, 'message': 'Pa ka aksede URL la (verifye koneksyon ou).'}), 400
     except Exception as e:
         current_app.logger.error(f"Error previewing URL: {e}")
         return jsonify({'success': False, 'message': 'Erè pandan preview URL'}), 500

@@ -315,7 +315,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         {% elif embed_url %}
                         <div class="post-video" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden;">
-                            <iframe src="{{ embed_url }}" style="width:100%; height:100%; border:none;" allowfullscreen allow="autoplay; fullscreen"></iframe>
+                            <iframe
+                                src="{{ embed_url }}"
+                                style="width:100%; height:100%; border:none;"
+                                allowfullscreen
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"
+                                allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope"
+                            ></iframe>
                         </div>
                         {% endif %}
                         
@@ -1930,17 +1937,35 @@ let postsPage = 2;
 let postsLoading = false;
 let postsDone = false;
 
+/**
+ * Robust CSRF token resolver.
+ * Uses window.CSRF_TOKEN first (injected by Jinja on page load L8),
+ * falls back to meta tag, then form input.
+ */
+function getCsrfToken() {
+    const t = (typeof window !== 'undefined' && window.CSRF_TOKEN)
+        || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || document.querySelector('input[name=csrf_token]')?.value
+        || '';
+    return (t || '').toString();
+}
+
 async function likePost(postId, btn) {
     try {
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
+        const csrfToken = getCsrfToken();
         const response = await fetch(`/api/ads/${postId}/like`, { 
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             }
         });
+        if (!response.ok) {
+            if (response.status === 401) {
+                showToast('🔒 Ou dwe konekte pou renmen piblisite sa.');
+            }
+            return;
+        }
         const data = await response.json();
         
         if (data.success) {
@@ -1963,12 +1988,11 @@ async function likePost(postId, btn) {
 
 async function sharePost(postId) {
     try {
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
+        const csrfToken = getCsrfToken();
         await fetch(`/api/ads/${postId}/share`, { 
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             }
         });
@@ -2069,12 +2093,12 @@ function getEmbedUrl(url) {
     const youtubeRegex = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     const youtubeMatch = url.match(youtubeRegex);
     if (youtubeMatch) {
-        return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&mute=1`;
+        return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&modestbranding=1`;
     }
     const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
     const vimeoMatch = url.match(vimeoRegex);
     if (vimeoMatch) {
-        return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&muted=1`;
+        return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&muted=1&playsinline=1&title=0&byline=0&portrait=0`;
     }
     return null;
 }
@@ -2089,7 +2113,7 @@ function buildPostCard(post) {
         const embedUrl = getEmbedUrl(post.description);
         if (embedUrl) {
             media = `<div class="post-video" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden;">
-                <iframe src="${embedUrl}" style="width:100%; height:100%; border:none;" allowfullscreen allow="autoplay; fullscreen"></iframe>
+                <iframe src="${embedUrl}" style="width:100%; height:100%; border:none;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope"></iframe>
             </div>`;
         }
     }
@@ -2190,6 +2214,7 @@ async function previewURL(url) {
     if (!url.trim()) {
         urlPreview.style.display = 'none';
         urlStatus.textContent = 'Mete yon URL valab';
+        urlStatus.style.color = '#65676b';
         urlPostBtn.disabled = true;
         return;
     }
@@ -2203,49 +2228,90 @@ async function previewURL(url) {
         urlPostBtn.disabled = true;
         return;
     }
+
+    // ═══ SHORTCUT YOUTUBE CÔTÉ CLIENT (aucune requête réseau nécessaire) ═══
+    // Évite 100% les cas "Erè rezo" pour YouTube, même si serveur timeout/CSRF.
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (ytMatch) {
+        const videoId = ytMatch[1];
+        displayURLPreview({
+            title: 'YouTube Video',
+            description: '',
+            image: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            site_name: 'YouTube',
+            type: 'youtube',
+            video_id: videoId,
+            url: url,
+            embed_url: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&modestbranding=1`
+        });
+        urlStatus.textContent = 'Preview pare 🎬';
+        urlStatus.style.color = '#28a745';
+        urlPostBtn.disabled = false;
+        return;
+    }
     
     urlStatus.textContent = 'Chaje preview...';
     urlStatus.style.color = '#667eea';
     urlPostBtn.disabled = true;
     
-    // Debounce preview request
+    // Debounce preview request — GET idempotent + query string (plus besoin CSRF)
     urlPreviewTimeout = setTimeout(async () => {
         try {
-            // Get CSRF token from meta tag or form
-            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
-                             document.querySelector('input[name=csrf_token]')?.value ||
-                             '{{ csrf_token() }}';
-            
-            const response = await fetch('/api/posts/preview-url', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({ url: url })
+            const endpoint = '/api/posts/preview-url?url=' + encodeURIComponent(url);
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
             });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                displayURLPreview(data.metadata);
+
+            // ═══ CORRECTION PRINCIPALE: response.ok guard ═══
+            // Si 400/500 on lit le JSON d'erreur ET QU'ON PASSE PAR LE BRANCHEMENT
+            // "else" au lieu de jeter. Sans ça, HTML error -> .json() throw SyntaxError
+            // -> catch affiche "Erè rezo" par erreur.
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (parseErr) {
+                // Response was NOT JSON (error page / nginx 502 / CSRF 400 HTML)
+                data = {
+                    success: false,
+                    message: response.status === 400
+                        ? 'URL pa ka li (verifye foma a)'
+                        : (response.status >= 500
+                            ? 'Sèvé pa reponn kounye a, eseye pita'
+                            : 'Pa ka chaje preview la kontinye')
+                };
+            }
+
+            if (response.ok && data && data.success) {
+                displayURLPreview(data.metadata || {});
                 urlStatus.textContent = 'Preview pare';
                 urlStatus.style.color = '#28a745';
                 urlPostBtn.disabled = false;
             } else {
-                urlStatus.textContent = data.message || 'Erè preview';
-                urlStatus.style.color = '#ff6b6b';
+                // Erreur PREVIEW mais URL VALIDE -> on LAISSE POSTER (car l'URL check est OK)
+                const msg = (data && data.message) ? data.message : 'Pa ka voye preview';
+                urlStatus.textContent = msg + ' — ou ka poste li';
+                urlStatus.style.color = '#ffa500';
                 urlPreview.style.display = 'none';
-                urlPostBtn.disabled = true;
+                // ⚠️ Ne pas bloquer le bouton : erreur preview != URL invalide
+                urlPostBtn.disabled = false;
             }
         } catch (error) {
-            console.error('Error previewing URL:', error);
-            urlStatus.textContent = 'Erè rezo';
-            urlStatus.style.color = '#ff6b6b';
+            // Réseau / DNS down — si URL valide on laisse quand-même poster
+            console.warn('previewURL network (non-fatal):', error && error.message ? error.message : error);
+            const valid = /^https?:\/\/.+/i.test(url.trim());
+            if (valid) {
+                urlStatus.textContent = 'Pa ka chaje preview (rezo fèb) — ou ka poste li';
+                urlStatus.style.color = '#ffa500';
+                urlPostBtn.disabled = false;
+            } else {
+                urlStatus.textContent = 'Erè rezo';
+                urlStatus.style.color = '#ff6b6b';
+                urlPostBtn.disabled = true;
+            }
             urlPreview.style.display = 'none';
-            urlPostBtn.disabled = true;
         }
-    }, 800);
+    }, 500);
 }
 
 function displayURLPreview(metadata) {
@@ -2255,9 +2321,9 @@ function displayURLPreview(metadata) {
     const previewDescription = document.getElementById('previewDescription');
     const previewSite = document.getElementById('previewSite');
     
-    previewTitle.textContent = metadata.title;
-    previewDescription.textContent = metadata.description;
-    previewSite.textContent = metadata.site_name;
+    previewTitle.textContent = metadata.title || '';
+    previewDescription.textContent = metadata.description || '';
+    previewSite.textContent = metadata.site_name || '';
     
     if (metadata.image) {
         previewImg.src = metadata.image;
@@ -2292,13 +2358,17 @@ async function submitTextPost() {
     
     // Disable button and show loading
     textPostBtn.disabled = true;
+    textPostBtn.style.opacity = '0.7';
+    textPostBtn.style.cursor = 'progress';
     textPostBtn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
     
     try {
-        // Get CSRF token from meta tag or form
-        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
-                         document.querySelector('input[name=csrf_token]')?.value ||
-                         '{{ csrf_token() }}';
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+            showToast('🔒 Sesyon ou ekspire. Tanpri re-chaje paj la.');
+            setTimeout(() => location.reload(), 1500);
+            return;
+        }
         
         const response = await fetch('/api/posts/create', {
             method: 'POST',
@@ -2316,13 +2386,12 @@ async function submitTextPost() {
         if (!response.ok) {
             if (response.status === 401) {
                 showToast('🔒 Ou dwe konekte pou poste. Redireksyon...');
-                setTimeout(() => {
-                    window.location.href = '/auth/login';
-                }, 2000);
+                setTimeout(() => { window.location.href = '/auth/login'; }, 2000);
                 return;
             } else if (response.status === 400) {
-                const errorData = await response.json();
-                showToast(errorData.message || '❌ Envalid data. Verify your content.');
+                let errorData = null;
+                try { errorData = await response.json(); } catch (_) {}
+                showToast((errorData && errorData.message) || '❌ Envalid data. Verify kontni an.');
                 return;
             } else if (response.status === 429) {
                 showToast('⏱️ Trop de requests. Reesaye plita.');
@@ -2336,33 +2405,31 @@ async function submitTextPost() {
             }
         }
         
-        const data = await response.json();
+        let data = null;
+        try { data = await response.json(); } catch (_) { data = { success: true }; }
         
-        if (data.success) {
+        if (!data || data.success) {
             showToast('✅ Post teks kreye ak siksè!');
             document.getElementById('textContent').value = '';
             updateCharCount(document.getElementById('textContent'));
             
-            // Add new post to feed (optional refresh)
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            setTimeout(() => { location.reload(); }, 1000);
         } else {
-            showToast(data.message || 'Erè pandan kreyasyon post');
+            showToast((data && data.message) || 'Erè pandan kreyasyon post');
         }
     } catch (error) {
         console.error('Error creating text post:', error);
-        
-        // Handle network errors specifically
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verify your connection.');
-        } else if (error.name === 'AbortError') {
+        if (error && (error.name === 'TypeError' || (error.message && error.message.includes('fetch')))) {
+            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verifye koneksyon ou.');
+        } else if (error && error.name === 'AbortError') {
             showToast('⏱️ Request anile. Reesaye.');
         } else {
             showToast('💥 Erè inaten. Reesaye ou kontakte admin.');
         }
     } finally {
         textPostBtn.disabled = false;
+        textPostBtn.style.opacity = '1';
+        textPostBtn.style.cursor = 'pointer';
         textPostBtn.innerHTML = '<span>📤</span><span>Poste</span>';
     }
 }
@@ -2370,21 +2437,36 @@ async function submitTextPost() {
 async function submitURLPost() {
     const url = document.getElementById('urlContent').value.trim();
     const urlPostBtn = document.getElementById('urlPostBtn');
+    const urlStatus = document.getElementById('urlStatus');
+    const urlPreview = document.getElementById('urlPreview');
     
     if (!url) {
         showToast('Mete yon URL avan poste');
         return;
     }
     
+    // Basic final validation (in case preview URL shortcut hasn't run yet)
+    const urlPattern = /^https?:\/\/.+/i;
+    if (!urlPattern.test(url)) {
+        showToast('❌ URL envalid — li dwe kòmanse pa http:// oswa https://');
+        urlStatus.textContent = 'URL envalid';
+        urlStatus.style.color = '#ff6b6b';
+        return;
+    }
+    
     // Disable button and show loading
     urlPostBtn.disabled = true;
-    urlPostBtn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
+    urlPostBtn.style.opacity = '0.7';
+    urlPostBtn.style.cursor = 'progress';
+    urlPostBtn.innerHTML = '<span>⏳</span><span>Ap voye...</span>';
     
     try {
-        // Get CSRF token from meta tag or form
-        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
-                         document.querySelector('input[name=csrf_token]')?.value ||
-                         '{{ csrf_token() }}';
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+            showToast('🔒 Sesyon ou ekspire. Tanpri re-chaje paj la.');
+            setTimeout(() => location.reload(), 1500);
+            return;
+        }
         
         const response = await fetch('/api/posts/create', {
             method: 'POST',
@@ -2398,17 +2480,15 @@ async function submitURLPost() {
             })
         });
         
-        // Handle different HTTP status codes
         if (!response.ok) {
             if (response.status === 401) {
                 showToast('🔒 Ou dwe konekte pou poste. Redireksyon...');
-                setTimeout(() => {
-                    window.location.href = '/auth/login';
-                }, 2000);
+                setTimeout(() => { window.location.href = '/auth/login'; }, 2000);
                 return;
             } else if (response.status === 400) {
-                const errorData = await response.json();
-                showToast(errorData.message || '❌ URL envalid. Verify your link.');
+                let errorData = null;
+                try { errorData = await response.json(); } catch (_) {}
+                showToast((errorData && errorData.message) || '❌ URL envalid. Verifye lyen an.');
                 return;
             } else if (response.status === 429) {
                 showToast('⏱️ Trop de requests. Reesaye plita.');
@@ -2422,35 +2502,97 @@ async function submitURLPost() {
             }
         }
         
-        const data = await response.json();
+        let data = null;
+        try { data = await response.json(); } catch (_) { data = { success: true }; }
         
-        if (data.success) {
+        if (!data || data.success) {
             showToast('✅ Post lyen kreye ak siksè!');
             document.getElementById('urlContent').value = '';
-            document.getElementById('urlPreview').style.display = 'none';
-            document.getElementById('urlStatus').textContent = 'Mete yon URL valab';
-            
-            // Add new post to feed (optional refresh)
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            if (urlPreview) urlPreview.style.display = 'none';
+            if (urlStatus) {
+                urlStatus.textContent = 'Mete yon URL valab';
+                urlStatus.style.color = '#65676b';
+            }
+            setTimeout(() => { location.reload(); }, 1000);
         } else {
-            showToast(data.message || 'Erè pandan kreyasyon post');
+            showToast((data && data.message) || 'Erè pandan kreyasyon post lyen');
         }
     } catch (error) {
         console.error('Error creating URL post:', error);
-        
-        // Handle network errors specifically
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verify your connection.');
-        } else if (error.name === 'AbortError') {
+        if (error && (error.name === 'TypeError' || (error.message && error.message.includes('fetch')))) {
+            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verifye koneksyon ou.');
+        } else if (error && error.name === 'AbortError') {
             showToast('⏱️ Request anile. Reesaye.');
         } else {
             showToast('💥 Erè inaten. Reesaye ou kontakte admin.');
         }
     } finally {
         urlPostBtn.disabled = false;
+        urlPostBtn.style.opacity = '1';
+        urlPostBtn.style.cursor = 'pointer';
         urlPostBtn.innerHTML = '<span>🔗</span><span>Poste</span>';
+    }
+}
+
+// ═══ VIEWPORT AUTOPLAY TRIGGER for YouTube/Vimeo iframes ═══
+// Navigateurs modernes (Safari iOS, Chrome Android) bloquent autoplay hors viewport.
+// On force une re-sync de src avec autoplay=1 QUAND l'iframe rentre dans viewport.
+function startAutoplayObserver() {
+    try {
+        if (!('IntersectionObserver' in window)) return;
+        const selector = 'iframe[src*="youtube.com/embed"], iframe[src*="youtu.be/embed"], iframe[src*="player.vimeo.com/video"]';
+        
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const frame = entry.target;
+                if (!entry.isIntersecting) {
+                    if (frame.dataset.srcOriginal && frame.src !== frame.dataset.srcOriginal) {
+                        // Pause en sortant du viewport (respect bande passante mobile)
+                        try {
+                            const u = new URL(frame.src, window.location.origin);
+                            u.searchParams.set('autoplay', '0');
+                            frame.src = u.toString();
+                        } catch (_) {}
+                    }
+                    return;
+                }
+                // Entre dans le viewport: re-emit src avec autoplay=1 (force start)
+                try {
+                    const src = frame.getAttribute('src') || '';
+                    if (!src) return;
+                    let u;
+                    try { u = new URL(src, window.location.origin); } catch(_) { return; }
+                    u.searchParams.set('autoplay', '1');
+                    u.searchParams.set('mute', '1');
+                    if (u.hostname.includes('youtube') || u.hostname === 'youtube-nocookie.com') {
+                        u.searchParams.set('mute', '1');
+                        u.searchParams.set('playsinline', '1');
+                        u.searchParams.set('rel', '0');
+                    } else if (u.hostname.includes('vimeo')) {
+                        u.searchParams.set('muted', '1');
+                        u.searchParams.set('playsinline', '1');
+                    }
+                    if (!frame.dataset.srcOriginal) frame.dataset.srcOriginal = src;
+                    // Skip re-insert if already same src (prevent loop)
+                    const finalSrc = u.toString();
+                    if (finalSrc !== frame.getAttribute('src')) {
+                        frame.setAttribute('src', finalSrc);
+                    }
+                } catch (_) {}
+            });
+        }, { threshold: 0.6, rootMargin: '0px 0px -50px 0px' });
+        
+        const observeAll = () => {
+            document.querySelectorAll(selector).forEach(f => obs.observe(f));
+        };
+        observeAll();
+        // Observer aussi les nouveaux iframes (nouvelles pages infinies / posts dynamiques)
+        if ('MutationObserver' in window) {
+            const mo = new MutationObserver(() => observeAll());
+            mo.observe(document.body, { childList: true, subtree: true });
+        }
+    } catch (err) {
+        console.warn('Autoplay observer failed (non-fatal):', err);
     }
 }
 
@@ -2458,6 +2600,7 @@ async function submitURLPost() {
 document.addEventListener('DOMContentLoaded', () => {
     loadStories();
     startAutoSlide();
+    startAutoplayObserver();
 });
 </script>
 
