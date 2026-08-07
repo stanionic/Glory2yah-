@@ -123,6 +123,23 @@ def create_app(config_name=None):
     csrf.init_app(app)
     limiter.init_app(app)
     cache.init_app(app)
+
+    # P1 FIX: Handle oversized uploads (100MB video promise in UI) with user-friendly
+    # flash message instead of a generic "413 Request Entity Too Large".
+    from werkzeug.exceptions import RequestEntityTooLarge as _RETL
+    @app.errorhandler(_RETL)
+    def _handle_entity_too_large(e):
+        from flask import flash, redirect, request, url_for, render_template, current_app as _capp
+        try:
+            _capp.logger.warning(f"RequestEntityTooLarge: uri={request.path} size_hint={request.content_length}")
+            flash('Fichye a twò gwo! Maksimòm otorize: 100 MB pou yon videyo. Tanpri redwi gwosè a epi reeseye.', 'error')
+            ref = request.referrer or '/'
+            if ref.startswith('/') or '://' in ref and request.host in ref:
+                return redirect(ref)
+            return redirect(url_for('main.submit_ad'))
+        except Exception:
+            return render_template('submit_ad.html'), 413
+
     # Initialize SocketIO with Redis if available — P1 FIX: restrict CORS origins, no wildcard
     import os as _os
     _allowed_origins_env = _os.environ.get('SOCKETIO_CORS_ALLOWED_ORIGINS')

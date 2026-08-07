@@ -75,11 +75,24 @@
             {% set p_likes = product.like_count if product is mapping else product.get('like_count', 0) %}
             {% set p_views = product.view_count if product is mapping else product.get('view_count', 0) %}
             {% set p_whatsapp = product.user_whatsapp if product is mapping else product.get('user_whatsapp','') %}
+            {% set p_media_type = product.media_type if product is mapping else product.get('media_type','images') %}
+            {% set p_video_url = (product.video_url if product is mapping else product.get('video_url')) or (('/static/uploads/' ~ (product.video if product is mapping else product.get('video',''))) if ((product is not mapping and product.video) or (product is mapping and product.get('video'))) else None) %}
             
             <div class="product-card" data-product-id="{{ p_id }}">
                 <a href="/ad/{{ p_id }}" class="product-link">
                     <div class="product-image">
-                        {% if p_images %}
+                        {% if p_media_type == 'video' and p_video_url %}
+                        <video
+                            src="{{ p_video_url }}"
+                            style="width:100%; height:100%; object-fit: cover; background:#000;"
+                            muted
+                            playsinline
+                            loop
+                            preload="metadata"
+                            poster=""
+                            data-marketplace-video="1"
+                        ></video>
+                        {% elif p_images %}
                         <img src="/static/uploads/{{ p_images[0] }}" alt="{{ p_title }}" loading="lazy">
                         {% else %}
                         <div class="product-placeholder">📦</div>
@@ -648,9 +661,15 @@ function buildProductCard(p) {
     div.className = 'product-card';
     div.dataset.productId = p.ad_id;
     
-    const img = p.images && p.images.length > 0 
-        ? `<img src="/static/uploads/${p.images[0]}" alt="${p.title}" loading="lazy">`
-        : '<div class="product-placeholder">📦</div>';
+    const videoUrl = p.video_url || (p.video ? `/static/uploads/${p.video}` : null);
+    let mediaHtml;
+    if (p.media_type === 'video' && videoUrl) {
+        mediaHtml = `<video src="${videoUrl}" style="width:100%; height:100%; object-fit: cover; background:#000;" muted playsinline loop preload="metadata" poster="" data-marketplace-video="1"></video>`;
+    } else if (p.images && p.images.length > 0) {
+        mediaHtml = `<img src="/static/uploads/${p.images[0]}" alt="${p.title}" loading="lazy">`;
+    } else {
+        mediaHtml = '<div class="product-placeholder">📦</div>';
+    }
     
     // Check if current user is owner (we need to get current user's whatsapp from somewhere - let's assume we have it in a global variable or check via DOM)
     const isOwner = false; // We'll handle this in the template for now, since dynamic data doesn't have current user info
@@ -658,7 +677,7 @@ function buildProductCard(p) {
     div.innerHTML = `
         <a href="/ad/${p.ad_id}" class="product-link">
             <div class="product-image">
-                ${img}
+                ${mediaHtml}
                 <div class="product-actions">
                     <button class="action-icon-btn like-btn" onclick="quickLike(event, '${p.ad_id}')" data-liked="false">
                         <span>🤍</span>
@@ -685,5 +704,45 @@ function buildProductCard(p) {
     
     return div;
 }
+
+// Viewport autoplay observer for uploaded native <video> tags on marketplace grid
+(function(){
+    function start(){
+        if (!('IntersectionObserver' in window)) return;
+        const selector = 'video[src][data-marketplace-video]:not([data-video-obs="1"])';
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const v = entry.target;
+                v.setAttribute('muted','');
+                v.muted = true;
+                try { v.setAttribute('playsinline',''); v.playsInline = true; } catch(_){}
+                if (entry.isIntersecting) {
+                    const p = v.play();
+                    if (p && typeof p.catch === 'function') p.catch(()=>{});
+                } else {
+                    try { v.pause(); } catch(_){}
+                }
+            });
+        }, { threshold: 0.4, rootMargin: '0px 0px -40px 0px' });
+
+        function observeAll(){
+            document.querySelectorAll(selector).forEach(v => {
+                v.setAttribute('data-video-obs','1');
+                v.setAttribute('muted','');
+                v.muted = true;
+                try { v.setAttribute('playsinline',''); v.playsInline = true; } catch(_){}
+                obs.observe(v);
+            });
+        }
+        observeAll();
+        if ('MutationObserver' in window) {
+            const mo = new MutationObserver(() => observeAll());
+            mo.observe(document.body, { childList: true, subtree: true });
+        }
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(start, 30);
+    else document.addEventListener('DOMContentLoaded', () => setTimeout(start, 30));
+    window.addEventListener('load', () => setTimeout(start, 120));
+})();
 </script>
 {% endblock %}

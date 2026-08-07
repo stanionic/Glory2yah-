@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     {% set ad_price = ad.price_gkach if ad is mapping else ad.get('price_gkach', 0) %}
                     {% set ad_images = ad.get_images_list() if not (ad is mapping) else ad.get('images', []) %}
                     {% set ad_whatsapp = ad.user_whatsapp if ad is mapping else ad.get('user_whatsapp','') %}
+                    {% set ad_media_type = ad.media_type if ad is not mapping else ad.get('media_type','images') %}
                     
                     <div class="carousel-slide" data-slide="{{ loop.index0 }}">
                         <div class="carousel-card" style="position: relative;">
@@ -187,6 +188,23 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <img src="/static/uploads/{{ ad_images[0] }}" alt="{{ ad_title }}" loading="lazy" onerror="this.src='/static/images/logo.png'">
                                 <div class="carousel-badge">Vann</div>
                             </div>
+                            {% elif ad_media_type == 'video' %}
+                                {% set carousel_video_url = (ad.video_url if ad is not mapping else ad.get('video_url')) or (('/static/uploads/' ~ (ad.video if ad is not mapping else ad.get('video',''))) if (ad is not mapping and ad.video) or (ad is mapping and ad.get('video')) else None) %}
+                                {% if carousel_video_url %}
+                            <div class="carousel-image" style="background:#000;">
+                                <video
+                                    src="{{ carousel_video_url }}"
+                                    style="width:100%; height:100%; object-fit: contain; background:#000;"
+                                    muted
+                                    playsinline
+                                    loop
+                                    preload="metadata"
+                                    controls
+                                    data-carousel-video="1"
+                                ></video>
+                                <div class="carousel-badge" style="background:#6f42c1;">Videyo</div>
+                            </div>
+                                {% endif %}
                             {% endif %}
                             
                             <div class="carousel-content">
@@ -324,6 +342,24 @@ document.addEventListener('DOMContentLoaded', function() {
                                 allow="autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope"
                             ></iframe>
                         </div>
+                        {% elif post_media_type == 'video' %}
+                            {% set post_video_url = (post.video_url if post is not mapping else post.get('video_url')) or (('/static/uploads/' ~ (post.video if post is not mapping else post.get('video',''))) if (post is not mapping and post.video) or (post is mapping and post.get('video')) else None) %}
+                            {% if post_video_url %}
+                        <div class="post-video" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background:#000;">
+                            <video
+                                src="{{ post_video_url }}"
+                                style="width:100%; height:100%; object-fit: contain; background:#000;"
+                                muted
+                                playsinline
+                                loop
+                                preload="metadata"
+                                controls
+                                poster=""
+                                allowfullscreen
+                                referrerpolicy="no-referrer-when-downgrade"
+                            ></video>
+                        </div>
+                            {% endif %}
                         {% endif %}
                         
                         <div class="post-actions">
@@ -2117,6 +2153,14 @@ function buildPostCard(post) {
             </div>`;
         }
     }
+    if (!media && post.media_type === 'video') {
+        const videoUrl = post.video_url || (post.video ? `/static/uploads/${post.video}` : null);
+        if (videoUrl) {
+            media = `<div class="post-video" style="width: 100%; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background:#000;">
+                <video src="${videoUrl}" style="width:100%; height:100%; object-fit: contain; background:#000;" muted playsinline loop preload="metadata" controls poster="" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></video>
+            </div>`;
+        }
+    }
     if (!media && post.images && post.images.length > 0) {
         media = `<div class="post-image"><img src="/static/uploads/${post.images[0]}" alt="${post.title}" loading="lazy" onerror="this.style.display='none'"></div>`;
     }
@@ -2596,11 +2640,61 @@ function startAutoplayObserver() {
     }
 }
 
+// ═══ VIEWPORT AUTOPLAY TRIGGER for UPLOADED native <video> tags ═══
+// Mobile Chrome/Safari require MUTED + PLAY() to be called in viewport
+// (user-gesture policy on mobile blocks autoplay without MUTED).
+function startVideoAutoplayObserver() {
+    try {
+        if (!('IntersectionObserver' in window)) return;
+        const selector = 'video[src]:not([data-video-obs="1"]):not(.reel-media)';
+
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const vid = entry.target;
+                vid.setAttribute('muted','');
+                vid.muted = true;
+                try { vid.setAttribute('playsinline',''); vid.playsInline = true; } catch(_){}
+                if (entry.isIntersecting) {
+                    const playPromise = vid.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(() => {
+                            vid.setAttribute('controls','');
+                            vid.controls = true;
+                        });
+                    }
+                } else {
+                    try {
+                        vid.pause();
+                    } catch(_) {}
+                }
+            });
+        }, { threshold: 0.5, rootMargin: '0px 0px -60px 0px' });
+
+        const observeAll = () => {
+            document.querySelectorAll(selector).forEach(v => {
+                v.setAttribute('data-video-obs','1');
+                v.setAttribute('muted','');
+                v.muted = true;
+                try { v.setAttribute('playsinline',''); v.playsInline = true; } catch(_){}
+                obs.observe(v);
+            });
+        };
+        observeAll();
+        if ('MutationObserver' in window) {
+            const mo2 = new MutationObserver(() => observeAll());
+            mo2.observe(document.body, { childList: true, subtree: true });
+        }
+    } catch(err) {
+        console.warn('Video autoplay observer failed (non-fatal):', err);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadStories();
     startAutoSlide();
     startAutoplayObserver();
+    startVideoAutoplayObserver();
 });
 </script>
 

@@ -229,9 +229,35 @@
     <div class="product-grid">
         <div class="product-gallery">
             {% if ad.media_type == 'video' %}
-                <video id="mainVideo" class="main-image" controls>
+                <video id="mainVideo" class="main-image" controls muted playsinline preload="auto" loop>
                     <source src="{{ url_for('static', filename='uploads/' + ad.video) }}" type="video/mp4">
                 </video>
+                <script>
+                    (function(){
+                        function tryStartMainVideo(){
+                            const mv = document.getElementById('mainVideo');
+                            if(!mv) return;
+                            // Mobile policies require muted + playsinline for autoplay
+                            mv.setAttribute('muted','');
+                            mv.muted = true;
+                            try { mv.setAttribute('playsinline',''); mv.playsInline = true; } catch(_){}
+                            mv.controls = true;
+                            const p = mv.play();
+                            if (p && typeof p.catch === 'function') {
+                                p.catch(() => {
+                                    // If autoplay is blocked, show a visible "Play" overlay or ensure controls are shown
+                                    mv.controls = true;
+                                });
+                            }
+                        }
+                        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                            setTimeout(tryStartMainVideo, 50);
+                        } else {
+                            document.addEventListener('DOMContentLoaded', () => setTimeout(tryStartMainVideo, 50));
+                        }
+                        window.addEventListener('load', () => setTimeout(tryStartMainVideo, 150));
+                    })();
+                </script>
             {% else %}
                 {% set images = ad.images if ad.images else [] %}
                 {% if images %}

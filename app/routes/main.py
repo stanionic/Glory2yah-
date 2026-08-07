@@ -18,6 +18,74 @@ from flask import request as flask_req
 main_bp = Blueprint('main', __name__)
 
 
+# #region debug-point H:main-index-entry (H1 H2 H3)
+import json as _dbg_json, os as _dbg_os, threading as _dbg_thr, time as _dbg_time
+_DBG_P = '.dbg/marketplace-approved-ads-empty-state.env'
+_DBG_U, _DBG_S = 'http://127.0.0.1:7777/event', 'marketplace-approved-ads-empty-state'
+try:
+    with open(_DBG_P) as _dbg_f:
+        _dbg_c = _dbg_f.read()
+        for _dbg_l in _dbg_c.split('\n'):
+            if _dbg_l.startswith('DEBUG_SERVER_URL='): _DBG_U = _dbg_l.split('=',1)[1].strip()
+            elif _dbg_l.startswith('DEBUG_SESSION_ID='): _DBG_S = _dbg_l.split('=',1)[1].strip()
+except Exception:
+    pass
+_DBG_LOCK = _dbg_thr.Lock()
+_DBG_NDJSON = '.dbg/trae-debug-log-marketplace-approved-ads-empty-state.ndjson'
+def _dbg_log(hypothesisId, msg, data=None, runId='post', location='main.py'):
+    try:
+        import urllib.request as _ur
+        payload = {'sessionId': _DBG_S, 'runId': runId, 'hypothesisId': hypothesisId,
+                   'location': location, 'msg': '[DEBUG] '+msg,
+                   'data': data or {}, 'ts': int(_dbg_time.time()*1000)}
+        body = _dbg_json.dumps(payload).encode()
+        try:
+            _ur.urlopen(_ur.Request(_DBG_U, data=body, headers={'Content-Type':'application/json'}), timeout=1).read()
+            return
+        except Exception:
+            pass
+        with _DBG_LOCK:
+            _dbg_os.makedirs('.dbg', exist_ok=True)
+            with open(_DBG_NDJSON, 'a', encoding='utf-8') as f:
+                f.write(_dbg_json.dumps(payload)+'\n')
+    except Exception:
+        pass
+# #endregion
+
+# #region debug-point V:publish-video-not-loading (H1..H5)
+_DBG_P_V = '.dbg/publish-video-not-loading.env'
+_DBG_U_V, _DBG_S_V = 'http://127.0.0.1:7777/event', 'publish-video-not-loading'
+try:
+    with open(_DBG_P_V) as _dbg_fv:
+        _dbg_cv = _dbg_fv.read()
+        for _dbg_lv in _dbg_cv.split('\n'):
+            if _dbg_lv.startswith('DEBUG_SERVER_URL='): _DBG_U_V = _dbg_lv.split('=',1)[1].strip()
+            elif _dbg_lv.startswith('DEBUG_SESSION_ID='): _DBG_S_V = _dbg_lv.split('=',1)[1].strip()
+except Exception:
+    pass
+_DBG_LOCK_V = _dbg_thr.Lock()
+_DBG_NDJSON_V = '.dbg/trae-debug-log-publish-video-not-loading.ndjson'
+def _dbg_vlog(hypothesisId, msg, data=None, runId='pre', location='main.py'):
+    try:
+        import urllib.request as _urv
+        payload = {'sessionId': _DBG_S_V, 'runId': runId, 'hypothesisId': hypothesisId,
+                   'location': location, 'msg': '[DEBUG] '+msg,
+                   'data': data or {}, 'ts': int(_dbg_time.time()*1000)}
+        body_v = _dbg_json.dumps(payload).encode()
+        try:
+            _urv.urlopen(_urv.Request(_DBG_U_V, data=body_v, headers={'Content-Type':'application/json'}), timeout=1).read()
+            return
+        except Exception:
+            pass
+        with _DBG_LOCK_V:
+            _dbg_os.makedirs('.dbg', exist_ok=True)
+            with open(_DBG_NDJSON_V, 'a', encoding='utf-8') as fv:
+                fv.write(_dbg_json.dumps(payload)+'\n')
+    except Exception:
+        pass
+# #endregion
+
+
 @main_bp.route('/search', methods=['GET'])
 def search():
     """P1 FIX B02 — dispatcher for base.html <form action="/search"> (404 before)"""
@@ -54,6 +122,10 @@ def index():
         _rs.invalidate_approved_ads()
     except Exception:
         pass
+    # #region debug-point C:main-cache-flushed (H3)
+    _dbg_log('C', 'main.index() cache flushed; starting DB query for ALL approved ads (sell+publish)',
+             {'route': '/'}, location='main.py:index:entry')
+    # #endregion
 
     # Robust ad-to-dict helper: NEVER raise on missing columns (legacy SQLite DBs on
     # Render may skip ALTER TABLE migrations for quantity/publish_fee_gkach causing
@@ -89,6 +161,15 @@ def index():
                     images_list = [i.strip() for i in str(imgs).split(',') if i and i.strip()]
             except Exception:
                 pass
+            video_name = _g('video')
+            if video_name:
+                try:
+                    from flask import url_for as _uf
+                    video_url = _uf('static', filename='uploads/' + str(video_name))
+                except Exception:
+                    video_url = '/static/uploads/' + str(video_name)
+            else:
+                video_url = None
             qty = _g('quantity', None)
             if qty is None:
                 qty = 1 if _g('ad_type', 'sell') == 'sell' else 0
@@ -106,7 +187,8 @@ def index():
                 'description': _g('description', ''),
                 'media_type': _g('media_type', 'images'),
                 'images': images_list,
-                'video': _g('video'),
+                'video': video_name,
+                'video_url': video_url,
                 'video_id': video_id,
                 'embed_url': embed_url,
                 'ad_type': _g('ad_type', 'sell'),
@@ -139,6 +221,27 @@ def index():
         marketplace_ads = Ad.query.filter_by(admin_status='approved').order_by(Ad.created_at.desc()).all()
         marketplace_ads_dict = [_safe_ad_to_dict(ad) for ad in marketplace_ads]
 
+        # #region debug-point V:main-index-video-breakdown (H2 H5)
+        try:
+            post_video_cnt = sum(1 for p in (posts or []) if (p.get('media_type')=='video' and (p.get('video') or p.get('video_url'))))
+            mp_video_cnt = sum(1 for p in (marketplace_ads_dict or []) if (p.get('media_type')=='video' and (p.get('video') or p.get('video_url'))))
+            post_missing_video_url = sum(1 for p in (posts or []) if p.get('media_type')=='video' and not p.get('video_url'))
+            _dbg_vlog('H2', f'main.index() video ads breakdown: posts video_count={post_video_cnt}; carousel video_count={mp_video_cnt}; posts(mt=video & no video_url)={post_missing_video_url}',
+                     {'posts_video_count': post_video_cnt, 'carousel_video_count': mp_video_cnt, 'posts_with_video_missing_url': post_missing_video_url},
+                     location='main.py:index:video-breakdown')
+        except Exception:
+            pass
+        # #endregion
+
+        # #region debug-point C:main-index-success-exit (H1 H2 H3)
+        from collections import Counter as _Cnt
+        posts_types = dict(_Cnt(p.get('ad_type','?') for p in (posts or [])))
+        mp_types = dict(_Cnt(p.get('ad_type','?') for p in (marketplace_ads_dict or [])))
+        _dbg_log('C', f'main.index() exit success posts.len={len(posts or [])} types={posts_types}; carousel ads.len={len(marketplace_ads_dict)} types={mp_types}',
+                 {'posts_len': len(posts or []), 'posts_types': posts_types,
+                  'marketplace_ads_len': len(marketplace_ads_dict), 'marketplace_types': mp_types},
+                 location='main.py:index:exit-ok')
+        # #endregion
         return render_template(
             'index.html',
             posts=posts,
@@ -148,6 +251,11 @@ def index():
     except Exception as e:
         import traceback as _tb
         current_app.logger.error(f"FATAL main.index exception: {e}\n{_tb.format_exc()}")
+        # #region debug-point C:main-index-fatal (H4)
+        _dbg_log('C', f'main.index() FATAL exception swallowed',
+                 {'exception': str(e), 'stack': _tb.format_exc()[:800]},
+                 location='main.py:index:exit-fatal')
+        # #endregion
         return render_template(
             'index.html',
             posts=[],
@@ -767,6 +875,24 @@ def submit_ad():
             ad_type = request.form.get('ad_type', 'publish')
             title = sanitize_text(request.form.get('title', ''))
             description = sanitize_text(request.form.get('description', ''))
+            # #region debug-point V:submit_ad entry (H1 H4 H5)
+            _dbg_vlog('H1', f'submit_ad POST entry media_type={media_type} ad_type={ad_type}',
+                     {'media_type': media_type, 'ad_type': ad_type, 'user_whatsapp': whatsapp,
+                      'title_len': len(title), 'desc_len': len(description)},
+                     location='main.py:submit_ad:entry')
+            # #endregion
+            try:
+                video_file_in = request.files.get('video') if media_type == 'video' else None
+                if video_file_in and video_file_in.filename:
+                    video_file_in.seek(0, 2)
+                    vsz = video_file_in.tell()
+                    video_file_in.seek(0)
+                else:
+                    vsz = 0
+            except Exception:
+                vsz = None
+            _dbg_vlog('H1', f'submit_ad payload sizes: video_bytes={vsz}',
+                     {'video_bytes': vsz}, location='main.py:submit_ad:payload-size')
 
             # Price handling: prefer the server-computed value so we don't
             # depend on the client-side hidden-input update.
@@ -849,9 +975,26 @@ def submit_ad():
                         file.filename.rsplit('.', 1)[-1].lower()
                         if '.' in file.filename else 'mp4'
                     )
+                    allowed_video_ext = current_app.config.get('ALLOWED_VIDEO_EXTENSIONS', {'mp4','avi','mov','mkv','webm'})
+                    if ext not in allowed_video_ext:
+                        raise ValidationError(
+                            f'Tip videyo a pa aksepte. Aksepte sèlman: {", ".join(sorted(allowed_video_ext)).upper()}.'
+                        )
+                    file.seek(0, 2)
+                    video_bytes = file.tell()
+                    file.seek(0)
+                    max_bytes = int(current_app.config.get('MAX_CONTENT_LENGTH', 100*1024*1024))
+                    if video_bytes > max_bytes:
+                        raise ValidationError(
+                            f'Videyo a twò gwo (≈{round(video_bytes/1024/1024,1)} MB). Maksimòm otorize: {max_bytes//1024//1024} MB (100MB).'
+                        )
                     filename = f'{uuid.uuid4().hex}.{ext}'
-                    file.save(os.path.join(upload_folder, filename))
+                    dest_path = os.path.join(upload_folder, filename)
+                    file.save(dest_path)
                     video = filename
+                    _dbg_vlog('H1', f'video upload saved: {filename} ext={ext} bytes={video_bytes}',
+                             {'filename': filename, 'ext': ext, 'bytes': video_bytes, 'dest_exists': os.path.exists(dest_path)},
+                             location='main.py:submit_ad:video-saved')
                 else:
                     raise ValidationError('Tanpri telechaje yon videyo.')
 
@@ -867,6 +1010,11 @@ def submit_ad():
                 category=category,
                 quantity=quantity
             )
+            _dbg_vlog('H1', f'create_ad SUCCESS ad_id={ad.ad_id} video={bool(video)} images_cnt={len(images)}',
+                     {'ad_id': getattr(ad, 'ad_id', None), 'media_type': media_type,
+                      'ad_type': ad_type, 'video': video, 'images_cnt': len(images),
+                      'publish_fee_gkach': getattr(ad, 'publish_fee_gkach', None)},
+                     location='main.py:submit_ad:create_ad-success')
             # Apply fixed publication fee (1000 Gkach) for every new ad so the
             # admin panel + upload_payment page display it.
             try:
@@ -886,10 +1034,20 @@ def submit_ad():
             return redirect(url_for('main.upload_payment', ad_id=ad.ad_id))
 
         except ValidationError as e:
+            _dbg_vlog('H5', f'submit_ad ValidationError: {str(e)}',
+                     {'error': str(e), 'media_type': request.form.get('media_type','?')},
+                     location='main.py:submit_ad:validation-error')
             flash(str(e), 'error')
         except Exception as e:
-            current_app.logger.error(f"submit_ad failed: {e}")
-            flash('Erè pandan soumèt piblisite a.', 'error')
+            import traceback as _tb2
+            _dbg_vlog('H1', f'submit_ad FATAL exception {type(e).__name__}: {str(e)}',
+                     {'error': str(e), 'traceback': _tb2.format_exc()[:1200]},
+                     location='main.py:submit_ad:fatal-exception')
+            current_app.logger.error(f"submit_ad failed: {e}\n{_tb2.format_exc()}")
+            if isinstance(e, OverflowError) or ('Maximum ' in str(e) and 'content length' in str(e).lower()) or 'RequestEntityTooLarge' in type(e).__name__:
+                flash('Fichye a twò gwo. Maksimòm otorize: 100MB pou videyo. Tanpri chwazi yon pi piti.', 'error')
+            else:
+                flash('Erè pandan soumèt piblisite a.', 'error')
     
     return render_template('submit_ad.html')
 

@@ -11,6 +11,48 @@ from app.utils.validators import validate_pagination, sanitize_text, ValidationE
 marketplace_bp = Blueprint('marketplace', __name__, url_prefix='/mache')
 
 
+# #region debug-point A:marketplace-index-entry
+# Instrumentation: reports entry/exit counts, category filter, product count,
+# fallback usage counts to Debug Server (local NDJSON fallback if server down)
+import json as _dbg_json, os as _dbg_os, threading as _dbg_thr, time as _dbg_time
+_DBG_P = '.dbg/marketplace-approved-ads-empty-state.env'
+_DBG_U, _DBG_S = 'http://127.0.0.1:7777/event', 'marketplace-approved-ads-empty-state'
+try:
+    with open(_DBG_P) as _dbg_f:
+        _dbg_c = _dbg_f.read()
+        for _dbg_l in _dbg_c.split('\n'):
+            if _dbg_l.startswith('DEBUG_SERVER_URL='): _DBG_U = _dbg_l.split('=',1)[1].strip()
+            elif _dbg_l.startswith('DEBUG_SESSION_ID='): _DBG_S = _dbg_l.split('=',1)[1].strip()
+except Exception:
+    pass
+_DBG_LOCK = _dbg_thr.Lock()
+_DBG_NDJSON = '.dbg/trae-debug-log-marketplace-approved-ads-empty-state.ndjson'
+def _dbg_log(hypothesisId, msg, data=None, runId='post', location='marketplace.py'):
+    """Report debug event to Debug Server HTTP, else append locally to NDJSON."""
+    try:
+        import urllib.request as _ur
+        payload = {
+            'sessionId': _DBG_S, 'runId': runId, 'hypothesisId': hypothesisId,
+            'location': location, 'msg': '[DEBUG] '+msg,
+            'data': data or {}, 'ts': int(_dbg_time.time()*1000)
+        }
+        body = _dbg_json.dumps(payload).encode()
+        try:
+            req = _ur.Request(_DBG_U, data=body, headers={'Content-Type':'application/json'})
+            _ur.urlopen(req, timeout=1).read()
+            return
+        except Exception:
+            pass
+        # Fallback: write NDJSON locally
+        with _DBG_LOCK:
+            os.makedirs('.dbg', exist_ok=True)
+            with open(_DBG_NDJSON, 'a', encoding='utf-8') as f:
+                f.write(_dbg_json.dumps(payload)+'\n')
+    except Exception:
+        pass
+# #endregion
+
+
 def _flush_approved_cache():
     """Clear Redis approved-ads cache to work around stale cache (pre-200eaea)."""
     try:
@@ -69,6 +111,7 @@ def _safe_ad_to_dict(ad):
             'media_type': _g('media_type', 'images'),
             'images': [],
             'video': _g('video'),
+            'video_url': None,
             'video_id': video_id,
             'embed_url': embed_url,
             'ad_type': _g('ad_type', 'sell'),
@@ -84,6 +127,17 @@ def _safe_ad_to_dict(ad):
             'share_count': _g('share_count', 0) or 0,
             'created_at': None,
         }
+        # video_url: resolve full upload URL
+        try:
+            _vname = d.get('video')
+            if _vname:
+                try:
+                    from flask import url_for as _uf2
+                    d['video_url'] = _uf2('static', filename='uploads/' + str(_vname))
+                except Exception:
+                    d['video_url'] = '/static/uploads/' + str(_vname)
+        except Exception:
+            pass
         # quantity default
         if d['quantity'] is None:
             d['quantity'] = 1 if d['ad_type'] == 'sell' else 0
@@ -113,6 +167,9 @@ def index():
     # Always clear approved-ads cache on marketplace load
     # (stale sell-only cached data from pre-200eaea builds caused 'Pa gen pwodui')
     _flush_approved_cache()
+    # #region debug-point A:marketplace-index-entry (H1-H5)
+    _dbg_log('A', 'index() entry; flushing approved cache OK', {'route':'/mache/'}, location='marketplace.py:index')
+    # #endregion
     try:
         # Validate pagination parameters
         page, per_page = validate_pagination(
@@ -136,6 +193,11 @@ def index():
         # every approved announcement/publish/job/service ad.
         from app.models.ad import Ad
         query = Ad.query.filter_by(admin_status='approved')
+        # #region debug-point B:check-filter-chain (H2 H5)
+        _dbg_log('B', 'base query built: filter_by(admin_status=approved). about to apply category/sort.',
+                 {'category': category, 'sort_by': sort_by, 'page': page, 'per_page': per_page},
+                 location='marketplace.py:index:pre-filter')
+        # #endregion
         if category != 'all':
             query = query.filter_by(category=category)
         if sort_by == 'price_low':
@@ -154,8 +216,22 @@ def index():
             ads = [_safe_ad_to_dict(ad) for ad in pagination.items]
         except Exception as conv_err:
             current_app.logger.error(f"marketplace index() conversion inner exception: {conv_err}\n{traceback.format_exc()}")
+            # #region debug-point D:safe-conversion-exception (H4)
+            _dbg_log('D', 'conversion inner exception (pagination items iter)',
+                     {'conv_err': str(conv_err), 'pagination_items_len': len(pagination.items)},
+                     location='marketplace.py:index:conv-exc')
+            # #endregion
             ads = []
 
+        # #region debug-point A:index-exit-success (H1 H2 H5)
+        from collections import Counter as _Cnt
+        types_cnt = dict(_Cnt(a.get('ad_type','?') for a in ads))
+        cats_cnt = dict(_Cnt(a.get('category','?') for a in ads))
+        _dbg_log('A', f'index() exit success: ads.len={len(ads)}; types={types_cnt}; categories={cats_cnt}',
+                 {'products_len': len(ads), 'per_type': types_cnt, 'per_category': cats_cnt,
+                  'category': category, 'sort_by': sort_by, 'total_count': pagination.total},
+                 location='marketplace.py:index:exit-ok')
+        # #endregion
         return render_template(
             'marketplace/index.html',
             products=ads,
@@ -171,6 +247,11 @@ def index():
         # CRITICAL: previously swallowed silently, empty products=[].
         # Log full stack trace for debugging in Render logs.
         current_app.logger.error(f"FATAL marketplace.index() exception: {e}\n{traceback.format_exc()}")
+        # #region debug-point A:index-exit-fatal (H4)
+        _dbg_log('A', f'index() FATAL exception swallowed — would return products=[]',
+                 {'exception': str(e), 'stack': traceback.format_exc()[:800]},
+                 location='marketplace.py:index:exit-fatal')
+        # #endregion
         return render_template(
             'marketplace/index.html',
             products=[],

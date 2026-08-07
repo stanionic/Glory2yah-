@@ -64,7 +64,7 @@ class Config:
     
     # File Upload
     UPLOAD_FOLDER = os.path.join('static', 'uploads')
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
+    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB (matches UI promise: 1 Videyo maks 100MB / 30 segonn)
     ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
     ALLOWED_DOCUMENT_EXTENSIONS = {'pdf'}
