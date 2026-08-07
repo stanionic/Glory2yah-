@@ -1068,6 +1068,193 @@ select {
     color: var(--g2y-text-muted);
 }
 
+/* ═══ IMAGE + VIDEO UPLOAD BOXES (Fè Piblisite W) ═══ */
+
+.image-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.upload-box {
+    position: relative;
+    min-height: 140px;
+    border: 2px dashed var(--g2y-border-dark);
+    border-radius: var(--g2y-radius);
+    background-color: var(--g2y-bg-alt);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 12px;
+    text-align: center;
+    overflow: hidden;
+}
+
+.upload-box input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.upload-box > span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--g2y-text-secondary);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.upload-box > span::before {
+    content: "🖼️";
+    font-size: 32px;
+    opacity: 0.6;
+}
+
+.upload-box:hover {
+    border-color: var(--g2y-primary-light);
+    background-color: rgba(74, 111, 199, 0.05);
+    transform: translateY(-2px);
+    box-shadow: var(--g2y-shadow-sm);
+}
+
+.upload-box:active {
+    transform: translateY(0);
+}
+
+/* --- VIDEO UPLOAD: looks like a CLICKABLE BUTTON (user request) --- */
+
+.video-upload-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    margin: 8px 0 12px 0;
+    min-height: auto;
+    width: auto;
+    border: none;
+    border-radius: var(--g2y-radius-lg);
+    background: var(--g2y-gradient-purple, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+    text-decoration: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
+    overflow: hidden;
+}
+
+.video-upload-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.7s ease;
+    pointer-events: none;
+}
+
+.video-upload-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(102, 126, 234, 0.45);
+    filter: brightness(1.05);
+}
+
+.video-upload-box:hover::after {
+    transform: translateX(100%);
+}
+
+.video-upload-box:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+    filter: brightness(0.97);
+}
+
+.video-upload-box input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.video-upload-box > #video-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.video-upload-box > #video-upload-label::before {
+    content: "🎬";
+    font-size: 22px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    flex-shrink: 0;
+}
+
+.video-upload-box.video-selected {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+.video-upload-box.video-selected > #video-upload-label::before {
+    content: "✅";
+}
+
+.video-upload-box .video-filename {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.95;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 260px;
+}
+
+@media (max-width: 640px) {
+    .image-upload-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .upload-box {
+        min-height: 100px;
+    }
+
+    .video-upload-box {
+        width: 100%;
+        padding: 14px 18px;
+    }
+
+    .video-upload-box .video-filename {
+        max-width: 180px;
+    }
+}
+
 .form-actions {
     display: flex;
     gap: 12px;

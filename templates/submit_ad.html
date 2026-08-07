@@ -41,11 +41,14 @@
 
         <div class="form-group" id="video-section" style="display: none;">
             <label>Videyo Piblisite w (maks 30 segonn, 100MB) *</label>
-            <div class="upload-box" style="position: relative;">
-                <input type="file" name="video" accept="video/mp4,video/avi,video/mov,video/mkv" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                <span>Klike pou chwazi videyo</span>
+            <div class="upload-box video-upload-box" id="videoUploadBox">
+                <input type="file" name="video" id="videoFileInput" accept="video/mp4,video/avi,video/mov,video/mkv,video/webm">
+                <span id="video-upload-label">
+                    Klike pou chwazi videyo
+                    <span class="video-filename" id="videoFilename" style="display:none;"></span>
+                </span>
             </div>
-            <small>Videyo dwe gen maksimòm 30 segonn ak 100MB. Tip aksepte: MP4, AVI, MOV, MKV.</small>
+            <small>Videyo dwe gen maksimòm 30 segonn ak 100MB. Tip aksepte: MP4, AVI, MOV, MKV, WEBM.</small>
         </div>
 
         <div class="form-group">
@@ -170,6 +173,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mediaTypeRadios.forEach(r => r.addEventListener('change', toggleMediaSection));
     toggleMediaSection();
+
+    // ===== Video upload button: show selected filename + success style =====
+    const videoInputEl = document.getElementById('videoFileInput');
+    const videoUploadBox = document.getElementById('videoUploadBox');
+    const videoFilenameEl = document.getElementById('videoFilename');
+    const videoUploadLabelEl = document.getElementById('video-upload-label');
+
+    function formatBytes(bytes) {
+        if (!bytes && bytes !== 0) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function updateVideoButtonUI() {
+        if (!videoInputEl || !videoInputEl.files || videoInputEl.files.length === 0) {
+            if (videoUploadBox) videoUploadBox.classList.remove('video-selected');
+            if (videoUploadLabelEl) {
+                // Keep emoji + original prompt as first node, hide filename
+                videoUploadLabelEl.childNodes.forEach((n, i) => {
+                    if (n.nodeType === Node.TEXT_NODE && i === 0) {
+                        n.textContent = 'Klike pou chwazi videyo';
+                    }
+                });
+            }
+            if (videoFilenameEl) { videoFilenameEl.style.display = 'none'; videoFilenameEl.textContent = ''; }
+            return;
+        }
+        const f = videoInputEl.files[0];
+        if (videoUploadBox) videoUploadBox.classList.add('video-selected');
+        if (videoUploadLabelEl) {
+            videoUploadLabelEl.childNodes.forEach((n, i) => {
+                if (n.nodeType === Node.TEXT_NODE && i === 0) {
+                    n.textContent = 'Videyo chwazi:';
+                }
+            });
+        }
+        if (videoFilenameEl) {
+            const sz = formatBytes(f.size);
+            videoFilenameEl.textContent = sz ? (f.name + '  ·  ' + sz) : f.name;
+            videoFilenameEl.style.display = 'block';
+        }
+    }
+
+    if (videoInputEl) {
+        videoInputEl.addEventListener('change', updateVideoButtonUI);
+    }
 
     const adTypeRadios = document.querySelectorAll('input[name="ad_type"]');
     const priceSection = document.getElementById('price-section');
