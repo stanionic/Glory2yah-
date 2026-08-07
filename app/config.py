@@ -31,6 +31,29 @@ def _load_secret_key():
     return key
 
 
+def _default_sqlite_path(db_name='glory2yahpub.db'):
+    """Return an absolute sqlite:/// URI whose file lives inside ./instance.
+
+    PERSISTENCE FIX (2026-08-07): on Render the project root is on an EPHEMERAL
+    filesystem that is wiped on every redeploy/restart. A SQLite DB written to
+    the working directory (e.g. 'sqlite:///glory2yahpub.db') would therefore be
+    erased on each deploy — silently deleting ALL ads.
+
+    render.yaml mounts a PERSISTENT disk at /opt/render/project/src/instance,
+    so routing every SQLite fallback DB into ./instance guarantees the database
+    file survives redeploys/restarts. Local dev keeps working (creates
+    <project>/instance/ automatically).
+    """
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'instance'))
+    try:
+        os.makedirs(base, exist_ok=True)
+    except Exception:
+        pass
+    path = os.path.join(base, db_name).replace('\\', '/')
+    return 'sqlite:///' + path
+
+
+
 class Config:
     """Base configuration"""
 
@@ -130,10 +153,12 @@ class DevelopmentConfig(Config):
 
     SECRET_KEY = _load_secret_key()
 
-    # Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
+    # Use PostgreSQL if DATABASE_URL is set, otherwise SQLite.
+    # SQLite fallback lives in ./instance (PERSISTENT disk on Render) so the
+    # database — and every ad — survives redeploys/restarts.
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         os.environ.get('DEV_DATABASE_URL') or \
-        'sqlite:///glory2yahpub_dev.db'
+        _default_sqlite_path('glory2yahpub_dev.db')
 
     # Disable HTTPS requirements
     SESSION_COOKIE_SECURE = False
