@@ -309,6 +309,7 @@ def create_app(config_name=None):
         from app.models.user_gkach import UserGkach
         from app.models.ad import Ad
         from app.models.delivery import Delivery
+        from app.models.delivery_item import DeliveryItem
         from app.models.batch import Batch
         from app.models.batch_click import BatchClick
         from app.models.batch_ad import BatchAd
@@ -388,6 +389,44 @@ def create_app(config_name=None):
         except Exception as _e:
             db.session.rollback()
             app.logger.warning(f"ADS MIGRATION: could not add ads columns: {_e}")
+
+        # =====================================================================
+        # SOFT DELETE MIGRATION: add `deleted_at` column to all existing tables
+        # that inherit from BaseModel. db.create_all() does NOT alter existing
+        # tables, so on databases created before the deleted_at column existed,
+        # queries would raise "no such column: <table>.deleted_at".
+        # This idempotent patch inspects the live schema and ALTERs only when
+        # the column is missing (Audit #19 - soft deletes).
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect_sd
+            from sqlalchemy import text as _sa_text_sd
+            from app.models.base import BaseModel as _BaseM
+            _insp_sd = _sa_inspect_sd(db.engine)
+            _sd_models = [_BaseM.__subclasses__()]
+            _sd_tables_checked = 0
+            _sd_tables_altered = 0
+            for _sd_cls_list in _sd_models:
+                for _sd_cls in _sd_cls_list:
+                    try:
+                        _sd_tbl = _sd_cls.__table__
+                        _sd_tbl_name = _sd_tbl.name
+                        if not _insp_sd.has_table(_sd_tbl_name):
+                            continue
+                        _sd_cols = {c['name'] for c in _insp_sd.get_columns(_sd_tbl_name)}
+                        if 'deleted_at' not in _sd_cols:
+                            db.session.execute(_sa_text_sd(f'ALTER TABLE {_sd_tbl_name} ADD COLUMN deleted_at DATETIME'))
+                            db.session.commit()
+                            app.logger.info(f'SOFT DELETE MIGRATION: added {_sd_tbl_name}.deleted_at column')
+                            _sd_tables_altered += 1
+                        _sd_tables_checked += 1
+                    except Exception as _sd_e:
+                        db.session.rollback()
+                        app.logger.warning(f'SOFT DELETE MIGRATION: could not add deleted_at to table: {_sd_e}')
+            app.logger.info(f'SOFT DELETE MIGRATION: checked {_sd_tables_checked} tables, altered {_sd_tables_altered}')
+        except Exception as _sd_exc:
+            db.session.rollback()
+            app.logger.warning(f'SOFT DELETE MIGRATION: could not run: {_sd_exc}')
         
         # Create default loan products if they don't exist
         try:

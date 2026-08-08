@@ -126,7 +126,9 @@ def checkout():
                             'ad_id': item.product_id,
                             'ad_title': item.ad.title,
                             'quantity': item.quantity,
-                            'price': item.ad.price_gkach
+                            'price': item.ad.price_gkach,
+                            'price_gkach': item.ad.price_gkach,
+                            'shipping_fee': item.shipping_fee or 0.0
                         } for item in seller_items
                     ]
 

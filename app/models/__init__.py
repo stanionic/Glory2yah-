@@ -9,6 +9,7 @@ from app.models.gkach_transaction import GkachTransaction
 from app.models.ad import Ad
 from app.models.cart import CartItem
 from app.models.delivery import Delivery
+from app.models.delivery_item import DeliveryItem
 from app.models.batch import Batch
 from app.models.batch_click import BatchClick
 from app.models.message import Message
@@ -33,6 +34,7 @@ __all__ = [
     'Ad',
     'CartItem',
     'Delivery',
+    'DeliveryItem',
     'Batch',
     'BatchClick',
     'Message',

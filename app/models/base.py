@@ -13,6 +13,7 @@ class BaseModel(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)  # Soft delete (Audit #19)
     
     def to_dict(self):
         """Convert model to dictionary"""
@@ -49,10 +50,21 @@ class BaseModel(db.Model):
     
     @classmethod
     def get_all(cls):
-        """Get all models"""
-        return cls.query.all()
+        """Get all models (excluding soft-deleted)"""
+        return cls.query.filter(cls.deleted_at.is_(None)).all()
+    
+    @classmethod
+    def active(cls):
+        """Query only non-deleted records (soft delete support — Audit #19)"""
+        return cls.query.filter(cls.deleted_at.is_(None))
     
     @classmethod
     def paginate(cls, page=1, per_page=20):
-        """Paginate models"""
-        return cls.query.paginate(page=page, per_page=per_page, error_out=False)
+        """Paginate models (excluding soft-deleted)"""
+        return cls.active().paginate(page=page, per_page=per_page, error_out=False)
+    
+    def soft_delete(self):
+        """Soft delete: set deleted_at timestamp instead of hard delete (Audit #19)"""
+        self.deleted_at = datetime.utcnow()
+        db.session.commit()
+        return self
