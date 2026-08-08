@@ -288,3 +288,18 @@ class AdService:
         }
         
         return stats
+    
+    @staticmethod
+    def invalidate_all_ad_caches():
+        """Invalidate ALL ad-related caches (approved list + individual ads).
+        Called at app startup to ensure freshly-approved ads are visible
+        after a deploy/restart (Redis persists between deploys)."""
+        from app.services.redis_service import RedisService
+        from app import redis_client
+        redis_service = RedisService(redis_client)
+        
+        # Invalidate the approved-ads list cache
+        redis_service.invalidate_approved_ads()
+        
+        # Invalidate all individual ad caches (ad:<ad_id>)
+        redis_service.cache_clear_pattern("ad:*")

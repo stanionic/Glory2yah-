@@ -423,6 +423,22 @@ def create_app(config_name=None):
             db.session.rollback()
             app.logger.warning(f"Could not create default investment products: {e}")
         
+        # =====================================================================
+        # ADS CACHE INVALIDATION AT STARTUP
+        # Redis persists between deploys. On Render, a new deploy reuses the
+        # same Redis. If an admin approved ads just before a deploy, the cached
+        # `ads:approved` list would still hold the OLD data (10-min TTL) and the
+        # freshly-approved ads would appear "disappeared" after the commit.
+        # Fix: invalidate ALL ad caches on every startup so the DB is the
+        # single source of truth right after boot.
+        # =====================================================================
+        try:
+            from app.services.ad_service import AdService
+            AdService.invalidate_all_ad_caches()
+            app.logger.info('ADS CACHE: invalidated approved-ads + ad:* caches at startup')
+        except Exception as _e_adcache:
+            app.logger.warning(f'ADS CACHE: startup invalidation skipped: {_e_adcache}')
+
         # Create default charity causes if they don't exist
         try:
             default_causes = [

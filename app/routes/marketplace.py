@@ -53,19 +53,6 @@ def _dbg_log(hypothesisId, msg, data=None, runId='post', location='marketplace.p
 # #endregion
 
 
-def _flush_approved_cache():
-    """Clear Redis approved-ads cache to work around stale cache (pre-200eaea)."""
-    try:
-        from app.services.redis_service import RedisService
-        from app import redis_client as rc
-        rs = RedisService(rc)
-        rs.invalidate_approved_ads()
-        # Try delete individual known approved keys
-        rs.cache_delete('ads:approved:list')
-    except Exception:
-        pass
-
-
 def _safe_ad_to_dict(ad):
     """Robust version of ad.to_dict() — NEVER crashes on missing columns.
 
@@ -164,12 +151,6 @@ def _safe_ad_to_dict(ad):
 @marketplace_bp.route('/')
 def index():
     """Marketplace homepage - AliExpress style grid"""
-    # Always clear approved-ads cache on marketplace load
-    # (stale sell-only cached data from pre-200eaea builds caused 'Pa gen pwodui')
-    _flush_approved_cache()
-    # #region debug-point A:marketplace-index-entry (H1-H5)
-    _dbg_log('A', 'index() entry; flushing approved cache OK', {'route':'/mache/'}, location='marketplace.py:index')
-    # #endregion
     try:
         # Validate pagination parameters
         page, per_page = validate_pagination(
@@ -277,7 +258,6 @@ def index():
 def api_products():
     """API endpoint for marketplace products (infinite scroll)"""
     from app.utils.validators import validate_pagination, sanitize_text, ValidationError
-    _flush_approved_cache()
     try:
         page, per_page = validate_pagination(
             request.args.get('page'),
