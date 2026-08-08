@@ -239,7 +239,7 @@
         </div>
         <div class="modal-actions">
             <a href="/" class="modal-btn modal-btn-primary">Retounen Akèy</a>
-            <a href="/delivery/list" class="modal-btn modal-btn-secondary">Wè Kòmand</a>
+            <a href="/delivery/my-deliveries" class="modal-btn modal-btn-secondary">Wè Kòmand</a>
         </div>
     </div>
 </div>
@@ -430,7 +430,6 @@ function confirmOrder() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            if (data.donation) { document.getElementById('donationThanks').style.display = 'block'; }
             showModal();
         } else {
             alert(data.error || 'Erè nan konfime kòmand');

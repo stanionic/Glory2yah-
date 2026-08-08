@@ -260,6 +260,16 @@ def dashboard():
     # Fetch all admin settings
     admin_settings = AdminSettings.get_all_settings()
     
+    # Resolve the promotional (demo) video URL.
+    # If an admin has uploaded a custom promo video it lives in static/uploads/
+    # (filenames stored in AdminSettings 'demo_video'); otherwise fall back to
+    # the default static/glory2yahpub_demo.mp4.
+    demo_video_name = AdminSettings.get_setting('demo_video', None)
+    if demo_video_name:
+        demo_video_url = url_for('static', filename='uploads/' + str(demo_video_name))
+    else:
+        demo_video_url = url_for('static', filename='glory2yahpub_demo.mp4')
+    
     return render_template(
         'admin.html',
         stats=stats,
@@ -267,8 +277,78 @@ def dashboard():
         batches=batches,
         users_gkach=users_gkach,
         admin_settings=admin_settings,
+        demo_video_url=demo_video_url,
+        demo_video_name=demo_video_name,
         current_user=current_user
     )
+
+
+@admin_bp.route('/demo-video/update', methods=['POST'])
+@login_required
+@admin_required
+def update_demo_video():
+    """Update the app's PROMOTIONAL video (the video that explains what the
+    app does / promotes Glory2YahPub). Uploaded file is saved to static/uploads/
+    and its filename stored in AdminSettings ('demo_video') so the admin card,
+    download/share buttons and the /demo page all use the new video."""
+    import os
+    import uuid
+
+    try:
+        if 'demo_video' not in request.files:
+            flash('Tanpri chwazi yon videyo pou telechaje.', 'error')
+            return redirect(url_for('admin.dashboard'))
+
+        file = request.files['demo_video']
+        if not file or not file.filename:
+            flash('Tanpri chwazi yon videyo pou telechaje.', 'error')
+            return redirect(url_for('admin.dashboard'))
+
+        ext = (
+            file.filename.rsplit('.', 1)[-1].lower()
+            if '.' in file.filename else 'mp4'
+        )
+        allowed = current_app.config.get('ALLOWED_VIDEO_EXTENSIONS', {'mp4','avi','mov','mkv','webm'})
+        if ext not in allowed:
+            flash(
+                f'Tip videyo a pa aksepte. Aksepte sèlman: {", ".join(sorted(allowed)).upper()}.',
+                'error'
+            )
+            return redirect(url_for('admin.dashboard'))
+
+        # Size guard (100MB max, matching MAX_CONTENT_LENGTH)
+        file.seek(0, 2)
+        video_bytes = file.tell()
+        file.seek(0)
+        max_bytes = int(current_app.config.get('MAX_CONTENT_LENGTH', 100*1024*1024))
+        if video_bytes > max_bytes:
+            flash(f'Videyo a twò gwo (≈{round(video_bytes/1024/1024,1)} MB). Maksimòm otorize: {max_bytes//1024//1024} MB.', 'error')
+            return redirect(url_for('admin.dashboard'))
+
+        # Save to static/uploads/ (persistent disk on Render)
+        upload_folder = os.path.join(
+            current_app.root_path, '..', current_app.config['UPLOAD_FOLDER']
+        )
+        upload_folder = os.path.abspath(upload_folder)
+        os.makedirs(upload_folder, exist_ok=True)
+
+        filename = f'promo_{uuid.uuid4().hex}.{ext}'
+        dest_path = os.path.join(upload_folder, filename)
+        file.save(dest_path)
+
+        # Store reference in AdminSettings
+        AdminSettings.set_setting('demo_video', filename)
+
+        flash(
+            '✅ Videyo Pwomosyonèl mete ajou avèk siksè! '
+            'Kounye a li itilize pou pwomouvwa app la (paj /demo, pataj, telechajman).',
+            'success'
+        )
+    except Exception as e:
+        current_app.logger.error(f"Admin update_demo_video failed: {e}")
+        flash('Erè pandan mete ajou videyo pwomosyonèl la.', 'error')
+
+    return redirect(url_for('admin.dashboard'))
 
 
 @admin_bp.route('/users')
@@ -438,6 +518,110 @@ def block_user_by_pseudo():
     db.session.commit()
     flash(f'Kont "{user.pseudo}" bloke avèk siksè! Li pa ka konekte ankò.', 'success')
     return redirect(url_for('admin.manage_users'))
+
+
+@admin_bp.route('/rewards')
+@login_required
+@admin_required
+def rewards():
+    """Admin rewards dashboard — shows UNIQUE clicks and Admin rewards paid
+    per sharer (referrer) per shared batch link.
+
+    Rules reflected here:
+      - Each click counts once per unique person (BatchClick unique constraint).
+      - The platform/Admin pays +GKACH_REWARD_AMOUNT (10) Gkach every
+        GKACH_CLICKS_REQUIRED (100) unique clicks to each sharer (referrer).
+      - Actually PAID rewards = GkachTransaction rows of type 'reward'.
+    """
+    from sqlalchemy import func
+    from app.models.batch import Batch
+    from app.models.batch_click import BatchClick
+    from app.models.gkach_transaction import GkachTransaction
+    from app.models.user import User
+
+    required = int(current_app.config.get('GKACH_CLICKS_REQUIRED', 100) or 100)
+    reward = int(current_app.config.get('GKACH_REWARD_AMOUNT', 10) or 10)
+
+    # Aggregate UNIQUE clicks per (batch, referrer)
+    rows = (
+        db.session.query(
+            BatchClick.batch_id,
+            BatchClick.referrer_whatsapp,
+            func.count(BatchClick.id).label('unique_clicks'),
+            func.count(func.distinct(BatchClick.clicker_ip)).label('unique_ips'),
+            func.max(BatchClick.created_at).label('last_click'),
+        )
+        .group_by(BatchClick.batch_id, BatchClick.referrer_whatsapp)
+        .order_by(func.max(BatchClick.created_at).desc())
+        .all()
+    )
+
+    # Map batch_id -> Batch for labels
+    batch_ids = {r.batch_id for r in rows}
+    batches_map = {
+        b.batch_id: b for b in Batch.query.filter(Batch.batch_id.in_(batch_ids)).all()
+    } if batch_ids else {}
+
+    # Map referrer -> user info
+    referrers = {r.referrer_whatsapp for r in rows}
+    users_map = {
+        u.whatsapp: u for u in User.query.filter(User.whatsapp.in_(referrers)).all()
+    } if referrers else {}
+
+    # Map actually paid rewards per (referrer, batch) from GkachTransaction
+    reward_txns = GkachTransaction.query.filter_by(
+        transaction_type='reward', status='completed'
+    ).all()
+    paid_map = {}  # (referrer, batch_id) -> {'txns': int, 'amount': int}
+    for t in reward_txns:
+        # Description format: "Rekonpans Admin: +10 Gkach pou 100 klik inik sou batch <id>"
+        bid = None
+        if t.ad_id:  # optional ad reference
+            bid = str(t.ad_id)
+        else:
+            idx = t.description.find('batch ')
+            if idx != -1:
+                bid = t.description[idx + len('batch '):].strip()
+        if bid:
+            key = (t.user_whatsapp, bid)
+            e = paid_map.setdefault(key, {'txns': 0, 'amount': 0})
+            e['txns'] += 1
+            e['amount'] += t.amount
+
+    entries = []
+    for r in rows:
+        clicks = r.unique_clicks
+        milestones = clicks // required
+        expected = milestones * reward
+        key = (r.referrer_whatsapp, r.batch_id)
+        paid = paid_map.get(key, {'txns': 0, 'amount': 0})
+        batch = batches_map.get(r.batch_id)
+        user = users_map.get(r.referrer_whatsapp)
+        entries.append({
+            'batch_id': r.batch_id,
+            'referrer_whatsapp': r.referrer_whatsapp,
+            'pseudo': (user.pseudo if user else None) or r.referrer_whatsapp,
+            'unique_clicks': clicks,
+            'unique_ips': r.unique_ips or 0,
+            'milestones': milestones,
+            'expected_reward': expected,
+            'paid_txns': paid['txns'],
+            'paid_amount': paid['amount'],
+            'progress': clicks % required,          # clicks toward next milestone
+            'next_milestone': required - (clicks % required),
+            'last_click': r.last_click,
+            'ads_count': batch.batch_ads.count() if batch else 0,
+        })
+
+    entries.sort(key=lambda e: e['unique_clicks'], reverse=True)
+
+    return render_template(
+        'admin_rewards.html',
+        entries=entries,
+        required=required,
+        reward=reward,
+        current_user=current_user,
+    )
 
 
 @admin_bp.route('/ads')

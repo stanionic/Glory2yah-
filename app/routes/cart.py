@@ -107,23 +107,7 @@ def checkout():
         # Check if AJAX request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from app.services.delivery_service import DeliveryService
-            from app.services.gkach_service import GkachService
             from app import db
-
-            totals = CartService.calculate_totals(current_user.id)
-            total_price = totals.get('subtotal', 0)
-
-            donation_amount = int(request.form.get('donation_amount', 0) or 0)
-            donation_cause = request.form.get('donation_cause', 'general')
-
-            if donation_amount < 0:
-                donation_amount = 0
-
-            total_with_donation = total_price + donation_amount
-
-            balance = GkachService.get_balance(current_user.whatsapp)
-            if balance < total_with_donation:
-                return jsonify({'success': False, 'error': f'Balans ensifisan. Ou bezwen {total_with_donation} Gkach men ou gen {balance} Gkach.'}), 400
 
             sellers = {}
             for item in items:
@@ -132,13 +116,9 @@ def checkout():
                     sellers[ad.user_whatsapp] = []
                 sellers[ad.user_whatsapp].append(item)
 
-            # P1 FIX: single transaction for ALL sellers (atomic multi-seller checkout)
-            # P1 FIX: escrow_hold=True — funds to ESCROW account, NOT direct seller (fixes double charge contradiction)
-            any_error = None
+            # NEGOC_LOGIG: NO PAYMENT HERE — vandè a dwe negosye FRAIS DE LIVRAISON ak achtè a anvan.
+            # Lè achtè a konfime livrezon an (confirm_delivery), se lè sa a peman an rezève.
             try:
-                _first_seller = list(sellers.keys())[0] if sellers else None
-                donation_applied = False
-
                 for seller_whatsapp, seller_items in sellers.items():
                     seller_total = sum(item.ad.price_gkach * item.quantity for item in seller_items)
                     cart_data = [
@@ -158,35 +138,16 @@ def checkout():
                         delivery_address='Pou negosye'
                     )
 
-                    # Only one seller charges the donation (first seller only)
-                    this_donation = 0
-                    this_cause = donation_cause
-                    if (donation_amount > 0) and (not donation_applied) and (seller_whatsapp == _first_seller):
-                        this_donation = donation_amount
-                        donation_applied = True
-
-                    GkachService.process_purchase(
-                        buyer_whatsapp=current_user.whatsapp,
-                        seller_whatsapp=seller_whatsapp,
-                        amount=seller_total,
-                        ad_id=seller_items[0].product_id,
-                        delivery_id=delivery.delivery_id,
-                        donation_amount=this_donation,
-                        donation_cause=this_cause,
-                        escrow_hold=True
-                    )
-
                 CartService.clear_cart(current_user.id)
                 db.session.commit()
-                return jsonify({'success': True, 'donation': donation_amount > 0})
+                return jsonify({'success': True})
             except ValidationError as e:
                 db.session.rollback()
                 return jsonify({'success': False, 'error': str(e)}), 400
             except Exception as e:
                 db.session.rollback()
-                any_error = e
-                current_app.logger.error(f"Cart AJAX checkout failed user={current_user.id}: {any_error}")
-                return jsonify({'success': False, 'error': 'Erè pandan peyman panier la. Tanpri eseye ankò oswa kontakte admin.'}), 500
+                current_app.logger.error(f"Cart AJAX checkout failed user={current_user.id}: {e}")
+                return jsonify({'success': False, 'error': 'Erè pandan kreye kòmand la. Tanpri eseye ankò oswa kontakte admin.'}), 500
 
         # Regular form submission — P1 FIX: correct endpoint name my_deliveries
         flash('Kòmand voye bay vandè yo!', 'success')

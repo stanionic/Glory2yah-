@@ -380,27 +380,121 @@ class GkachService:
             raise ValidationError(f"Tranzaksyon echwe: {str(e)}")
 
     @staticmethod
-    def track_batch_click(batch_id, referrer_whatsapp):
-        """Track click on shared batch and reward if milestone reached"""
+    def _is_ip_blocked(ip):
+        """Return True if the given client IP is blocked by the Admin.
+
+        Blocked IPs are stored as a comma/newline separated string in
+        AdminSettings under the key 'blocked_ips' (managed from the admin panel).
+        """
+        try:
+            from app.models.admin_settings import AdminSettings
+            raw = (AdminSettings.get_setting('blocked_ips', '') or '')
+            blocked = {
+                x.strip() for x in raw.replace('\n', ',').split(',') if x.strip()
+            }
+            return str(ip).strip() in blocked
+        except Exception:
+            return False
+
+    @staticmethod
+    def track_batch_click(batch_id, referrer_whatsapp, clicker_whatsapp=None, dedup_key=None, clicker_ip=None, clicker_device=None):
+        """Track a UNIQUE click on a shared batch and auto-credit the Admin reward.
+
+        Rules:
+          - Each click must come from a UNIQUE person: enforced with the
+            BatchClick unique constraint on (batch_id, referrer, clicker).
+          - Anti-fraud IP limit: at most GKACH_MAX_CLICKS_PER_IP unique clicks
+            are accepted from the same IP for a given (batch, referrer).
+          - Anti-fraud device limit: at most GKACH_MAX_CLICKS_PER_DEVICE unique
+            clicks accepted from the same browser/device (signed cookie).
+          - Admin can block an IP outright (stored in AdminSettings 'blocked_ips').
+          - The referrer (the user who SHARED the ad link) is paid automatically
+            by the platform/Admin: +GKACH_REWARD_AMOUNT (10) Gkach every
+            GKACH_CLICKS_REQUIRED (100) UNIQUE clicks.
+          - A user cannot earn from his own click (clicker == referrer is ignored).
+        """
+        from flask import current_app
         from app.models.batch import Batch
-        from app.models.user import User
-        
+        from app.models.batch_click import BatchClick
+
         batch = Batch.query.filter_by(batch_id=batch_id).first()
         if not batch:
             return False
-            
-        batch.share_count += 1
-        
-        # Reward logic: 10 Gkach per 100 clicks
-        if batch.share_count % 100 == 0:
-            reward_amount = 10
+
+        # Blocked-IP check (set by Admin in AdminSettings 'blocked_ips')
+        if clicker_ip and GkachService._is_ip_blocked(clicker_ip):
+            return False
+
+        # Guard: the clicker must not be the referrer (no self-reward)
+        if clicker_whatsapp and referrer_whatsapp and str(clicker_whatsapp).strip() == str(referrer_whatsapp).strip():
+            return False
+
+        # Determine unique click count for this (batch, referrer)
+        query = BatchClick.query.filter_by(
+            batch_id=batch_id,
+            referrer_whatsapp=referrer_whatsapp,
+        )
+
+        if clicker_whatsapp:
+            # Only count this click if this exact person has NOT already clicked
+            # this batch for this referrer (uniqueness per person).
+            already_clicked = query.filter_by(
+                clicker_whatsapp=clicker_whatsapp
+            ).first()
+            if already_clicked:
+                return False
+
+            # Anti-fraud IP limit: same IP cannot feed unlimited unique clickers
+            if clicker_ip:
+                max_per_ip = int(current_app.config.get('GKACH_MAX_CLICKS_PER_IP', 3) or 3)
+                ip_clicks = BatchClick.query.filter_by(
+                    batch_id=batch_id,
+                    referrer_whatsapp=referrer_whatsapp,
+                    clicker_ip=clicker_ip,
+                ).count()
+                if ip_clicks >= max_per_ip:
+                    return False
+
+            # Anti-fraud device limit: same browser/device cannot feed multiple icons
+            if clicker_device:
+                max_per_device = int(current_app.config.get('GKACH_MAX_CLICKS_PER_DEVICE', 1) or 1)
+                device_clicks = BatchClick.query.filter_by(
+                    batch_id=batch_id,
+                    referrer_whatsapp=referrer_whatsapp,
+                    clicker_device=clicker_device,
+                ).count()
+                if device_clicks >= max_per_device:
+                    return False
+
+            click = BatchClick(
+                batch_id=batch_id,
+                referrer_whatsapp=referrer_whatsapp,
+                clicker_whatsapp=clicker_whatsapp,
+                clicker_ip=clicker_ip,
+                clicker_device=clicker_device,
+            )
+            db.session.add(click)
+            # db.session.flush() to make the new row visible to the count below
+            db.session.flush()
+
+        # Total UNIQUE clicks earned by this referrer on this batch
+        unique_clicks = query.count()
+
+        batch.share_count = unique_clicks
+
+        # Auto-credit by Admin/platform: 10 Gkach every 100 UNIQUE clicks
+        required = int(current_app.config.get('GKACH_CLICKS_REQUIRED', 100) or 100)
+        reward = int(current_app.config.get('GKACH_REWARD_AMOUNT', 10) or 10)
+
+        if unique_clicks > 0 and unique_clicks % required == 0:
             GkachService.add_balance(
                 referrer_whatsapp,
-                reward_amount,
-                f"Reward for 100 clicks on batch {batch_id}",
+                reward,
+                f"Rekonpans Admin: +{reward} Gkach pou {required} klik inik sou batch {batch_id}",
                 'reward'
             )
-            batch.click_rewards += reward_amount
-            
+            batch.click_rewards += reward
+
         db.session.commit()
         return True
+

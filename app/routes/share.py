@@ -12,11 +12,26 @@ from datetime import date
 share_bp = Blueprint('share', __name__)
 
 
+def _get_client_ip():
+    """Resolve the real client IP behind a reverse proxy (Render/Heroku).
+
+    Priority: X-Forwarded-For (first entry) → X-Real-IP → remote_addr.
+    Used only for the GKach click anti-fraud per-IP limit.
+    """
+    xff = (request.headers.get('X-Forwarded-For') or '').split(',')[0].strip()
+    if xff:
+        return xff
+    xri = (request.headers.get('X-Real-IP') or '').strip()
+    if xri:
+        return xri
+    return request.remote_addr or ''
+
+
 @share_bp.route('/create', methods=['GET', 'POST'])
 def create():
     """Create new ad/post"""
     from flask import render_template, flash, redirect
-    
+
     flash('Fonksyon sa ap vini byento!', 'info')
     return redirect(url_for('main.index'))
 
@@ -63,10 +78,14 @@ def batch_click(batch_id):
             db.session.add(referrer_account)
             db.session.flush()
 
-        GkachService.track_batch_click(batch_id, referrer_whatsapp, clicker_whatsapp=current_user.whatsapp, dedup_key=dedup_key)
+        # Resolve real client IP for the per-IP anti-fraud limit
+        clicker_ip = _get_client_ip()
+
+        GkachService.track_batch_click(batch_id, referrer_whatsapp, clicker_whatsapp=current_user.whatsapp, dedup_key=dedup_key, clicker_ip=clicker_ip)
         db.session.commit()
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error tracking click: {e}")
 
     return redirect(url_for('main.index', batch=batch_id))
+

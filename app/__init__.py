@@ -310,6 +310,7 @@ def create_app(config_name=None):
         from app.models.ad import Ad
         from app.models.delivery import Delivery
         from app.models.batch import Batch
+        from app.models.batch_click import BatchClick
         from app.models.batch_ad import BatchAd
         from app.models.gkach_transaction import GkachTransaction
         from app.models.cart import CartItem
@@ -332,6 +333,34 @@ def create_app(config_name=None):
         from app.models.bank import LoanProduct, Loan, LoanRepayment, InvestmentProduct, Investment
         db.create_all()
         
+        # =====================================================================
+        # BATCH_CLICKS MIGRATION: add `clicker_ip` column if missing (anti-fraud
+        # per-IP limit on ad-batch sharing clicks). SQLAlchemy create_all() does
+        # NOT alter existing tables, so this idempotent patch inspects the live
+        # schema and ALTERs only when the column is absent.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect2
+            from sqlalchemy import text as _sa_text2
+            _insp2 = _sa_inspect2(db.engine)
+            if _insp2.has_table('batch_clicks'):
+                _bc_cols = {c['name'] for c in _insp2.get_columns('batch_clicks')}
+                if 'clicker_ip' not in _bc_cols:
+                    db.session.execute(_sa_text2('ALTER TABLE batch_clicks ADD COLUMN clicker_ip VARCHAR(45)'))
+                    db.session.commit()
+                    app.logger.info('BATCH_CLICKS MIGRATION: added batch_clicks.clicker_ip column')
+                if 'clicker_device' not in _bc_cols:
+                    try:
+                        db.session.execute(_sa_text2('ALTER TABLE batch_clicks ADD COLUMN clicker_device VARCHAR(64)'))
+                    except Exception:
+                        db.session.rollback()
+                        db.session.execute(_sa_text2('ALTER TABLE batch_clicks ADD COLUMN clicker_device VARCHAR(64) DEFAULT NULL'))
+                    db.session.commit()
+                    app.logger.info('BATCH_CLICKS MIGRATION: added batch_clicks.clicker_device column')
+        except Exception as _e2:
+            db.session.rollback()
+            app.logger.warning(f"BATCH_CLICKS MIGRATION: could not add clicker_ip column: {_e2}")
+
         # =====================================================================
         # ADS MIGRATION: add `category` column to existing `ads` table.
         # SQLAlchemy create_all() does NOT alter existing tables — on databases

@@ -17,6 +17,9 @@
             <a href="{{ url_for('admin.manage_gkach') }}" class="admin-quick-link">
                 <i class="fas fa-coins"></i> Jere Gkach
             </a>
+            <a href="{{ url_for('admin.rewards') }}" class="admin-quick-link">
+                <i class="fas fa-trophy"></i> Rekonpans Klik Inik
+            </a>
             <a href="{{ url_for('admin.manage_ads') }}" class="admin-quick-link">
                 <i class="fas fa-ad"></i> Jere Piblisite
             </a>
@@ -56,12 +59,15 @@
             </div>
         </div>
 
-        <div class="admin-card" style="border: none; background: linear-gradient(135deg, #ffc857 0%, #f79f1f 100%);">
+<div class="admin-card" style="border: none; background: linear-gradient(135deg, #ffc857 0%, #f79f1f 100%);">
             <div class="admin-card-body text-center" style="color: #3a2680;">
-                <h3 class="mb-4" style="margin: 0 0 20px 0; font-weight: 800; color: #2a1d68;">📹 Videyo Demo Glory2YahPub</h3>
+                <h3 class="mb-4" style="margin: 0 0 20px 0; font-weight: 800; color: #2a1d68;">📹 Videyo Pwomosyonèl Glory2YahPub</h3>
+                <p style="color:#5b3a00; font-weight:600; margin:0 0 16px 0;">
+                    Videyo sa a pwomouvwa app la epi li ede itilizatè yo konprann kisa Glory2YahPub fè.
+                </p>
                 <div class="d-flex gap-3 justify-content-center mb-4 flex-wrap">
-                    <a href="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" download class="admin-btn" style="background: #fff; color: #f97316; font-weight: 700; padding: 12px 20px;">
-                        <i class="fas fa-download"></i> Telechaje Videyo Demo
+                    <a href="{{ demo_video_url }}" download class="admin-btn" style="background: #fff; color: #f97316; font-weight: 700; padding: 12px 20px;">
+                        <i class="fas fa-download"></i> Telechaje Videyo Pwomosyonèl
                     </a>
                     <button onclick="shareToFacebook()" class="admin-btn admin-btn-primary">
                         <i class="fab fa-facebook"></i> Pataje sou Facebook
@@ -72,10 +78,31 @@
                 </div>
                 <div class="video-preview d-flex justify-content-center">
                     <video controls class="rounded shadow" style="max-width: 100%; max-height: 420px; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);">
-                        <source src="{{ url_for('static', filename='glory2yahpub_demo.mp4') }}" type="video/mp4">
+                        <source src="{{ demo_video_url }}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
+                <hr style="border-color: rgba(90,60,0,0.25); margin: 22px 0;">
+                <h4 style="font-weight:800; color:#2a1d68; margin:0 0 12px 0;">⬆️ METE AJOU Videyo Pwomosyonèl</h4>
+                <p style="color:#6b4a00; margin:0 0 14px 0;">
+                    Chwazi yon nouvo videyo MP4/AVI/MOV/MKV/WEBM (maks 100MB) pou ranplase videyo pwomosyonèl la.
+                </p>
+                <form method="POST" action="{{ url_for('admin.update_demo_video') }}" enctype="multipart/form-data"
+                      onsubmit="return confirm('Èske w sèten w vle ranplase videyo pwomosyonèl la?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
+                        <input type="file" name="demo_video" accept="video/mp4,video/avi,video/quicktime,video/x-matroska,video/webm"
+                               class="form-control" style="max-width:360px; display:inline-block; width:auto;" required>
+                        <button type="submit" class="admin-btn admin-btn-success" style="font-weight:800;">
+                            <i class="fas fa-upload"></i> Mete Ajou Videyo
+                        </button>
+                    </div>
+                </form>
+                {% if demo_video_name %}
+                <p class="mt-3" style="font-size:12px; color:#6b4a00;">
+                    ✅ Videyo pwomosyonèl aktyèl: <code>{{ demo_video_name }}</code>
+                </p>
+                {% endif %}
             </div>
         </div>
 
@@ -535,8 +562,9 @@ function copyBatchLink(batchId) {
 }
 
 function shareToFacebook() {
-    const videoUrl = `${window.location.origin}/static/glory2yahpub_demo.mp4`;
-    const message = encodeURIComponent('📹 Dekouvri Glory2YahPub - Platfòm Piblisite #1 nan Ayiti! Vande ak achte ak Gkach (Lajan Virtual). Telechaje aplikasyon an kounye a!\n\n#Glory2YahPub #Ayiti #Biznis');
+    const videoUrl = `{{ demo_video_url }}`;
+    const absVideoUrl = videoUrl.startsWith('http') ? videoUrl : `${window.location.origin}${videoUrl}`;
+    const message = encodeURIComponent('📹 Dekouvri Glory2YahPub - Platfòm Piblisite #1 nan Ayiti! Vande ak achte ak Gkach (Lajan Virtual). Telechaje aplikasyon an kounye a!
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}&quote=${message}`;
     window.open(facebookUrl, '_blank', 'width=600,height=400');
 }

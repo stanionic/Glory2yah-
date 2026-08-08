@@ -31,29 +31,6 @@ def _load_secret_key():
     return key
 
 
-def _default_sqlite_path(db_name='glory2yahpub.db'):
-    """Return an absolute sqlite:/// URI whose file lives inside ./instance.
-
-    PERSISTENCE FIX (2026-08-07): on Render the project root is on an EPHEMERAL
-    filesystem that is wiped on every redeploy/restart. A SQLite DB written to
-    the working directory (e.g. 'sqlite:///glory2yahpub.db') would therefore be
-    erased on each deploy — silently deleting ALL ads.
-
-    render.yaml mounts a PERSISTENT disk at /opt/render/project/src/instance,
-    so routing every SQLite fallback DB into ./instance guarantees the database
-    file survives redeploys/restarts. Local dev keeps working (creates
-    <project>/instance/ automatically).
-    """
-    base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'instance'))
-    try:
-        os.makedirs(base, exist_ok=True)
-    except Exception:
-        pass
-    path = os.path.join(base, db_name).replace('\\', '/')
-    return 'sqlite:///' + path
-
-
-
 class Config:
     """Base configuration"""
 
@@ -124,8 +101,16 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
     
     # Business Logic
-    GKACH_REWARD_AMOUNT = 100
+    # Admin reward: 10 Gkach per 100 UNIQUE clicks on a shared ad batch link
+    GKACH_REWARD_AMOUNT = 10
     GKACH_CLICKS_REQUIRED = 100
+    # Anti-fraud: max unique clicks accepted from the SAME IP for a given
+    # (batch, referrer). Allows a household sharing one IP while blocking
+    # click-farms / multiple accounts from the same device.
+    GKACH_MAX_CLICKS_PER_IP = 3
+    # Anti-fraud: max unique clicks accepted from the SAME browser/device
+    # (identified by a signed cookie) for a given (batch, referrer).
+    GKACH_MAX_CLICKS_PER_DEVICE = 1
     AUTO_SLIDE_INTERVAL = 2000  # milliseconds
     # Gkach Exchange Rate: 100 Gkach = 120 Gourdes
     GKACH_TO_HTG_RATE = 1.2  # 1 Gkach = 1.2 HTG
@@ -153,12 +138,10 @@ class DevelopmentConfig(Config):
 
     SECRET_KEY = _load_secret_key()
 
-    # Use PostgreSQL if DATABASE_URL is set, otherwise SQLite.
-    # SQLite fallback lives in ./instance (PERSISTENT disk on Render) so the
-    # database — and every ad — survives redeploys/restarts.
+    # Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         os.environ.get('DEV_DATABASE_URL') or \
-        _default_sqlite_path('glory2yahpub_dev.db')
+        'sqlite:///glory2yahpub_dev.db'
 
     # Disable HTTPS requirements
     SESSION_COOKIE_SECURE = False

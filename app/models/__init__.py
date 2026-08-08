@@ -10,6 +10,7 @@ from app.models.ad import Ad
 from app.models.cart import CartItem
 from app.models.delivery import Delivery
 from app.models.batch import Batch
+from app.models.batch_click import BatchClick
 from app.models.message import Message
 from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
 from app.models.story import Story
@@ -33,6 +34,7 @@ __all__ = [
     'CartItem',
     'Delivery',
     'Batch',
+    'BatchClick',
     'Message',
     'AdLike',
     'AdStar',

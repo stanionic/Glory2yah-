@@ -232,7 +232,7 @@
             {% set ad_desc_var = (ad.description if (ad is not mapping) else ad.get('description','')) %}
             {% set ad_imgs_var = (ad.get_images_list() if (ad is not mapping and ad.get_images_list is defined) else (ad.get('images', []) or [])) %}
             {# CASE A: explicit media_type='url' → iframe embed autoplay #}
-            {% set ad_embed_url = (ad_desc_var|get_embed_url) if (ad_media_type_var == 'url' and ad_desc_var) else None %}
+            {% set ad_embed_url = (ad_media_type_var == 'url' and ad_desc_var) ? (ad_desc_var|get_embed_url) : None %}
             {# CASE B (screenshot 2026-08-07): Post Teks → images media_type mais images vides + description URL → iframe auto-detect #}
             {% if not ad_embed_url and ad_media_type_var in (None, 'images', '') and ad_desc_var and (ad_imgs_var|length == 0) %}
                 {% set ad_embed_url = ad_desc_var|get_embed_url %}
@@ -240,7 +240,7 @@
 
             {% if ad_media_type_var == 'video' %}
                 {% set video_upload_name = (ad.video if ad is not mapping else ad.get('video','')) %}
-                {% set video_upload_url = url_for('static', filename='uploads/' ~ video_upload_name) if video_upload_name else None %}
+                {% set video_upload_url = video_upload_name ? url_for('static', filename='uploads/' ~ video_upload_name) : None %}
                 {% set main_video_url = (ad.video_url if ad is not mapping else ad.get('video_url')) or video_upload_url %}
                 <video id="mainVideo" class="main-image" controls muted playsinline preload="auto" loop
                        src="{{ main_video_url }}" style="object-fit: contain; background:#000;">
