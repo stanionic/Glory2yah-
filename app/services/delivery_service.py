@@ -4,6 +4,7 @@ Business logic for delivery and negotiation
 """
 from app import db
 from app.models.delivery import Delivery
+from app.models.delivery_item import DeliveryItem
 from app.models.message import Message
 from app.utils.validators import validate_whatsapp, ValidationError
 from app.services.gkach_service import GkachService
@@ -17,13 +18,14 @@ class DeliveryService:
     @staticmethod
     def create_delivery(buyer_whatsapp, seller_whatsapp, ad_id=None, 
                         cart_items=None, total_price=0, delivery_address=''):
-        """Create a new delivery/negotiation process"""
+        """Create a new delivery/negotiation process.
+        P1 FIX (Audit #6d): cart_items now stored in normalized junction table
+        `delivery_items` instead of a JSON string. Accepts either:
+          - list of dicts: [{'ad_id':..., 'quantity':..., 'price_gkach':..., 'shipping_fee':...}]
+          - list of CartItem objects
+        """
         buyer_whatsapp = validate_whatsapp(buyer_whatsapp)
         seller_whatsapp = validate_whatsapp(seller_whatsapp)
-        
-        # Format cart items to JSON if list
-        if isinstance(cart_items, list):
-            cart_items = json.dumps(cart_items)
             
         delivery_id = str(uuid.uuid4())
         
@@ -33,15 +35,44 @@ class DeliveryService:
             buyer_whatsapp=buyer_whatsapp,
             seller_whatsapp=seller_whatsapp,
             total_price=total_price,
-            cart_items=cart_items,
             delivery_address=delivery_address,
             status='negotiating'
         )
         
         db.session.add(delivery)
+        db.session.flush()  # Ensure delivery_id is available for FK
+        
+        # Store cart items in normalized junction table
+        if cart_items:
+            for item in cart_items:
+                if hasattr(item, 'product_id'):  # CartItem object
+                    di = DeliveryItem(
+                        delivery_id=delivery_id,
+                        ad_id=item.product_id,
+                        quantity=item.quantity,
+                        price_gkach=0,
+                        shipping_fee=item.shipping_fee or 0.0
+                    )
+                elif isinstance(item, dict):  # dict
+                    di = DeliveryItem(
+                        delivery_id=delivery_id,
+                        ad_id=item.get('ad_id') or item.get('product_id'),
+                        quantity=item.get('quantity', 1),
+                        price_gkach=item.get('price_gkach', 0),
+                        shipping_fee=item.get('shipping_fee', 0.0)
+                    )
+                else:
+                    continue
+                db.session.add(di)
+        
         db.session.commit()
         
         return delivery
+    
+    @staticmethod
+    def get_delivery_items(delivery_id):
+        """Get normalized cart items for a delivery (Audit #6d)"""
+        return DeliveryItem.query.filter_by(delivery_id=delivery_id).all()
     
     @staticmethod
     def get_delivery(delivery_id):

@@ -46,11 +46,19 @@ class Delivery(BaseModel):
     
     def to_dict(self):
         """Convert to dictionary"""
-        import json
+        # Audit #6d: prefer normalized junction table; fallback to legacy JSON string
+        cart_items_data = []
         try:
-            cart_items_data = json.loads(self.cart_items) if self.cart_items else []
-        except:
-            cart_items_data = []
+            if hasattr(self, 'delivery_items') and self.delivery_items:
+                cart_items_data = [di.to_dict() for di in self.delivery_items]
+        except Exception:
+            pass
+        if not cart_items_data:
+            import json
+            try:
+                cart_items_data = json.loads(self.cart_items) if self.cart_items else []
+            except:
+                cart_items_data = []
             
         return {
             'delivery_id': self.delivery_id,
