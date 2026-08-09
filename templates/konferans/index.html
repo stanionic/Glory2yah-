@@ -120,27 +120,35 @@ ake it {% extends "base.html" %}
                 <p class="konf-subtitle">Sal Konferans Videyo Glory2Yah</p>
             </div>
             <div class="konferans-card-body">
-                <!-- Create Room Section -->
+                <!-- Create Room Section: ONLY for authenticated users -->
+                {% if current_user.is_authenticated %}
                 <div class="konferans-section-title">
                     <i class="fas fa-plus-circle"></i> Kreye yon Sal
                 </div>
-                
+
                 <div class="konf-form-group">
                     <label for="create_room_name">Non Sal la</label>
                     <div class="konf-input-icon">
                         <i class="fas fa-door-open"></i>
-                        <input type="text" id="create_room_name" class="form-control" placeholder="Egz: Reyinyon Fanmi">
+                        <input type="text" id="create_room_name" class="form-control" placeholder="Egz: Klas Matematik 3èm">
                     </div>
                 </div>
-                
+
                 <div class="konf-form-group">
-                    <label for="create_user_name">Non w</label>
+                    <label for="create_user_name">Non w (Oto-ranpli depi kont ou)</label>
                     <div class="konf-input-icon">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="create_user_name" class="form-control" placeholder="Egz: Jean Philippe">
+                        <i class="fas fa-user-check"></i>
+                        <input type="text" id="create_user_name" class="form-control"
+                               value="{{ (current_user.name or current_user.pseudo or '') | e }}" readonly>
                     </div>
+                    <small style="color:var(--g2y-text-muted);font-size:0.75rem;margin-top:4px;display:block">
+                        Kreye pa <strong>{{ (current_user.name or current_user.pseudo or 'User') | e }}</strong>
+                        {% if current_user.whatsapp %}
+                        • WhatsApp: <code style="color:var(--g2y-primary-light)">{{ current_user.whatsapp }}</code>
+                        {% endif %}
+                    </small>
                 </div>
-                
+
                 <div class="konf-form-group">
                     <label for="create_password">Modpas (Opsyonèl)</label>
                     <div class="konf-input-icon">
@@ -148,10 +156,25 @@ ake it {% extends "base.html" %}
                         <input type="password" id="create_password" class="form-control" placeholder="Kite vid si w pa vle modpas">
                     </div>
                 </div>
-                
+
                 <button class="konf-btn konf-btn-primary" onclick="createRoom()">
                     <i class="fas fa-plus-circle"></i> Kreye Sal
                 </button>
+                {% else %}
+                <div class="konferans-section-title">
+                    <i class="fas fa-user-lock"></i> Kreye yon Sal
+                </div>
+                <div id="create_room_anon_warn" style="padding:20px;border-radius:12px;background:linear-gradient(135deg,rgba(74,111,199,0.08),rgba(94,136,232,0.05));border:1px dashed var(--g2y-primary-light);text-align:center;margin-bottom:16px">
+                    <i class="fas fa-sign-in-alt" style="font-size:2.2rem;color:var(--g2y-primary-light);margin-bottom:10px;display:block"></i>
+                    <p style="color:var(--g2y-text-secondary);margin-bottom:14px;line-height:1.5">
+                        <strong>Ou dwe konekte avan ou kapab kreye yon sal Konferans.</strong><br>
+                        Kont ou pral devni pwopriyetè sal la e modérateur dirèk.
+                    </p>
+                    <a href="/auth/login?next=%2Fkonferans%2F" class="konf-btn konf-btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
+                        <i class="fas fa-sign-in-alt"></i> Konekte pou Kreye Sal
+                    </a>
+                </div>
+                {% endif %}
 
                 <div class="konf-divider">
                     <span>OSWA</span>
@@ -211,19 +234,27 @@ ake it {% extends "base.html" %}
 </div>
 
 <script>
-    // Get CSRF token from meta tag
     function getCSRFToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
     }
 
-    async function createRoom() {
-        const roomName = document.getElementById('create_room_name').value;
-        const creatorName = document.getElementById('create_user_name').value;
-        const password = document.getElementById('create_password').value;
+    function _pickErr(data, fallback) {
+        if (!data) return fallback;
+        return data.error || data.message || fallback;
+    }
 
-        if (!roomName || !creatorName) {
-            alert('Tanpri ranpli non sal la ak non w.');
+    async function createRoom() {
+        const roomName = (document.getElementById('create_room_name')?.value || '').trim();
+        const password = (document.getElementById('create_password')?.value || '');
+        const _anonBlock = document.getElementById('create_room_anon_warn');
+        if (_anonBlock) {
+            alert('Ou dwe konekte avan ou kapab kreye sal. Klike bouton "Konekte pou Kreye Sal" anwo a.');
+            window.location.href = '/auth/login?next=%2Fkonferans%2F';
+            return;
+        }
+        if (!roomName) {
+            alert('Tanpri ranpli non sal la.');
             return;
         }
 
@@ -232,35 +263,53 @@ ake it {% extends "base.html" %}
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
+                    'Accept': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
                 },
-                body: JSON.stringify({
-                    room_name: roomName,
-                    creator_name: creatorName,
-                    password: password
-                })
+                body: JSON.stringify({ room_name: roomName, password: password })
             });
 
-            const data = await response.json();
-            if (data.success) {
+            if (response.status === 401) {
+                try {
+                    const dt = await response.json();
+                    if (dt && dt.login_redirect) {
+                        window.location.href = dt.login_redirect;
+                        return;
+                    }
+                } catch (_) { /* ignore parse err */ }
+                window.location.href = '/auth/login?next=%2Fkonferans%2F';
+                return;
+            }
+
+            let data;
+            try { data = await response.json(); } catch (err) {
+                alert('Repons sève a pa bon. Tanpri konekte ou epi resi ankò.');
+                if (!response.ok) window.location.href = '/auth/login?next=%2Fkonferans%2F';
+                return;
+            }
+
+            if (response.ok && data && data.success) {
                 if (data.redirect) {
                     window.location.href = data.redirect;
-                } else {
+                } else if (data.room_code) {
+                    const creatorName = (document.getElementById('create_user_name')?.value || 'User').trim();
                     window.location.href = `/konferans/room/${data.room_code}?user_name=${encodeURIComponent(creatorName)}`;
+                } else {
+                    window.location.reload();
                 }
             } else {
-                alert(data.error || 'Erè nan kreasyon sal la.');
+                alert(_pickErr(data, 'Erè nan kreasyon sal la.'));
             }
         } catch (err) {
             console.error(err);
-            alert('Yon erè rive. Eseye ankò.');
+            alert('Yon erè rezo rive. Eseye ankò.');
         }
     }
 
     async function joinRoom() {
-        const roomCode = document.getElementById('join_room_code').value.toUpperCase();
-        const userName = document.getElementById('join_user_name').value;
-        const password = document.getElementById('join_password').value;
+        const roomCode = (document.getElementById('join_room_code').value || '').toUpperCase().trim();
+        const userName = (document.getElementById('join_user_name').value || '').trim();
+        const password = (document.getElementById('join_password').value || '');
 
         if (!roomCode || !userName) {
             alert('Tanpri ranpli kòd sal la ak non w.');
@@ -272,6 +321,7 @@ ake it {% extends "base.html" %}
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRFToken': getCSRFToken()
                 },
                 body: JSON.stringify({
@@ -281,19 +331,24 @@ ake it {% extends "base.html" %}
                 })
             });
 
-            const data = await response.json();
-            if (data.success) {
+            let data;
+            try { data = await response.json(); } catch (err) {
+                alert('Repons sève a pa valab. Resi ankò.');
+                return;
+            }
+
+            if (response.ok && data && data.success) {
                 if (data.redirect) {
                     window.location.href = data.redirect;
                 } else {
                     window.location.href = `/konferans/room/${roomCode}?user_name=${encodeURIComponent(userName)}`;
                 }
             } else {
-                alert(data.error || 'Erè nan antre nan sal la.');
+                alert(_pickErr(data, 'Erè nan antre nan sal la.'));
             }
         } catch (err) {
             console.error(err);
-            alert('Yon erè rive. Eseye ankò.');
+            alert('Yon erè rezo rive. Eseye ankò.');
         }
     }
 </script>

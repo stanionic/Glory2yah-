@@ -101,6 +101,26 @@ def create_app(config_name=None):
     login_manager.needs_refresh_message = (u"Tanpri rekonfim modpas ou pou kontinye.")
     login_manager.needs_refresh_message_category = "info"
 
+    @login_manager.unauthorized_handler
+    def _unauthorized():
+        """Return JSON 401 for AJAX/fetch() calls; redirect browser HTML visits."""
+        from flask import jsonify
+        wants_json = (
+            request.is_json
+            or (request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html)
+            or request.headers.get('X-Requested-With', '').lower() == 'xmlhttprequest'
+        )
+        if wants_json:
+            login_url = url_for(login_manager.login_view, next=request.path or '/')
+            resp = jsonify({
+                'success': False,
+                'error': login_manager.login_message or 'Unauthorized',
+                'login_redirect': login_url,
+            })
+            resp.status_code = 401
+            return resp
+        return redirect(url_for(login_manager.login_view, next=request.path or request.args.get('next') or '/'))
+
     # ===== PERSISTENT SESSION GLOBAL FIX — keep logged in until explicit logout =====
     #
     # Issue: flask-login session.permanent defaults to False → browser close = logout.

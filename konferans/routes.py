@@ -570,70 +570,58 @@ def index():
     return render_template('konferans/index.html')
 
 @konferans_bp.route('/create_room', methods=['POST'])
+@login_required
 def create_room():
-    """Create a new conference room"""
+    """Create a new conference room.
+
+    ONLY authenticated users can create rooms.
+    creator_name / user_id / creator_whatsapp are ENFORCED from current_user
+    (never trust client-supplied identity — prevents spoofing room ownership).
+    """
     try:
-        # Try JSON first, then form data
         if request.is_json:
             data = request.get_json()
         else:
             data = request.form
 
-        room_name = data.get('room_name', '').strip()
-        creator_name = data.get('creator_name', '').strip()
-        password = data.get('password', '').strip()
+        room_name = (data.get('room_name') or '').strip()
+        password = (data.get('password') or '').strip()
 
-        if not room_name or not creator_name:
-            return jsonify({'success': False, 'message': 'Non sal la ak non ou obligatwa.'})
+        if not room_name:
+            return jsonify({'success': False, 'error': 'Non sal la obligatwa.'}), 400
+        if len(room_name) > 100:
+            return jsonify({'success': False, 'error': 'Non sal la twò long (max 100 karaktè).'}), 400
 
-        if len(room_name) > 100 or len(creator_name) > 100:
-            return jsonify({'success': False, 'message': 'Non yo twò long.'})
-
-        # Get user_id from session if logged in
-        user_id = session.get('user_id')
-        
-        # If user is logged in, try to get their profile info
-        if user_id:
-            from app.models.user import User
-            user = User.query.get(user_id)
-            if user:
-                # Use user's profile info if creator_name not provided
-                if not creator_name:
-                    creator_name = user.name or user.pseudo
-                # Store creator's WhatsApp if available
-                creator_whatsapp = user.whatsapp
-            else:
-                creator_whatsapp = None
-        else:
-            creator_whatsapp = None
+        creator_name = (current_user.name or current_user.pseudo or f"User{current_user.id}").strip()[:100]
+        creator_whatsapp = getattr(current_user, 'whatsapp', None)
 
         room_id = generate_room_id()
         room_code = generate_room_code()
 
-        # Hash password if provided
         hashed_password = None
         if password:
+            if len(password) > 128:
+                return jsonify({'success': False, 'error': 'Modpas la twò long.'}), 400
             hashed_password = generate_password_hash(password)
 
-        # Create room in database - link to user profile if logged in
         new_room = KonferansRoom(
             room_id=room_id,
             room_code=room_code,
             room_name=room_name,
             creator_name=creator_name,
             password=hashed_password,
-            user_id=user_id,  # Link to User profile
-            creator_whatsapp=creator_whatsapp
+            user_id=current_user.id,
+            creator_whatsapp=creator_whatsapp,
+            is_active=True,
         )
 
         db.session.add(new_room)
         db.session.commit()
 
-        # Initialize room data
         active_rooms[room_id] = {
             'participants': [],
             'is_recording': False,
-            'recording_started_by': None
+            'recording_started_by': None,
         }
 
         return jsonify({
@@ -641,13 +629,13 @@ def create_room():
             'room_code': room_code,
             'room_id': room_id,
             'redirect': f'/konferans/room/{room_code}?user_name={creator_name}',
-            'message': f'Sal {room_name} kreye avèk siksè!'
+            'message': f'Sal {room_name} kreye avèk siksè!',
         })
 
     except Exception as e:
         db.session.rollback()
         print(f"Error creating room: {e}")
-        return jsonify({'success': False, 'message': 'Erè nan kreasyon sal la.'})
+        return jsonify({'success': False, 'error': 'Erè nan kreasyon sal la.'}), 500
 
 @konferans_bp.route('/join_room', methods=['POST'])
 def join_room_route():
