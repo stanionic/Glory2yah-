@@ -15,6 +15,7 @@ services:
       mkdir -p .flask_session
       mkdir -p logs
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --worker-class sync --timeout 120 --log-level info
+    healthCheckPath: /health
     envVars:
       - key: FLASK_ENV
         value: production
@@ -24,6 +25,11 @@ services:
         generateValue: true
       - key: ADMIN_WHATSAPP
         value: +50942882076
+      # DATABASE_URL is injected automatically by Render from the managed
+      # PostgreSQL instance. The app normalizes the legacy `postgres://` scheme
+      # to `postgresql://` at startup, so no edit is required here.
+      # Optional: set DATABASE_SSLMODE=require if you switch to the database's
+      # EXTERNAL connection string.
       - key: DATABASE_URL
         fromDatabase:
           name: glory2yahpub-db

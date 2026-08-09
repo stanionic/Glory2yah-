@@ -68,6 +68,63 @@ def _load_secret_key():
             pass
     return key
 
+def _normalize_database_url(url=None):
+    """None/empty-safe DSN normalization.
+
+    - Render legacy 'postgres://' → 'postgresql://' (required by SQLAlchemy 1.4+).
+    - Optionally appends '?sslmode=...' from DATABASE_SSLMODE when the URL does
+      not already carry an sslmode parameter (Render external / Neon / Supabase).
+    """
+    if not url:
+        return url
+    url = url.strip()
+    if url.startswith('postgres://'):
+        url = 'postgresql://' + url[len('postgres://'):]
+    ssl = os.environ.get('DATABASE_SSLMODE', '').strip()
+    if url.startswith('postgresql://') and ssl and 'sslmode=' not in url:
+        url = url + ('&' if '?' in url else '?') + 'sslmode=' + ssl
+    return url
+
+
+def _is_postgres_url(url=None):
+    """True when the DSN targets PostgreSQL (postgresql://...)."""
+    return bool(url and url.lower().startswith('postgresql://'))
+
+
+def _engine_options_for(url=None):
+    """Return SQLAlchemy engine options tuned for the resolved DB URL.
+
+    PostgreSQL: gunicorn runs 4 workers, EACH with its own SQLAlchemy pool, so we
+    keep the per-worker pool small — 4 workers x (pool_size + max_overflow) =
+    4 x 10 = 40 connections worst-case, safely inside Render Postgres limits.
+    `pool_pre_ping` + `pool_recycle` avoid stale connections after DB restarts;
+    `connect_timeout` + TCP keepalives fail fast instead of hanging on a dead host.
+    SQLite: mirrors the historical base defaults so existing dev behaviour is unchanged.
+    """
+    if _is_postgres_url(url):
+        pool_size = int(os.environ.get('DB_POOL_SIZE', '4'))
+        max_overflow = int(os.environ.get('DB_MAX_OVERFLOW', '6'))
+        return {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_size': pool_size,
+            'max_overflow': max_overflow,
+            'pool_timeout': 30,
+            'connect_args': {
+                'connect_timeout': 10,
+                'keepalives': 1,
+                'keepalives_idle': 60,
+                'keepalives_interval': 15,
+                'keepalives_count': 5,
+            },
+        }
+    return {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': 10,
+        'max_overflow': 20,
+        'pool_timeout': 30,
+    }
 
 class Config:
     """Base configuration.
@@ -215,11 +272,11 @@ class DevelopmentConfig(Config):
         super().__init__()
         inst_dir = _instance_dir()
         # DB: PostgreSQL (DATABASE_URL env) OR legacy DEV_DATABASE_URL OR local SQLite persistent
-        self.SQLALCHEMY_DATABASE_URI = (
-            os.environ.get('DATABASE_URL') or
-            os.environ.get('DEV_DATABASE_URL') or
-            'sqlite:///' + os.path.join(inst_dir, 'glory2yahpub_dev.db')
-        )
+        db_url = _normalize_database_url(
+            os.environ.get('DATABASE_URL') or os.environ.get('DEV_DATABASE_URL')
+        ) or 'sqlite:///' + os.path.join(inst_dir, 'glory2yahpub_dev.db')
+        self.SQLALCHEMY_DATABASE_URI = db_url
+        self.SQLALCHEMY_ENGINE_OPTIONS = _engine_options_for(db_url)
         # Local dev: no real Redis available -> simple cache + memory rate-limit
         if not os.environ.get('REDIS_URL'):
             self.CACHE_TYPE = 'simple'
@@ -253,10 +310,17 @@ class StagingConfig(Config):
 
     def __init__(self):
         super().__init__()
-        self.SQLALCHEMY_DATABASE_URI = (
+        db_url = _normalize_database_url(
             os.environ.get('STAGING_DATABASE_URL') or
             os.environ.get('DATABASE_URL')
         )
+        if not db_url or not _is_postgres_url(db_url):
+            raise ValueError(
+                'CRITICAL: STAGING_DATABASE_URL (or DATABASE_URL) must be a '
+                'PostgreSQL connection string in staging — SQLite is not allowed.'
+            )
+        self.SQLALCHEMY_DATABASE_URI = db_url
+        self.SQLALCHEMY_ENGINE_OPTIONS = _engine_options_for(db_url)
 
 
 class ProductionConfig(Config):
@@ -281,19 +345,19 @@ class ProductionConfig(Config):
         inst_dir = _instance_dir()
         on_render = _on_render()
 
-        # ----- PostgreSQL DSN (Render legacy postgres:// → postgresql:// fix) -----
-        db_url = os.environ.get('DATABASE_URL')
-        if db_url and db_url.startswith('postgres://'):
-            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        # ----- PostgreSQL DSN normalization (Render legacy postgres:// → postgresql://) -----
+        db_url = _normalize_database_url(os.environ.get('DATABASE_URL'))
         self.SQLALCHEMY_DATABASE_URI = db_url
+        self.SQLALCHEMY_ENGINE_OPTIONS = _engine_options_for(db_url)
 
         # ----- Guards (prevent a broken/insecure production deploy) -----
         if not self.SECRET_KEY:
             raise ValueError("CRITICAL: SECRET_KEY must be set in production environment!")
-        if not self.SQLALCHEMY_DATABASE_URI or 'sqlite' in self.SQLALCHEMY_DATABASE_URI.lower():
+        if not _is_postgres_url(db_url):
             raise ValueError(
                 "CRITICAL: DATABASE_URL must be a PostgreSQL connection string in production. "
-                "SQLite databases live on the ephemeral container FS and get wiped on every deploy."
+                "SQLite databases live on the ephemeral container FS and get wiped on every deploy. "
+                "Set DATABASE_URL (e.g. the connection string from Render → your PostgreSQL dashboard)."
             )
 
         # ----- Session cookie security: Secure ON when behind HTTPS proxy (Render) -----
