@@ -18,6 +18,40 @@
         <strong>kredite otomatikman {{ reward }} Gkach</strong> sou kont li.
     </div>
 
+    <div class="admin-card" style="margin-bottom:24px;">
+        <div class="admin-card-header" style="background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%); color:#fff;">
+            <h3 style="color:#fff;"><i class="fas fa-ban"></i> Bloke Adrès IP (Anti-fraud)</h3>
+        </div>
+        <div class="admin-card-body">
+            <form method="POST" action="{{ url_for('admin.block_ip') }}" class="d-flex gap-2 mb-3 flex-wrap"
+                  onsubmit="return confirm('Èske ou sèten ou vle bloke adrès IP sa a ?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="ip" placeholder="Egzamp: 203.0.113.45" required class="admin-form-control"
+                       style="flex:1; min-width:220px;">
+                <button type="submit" class="admin-btn admin-btn-danger"><i class="fas fa-ban"></i> Bloke IP</button>
+            </form>
+
+            {% if blocked_ips %}
+            <strong>Lis IP bloke:</strong>
+            <ul class="list-group mt-2" style="list-style:none; padding-left:0;">
+                {% for ip in blocked_ips %}
+                <li class="list-group-item d-flex justify-content-between align-items-center"
+                    style="padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:6px;">
+                    <code>{{ ip }}</code>
+                    <form method="POST" action="{{ url_for('admin.unblock_ip') }}" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="ip" value="{{ ip }}">
+                        <button type="submit" class="admin-btn admin-btn-secondary admin-btn-sm">Debloke</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">Pa gen adrès IP bloke pou kounye a.</p>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="admin-card">
         <div class="admin-card-header" style="background: linear-gradient(135deg, #3a2680 0%, #667eea 100%); color:#fff;">
             <h3 style="color:#fff;"><i class="fas fa-chart-line"></i> Klik Inik pa Moun ki Pataje/Batch</h3>

@@ -593,7 +593,7 @@ def achte_gkach():
             # Save uploaded file
             ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
             filename = f'gkach_req_{uuid.uuid4().hex}.{ext}'
-            upload_path = os.path.join('static', 'uploads', filename)
+            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             file.save(upload_path)
             
             # Save request
@@ -790,7 +790,7 @@ def upload_gkach_approval(request_id):
             if file:
                 ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
                 filename = f'gkach_req_{uuid.uuid4().hex}.{ext}'
-                upload_path = os.path.join('static', 'uploads', filename)
+                upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                 file.save(upload_path)
                 
                 # Update request with document

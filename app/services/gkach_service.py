@@ -386,15 +386,32 @@ class GkachService:
         Blocked IPs are stored as a comma/newline separated string in
         AdminSettings under the key 'blocked_ips' (managed from the admin panel).
         """
+        return str(ip).strip() in GkachService.get_blocked_ips()
+
+    @staticmethod
+    def get_blocked_ips():
+        """Return the currently blocked IPs as a list (deduplicated)."""
         try:
             from app.models.admin_settings import AdminSettings
             raw = (AdminSettings.get_setting('blocked_ips', '') or '')
-            blocked = {
-                x.strip() for x in raw.replace('\n', ',').split(',') if x.strip()
-            }
-            return str(ip).strip() in blocked
+            seen = set()
+            result = []
+            for item in raw.replace('\n', ',').split(','):
+                ip = item.strip()
+                if ip and ip not in seen:
+                    seen.add(ip)
+                    result.append(ip)
+            return result
         except Exception:
-            return False
+            return []
+
+    @staticmethod
+    def set_blocked_ips(ips):
+        """Persist the blocked-IP list into AdminSettings as 'blocked_ips'."""
+        from app.models.admin_settings import AdminSettings
+        clean = [str(x).strip() for x in ips if str(x).strip()]
+        AdminSettings.set_setting('blocked_ips', '\n'.join(clean))
+        return clean
 
     @staticmethod
     def track_batch_click(batch_id, referrer_whatsapp, clicker_whatsapp=None, dedup_key=None, clicker_ip=None, clicker_device=None):

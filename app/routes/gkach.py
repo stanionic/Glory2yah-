@@ -2,7 +2,7 @@
 Gkach Routes Blueprint
 Virtual currency management and requests
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.services.gkach_service import GkachService, UserGkach
 from app.utils.validators import ValidationError
@@ -57,7 +57,7 @@ def request_gkach():
                     # Save file
                     ext = file.filename.rsplit('.', 1)[1].lower()
                     document_filename = f"gkach_req_{uuid.uuid4().hex}.{ext}"
-                    file.save(os.path.join('static/uploads', document_filename))
+                    file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], document_filename))
             
             # Save request
             if not account.gkach_requests or account.gkach_requests == '[]':

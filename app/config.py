@@ -7,38 +7,92 @@ import secrets
 from datetime import timedelta
 
 
+def _instance_dir():
+    """Return the Flask instance/ directory path (persistent disk mount point on Render).
+    On Render: render.yaml mounts 1GB disk at /opt/render/project/src/instance.
+    By using instance/ as the root for all mutable data, we get persistence for free.
+    """
+    import os as _os
+    here = _os.path.dirname(_os.path.abspath(__file__))  # app/
+    project_root = _os.path.dirname(here)                 # project root
+    inst_dir = _os.environ.get('INSTANCE_DIR', _os.path.join(project_root, 'instance'))
+    try:
+        _os.makedirs(inst_dir, exist_ok=True)
+    except Exception:
+        pass
+    return inst_dir
+
+
+def _on_render():
+    """Heuristic: are we running on Render.com PaaS?"""
+    import os as _os
+    return bool(
+        _os.environ.get('RENDER') or
+        _os.environ.get('RENDER_SERVICE_ID') or
+        _os.environ.get('RENDER_EXTERNAL_URL') or
+        (_os.environ.get('PORT') and _os.environ.get('PORT') != '5000')
+    )
+
+
 def _load_secret_key():
-    """Load or generate a persistent SECRET_KEY (never None)."""
+    """Load or generate a persistent SECRET_KEY (never None).
+    Priority: env SECRET_KEY > instance/.flask_secret_key (persistent) > cwd/.flask_secret_key.
+    """
     env_key = os.environ.get('SECRET_KEY', '')
     weak = ('', 'your-secret-key-here-change-this-in-production', 'None', None)
     if env_key not in weak:
         return env_key
-    secret_key_file = '.flask_secret_key'
-    if os.path.exists(secret_key_file):
-        try:
-            with open(secret_key_file, 'r') as f:
-                data = f.read().strip()
-                if data:
-                    return data
-        except Exception:
-            pass
+    inst_dir = _instance_dir()
+    candidates = [
+        os.path.join(inst_dir, '.flask_secret_key'),
+        '.flask_secret_key',
+    ]
+    for secret_key_file in candidates:
+        if os.path.exists(secret_key_file):
+            try:
+                with open(secret_key_file, 'r') as f:
+                    data = f.read().strip()
+                    if data:
+                        return data
+            except Exception:
+                pass
     key = secrets.token_hex(32)
     try:
-        with open(secret_key_file, 'w') as f:
+        with open(candidates[0], 'w') as f:
             f.write(key)
     except Exception:
-        pass
+        try:
+            with open(candidates[1], 'w') as f:
+                f.write(key)
+        except Exception:
+            pass
     return key
 
 
 class Config:
-    """Base configuration"""
+    """Base configuration.
 
-    # App — persistent SECRET_KEY via _load_secret_key() (env > file > auto-generated)
-    SECRET_KEY = _load_secret_key()
+    PERSISTENCE PRINCIPLE (Render deploy safety):
+      All mutable user data paths default under INSTANCE_DIR = project/instance
+      On Render.com render.yaml mounts a 1GB persistent disk at:
+        mountPath: /opt/render/project/src/instance
+      Therefore uploads, sessions, SQLite fallback, logs, flask_secret_key
+      ALL survive rebuilds / deploys / commits by default.
+      Env-var overrides exist for every path (UPLOAD_FOLDER, SESSION_FILE_DIR,
+      INSTANCE_DIR, DATABASE_URL) if operators want to relocate them.
+
+    NOTE: environment variables are read IN __init__() (per-instance) so that
+    get_config() returns a live instance — Flask.config.from_object() then
+    picks up the freshly-computed values. This fixes a bug where class-body
+    os.environ reads happen at module-import time and were stale / not
+    overridable by tests setting env vars mid-process.
+    """
+
+    # -------- Class-level DEFAULT values (can be overridden per instance) --------
+    _INSTANCE_DIR_DEFAULT = None  # computed lazy
+    _ON_RENDER_DEFAULT = None
+
     APP_NAME = 'Glory2YahPub'
-
-    # Database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
@@ -47,210 +101,256 @@ class Config:
         'max_overflow': 20,
         'pool_timeout': 30,
     }
-    
-    # Redis
-    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
-    
-    # Cache
-    CACHE_TYPE = 'redis'
-    CACHE_REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/1'
-    CACHE_DEFAULT_TIMEOUT = 300
-    
-    # Session
-    SESSION_COOKIE_SECURE = False  # For development only
+
+    SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
-    
-    # File Upload
-    UPLOAD_FOLDER = os.path.join('static', 'uploads')
-    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB (matches UI promise: 1 Videyo maks 100MB / 30 segonn)
+
+    MAX_CONTENT_LENGTH = 100 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
     ALLOWED_DOCUMENT_EXTENSIONS = {'pdf'}
-    
-    # Security
+
     WTF_CSRF_ENABLED = True
-    # P1 FIX CSRF: no expiry (users with long open login tabs don't get Bad Request on submit)
     WTF_CSRF_TIME_LIMIT = None
-    # P1 FIX CSRF: token lives in SESSION (default); ensure we don't SSL-check mismatch on Render proxy
     WTF_CSRF_SSL_CHECKS = False
     WTF_CSRF_METHODS = {'POST', 'PUT', 'PATCH', 'DELETE'}
     WTF_CSRF_HEADERS = ['X-CSRFToken', 'X-CSRF-Token']
     BCRYPT_LOG_ROUNDS = 12
-    
-    # Rate Limiting
-    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/2'
+
     RATELIMIT_STRATEGY = 'fixed-window'
     RATELIMIT_DEFAULT = "200 per day, 50 per hour"
-    
-    # Celery
-    CELERY_BROKER_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/3'
-    CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') or 'redis://localhost:6379/4'
-    
-    # Admin (defaults DEV/DEMO: override via .env in PRODUCTION)
-    #   Pseudo = Admin509   (login identifier: "Admin509" dans champ `identifier`)
-    #   Password = StanGlory2YahPub1986
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
-    ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
-    ADMIN_PSEUDO   = os.environ.get('ADMIN_PSEUDO',   'Admin509')
-    ADMIN_NAME     = os.environ.get('ADMIN_NAME',     'Glory2YahPub')
-    
-    # OAuth
-    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
-    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-    
-    # Business Logic
-    # Admin reward: 10 Gkach per 100 UNIQUE clicks on a shared ad batch link
+
     GKACH_REWARD_AMOUNT = 10
     GKACH_CLICKS_REQUIRED = 100
-    # Anti-fraud: max unique clicks accepted from the SAME IP for a given
-    # (batch, referrer). Allows a household sharing one IP while blocking
-    # click-farms / multiple accounts from the same device.
     GKACH_MAX_CLICKS_PER_IP = 3
-    # Anti-fraud: max unique clicks accepted from the SAME browser/device
-    # (identified by a signed cookie) for a given (batch, referrer).
     GKACH_MAX_CLICKS_PER_DEVICE = 1
-    AUTO_SLIDE_INTERVAL = 2000  # milliseconds
-    # Gkach Exchange Rate: 100 Gkach = 120 Gourdes
-    GKACH_TO_HTG_RATE = 1.2  # 1 Gkach = 1.2 HTG
-    
-    # Pagination
+    AUTO_SLIDE_INTERVAL = 2000
+    GKACH_TO_HTG_RATE = 1.2
+
     ITEMS_PER_PAGE = 20
     MAX_ITEMS_PER_PAGE = 100
-    
-    # Logging
+
     LOG_LEVEL = 'INFO'
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
-    # Sentry (Error Tracking)
-    SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+
+    SENTRY_DSN = ''
 
     def __init__(self):
-        # Global validation: Ensure REDIS_URL is not pointing to localhost in non-dev envs only if provided
-        pass
+        """Fully evaluate all env-dependent config values per instance.
+        Called by get_config() via cls() so Flask receives a populated
+        object where values reflect the CURRENT state of os.environ.
+        """
+        inst_dir = _instance_dir()
+        on_render = _on_render()
+        # Persistent paths under <instance>/ (Render persistent disk mount)
+        self.INSTANCE_DIR = inst_dir
+        self.ON_RENDER = on_render
+        # SECRET_KEY — never None (env > instance file > cwd file > auto)
+        self.SECRET_KEY = _load_secret_key()
+        # Redis — default localhost dev, override via env
+        redis_url = os.environ.get('REDIS_URL')
+        self.REDIS_URL = redis_url or 'redis://localhost:6379/0'
+        # Cache
+        self.CACHE_TYPE = 'redis'
+        self.CACHE_REDIS_URL = redis_url or 'redis://localhost:6379/1'
+        self.CACHE_DEFAULT_TIMEOUT = 300
+        # Sessions — filesystem fallback ON PERSISTENT DISK by default
+        self.SESSION_TYPE = os.environ.get('SESSION_TYPE', 'filesystem')
+        self.SESSION_FILE_DIR = os.environ.get(
+            'SESSION_FILE_DIR', os.path.join(inst_dir, '.flask_session')
+        )
+        self.SESSION_PERMANENT = True
+        try:
+            os.makedirs(self.SESSION_FILE_DIR, exist_ok=True)
+        except Exception:
+            pass
+        # File Upload — ENV OVERRIDE wins, else Render=instance/uploads, else static/uploads
+        env_up = os.environ.get('UPLOAD_FOLDER')
+        if env_up:
+            self.UPLOAD_FOLDER = env_up
+        elif on_render:
+            self.UPLOAD_FOLDER = os.path.join(inst_dir, 'uploads')
+        else:
+            self.UPLOAD_FOLDER = os.path.join('static', 'uploads')
+        try:
+            os.makedirs(self.UPLOAD_FOLDER, exist_ok=True)
+        except Exception:
+            pass
+        # Logging directory — default on persistent disk
+        self.LOG_DIR = os.environ.get('LOG_DIR', os.path.join(inst_dir, 'logs'))
+        try:
+            os.makedirs(self.LOG_DIR, exist_ok=True)
+        except Exception:
+            pass
+        # Rate limiting
+        self.RATELIMIT_STORAGE_URL = redis_url or 'redis://localhost:6379/2'
+        # Celery
+        self.CELERY_BROKER_URL = redis_url or 'redis://localhost:6379/3'
+        self.CELERY_RESULT_BACKEND = redis_url or 'redis://localhost:6379/4'
+        # Admin credentials
+        self.ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
+        self.ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
+        self.ADMIN_PSEUDO = os.environ.get('ADMIN_PSEUDO', 'Admin509')
+        self.ADMIN_NAME = os.environ.get('ADMIN_NAME', 'Glory2YahPub')
+        # OAuth
+        self.GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+        self.GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+        # Sentry
+        self.SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
 
 
 class DevelopmentConfig(Config):
-    """Development configuration"""
+    """Development configuration.
+    SQLite in instance/ for persistence across restarts; env DATABASE_URL overrides to Postgres.
+    """
     DEBUG = True
     TESTING = False
 
-    SECRET_KEY = _load_secret_key()
-
-    # Use PostgreSQL if DATABASE_URL is set, otherwise SQLite
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        os.environ.get('DEV_DATABASE_URL') or \
-        'sqlite:///glory2yahpub_dev.db'
-
-    # Disable HTTPS requirements
+    # Static dev-only defaults (env-dependent bits live in __init__)
     SESSION_COOKIE_SECURE = False
 
-    # Fallback to simple cache when Redis not available
-    CACHE_TYPE = 'simple'
-    RATELIMIT_STORAGE_URL = 'memory://'
-
-    # Allow tests/scripts to disable IP-based rate limiting via env var
-    # (e.g. RATELIMIT_ENABLED=0 python test_login_fixes.py)
-    RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', '1') not in ('0', 'false', 'False', 'no', 'off')
+    def __init__(self):
+        super().__init__()
+        inst_dir = _instance_dir()
+        # DB: PostgreSQL (DATABASE_URL env) OR legacy DEV_DATABASE_URL OR local SQLite persistent
+        self.SQLALCHEMY_DATABASE_URI = (
+            os.environ.get('DATABASE_URL') or
+            os.environ.get('DEV_DATABASE_URL') or
+            'sqlite:///' + os.path.join(inst_dir, 'glory2yahpub_dev.db')
+        )
+        # Local dev: no real Redis available -> simple cache + memory rate-limit
+        if not os.environ.get('REDIS_URL'):
+            self.CACHE_TYPE = 'simple'
+            self.RATELIMIT_STORAGE_URL = 'memory://'
+        # Optional env override to disable rate-limits (useful for local load tests)
+        self.RATELIMIT_ENABLED = (
+            os.environ.get('RATELIMIT_ENABLED', '1')
+            not in ('0', 'false', 'False', 'no', 'off')
+        )
 
 
 class TestingConfig(Config):
-    """Testing configuration"""
+    """Testing configuration — in-memory DB, CSRF/rate-limits disabled."""
     DEBUG = True
     TESTING = True
 
-    SECRET_KEY = _load_secret_key()
-    
-    # Use in-memory SQLite for tests  (pool options not supported by SQLite)
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-    }
-    
-    # Use fake Redis for tests
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
     CACHE_TYPE = 'simple'
-    
-    # Disable CSRF for testing
     WTF_CSRF_ENABLED = False
-    
-    # Disable rate limiting for tests
     RATELIMIT_ENABLED = False
+
+    def __init__(self):
+        super().__init__()
 
 
 class StagingConfig(Config):
-    """Staging configuration"""
+    """Staging configuration — PostgreSQL required via STAGING_DATABASE_URL or DATABASE_URL."""
     DEBUG = False
     TESTING = False
-    
-    # PostgreSQL for staging
-    SQLALCHEMY_DATABASE_URI = os.environ.get('STAGING_DATABASE_URL') or \
-        None
+
+    def __init__(self):
+        super().__init__()
+        self.SQLALCHEMY_DATABASE_URI = (
+            os.environ.get('STAGING_DATABASE_URL') or
+            os.environ.get('DATABASE_URL')
+        )
 
 
 class ProductionConfig(Config):
-    """Production configuration"""
+    """Production configuration.
+
+    CRITICAL REQUIREMENTS (enforced here; raise ValueError if violated):
+      - DATABASE_URL must be set and MUST be PostgreSQL (NOT SQLite)
+      - SECRET_KEY must be set (never None / weak / placeholder)
+
+    Render convention:
+      - postgres:// URLs (Render Dashboard default) are auto-converted to
+        postgresql:// (required by SQLAlchemy 1.4+)
+    """
     DEBUG = False
     TESTING = False
-
-    # Production-only Overrides
-    REDIS_URL = os.environ.get('REDIS_URL')
-    CACHE_REDIS_URL = os.environ.get('REDIS_URL')
-    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL')
-    CELERY_BROKER_URL = os.environ.get('REDIS_URL')
-    CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
-
-    # Strict security: SESSION_COOKIE_SECURE on Render / HTTPS proxies.
-    # Auto-detect if we are behind TLS proxy (PORT=10000 Render convention / SECURE_PROXY_SSL_HEADER env)
-    # If user explicitly set SESSION_COOKIE_SECURE env (0/1), respect that; else True for HTTPS safety.
-    _cookie_secure_env = os.environ.get('SESSION_COOKIE_SECURE', None)
-    if _cookie_secure_env is not None:
-        SESSION_COOKIE_SECURE = str(_cookie_secure_env) not in ('0', 'false', 'False', 'no', 'off')
-    else:
-        SESSION_COOKIE_SECURE = bool(os.environ.get('DYNO') or os.environ.get('RENDER') or os.environ.get('PORT'))
-
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
-    REMEMBER_COOKIE_HTTPONLY = True
-    REMEMBER_COOKIE_SAMESITE = 'Lax'
-
-    # Production logging
     LOG_LEVEL = 'WARNING'
 
     def __init__(self):
-        # Enforce PostgreSQL and Secret Key in Production
         super().__init__()
+        inst_dir = _instance_dir()
+        on_render = _on_render()
+
+        # ----- PostgreSQL DSN (Render legacy postgres:// → postgresql:// fix) -----
         db_url = os.environ.get('DATABASE_URL')
         if db_url and db_url.startswith('postgres://'):
             db_url = db_url.replace('postgres://', 'postgresql://', 1)
         self.SQLALCHEMY_DATABASE_URI = db_url
-        
+
+        # ----- Guards (prevent a broken/insecure production deploy) -----
         if not self.SECRET_KEY:
             raise ValueError("CRITICAL: SECRET_KEY must be set in production environment!")
         if not self.SQLALCHEMY_DATABASE_URI or 'sqlite' in self.SQLALCHEMY_DATABASE_URI.lower():
-            raise ValueError("CRITICAL: DATABASE_URL must be a PostgreSQL connection string in production!")
-        
-        # Fallback if no Redis
+            raise ValueError(
+                "CRITICAL: DATABASE_URL must be a PostgreSQL connection string in production. "
+                "SQLite databases live on the ephemeral container FS and get wiped on every deploy."
+            )
+
+        # ----- Session cookie security: Secure ON when behind HTTPS proxy (Render) -----
+        _cse = os.environ.get('SESSION_COOKIE_SECURE', None)
+        if _cse is not None:
+            self.SESSION_COOKIE_SECURE = str(_cse) not in ('0', 'false', 'False', 'no', 'off')
+        else:
+            # Auto-detect PaaS HTTPS proxies (Render, Heroku-style $DYNO, generic $PORT)
+            self.SESSION_COOKIE_SECURE = bool(
+                os.environ.get('DYNO') or os.environ.get('RENDER') or os.environ.get('PORT')
+            )
+        # Remember-me cookies mirror session cookie security
+        self.REMEMBER_COOKIE_SECURE = self.SESSION_COOKIE_SECURE
+        self.REMEMBER_COOKIE_HTTPONLY = True
+        self.REMEMBER_COOKIE_SAMESITE = 'Lax'
+
+        # ----- Redis-override / no-Redis fallbacks (persistent session FS) -----
         if not self.REDIS_URL:
             self.CACHE_TYPE = 'simple'
             self.SESSION_TYPE = 'filesystem'
-            self.SESSION_FILE_DIR = '.flask_session'
+            self.SESSION_FILE_DIR = os.environ.get(
+                'SESSION_FILE_DIR', os.path.join(inst_dir, '.flask_session')
+            )
+            try:
+                os.makedirs(self.SESSION_FILE_DIR, exist_ok=True)
+            except Exception:
+                pass
             self.RATELIMIT_STORAGE_URL = 'memory://'
 
 
-# Configuration dictionary
+# Configuration dictionary — values are CLASSES; get_config() instantiates them.
 config_dict = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'staging': StagingConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig
+    'default': DevelopmentConfig,
 }
 
 
 def get_config(env=None):
-    """Get configuration based on environment"""
+    """Get a CONFIG INSTANCE for the given (or detected) environment.
+
+    IMPORTANT: returns an INSTANCE (not the class), so that __init__() runs
+    and env vars are read FRESHLY at Flask startup. This fixes two bugs:
+      1. ProductionConfig.__init__ SQLite guard + postgres:// → postgresql://
+         URL translation were dead code (never executed before — Flask's
+         from_object() only reads UPPERCASE class attrs on classes).
+      2. UPLOAD_FOLDER / SESSION_FILE_DIR / LOG_DIR env overrides are picked
+         up even when os.environ changes between process invocations.
+    """
     if env is None:
         env = os.environ.get('FLASK_ENV', 'development')
-    return config_dict.get(env, config_dict['default'])
+    cls = config_dict.get(env, config_dict['default'])
+    try:
+        return cls()
+    except TypeError:
+        # If a subclass hasn't been updated and __init__ has unexpected
+        # signature, fall back to instantiating without args — safety net.
+        return cls.__new__(cls)

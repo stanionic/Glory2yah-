@@ -615,13 +615,63 @@ def rewards():
 
     entries.sort(key=lambda e: e['unique_clicks'], reverse=True)
 
+    # Load currently blocked IPs (managed by the admin)
+    blocked_ips = GkachService.get_blocked_ips()
+
     return render_template(
         'admin_rewards.html',
         entries=entries,
         required=required,
         reward=reward,
+        blocked_ips=blocked_ips,
         current_user=current_user,
     )
+
+
+@admin_bp.route('/rewards/block-ip', methods=['POST'])
+@login_required
+@admin_required
+def block_ip():
+    """Block a client IP from contributing clicks/rewards (anti-fraud).
+
+    Stored as a comma/newline separated list in AdminSettings
+    under the key 'blocked_ips'; checked by GkachService._is_ip_blocked.
+    """
+    raw_ip = (request.form.get('ip') or '').strip()
+    if not raw_ip:
+        flash('Antre yon adrès IP pou bloke.', 'error')
+        return redirect(url_for('admin.rewards'))
+
+    blocked_ips = GkachService.get_blocked_ips()
+    if raw_ip not in blocked_ips:
+        blocked_ips.append(raw_ip)
+        GkachService.set_blocked_ips(blocked_ips)
+        flash(f'Adrès IP {raw_ip} bloke avèk siksè!', 'success')
+    else:
+        flash(f'Adrès IP {raw_ip} te deja bloke.', 'info')
+
+    return redirect(url_for('admin.rewards'))
+
+
+@admin_bp.route('/rewards/unblock-ip', methods=['POST'])
+@login_required
+@admin_required
+def unblock_ip():
+    """Remove a previously blocked IP."""
+    raw_ip = (request.form.get('ip') or '').strip()
+    if not raw_ip:
+        flash('Antre yon adrès IP pou debloke.', 'error')
+        return redirect(url_for('admin.rewards'))
+
+    blocked_ips = GkachService.get_blocked_ips()
+    if raw_ip in blocked_ips:
+        blocked_ips = [ip for ip in blocked_ips if ip != raw_ip]
+        GkachService.set_blocked_ips(blocked_ips)
+        flash(f'Adrès IP {raw_ip} debloke avèk siksè!', 'success')
+    else:
+        flash(f'Adrès IP {raw_ip} pa nan lis bloke yo.', 'info')
+
+    return redirect(url_for('admin.rewards'))
 
 
 @admin_bp.route('/ads')

@@ -5,8 +5,13 @@ services:
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements.txt
-      mkdir -p static/uploads
+      # Mutable/persistent directories on the Render disk (mountPath: /opt/render/project/src/instance)
       mkdir -p instance
+      mkdir -p instance/uploads
+      mkdir -p instance/.flask_session
+      mkdir -p instance/logs
+      # Legacy upload dir (symlink target compatibility; also created for safety)
+      mkdir -p static/uploads
       mkdir -p .flask_session
       mkdir -p logs
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --worker-class sync --timeout 120 --log-level info
@@ -23,6 +28,16 @@ services:
         fromDatabase:
           name: glory2yahpub-db
           property: connectionString
+      # RENDER PERSISTENCE FIX: explicit path so uploads hit the 1GB persistent disk.
+      # Previously uploads went to static/uploads/ inside the ephemeral build container → wiped on every commit/deploy.
+      - key: UPLOAD_FOLDER
+        value: /opt/render/project/src/instance/uploads
+      # Sessions also on persistent disk (users stay logged-in across deploys):
+      - key: SESSION_FILE_DIR
+        value: /opt/render/project/src/instance/.flask_session
+      # Logs kept between deploys for debugging:
+      - key: LOG_DIR
+        value: /opt/render/project/src/instance/logs
     disk:
       name: glory2yahpub-disk
       mountPath: /opt/render/project/src/instance

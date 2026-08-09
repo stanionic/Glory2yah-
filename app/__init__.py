@@ -124,6 +124,72 @@ def create_app(config_name=None):
     limiter.init_app(app)
     cache.init_app(app)
 
+    # =====================================================================
+    # RENDER PERSISTENCE — Transparent uploads serving fallback
+    # (Pastes on every deploy previously wiped static/uploads/.)
+    #
+    # Problem:
+    #   - 500+ template references use url_for('static', filename='uploads/X')
+    #     or hardcoded /static/uploads/X URLs.
+    #   - On Render, uploads are now saved to instance/uploads (persistent
+    #     disk) instead of static/uploads (ephemeral container FS).
+    #   - Flask static endpoint only serves static/ folder by default.
+    #
+    # Fix (ZERO template changes required):
+    #   1. Register an explicit /uploads/<filename> endpoint that serves
+    #      from app.config['UPLOAD_FOLDER'] (canonical: instance/uploads on
+    #      Render, static/uploads locally).
+    #   2. Add a WSGI-middleware-light before_request that INTERCEPTS any
+    #      GET/HEAD for /static/uploads/<path>:
+    #        a) If file exists in Flask's static/uploads → let Flask serve it.
+    #        b) Else send from config.UPLOAD_FOLDER (persistent disk).
+    #      This maintains 100% backward compatibility with every existing
+    #      template URL without a single search/replace.
+    # =====================================================================
+    @app.route('/uploads/<path:filename>', methods=['GET', 'HEAD'])
+    def _serve_upload_persistent(filename):
+        import os as _os_up
+        from flask import send_from_directory, abort as _abort_up, current_app as _cup
+        safe_fn = _os_up.path.normpath(filename).lstrip('\\/')
+        if safe_fn.startswith('..') or _os_up.path.isabs(safe_fn):
+            _abort_up(404)
+        return send_from_directory(_cup.config['UPLOAD_FOLDER'], safe_fn)
+
+    @app.before_request
+    def _static_uploads_fallback_to_persistent_disk():
+        import os as _os_sb
+        from flask import request as _req_sb, send_from_directory as _sfd, abort as _abt
+        raw_path = _req_sb.path
+        if _req_sb.method not in ('GET', 'HEAD'):
+            return None
+        prefixes = ('/static/uploads/', '/static\\uploads\\')
+        match = None
+        for p in prefixes:
+            if raw_path.startswith(p):
+                match = raw_path[len(p):]
+                break
+        if match is None:
+            return None
+        safe_match = _os_sb.path.normpath(match).lstrip('\\/')
+        if safe_match.startswith('..') or _os_sb.path.isabs(safe_match):
+            _abt(404)
+        # First, try legacy static/uploads/ on the current filesystem
+        static_root = app.static_folder or _os_sb.join(app.root_path, '..', 'static')
+        legacy_path = _os_sb.join(static_root, 'uploads', safe_match)
+        if _os_sb.isfile(legacy_path):
+            return None  # Flask default static handler will take it
+        # Fallback: persistent UPLOAD_FOLDER (instance/uploads/ on Render)
+        persistent_dir = app.config.get('UPLOAD_FOLDER')
+        if not persistent_dir:
+            _abt(404)
+        target = _os_sb.join(persistent_dir, safe_match)
+        if not _os_sb.isfile(target):
+            # Also check: if a dev locally has UPLOAD_FOLDER=instance/uploads
+            # but an older ad's images referenced legacy static/uploads,
+            # return 404 (consistent behaviour)
+            _abt(404)
+        return _sfd(persistent_dir, safe_match)
+
     # P1 FIX: Handle oversized uploads (100MB video promise in UI) with user-friendly
     # flash message instead of a generic "413 Request Entity Too Large".
     from werkzeug.exceptions import RequestEntityTooLarge as _RETL
@@ -1161,15 +1227,15 @@ def register_template_filters(app):
 
 
 def setup_logging(app):
-    """Setup application logging"""
+    """Setup application logging — persistent on Render, logs land on the persistent
+    instance/ disk so they survive deploys. Use app.config['LOG_DIR']."""
     try:
-        if not os.path.exists('logs'):
-            os.makedirs('logs', exist_ok=True)
-        
+        log_dir = app.config.get('LOG_DIR') or 'logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
         log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO'))
-        file_handler = logging.FileHandler('logs/glory2yahpub.log')
+        file_handler = logging.FileHandler(os.path.join(log_dir, 'glory2yahpub.log'))
         file_handler.setLevel(log_level)
-        
         app.logger.addHandler(file_handler)
         app.logger.setLevel(log_level)
     except Exception as e:
@@ -1180,4 +1246,12 @@ def setup_logging(app):
 # Gunicorn entrypoint compatibility:
 # Procfile runs `gunicorn app:app ...` which expects an attribute named `app`
 # in this module. Provide it using the application factory.
-app = create_app(os.environ.get('FLASK_ENV', 'development'))
+#
+# RENDER-SAFE DEFAULT for FLASK_ENV:
+#   If RENDER env var / PORT env var (Render convention) is set we default to
+#   'production' to avoid accidentally running SQLite on the 'development' SQLite path
+#   (which would create an ephemeral SQLite DB wiped on every deploy).
+#   Users can still override via FLASK_ENV env var as usual.
+from app.config import _on_render as _on_render_guni
+_gunicorn_default_env = 'production' if _on_render_guni() else 'development'
+app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))

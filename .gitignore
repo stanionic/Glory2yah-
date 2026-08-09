@@ -53,3 +53,14 @@ _dbgrun.py
 _run_flask_20s.py
 _start_flask_debug.py
 debug-*.md
+
+# Render Persistent Data Folder (mountPath=/opt/render/project/src/instance)
+# Contains: SQLite (dev), uploads, sessions, logs, .flask_secret_key
+# MUST NOT be committed — data changes per deploy and contains user PII/photos
+instance/
+instance/*
+!/instance/.gitkeep
+
+# Local persistence test artifacts (not for repo)
+_test_config_persistence.py
+_persist_test_out.txt
