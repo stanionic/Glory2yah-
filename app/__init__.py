@@ -503,6 +503,19 @@ def create_app(config_name=None):
                 else:
                     app.logger.warning(f"ADS PERSISTENCE: unknown DSN scheme: {dsn[:20]}… (no check)")
 
+                if _os.environ.get('G2Y_PG_FALLBACK_ACTIVE') == '1':
+                    app.logger.critical(
+                        "PRODUCTION DB FALLBACK ACTIVE: DATABASE_URL was empty at boot (Render "
+                        "PostgreSQL managed env not yet injected / first-deploy race condition). "
+                        "App is running with a TEMPORARY PERSISTENT SQLite under /instance/. "
+                        "ACTION: 1) Check Render Dashboard → glory2yahpub → Environment → "
+                        "DATABASE_URL (fromDatabase glory2yahpub-db connectionString must be "
+                        "green). 2) Trigger a manual deploy so the container restarts WITH the "
+                        "proper PostgreSQL DSN. 3) Optional: set env DB_ENFORCE_POSTGRES_PRODUCTION=1 "
+                        "to NEVER use fallback (strict pipelines). NOTE: ads created while "
+                        "fallback is active stay in the local SQLite file and will NOT migrate "
+                        "to PostgreSQL automatically — switch to PG soon.")
+
                 # 2) UPLOAD_FOLDER safety (ads images)
                 _up = str(app.config.get('UPLOAD_FOLDER') or '').replace('\\', '/').rstrip('/')
                 if _on_render_env and _up:

@@ -346,18 +346,59 @@ class ProductionConfig(Config):
         on_render = _on_render()
 
         # ----- PostgreSQL DSN normalization (Render legacy postgres:// → postgresql://) -----
-        db_url = _normalize_database_url(os.environ.get('DATABASE_URL'))
+        raw_db_url = os.environ.get('DATABASE_URL')
+        db_url = _normalize_database_url(raw_db_url)
+
+        # ----- Render-managed DB race-condition safety -----
+        # On Render the very first deploy can start the web container BEFORE the
+        # managed PostgreSQL `fromDatabase` injection is fully propagated (env
+        # var temporarily empty/unset). We MUST NOT hard-crash in that window,
+        # otherwise the deploy gets stuck in a restart loop even after PG is
+        # ready. Instead we:
+        #   1. Fall back to a PERSISTENT SQLite file on the Render instance disk
+        #      (NOT the ephemeral container FS) — this guarantees NO DATA LOSS
+        #      across restarts/deploys while PG is still coming up.
+        #   2. Log a huge CRITICAL warning so the Render dashboard shows
+        #      immediately that DATABASE_URL is missing and needs attention.
+        #   3. Allow opting back into the strict hard-crash guard with
+        #      DB_ENFORCE_POSTGRES_PRODUCTION=1 (for CICD/deploy pipelines where
+        #      a misconfigured DSN should fail fast and NOT silently fallback).
+        missing_pg = bool(not raw_db_url)
+        enforce_pg = str(os.environ.get('DB_ENFORCE_POSTGRES_PRODUCTION', '')).lower() in (
+            '1', 'true', 'yes', 'on', 'require', 'strict'
+        )
+        if missing_pg:
+            persistent_sqlite = (
+                'sqlite:///' + os.path.join(inst_dir, 'glory2yahpub_prod_fallback.db')
+            )
+            if enforce_pg:
+                raise ValueError(
+                    "CRITICAL: DATABASE_URL not set in production and "
+                    "DB_ENFORCE_POSTGRES_PRODUCTION=strict; refusing to start. "
+                    "Set DATABASE_URL (Render → Environment → your PostgreSQL "
+                    "managed instance connectionString)."
+                )
+            db_url = persistent_sqlite
+            # Surface in logs AND in the app object so the bootstrap guard in
+            # app/__init__.py can emit its ADS-PERSISTENCE CRITICAL warning
+            # (SQLite is still OK here because the file is under /instance/).
+            os.environ['G2Y_PG_FALLBACK_ACTIVE'] = '1'
+            self.PRODUCTION_SQLITE_FALLBACK = True
+        else:
+            self.PRODUCTION_SQLITE_FALLBACK = False
+
         self.SQLALCHEMY_DATABASE_URI = db_url
         self.SQLALCHEMY_ENGINE_OPTIONS = _engine_options_for(db_url)
 
         # ----- Guards (prevent a broken/insecure production deploy) -----
         if not self.SECRET_KEY:
             raise ValueError("CRITICAL: SECRET_KEY must be set in production environment!")
-        if not _is_postgres_url(db_url):
+        if not missing_pg and not _is_postgres_url(db_url):
             raise ValueError(
-                "CRITICAL: DATABASE_URL must be a PostgreSQL connection string in production. "
-                "SQLite databases live on the ephemeral container FS and get wiped on every deploy. "
-                "Set DATABASE_URL (e.g. the connection string from Render → your PostgreSQL dashboard)."
+                "CRITICAL: DATABASE_URL was provided but is NOT a PostgreSQL "
+                "connection string in production. Use a PostgreSQL DSN "
+                "(postgresql://...). SQLite fallback is ONLY allowed when "
+                "DATABASE_URL is completely unset (Render PG warm-up race)."
             )
 
         # ----- Session cookie security: Secure ON when behind HTTPS proxy (Render) -----
