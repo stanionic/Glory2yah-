@@ -1,0 +1,20 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">nouvo kou / sibjet</p>
+        <h1 class="el-title">Kreye yon Kou</h1>
+        <p class="el-sub">Fòm nan PHASE 6 — estrikti la prè.</p>
+    </div>
+    <div class="el-head-actions"><a class="el-btn el-btn-outline" href="{{ url_for('elearning.teacher_dashboard') }}">← Retounen</a></div>
+</div>
+<div class="el-card">
+    <form method="POST" class="el-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="el-form-row"><label>Tit kou</label><input class="el-input" name="title" placeholder="Egz: Matematik" disabled></div>
+        <div class="el-form-row"><label>Matyè / Sibjet</label><input class="el-input" name="subject" placeholder="Matematik · Syans · Istwa..." disabled></div>
+        <button class="el-btn el-btn-primary" type="submit" disabled>Kreye Kou</button>
+        <div class="el-muted-text">🛠️ PHASE 6 k ap save nan <code>ElCourse</code> epi lye ak klas yo atravè <code>ElClassCourse</code>.</div>
+    </form>
+</div>
+{% endblock %}

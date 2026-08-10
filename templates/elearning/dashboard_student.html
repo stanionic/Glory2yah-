@@ -1,0 +1,116 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">espace étudiant</p>
+        <h1 class="el-title">Klas ou yo + sesyon kap vini</h1>
+        <p class="el-sub">Swiv kou ou yo, rann devwa, ak sesyon an dirèk.</p>
+    </div>
+    <div class="el-head-actions">
+        <form action="{{ url_for('elearning.class_join_by_invite') }}" method="POST" class="el-inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="invite_code" maxlength="12" placeholder="Kòd envitasyon..."
+                   class="el-input el-input--sm" required>
+            <button class="el-btn el-btn-outline" type="submit">Rejwenn</button>
+        </form>
+    </div>
+</div>
+
+<section class="el-grid">
+    <div class="el-card el-card--lg">
+        <div class="el-card-head">
+            <h2 class="el-card-title">Klas ou yo</h2>
+            <span class="el-chip">{{ classes | length }}</span>
+        </div>
+        {% if classes %}
+        <div class="el-row-list">
+            {% for c in classes %}
+            <a class="el-row" href="{{ url_for('elearning.class_detail', class_id=c.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#3c5a9f,#5e88e8)">
+                    {{ (c.name or 'C')[0] | upper }}
+                </div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ c.name | e }}</div>
+                    <div class="el-row-meta">
+                        <span>Nivo: {{ c.level or '—' | e }}</span>
+                        <span>·</span>
+                        <span>Ane: {{ c.academic_year or '—' | e }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty">
+            <span>🎒</span>
+            <p>Ou poko enskri nan okenn klas.</p>
+            <p style="color:var(--el-text-muted)">Mèt ou genyen yon kòd envitasyon ? Antre l nan fomilè a.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="el-card">
+        <div class="el-card-head">
+            <h2 class="el-card-title">Sesyon an dirèk</h2>
+            <span class="el-chip">{{ upcoming_lessons | length }}</span>
+        </div>
+        {% if upcoming_lessons %}
+        <div class="el-row-list">
+            {% for l in upcoming_lessons %}
+            <a class="el-row" href="{{ url_for('elearning.lesson_live', lesson_id=l.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#c84e12,#ffb86c)">🔴</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ l.title | e }}</div>
+                    <div class="el-row-meta">
+                        {% if l.scheduled_at %}
+                        <span>{{ l.scheduled_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        {% endif %}
+                        {% if l.status == 'live' %}
+                        <span class="el-tag el-tag--live">● AN KOURE</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty">
+            <span>🎥</span>
+            <p>Pa gen sesyon ki k ap viv kounye a.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="el-card" style="grid-column: 1 / -1;">
+        <div class="el-card-head">
+            <h2 class="el-card-title">Devwa yo rann</h2>
+            <span class="el-chip">{{ open_assignments | length }}</span>
+        </div>
+        {% if open_assignments %}
+        <div class="el-row-list">
+            {% for a in open_assignments %}
+            <a class="el-row" href="{{ url_for('elearning.assignment_detail', assignment_id=a.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#2b6d47,#7ad29a)">📝</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ a.title | e }}</div>
+                    <div class="el-row-meta">
+                        {% if a.due_date %}
+                        <span>Rann jou: {{ a.due_date.strftime('%d/%m/%Y %H:%M') }}</span>
+                        {% endif %}
+                        {% if a.max_score %}
+                        <span>· Nota max: {{ a.max_score }} pwen</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty">
+            <span>✅</span>
+            <p>Pa gen okenn devwa k ap tann ou.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

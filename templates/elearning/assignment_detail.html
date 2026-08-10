@@ -1,0 +1,68 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">devwa</p>
+        <h1 class="el-title">{{ assignment.title | e }}</h1>
+        <p class="el-sub">
+            {% if assignment.due_date %}
+            Rann jou: <strong>{{ assignment.due_date.strftime('%d/%m/%Y %H:%M') }}</strong>
+            {% if assignment.max_score %} · Nota maksimòm: {{ assignment.max_score }} pwen{% endif %}
+            {% else %}
+            Pa gen dat rann jou.
+            {% endif %}
+        </p>
+    </div>
+    <div class="el-head-actions">
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.class_detail', class_id=assignment.class_id) }}">← Klas la</a>
+    </div>
+</div>
+
+<div class="el-grid">
+    <div class="el-card el-card--lg">
+        <div class="el-card-head"><h2 class="el-card-title">Enstriksyon</h2></div>
+        <div class="el-prose">
+            {% if assignment.instructions %}
+            {{ assignment.instructions | replace('\n','<br>') | safe }}
+            {% else %}
+            <p style="color:var(--el-text-muted)">Pwofesè a pa rannplì enstriksyon.</p>
+            {% endif %}
+        </div>
+        {% if assignment.attachments %}
+        <div class="el-card-head"><h3 class="el-card-title" style="font-size:1rem">Fichye yo rantre yo pase pwofesè a</h3></div>
+        <div class="el-row-list">
+            {% for att in assignment.attachments %}
+            <div class="el-row"><div class="el-row-avatar" style="background:linear-gradient(135deg,#ff7b3b,#ffb86c)">📎</div>
+                <div class="el-row-body"><div class="el-row-title">{{ att }}</div></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="el-card">
+        {% if is_teacher %}
+        <div class="el-card-head"><h2 class="el-card-title">Kòl Elèv yo rann</h2></div>
+        <div class="el-empty"><span>🗂️</span><p>Lis rann yo PHASE 7 ap afiche isit la.</p></div>
+        {% else %}
+        <div class="el-card-head"><h2 class="el-card-title">Rann ou</h2></div>
+        {% if my_submission %}
+        <div class="el-muted">✅ Ou deja rann devwa a, nan dat: {{ my_submission.submitted_at.strftime('%d/%m/%Y %H:%M') }}.
+            {% if my_submission.score is not none %}Nota: <strong>{{ my_submission.score }}/{{ assignment.max_score }}</strong>{% endif %}
+        </div>
+        {% else %}
+        <form method="POST" class="el-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="el-form-row">
+                <label>Repons lan (tèks)</label>
+                <textarea class="el-input" rows="6" disabled placeholder="Ekri repons ou isit la..."></textarea>
+            </div>
+            <div class="el-form-row"><label>Oswa chwazi yon fichye (PDF / Imaj)</label><input type="file" disabled class="el-input"></div>
+            <button class="el-btn el-btn-primary" type="submit" disabled>Rann devwa</button>
+            <div class="el-muted-text">🛠️ PHASE 7 ap aktivè kòl sa a.</div>
+        </form>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

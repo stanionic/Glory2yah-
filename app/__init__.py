@@ -419,7 +419,104 @@ def create_app(config_name=None):
         # Import bank models
         from app.models.bank import LoanProduct, Loan, LoanRepayment, InvestmentProduct, Investment
         db.create_all()
-        
+
+        # =====================================================================
+        # ADS PERSISTENCE GUARD (Summary §6 + user explicit request 2026-08-10)
+        #   Goal: 100% prove at BOOTSTRAP time that approved ads / user ads were
+        #   NOT erased between commits / deploys.
+        #
+        #   Steps:
+        #   (A) Log BEFORE + AFTER row counts: ads rows / approved / pending /
+        #       images-only / paid — so diffing two consecutive app-start logs
+        #       instantly tells you if rows vanished (vs filter bugs hiding them).
+        #   (B) If running on Render (RENDER env var present) AND the resolved
+        #       DSN is SQLite: CRITICAL WARNING unless the sqlite file path lives
+        #       UNDER the persistent disk mount (/opt/render/project/src/instance).
+        #   (C) Same sanity check for upload folder (ads images): must be on the
+        #       persistent disk on Render, else images uploaded get wiped on every
+        #       commit / rebuild → looks like ads disappeared.
+        #
+        #   Zero writes / no mutations — pure read-only diagnostic + warning log.
+        # =====================================================================
+        def _ads_persistence_snapshot(stage_label: str):
+            """Count ads rows (various statuses) and return short dict.
+            Swallow all errors — persistence guard must never crash app startup."""
+            try:
+                from app.models.ad import Ad as _Ad
+                q = _Ad.query
+                total = q.count()
+                approved = q.filter_by(admin_status='approved').count()
+                pending = q.filter_by(admin_status='pending').count()
+                rejected = q.filter_by(admin_status='rejected').count()
+                paid = q.filter_by(payment_status='paid').count()
+                sell_type = q.filter_by(ad_type='sell').count()
+                publish_type = q.filter_by(ad_type='publish').count()
+                app.logger.info(
+                    f"ADS PERSISTENCE [{stage_label}] TOTAL={total} | APPROVED={approved} | "
+                    f"PENDING={pending} | REJECTED={rejected} | PAID={paid} | "
+                    f"SELL={sell_type} | PUBLISH={publish_type}"
+                )
+                return dict(total=total, approved=approved, pending=pending, rejected=rejected,
+                            paid=paid, sell=sell_type, publish=publish_type)
+            except Exception as _pg_e:
+                app.logger.warning(
+                    f"ADS PERSISTENCE [{stage_label}] count skipped (probably tables not yet "
+                    f"created on first run): {type(_pg_e).__name__}: {_pg_e}"
+                )
+                return None
+        _snap_before = _ads_persistence_snapshot("BEFORE-migrations")
+
+        # --- Render-specific guard: SQLite file MUST be on persistent disk -----
+        try:
+            _on_render_env = bool(_os.environ.get('RENDER') or _os.environ.get('RENDER_SERVICE_ID') or
+                                  'onrender.com' in (_os.environ.get('RENDER_EXTERNAL_HOSTNAME') or '').lower())
+            if _on_render_env:
+                import re as _re_pg
+                dsn = str(app.config.get('SQLALCHEMY_DATABASE_URI') or '')
+                # 1) DSN safety
+                if dsn.lower().startswith('sqlite:///'):
+                    # sqlite:///path/to.db OR sqlite:// (memory)
+                    if dsn == 'sqlite://' or dsn.startswith('sqlite:///:'):
+                        app.logger.critical(
+                            "ADS PERSISTENCE CRITICAL: on Render but SQLite URL is IN-MEMORY "
+                            "(empty/sqlite:///) — ALL ADS + users WILL BE WIPED on every "
+                            "commit / deploy / restart. Set DATABASE_URL to PostgreSQL managed "
+                            "database on Render or set SQLALCHEMY_DATABASE_URI to a file under "
+                            "/opt/render/project/src/instance/.")
+                    else:
+                        path_part = dsn[len('sqlite:///'):]
+                        norm = path_part.replace('\\', '/')
+                        if not norm.startswith('/opt/render/project/src/instance/') and \
+                           '/instance/' not in norm:
+                            app.logger.critical(
+                                f"ADS PERSISTENCE CRITICAL: on Render SQLite file NOT on "
+                                f"persistent disk. DSN file path={path_part!r}. Must be under "
+                                f"/opt/render/project/src/instance/ to survive commit/rebuild. "
+                                f"Verify DATABASE_URL env / ProductionConfig fallback.")
+                        else:
+                            app.logger.info(
+                                f"ADS PERSISTENCE: SQLite file ON persistent Render disk: {path_part}")
+                elif dsn.lower().startswith('postgresql'):
+                    app.logger.info(
+                        "ADS PERSISTENCE: using managed PostgreSQL (DSN postgresql://…[redacted 5 chars]…). "
+                        "ADS rows will SURVIVE every commit / deploy / rebuild.")
+                else:
+                    app.logger.warning(f"ADS PERSISTENCE: unknown DSN scheme: {dsn[:20]}… (no check)")
+
+                # 2) UPLOAD_FOLDER safety (ads images)
+                _up = str(app.config.get('UPLOAD_FOLDER') or '').replace('\\', '/').rstrip('/')
+                if _on_render_env and _up:
+                    if not _up.startswith('/opt/render/project/src/instance/'):
+                        app.logger.critical(
+                            f"ADS PERSISTENCE CRITICAL: UPLOAD_FOLDER={_up!r} is NOT on "
+                            f"persistent Render disk. Every uploaded ad IMAGE will be WIPED on "
+                            f"commit/rebuild. Fix: set env UPLOAD_FOLDER to "
+                            f"/opt/render/project/src/instance/uploads as in render.yaml.")
+                    else:
+                        app.logger.info(f"ADS PERSISTENCE: UPLOAD_FOLDER OK on Render disk: {_up}")
+        except Exception as _e_pg2:
+            app.logger.warning(f"ADS PERSISTENCE (Render guard skipped): {type(_e_pg2).__name__}: {_e_pg2}")
+
         # =====================================================================
         # BATCH_CLICKS MIGRATION: add `clicker_ip` column if missing (anti-fraud
         # per-IP limit on ad-batch sharing clicks). SQLAlchemy create_all() does
@@ -513,6 +610,69 @@ def create_app(config_name=None):
         except Exception as _sd_exc:
             db.session.rollback()
             app.logger.warning(f'SOFT DELETE MIGRATION: could not run: {_sd_exc}')
+
+        # =====================================================================
+        # KONFERANS → E-LEARNING MIGRATION (idempotent): extend konferans_rooms
+        # table with new columns introduced by PHASE 2.
+        # Existing classic rooms keep room_type='classic' (NULL = classic as well
+        # for backwards compat). All fields are NULLABLE so old rows remain fully
+        # readable by existing code paths. Zero breaking changes.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect_elkr
+            from sqlalchemy import text as _sa_text_elkr
+            _insp_elkr = _sa_inspect_elkr(db.engine)
+            if _insp_elkr.has_table('konferans_rooms'):
+                _kr_cols = {c['name'] for c in _insp_elkr.get_columns('konferans_rooms')}
+                _kr_adds: list[tuple[str, str]] = [
+                    ('room_type',      "VARCHAR(16) DEFAULT 'classic'"),
+                    ('class_id',       "INTEGER DEFAULT NULL"),
+                    ('lesson_id',      "INTEGER DEFAULT NULL"),
+                    ('scheduled_at',   "DATETIME DEFAULT NULL"),
+                    ('started_at',     "DATETIME DEFAULT NULL"),
+                    ('ended_at',       "DATETIME DEFAULT NULL"),
+                    ('max_participants', "INTEGER DEFAULT 50"),
+                    ('mic_locked',     "BOOLEAN DEFAULT FALSE"),
+                    ('cam_locked',     "BOOLEAN DEFAULT FALSE"),
+                    ('chat_locked',    "BOOLEAN DEFAULT FALSE"),
+                    ('class_locked',   "BOOLEAN DEFAULT FALSE"),
+                    ('whiteboard_id',  "INTEGER DEFAULT NULL"),
+                ]
+                _kr_altered = 0
+                for _col, _dcl in _kr_adds:
+                    if _col not in _kr_cols:
+                        try:
+                            db.session.execute(
+                                _sa_text_elkr(f'ALTER TABLE konferans_rooms ADD COLUMN {_col} {_dcl}')
+                            )
+                            db.session.commit()
+                            _kr_altered += 1
+                        except Exception:
+                            db.session.rollback()
+                if _kr_altered:
+                    app.logger.info(
+                        f'KONFERANS E-LEARNING MIGRATION: added {_kr_altered} '
+                        f'columns to konferans_rooms ({", ".join(c for c,_ in _kr_adds if c not in _kr_cols)})'
+                    )
+                _elkr_idx_name = 'ix_konferans_rooms_lesson_class'
+                try:
+                    _kr_indexes = {
+                        ix['name'] for ix in _insp_elkr.get_indexes('konferans_rooms')
+                    }
+                except Exception:
+                    _kr_indexes = set()
+                if _elkr_idx_name not in _kr_indexes:
+                    try:
+                        db.session.execute(_sa_text_elkr(
+                            'CREATE INDEX IF NOT EXISTS ix_konferans_rooms_lesson_class '
+                            'ON konferans_rooms (class_id, lesson_id, scheduled_at)'
+                        ))
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+        except Exception as _elkr_e:
+            db.session.rollback()
+            app.logger.warning(f'KONFERANS E-LEARNING MIGRATION: skipped: {_elkr_e}')
         
         # Create default loan products if they don't exist
         try:
@@ -972,6 +1132,51 @@ def create_app(config_name=None):
             except Exception:
                 pass
 
+        # =====================================================================
+        # ADS PERSISTENCE GUARD — 2nd snapshot AFTER migrations + seeds.
+        #   If AFTER < BEFORE for APPROVED → something just ERASED approved
+        #   ads during this bootstrap (should NEVER happen). Log CRITICAL so
+        #   admins see it immediately.
+        # =====================================================================
+        try:
+            from app.models.ad import Ad as _AdPost
+            _snap_after = {
+                'total': _AdPost.query.count(),
+                'approved': _AdPost.query.filter_by(admin_status='approved').count(),
+                'pending': _AdPost.query.filter_by(admin_status='pending').count(),
+                'rejected': _AdPost.query.filter_by(admin_status='rejected').count(),
+                'paid': _AdPost.query.filter_by(payment_status='paid').count(),
+                'sell': _AdPost.query.filter_by(ad_type='sell').count(),
+                'publish': _AdPost.query.filter_by(ad_type='publish').count(),
+            }
+            app.logger.info(
+                f"ADS PERSISTENCE [AFTER-migrations+seeds] "
+                f"TOTAL={_snap_after['total']} | APPROVED={_snap_after['approved']} | "
+                f"PENDING={_snap_after['pending']} | REJECTED={_snap_after['rejected']} | "
+                f"PAID={_snap_after['paid']} | SELL={_snap_after['sell']} | "
+                f"PUBLISH={_snap_after['publish']}"
+            )
+            # Diff check vs BEFORE snapshot
+            if _snap_before:
+                diff = {k: _snap_after[k] - _snap_before.get(k, 0) for k in _snap_after}
+                if diff['approved'] < 0 or diff['total'] < 0:
+                    app.logger.critical(
+                        f"ADS PERSISTENCE CRITICAL: approved ads DECREASED during bootstrap! "
+                        f"BEFORE={_snap_before.get('approved')} → AFTER={_snap_after['approved']} "
+                        f"(Δ approved={diff['approved']}, Δ total={diff['total']}). "
+                        f"Diff full: {diff}"
+                    )
+                else:
+                    app.logger.info(
+                        f"ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total={diff['total']:+d}, "
+                        f"Δ approved={diff['approved']:+d}, Δ pending={diff['pending']:+d} — "
+                        f"{'(no ads lost)' if diff['approved'] >= 0 and diff['total'] >= 0 else '(WARN)'}"
+                    )
+        except Exception as _e_pg3:
+            app.logger.warning(
+                f"ADS PERSISTENCE (AFTER snapshot skipped): {type(_e_pg3).__name__}: {_e_pg3}"
+            )
+
     app.logger.info(f'Glory2YahPub started in {config_name} mode')
 
     return app
@@ -1083,6 +1288,25 @@ def register_blueprints(app):
         import traceback as _tb_bk
         app.logger.error(_tb_bk.format_exc())
 
+    # =====================================================================
+    # Register E-LEARNING blueprint — Phase 2 architecture skeleton.
+    #   Module lives under app/routes/elearning/ (package).
+    #   url_prefix='/e-learning' is already set on the Blueprint constructor
+    #   (don't re-pass it here to avoid double prefixing).
+    #   All tables are el_* prefixed; all templates live in templates/elearning/
+    #   so the existing Konferans routes and views remain fully untouched
+    #   (non-breaking extension — see plan PHASE 2 §21 rule).
+    # =====================================================================
+    try:
+        from app.routes.elearning import elearning_bp
+        app.register_blueprint(elearning_bp)
+        app.logger.info("Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)")
+    except Exception as e:
+        app.logger.error(f"Failed to register E-LEARNING blueprint: {type(e).__name__}: {str(e)}")
+        import traceback as _tb_el
+        app.logger.error(_tb_el.format_exc())
+
+
 
 def register_error_handlers(app):
     """Register error handlers — P1 FIX: 500 rolls back session, add security headers on every response"""
@@ -1161,9 +1385,66 @@ def register_error_handlers(app):
 def register_template_filters(app):
     """Register custom Jinja2 filters"""
     import json
-    from flask import url_for as flask_url_for
+    from flask import url_for as flask_url_for, request as flask_request
     from app.utils.currency import gkach_to_htg, htg_to_gkach, format_htg
-    
+
+    def _resolve_base_url():
+        """Return a canonical base URL (scheme + host + port) for absolute external URLs
+        required by og:image / og:url tags. Always ends without trailing slash.
+
+        Resolution order (most reliable first):
+        1. Explicit SITE_URL env var (recommended for production Render)
+        2. Within a request context: use request.url_root, honor X-Forwarded-Proto/Host
+        3. SERVER_NAME + PREFERRED_URL_SCHEME Flask config if set
+        4. Fallback to http://localhost for dev/tests (not used by crawlers).
+        """
+        import os as _os
+        env_url = (_os.environ.get('SITE_URL') or '').strip().rstrip('/')
+        if env_url:
+            return env_url
+        # Within request: honor X-Forwarded headers (Render/Heroku proxy behavior)
+        try:
+            if flask_request and flask_request.environ:
+                scheme = (flask_request.headers.get('X-Forwarded-Proto') or
+                          flask_request.environ.get('wsgi.url_scheme') or 'http').split(',')[0].strip()
+                host = (flask_request.headers.get('X-Forwarded-Host') or
+                        flask_request.host or flask_request.environ.get('HTTP_HOST') or
+                        'localhost')
+                host = host.split(',')[0].strip()
+                return f"{scheme}://{host}".rstrip('/')
+        except Exception:
+            pass
+        server_name = app.config.get('SERVER_NAME')
+        if server_name:
+            scheme = app.config.get('PREFERRED_URL_SCHEME') or 'https'
+            return f"{scheme}://{server_name}".rstrip('/')
+        return 'http://localhost'
+
+    def _absolute_static_upload_url(filename):
+        """Build the full absolute URL for a file stored under UPLOAD_FOLDER.
+
+        Path rules on this project (see app/__init__.py uploads middleware PHASE1 fix):
+          * Files physically live at config UPLOAD_FOLDER (instance/uploads/ on Render).
+          * They are publicly served from both:
+              - /static/uploads/<filename>  (middleware redirect + symlink compat)
+              - /uploads/<filename>         (explicit route in before_request)
+        For OG crawlers we emit the canonical /uploads/<abs filename> path under the
+        resolved base URL.
+        """
+        if not filename:
+            return ''
+        base = _resolve_base_url()
+        fname = str(filename).strip().lstrip('/\\').replace('\\', '/')
+        # Already absolute URL (http/https) — return as-is
+        if fname.lower().startswith('http://') or fname.lower().startswith('https://'):
+            return fname
+        # Strip any "/static/uploads/" or "uploads/" prefix so we normalize to "/uploads/<name>"
+        for prefix in ('static/uploads/', 'uploads/'):
+            if fname.startswith(prefix):
+                fname = fname[len(prefix):]
+        return f"{base}/uploads/{fname}"
+
+
     @app.template_filter('gkach_to_htg')
     def gkach_to_htg_filter(value):
         """Convert Gkach to HTG"""
@@ -1198,6 +1479,40 @@ def register_template_filters(app):
             GKACH_TO_HTG_RATE=app.config.get('GKACH_TO_HTG_RATE', 1.15)
         )
     
+    @app.context_processor
+    def inject_og_helpers():
+        """Inject absolute URL helpers so templates can emit crawler-friendly OG tags.
+
+        Exposed names (all templates):
+          * absolute_base_url() -> str "https://glory2yah.onrender.com"
+          * absolute_upload_url('image.png') -> full URL for /uploads/image.png
+          * absolute_ad_url(ad_id)       -> full canonical URL to /ad/<ad_id>
+          * absolute_share_url(ad_id)    -> full short share URL /s/<ad_id>
+        """
+        from flask import url_for as _u
+        def _base():
+            return _resolve_base_url()
+        def _abs_upload(filename):
+            return _absolute_static_upload_url(filename)
+        def _abs_ad(ad_id):
+            try:
+                path = flask_url_for('main.view_ad', ad_id=ad_id)
+            except Exception:
+                path = f'/ad/{ad_id}'
+            return _base() + path
+        def _abs_share(ad_id):
+            try:
+                path = flask_url_for('share.single_ad', short_id=ad_id)
+            except Exception:
+                path = f'/s/{ad_id}'
+            return _base() + path
+        return dict(
+            absolute_base_url=_base,
+            absolute_upload_url=_abs_upload,
+            absolute_ad_url=_abs_ad,
+            absolute_share_url=_abs_share,
+        )
+
     @app.template_filter('fromjson')
     def fromjson_filter(value):
         if value is None:

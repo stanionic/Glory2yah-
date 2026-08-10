@@ -1,0 +1,31 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">pwogramasyon sesyon</p>
+        <h1 class="el-title">Pwogram yon Sesyon an Dirèk</h1>
+        <p class="el-sub">Fòm nan PHASE 6 — k ap lyezon avek Konferans Room pou live.</p>
+    </div>
+    <div class="el-head-actions"><a class="el-btn el-btn-outline" href="{{ url_for('elearning.teacher_dashboard') }}">← Retounen</a></div>
+</div>
+<div class="el-card">
+    <form method="POST" class="el-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="el-form-row">
+            <label>Klas ki gen sesyon an</label>
+            <select name="class_id" class="el-input" disabled>
+                {% if classes %}
+                {% for c in classes %}<option value="{{ c.id }}">{{ c.name | e }}</option>{% endfor %}
+                {% else %}<option>(Ou poko gen klas)</option>{% endif %}
+            </select>
+        </div>
+        <div class="el-form-row"><label>Non / Tit Sesyon</label><input class="el-input" name="title" placeholder="Egz: Repiz Operasyon Frakksyon" disabled></div>
+        <div class="el-form-row"><label>Dat ak Lè</label><input type="datetime-local" name="scheduled_at" class="el-input" disabled></div>
+        <div class="el-form-row"><label>Dire (minit)</label><input type="number" class="el-input" name="duration_minutes" value="60" disabled></div>
+        <button class="el-btn el-btn-primary" type="submit" disabled>Pwogram Sesyon</button>
+        <div class="el-muted-text">
+            🛠️ PHASE 6 k ap kreye <code>ElLesson</code> + otomatikman <code>KonferansRoom</code> ak room_type='live_course'.
+        </div>
+    </form>
+</div>
+{% endblock %}

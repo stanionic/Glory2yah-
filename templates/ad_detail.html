@@ -1,5 +1,88 @@
 {% extends "base.html" %}
 
+{# =====================================================================
+ # Compute OG variables UP FRONT (not inside any block) so both
+ # {% block title %} and {% block extra_head %} see the same values.
+ # Jinja's default(var, True) triggers the default on UNDEFINED AND on
+ # falsy values (empty string, None, 0, etc).
+ # ===================================================================== #}
+{% set og_title = (ad.title | default('Annonce Glory2YahPub', true)) | string | truncate(120, True, '...') %}
+{% set og_desc = ((ad.description | default('', true)) | striptags | replace('\n', ' ') | truncate(200, True, '...')) %}
+{% set og_images = (ad.images if ad.images else []) %}
+{% set og_first_image = (og_images[0] if og_images else None) %}
+{% set og_ad_type = (ad.ad_type | default('publish', true)) %}
+{% set og_type = 'product' if og_ad_type == 'sell' else 'article' %}
+{% set og_price_gkach = (ad.price_gkach | default(0, true) or 0) %}
+{% set og_price_htg = ((og_price_gkach | gkach_to_htg) if og_price_gkach else 0.0) %}
+{% set og_price_display = (og_price_htg | format_htg) %}
+{% set og_url = (absolute_ad_url(ad.ad_id) if ad.ad_id else request.url) %}
+{% set og_site_logo = (absolute_base_url() ~ '/static/images/logo.png') %}
+
+{# =========================================================
+ # OpenGraph / Twitter / Facebook Share Preview meta tags.
+ # Crawlers (FB, LinkedIn, WhatsApp, Discord, Twitter/X, iMessage)
+ # scrape these tags to show a RICH PREVIEW (image, title, price,
+ # description) instead of the generic site-level logo.
+ #
+ # Required rules:
+ #   - og:image MUST be absolute https:// URL (no /foo/bar.png).
+ #   - Prefer summary_large_image so Facebook uses the big 1200x630
+ #     landscape card instead of a tiny thumbnail.
+ #   - Inject product:* microdata since this is a marketplace listing.
+ # ========================================================= #}
+{% block extra_head %}
+<meta property="og:site_name" content="Glory2YahPub — Anons, Achète, Vann">
+<meta property="og:locale" content="fr_HT">
+<meta property="og:type" content="{{ og_type }}">
+<meta property="og:url" content="{{ og_url }}">
+<meta property="og:title" content="{{ og_title }}">
+{% if og_desc %}
+<meta property="og:description" content="{{ og_desc }}">
+{% else %}
+<meta property="og:description" content="{{ og_price_display }} — Jwenn of ou pi bon nan Glory2YahPub.">
+{% endif %}
+{# Product-specific OpenGraph microdata (Facebook + crawlers read product:price:amount directly) #}
+{% if og_price_gkach and og_price_gkach > 0 %}
+<meta property="product:price:amount" content="{{ og_price_htg }}">
+<meta property="product:price:currency" content="HTG">
+<meta property="product:availability" content="instock">
+<meta property="product:condition" content="new">
+{% endif %}
+{# ---- OG IMAGES (absolute URLs required) ------------------- #}
+{% if og_first_image %}
+<meta property="og:image" content="{{ absolute_upload_url(og_first_image) }}">
+<meta property="og:image:secure_url" content="{{ absolute_upload_url(og_first_image) }}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ og_title }}">
+{% else %}
+<meta property="og:image" content="{{ og_site_logo }}">
+<meta property="og:image:secure_url" content="{{ og_site_logo }}">
+<meta property="og:image:alt" content="Glory2YahPub">
+{% endif %}
+{# Additional images (carousel preview on FB / Discord) #}
+{% for img in og_images[1:5] %}
+<meta property="og:image" content="{{ absolute_upload_url(img) }}">
+{% endfor %}
+{# ---- Twitter / X card (summary_large_image) --------------- #}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@Glory2YahPub">
+<meta name="twitter:title" content="{{ og_title }}">
+<meta name="twitter:description" content="{{ og_desc if og_desc else (og_price_display ~ ' — Glory2YahPub') }}">
+{% if og_first_image %}
+<meta name="twitter:image" content="{{ absolute_upload_url(og_first_image) }}">
+<meta name="twitter:image:alt" content="{{ og_title }}">
+{% else %}
+<meta name="twitter:image" content="{{ og_site_logo }}">
+{% endif %}
+{# ---- Canonical URL avoids SEO duplicate content penalty ---- #}
+<link rel="canonical" href="{{ og_url }}">
+{% endblock %}
+
+{# Also override the HTML <title> so the browser tab matches the preview #}
+{% block title %}{{ og_title }}{% if og_price_gkach and og_price_gkach > 0 %} — {{ og_price_display }}{% endif %} — Glory2YahPub{% endblock %}
+
 {% block content %}
 <style>
 .product-detail-container {
@@ -232,7 +315,7 @@
             {% set ad_desc_var = (ad.description if (ad is not mapping) else ad.get('description','')) %}
             {% set ad_imgs_var = (ad.get_images_list() if (ad is not mapping and ad.get_images_list is defined) else (ad.get('images', []) or [])) %}
             {# CASE A: explicit media_type='url' → iframe embed autoplay #}
-            {% set ad_embed_url = (ad_media_type_var == 'url' and ad_desc_var) ? (ad_desc_var|get_embed_url) : None %}
+            {% set ad_embed_url = (ad_desc_var|get_embed_url) if (ad_media_type_var == 'url' and ad_desc_var) else None %}
             {# CASE B (screenshot 2026-08-07): Post Teks → images media_type mais images vides + description URL → iframe auto-detect #}
             {% if not ad_embed_url and ad_media_type_var in (None, 'images', '') and ad_desc_var and (ad_imgs_var|length == 0) %}
                 {% set ad_embed_url = ad_desc_var|get_embed_url %}
@@ -240,7 +323,7 @@
 
             {% if ad_media_type_var == 'video' %}
                 {% set video_upload_name = (ad.video if ad is not mapping else ad.get('video','')) %}
-                {% set video_upload_url = video_upload_name ? url_for('static', filename='uploads/' ~ video_upload_name) : None %}
+                {% set video_upload_url = url_for('static', filename='uploads/' ~ video_upload_name) if video_upload_name else None %}
                 {% set main_video_url = (ad.video_url if ad is not mapping else ad.get('video_url')) or video_upload_url %}
                 <video id="mainVideo" class="main-image" controls muted playsinline preload="auto" loop
                        src="{{ main_video_url }}" style="object-fit: contain; background:#000;">

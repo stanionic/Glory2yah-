@@ -20,6 +20,33 @@ from app.models.konferans import KonferansRoom, KonferansRecording
 from app.models.charity import CharityDonation, CharityCause
 
 try:
+    from app.models.elearning import (
+        ElAssignment,
+        ElClass,
+        ElClassCourse,
+        ElClassMember,
+        ElCourse,
+        ElCourseMaterial,
+        ElLesson,
+        ElLessonAttendance,
+        ElParticipantPermission,
+        ElSubmission,
+        ElWhiteboard,
+        ElWhiteboardEvent,
+        ElWhiteboardPage,
+    )
+    _ELEARNING_OK = True
+except Exception as _e_elearn:
+    ElAssignment = ElClass = ElClassCourse = ElClassMember = ElCourse = None
+    ElCourseMaterial = ElLesson = ElLessonAttendance = ElParticipantPermission = None
+    ElSubmission = ElWhiteboard = ElWhiteboardEvent = ElWhiteboardPage = None
+    _ELEARNING_OK = False
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        "E-LEARNING models disabled: %s", _e_elearn,
+    )
+
+try:
     from app.models.app_installation import AppInstallation
     _HAS_APPINSTALL = True
 except Exception:
@@ -49,6 +76,22 @@ __all__ = [
     'KonferansRecording',
 ]
 
+if _ELEARNING_OK:
+    __all__.extend([
+        'ElAssignment',
+        'ElClass',
+        'ElClassCourse',
+        'ElClassMember',
+        'ElCourse',
+        'ElCourseMaterial',
+        'ElLesson',
+        'ElLessonAttendance',
+        'ElParticipantPermission',
+        'ElSubmission',
+        'ElWhiteboard',
+        'ElWhiteboardEvent',
+        'ElWhiteboardPage',
+    ])
 if _HAS_APPINSTALL:
     __all__.append('AppInstallation')
 __all__.extend(['CharityDonation', 'CharityCause'])

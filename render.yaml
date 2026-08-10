@@ -10,6 +10,10 @@ services:
       mkdir -p instance/uploads
       mkdir -p instance/.flask_session
       mkdir -p instance/logs
+      # E-LEARNING PHASE 2+ : recordings of live lessons + student submission files
+      # also live on the persistent disk so they are NOT wiped between deploys.
+      mkdir -p instance/recordings
+      mkdir -p instance/submissions
       # Legacy upload dir (symlink target compatibility; also created for safety)
       mkdir -p static/uploads
       mkdir -p .flask_session
@@ -44,6 +48,13 @@ services:
       # Logs kept between deploys for debugging:
       - key: LOG_DIR
         value: /opt/render/project/src/instance/logs
+      # E-LEARNING PHASE 2+ : persistent locations for lesson recordings (produced
+      # by Konferans recording engine) and student submissions files. Stored on
+      # the persistent disk at mountPath instance/ (see disk: section below).
+      - key: RECORDING_DIR
+        value: /opt/render/project/src/instance/recordings
+      - key: SUBMISSION_DIR
+        value: /opt/render/project/src/instance/submissions
     disk:
       name: glory2yahpub-disk
       mountPath: /opt/render/project/src/instance

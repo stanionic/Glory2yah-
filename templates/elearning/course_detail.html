@@ -1,0 +1,37 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">kou</p>
+        <h1 class="el-title">{{ course.title | e }}</h1>
+        <p class="el-sub">{{ course.description or 'Pa gen deskripsyon kou.' | e }}</p>
+    </div>
+    <div class="el-head-actions">
+        {% if is_teacher %}
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.course_create') }}">+ Modifye</a>
+        {% endif %}
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.teacher_dashboard') }}">← Retounen</a>
+    </div>
+</div>
+<div class="el-card">
+    <div class="el-card-head">
+        <h2 class="el-card-title">Sipò Pedagojik</h2>
+        <span class="el-chip">{{ materials | length }}</span>
+    </div>
+    {% if materials %}
+    <div class="el-row-list">
+        {% for m in materials %}
+        <div class="el-row">
+            <div class="el-row-avatar" style="background:linear-gradient(135deg,#ff7b3b,#ffb86c)">📄</div>
+            <div class="el-row-body">
+                <div class="el-row-title">{{ m.title | e }}</div>
+                <div class="el-row-meta">{{ m.mime_type or 'fichye' }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="el-empty"><span>📄</span><p>Pa gen dokiman.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

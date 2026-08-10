@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ht">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% set og_title = (ad.title or 'Annonce Glory2YahPub') | string | truncate(120, True, '...') %}
+{% set og_desc = (ad.description or '') | striptags | replace('\n', ' ') | truncate(200, True, '...') %}
+{% set og_images = ad.images if ad.images else [] %}
+{% set og_first = og_images[0] if og_images else None %}
+{% set og_type = 'product' if (ad.ad_type | default('publish')) == 'sell' else 'article' %}
+{% set og_price_gkach = ad.price_gkach | default(0) %}
+{% set og_price_htg = (og_price_gkach | gkach_to_htg) if og_price_gkach else 0.0 %}
+{% set og_price_display = og_price_htg | format_htg %}
+{# Absolute URLs (crawlers REQUIRE https:// URLs — not relative paths) #}
+{% set abs_canonical = absolute_ad_url(ad.ad_id) if ad.ad_id else (absolute_base_url() ~ canonical_path) %}
+{% set og_site_logo = absolute_base_url() ~ '/static/images/logo.png' %}
+
+<title>{{ og_title }}{% if og_price_gkach and og_price_gkach > 0 %} — {{ og_price_display }}{% endif %} — Glory2YahPub</title>
+<link rel="canonical" href="{{ abs_canonical }}">
+
+{# ---- Open Graph (Facebook / LinkedIn / Discord / WhatsApp preview) ---- #}
+<meta property="og:site_name" content="Glory2YahPub — Anons, Achète, Vann">
+<meta property="og:locale" content="fr_HT">
+<meta property="og:type" content="{{ og_type }}">
+<meta property="og:url" content="{{ abs_canonical }}">
+<meta property="og:title" content="{{ og_title }}">
+{% if og_desc %}
+<meta property="og:description" content="{{ og_desc }}">
+{% else %}
+<meta property="og:description" content="{{ og_price_display }} — Jwenn of ou pi bon nan Glory2YahPub.">
+{% endif %}
+{% if og_price_gkach and og_price_gkach > 0 %}
+<meta property="product:price:amount" content="{{ og_price_htg }}">
+<meta property="product:price:currency" content="HTG">
+<meta property="product:availability" content="instock">
+<meta property="product:condition" content="new">
+{% endif %}
+{# Primary image #}
+{% if og_first %}
+<meta property="og:image" content="{{ absolute_upload_url(og_first) }}">
+<meta property="og:image:secure_url" content="{{ absolute_upload_url(og_first) }}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ og_title }}">
+{% else %}
+<meta property="og:image" content="{{ og_site_logo }}">
+<meta property="og:image:secure_url" content="{{ og_site_logo }}">
+<meta property="og:image:alt" content="Glory2YahPub">
+{% endif %}
+{# Carousel extras (max 4) #}
+{% for img in og_images[1:5] %}
+<meta property="og:image" content="{{ absolute_upload_url(img) }}">
+{% endfor %}
+{# ---- Twitter / X summary_large_image ---- #}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@Glory2YahPub">
+<meta name="twitter:title" content="{{ og_title }}">
+<meta name="twitter:description" content="{{ og_desc if og_desc else (og_price_display ~ ' — Glory2YahPub') }}">
+{% if og_first %}
+<meta name="twitter:image" content="{{ absolute_upload_url(og_first) }}">
+<meta name="twitter:image:alt" content="{{ og_title }}">
+{% else %}
+<meta name="twitter:image" content="{{ og_site_logo }}">
+{% endif %}
+
+{# ---- REDIRECT LOGIC ----
+Facebook / WhatsApp / Discord crawlers stop reading after they find og:* tags
+and DO NOT follow 302s + JS redirects (by design — they only parse the markup).
+Human users (regular browsers / non-crawler UAs) get redirected INSTANTLY to the
+real ad-detail page. We use THREE layers of fallback for max reliability:
+  1. <meta http-equiv=refresh>  (works even if JS is disabled)
+  2. Inline <script> location.replace (fast, cleans history)
+  3. A visible <a> tag for the very slow / old browsers.
+#}
+<meta http-equiv="refresh" content="0; url={{ abs_canonical }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+</head>
+<body style="background:#fff;color:#222;font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:40px 20px;text-align:center;">
+<noscript>
+  <a id="l" href="{{ abs_canonical }}">{{ og_title }} — Klike pou wè anons la sou Glory2YahPub</a>
+</noscript>
+<div style="max-width:600px;margin:20px auto;padding:28px;border:1px solid #e7e7ef;border-radius:16px;background:#f9fafc;">
+  <div style="width:112px;height:112px;display:inline-flex;border-radius:50%;background:linear-gradient(135deg,#002366,#4a6fc7);align-items:center;justify-content:center;color:white;font-size:3rem;letter-spacing:.1rem;font-weight:800;">G2Y</div>
+  <h1 style="margin:16px 0 6px;font-size:1.35rem;color:#002366;">{{ og_title }}</h1>
+  {% if og_price_gkach and og_price_gkach > 0 %}
+  <p style="margin:0 0 12px;font-size:1.4rem;font-weight:800;color:#e82e04;">{{ og_price_display }}</p>
+  {% endif %}
+  {% if og_desc %}
+  <p style="margin:0 0 22px;color:#4b5563;font-size:.95rem;line-height:1.55;">{{ og_desc }}</p>
+  {% endif %}
+  <a id="fallbackLink" href="{{ abs_canonical }}"
+     style="display:inline-flex;align-items:center;gap:10px;height:46px;padding:0 22px;background:#002366;color:white;border-radius:999px;text-decoration:none;font-weight:700;">
+    Ale nan paj anons la →
+  </a>
+  <p style="margin:18px 0 0;color:#6b7280;font-size:.78rem;">
+    Si w pa redirije otomatikman, klike bouton ki anlè a.
+  </p>
+</div>
+{# Inline non-blocking redirect (after rendering the OG-enabled <head> so
+   crawlers have already finished their tag extraction by the time this runs) #}
+<script>(function () {
+  try {
+    var t = "{{ abs_canonical | safe }}";
+    if (window.top && window.top.location && window.top.location.replace) {
+      window.top.location.replace(t);
+    } else {
+      window.location.replace(t);
+    }
+  } catch (e) { /* ignore; user can click fallback link */ }
+})();</script>
+</body>
+</html>

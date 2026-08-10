@@ -1,0 +1,49 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">sesyon an dirèk</p>
+        <h1 class="el-title">{{ lesson.title | e }}</h1>
+        <p class="el-sub">
+            {% if lesson.scheduled_at %}
+                {{ lesson.scheduled_at.strftime('%d/%m/%Y %H:%M') }} · Durée: {{ lesson.duration_minutes or  }} min ·
+            {% endif %}
+            Estati: <strong>{{ lesson.status }}</strong>
+        </p>
+    </div>
+    <div class="el-head-actions">
+        {% if is_teacher and lesson.status == 'scheduled' %}
+        <button class="el-btn el-btn-primary" disabled>Lanse Sesyon an</button>
+        {% elif lesson.status == 'live' and lesson.konferans_room_id %}
+        <a class="el-btn el-btn-primary" href="/konferans/room/{{ lesson.konferans_room_id }}">Antre nan Sal Konferans</a>
+        {% endif %}
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.class_detail', class_id=lesson.class_id) }}">← Klas la</a>
+    </div>
+</div>
+
+<section class="el-grid">
+    <div class="el-card">
+        <div class="el-card-head">
+            <h2 class="el-card-title">Sal live</h2>
+        </div>
+        <div class="el-empty">
+            <span>🎥</span>
+            <p>Interface live sesyon an PHASE 6 ap ouvri <code>/konferans/room/&lt;code&gt;</code> nan iframe la.</p>
+            <p style="color:var(--el-text-muted)">
+                PHASE 4 (Tableau blan) + PHASE 5 (Pataje ekran, Dokiman) + PHASE 3 (Moderasyon Prof) ap fini sou paj sa a.
+            </p>
+        </div>
+    </div>
+
+    <div class="el-card">
+        <div class="el-card-head"><h2 class="el-card-title">Enfòmasyon</h2></div>
+        <ul class="el-list">
+            <li>👨‍🏫 Pwofesè: user #{{ lesson.teacher_user_id }}</li>
+            <li>🏫 Klas: #{{ lesson.class_id }}</li>
+            {% if lesson.course_id %}<li>📖 Kou: #{{ lesson.course_id }}</li>{% endif %}
+            {% if lesson.recording_id %}<li>▶️ Replay: disponib aprè sesyon an (PHASE 7)</li>{% endif %}
+            <li>🧮 Materyèl: {{ lesson.materials_count }} fichye</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

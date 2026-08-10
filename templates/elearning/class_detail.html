@@ -1,0 +1,87 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">detay klas</p>
+        <h1 class="el-title">{{ klass.name | e }}</h1>
+        <p class="el-sub">{{ klass.description or 'Pa gen deskripsyon.' | e }}</p>
+    </div>
+    <div class="el-head-actions">
+        {% if is_teacher %}
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.lesson_create') }}">
+            + Pwogram Sesyon
+        </a>
+        {% endif %}
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.teacher_dashboard' if is_teacher else 'elearning.student_dashboard') }}">
+            ← Retounen
+        </a>
+    </div>
+</div>
+
+<div class="el-grid">
+    <div class="el-card">
+        <div class="el-card-head"><h2 class="el-card-title">Sesyon yo</h2><span class="el-chip">{{ lessons | length }}</span></div>
+        {% if lessons %}
+        <div class="el-row-list">
+            {% for l in lessons %}
+            <a class="el-row" href="{{ url_for('elearning.lesson_live', lesson_id=l.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#4a6fc7,#77a0ff)">📚</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ l.title | e }}</div>
+                    <div class="el-row-meta">
+                        {% if l.scheduled_at %}
+                        <span>{{ l.scheduled_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        {% endif %}
+                        <span class="el-tag">{{ l.status }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty"><span>📅</span><p>Pa gen sesyon.</p></div>
+        {% endif %}
+    </div>
+
+    <div class="el-card">
+        <div class="el-card-head"><h2 class="el-card-title">Dokiman / Sipò</h2><span class="el-chip">{{ materials | length }}</span></div>
+        {% if materials %}
+        <div class="el-row-list">
+            {% for m in materials %}
+            <div class="el-row">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#ff7b3b,#ffb86c)">📄</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ m.title | e }}</div>
+                    <div class="el-row-meta">{{ m.mime_type or 'fichye' }} · {{ '%.1f' | format((m.file_size or 0)/1024/1024 }} MB</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty"><span>📄</span><p>Pa gen dokiman.</p></div>
+        {% endif %}
+    </div>
+
+    <div class="el-card" style="grid-column: 1 / -1;">
+        <div class="el-card-head"><h2 class="el-card-title">Devwa</h2><span class="el-chip">{{ assignments | length }}</span></div>
+        {% if assignments %}
+        <div class="el-row-list">
+            {% for a in assignments %}
+            <a class="el-row" href="{{ url_for('elearning.assignment_detail', assignment_id=a.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#2b6d47,#7ad29a)">📝</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ a.title | e }}</div>
+                    <div class="el-row-meta">
+                        {% if a.due_date %}<span>Rann jou {{ a.due_date.strftime('%d/%m/%Y') }}</span>{% endif %}
+                        {% if a.max_score %}<span>· Nota: {{ a.max_score }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty"><span>📝</span><p>Pa gen devwa.</p></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">kreye klas</p>
+        <h1 class="el-title">Kreye yon Klas</h1>
+        <p class="el-sub">PHASE 2 — estrikti paj la prè, fonksyonalite a ap vini nan PHASE 6.</p>
+    </div>
+    <div class="el-head-actions">
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.teacher_dashboard') }}">
+            ← Retounen
+        </a>
+    </div>
+</div>
+<div class="el-card">
+    <form method="POST" class="el-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="el-form-row">
+            <label>Non klas la</label>
+            <input type="text" name="name" class="el-input" placeholder="Egz: Matematik Trozyèm" disabled>
+        </div>
+        <div class="el-form-row">
+            <label>Nivo / Katègori</label>
+            <select name="level" class="el-input" disabled>
+                <option>Prensipal</option>
+                <option>Segondè</option>
+                <option>Inivèsitè</option>
+                <option>Etid adilt</option>
+            </select>
+        </div>
+        <div class="el-form-row">
+            <label>Deskicksannée scolaire</label>
+            <input type="text" name="academic_year" class="el-input" placeholder="2026-2027" disabled>
+        </div>
+        <button class="el-btn el-btn-primary" type="submit" disabled>Kreye Klas</button>
+        <div class="el-muted-text">🛠️ Kòd sa a ap aktivé nan PHASE 6 — souvan ou pral ranpli tout fòm sa avèk modèl <code>ElClass</code>.</div>
+    </form>
+</div>
+{% endblock %}

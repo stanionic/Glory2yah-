@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}E-LEARNING — Glory2YahPub{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/e-learning/css/elearning.css?v=2">{% endblock %}
+
+{% block content %}
+<div class="el-shell">
+    <aside class="el-side">
+        <div class="el-side-brand">
+            <span class="el-side-emoji">📚</span>
+            <div>
+                <div class="el-side-title">E-LEARNING</div>
+                <div class="el-side-sub">Konferans + Klas + Cours</div>
+            </div>
+        </div>
+        <nav class="el-nav">
+            {% if current_user.is_authenticated %}
+            <a class="el-nav-link {% if request.endpoint == 'elearning.teacher_dashboard' %}is-active{% endif %}"
+               href="{{ url_for('elearning.teacher_dashboard') }}">
+                <span>👨‍🏫</span> Tablo Prof
+            </a>
+            <a class="el-nav-link {% if request.endpoint == 'elearning.student_dashboard' %}is-active{% endif %}"
+               href="{{ url_for('elearning.student_dashboard') }}">
+                <span>🎒</span> Tablo Elèv
+            </a>
+            <div class="el-nav-sep"></div>
+            <a class="el-nav-link" href="{{ url_for('elearning.class_create') }}">
+                <span>➕</span> Kreye yon Klas
+            </a>
+            <a class="el-nav-link" href="{{ url_for('elearning.course_create') }}">
+                <span>📖</span> Kreye Kou
+            </a>
+            <a class="el-nav-link" href="{{ url_for('elearning.lesson_create') }}">
+                <span>🗓️</span> Pwogramasyon Sesyon
+            </a>
+            <div class="el-nav-sep"></div>
+            <a class="el-nav-link" href="{{ url_for('konferans.index') }}">
+                <span>🎥</span> Konferans Klasik
+            </a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <main class="el-main">
+        {% block el_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

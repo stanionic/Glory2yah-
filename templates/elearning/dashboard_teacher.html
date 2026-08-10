@@ -1,0 +1,93 @@
+{% extends "elearning/_base.html" %}
+{% block el_content %}
+<div class="el-page-head">
+    <div>
+        <p class="el-kicker">Espace professeur</p>
+        <h1 class="el-title">Tablo de Bò — Klas ou yo</h1>
+        <p class="el-sub">Jere klas yo, pwogram sesyon yo, epi voye devwa.</p>
+    </div>
+    <div class="el-head-actions">
+        <a class="el-btn el-btn-primary" href="{{ url_for('elearning.class_create') }}">
+            <i class="fas fa-plus-circle"></i> Kreye yon Klas
+        </a>
+        <a class="el-btn el-btn-outline" href="{{ url_for('elearning.lesson_create') }}">
+            <i class="fas fa-calendar-plus"></i> Pwogram yon Sesyon
+        </a>
+    </div>
+</div>
+
+<section class="el-grid">
+    <div class="el-card el-card--lg">
+        <div class="el-card-head">
+            <h2 class="el-card-title">Klas ou yo</h2>
+            <span class="el-chip">{{ classes | length }}</span>
+        </div>
+        {% if classes %}
+        <div class="el-row-list">
+            {% for c in classes %}
+            <a class="el-row" href="{{ url_for('elearning.class_detail', class_id=c.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#4a6fc7,#77a0ff)">{{ (c.name or 'C')[0] | upper }}</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ c.name | e }}</div>
+                    <div class="el-row-meta">
+                        <span>Nivo: {{ c.level or '—' | e }}</span>
+                        <span>·</span>
+                        <span>Ane: {{ c.academic_year or '—' | e }}</span>
+                        <span>·</span>
+                        <span>Kòd envitasyon: <code>{{ c.invite_code }}</code></span>
+                    </div>
+                </div>
+                <div class="el-row-tags">
+                    {% if c.is_archived %}<span class="el-tag el-tag--muted">Anchiv</span>{% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty">
+            <span>🏫</span>
+            <p>Ou poko kreye okenn klas.</p>
+            <p style="color:var(--el-text-muted)">Klike "Kreye yon Klas" anwo a — li PHASE 6 ki ap fè egzakteman 😊.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="el-card">
+        <div class="el-card-head">
+            <h2 class="el-card-title">Sesyon kap vini</h2>
+            <span class="el-chip">{{ upcoming_lessons | length }}</span>
+        </div>
+        {% if upcoming_lessons %}
+        <div class="el-row-list">
+            {% for l in upcoming_lessons %}
+            <a class="el-row" href="{{ url_for('elearning.lesson_live', lesson_id=l.id) }}">
+                <div class="el-row-avatar" style="background:linear-gradient(135deg,#3c5a9f,#5e88e8)">📚</div>
+                <div class="el-row-body">
+                    <div class="el-row-title">{{ l.title | e }}</div>
+                    <div class="el-row-meta">
+                        <span>
+                            {% if l.scheduled_at %}
+                                {{ l.scheduled_at.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                Pa programé
+                            {% endif %}
+                        </span>
+                        {% if l.status == 'live' %}
+                        <span class="el-tag el-tag--live">● AN KOURE</span>
+                        {% else %}
+                        <span class="el-tag">Prevu</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="el-empty">
+            <span>📅</span>
+            <p>Pa gen sesyon ki programé pou kounye a.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
