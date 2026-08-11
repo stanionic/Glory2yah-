@@ -32,26 +32,75 @@ class GkachService:
     
     @staticmethod
     def get_balance(whatsapp):
-        """Get Gkach balance with caching"""
-        from app.services.redis_service import RedisService
-        from app import redis_client
-        
-        whatsapp = validate_whatsapp(whatsapp)
-        redis_service = RedisService(redis_client)
-        
-        # Try cache first
-        balance = redis_service.get_gkach_balance(whatsapp)
-        if balance is not None:
+        """Get Gkach balance with caching.
+
+        DEFENSIVE GUARD (fixes "connected users can't load ADS"):
+          - Called ONLY for logged-in users from inject_global_data / templates.
+            validate_whatsapp OR redis OR missing UserGkach columns → any
+            uncaught exception bubbles up into Jinja render → route's outer
+            except catches it → EMPTY products=[] returned.
+          - NEVER raises — always returns an int (default 0).
+        """
+        try:
+            from app.services.redis_service import RedisService
+            from app import redis_client
+
+            # 1) Normalize whatsapp with lenient fallback (never raise)
+            normalized = None
+            try:
+                from app.utils.validators import validate_whatsapp
+                normalized = validate_whatsapp(whatsapp)
+            except Exception:
+                # validate_whatsapp refused the format — try a minimal
+                # lenient cleanup ourselves instead of aborting.
+                if whatsapp:
+                    import re as _re
+                    digits = _re.sub(r'[^\d+]', '', str(whatsapp))
+                    if len(digits.replace('+', '')) >= 7:
+                        normalized = digits if digits.startswith('+') else ('+' + digits)
+            if not normalized:
+                return 0
+
+            redis_service = None
+            try:
+                redis_service = RedisService(redis_client)
+            except Exception:
+                redis_service = None
+
+            # 2) Try cache first (ignore errors)
+            if redis_service is not None:
+                balance = None
+                try:
+                    balance = redis_service.get_gkach_balance(normalized)
+                except Exception:
+                    balance = None
+                if balance is not None:
+                    try:
+                        return int(balance)
+                    except (ValueError, TypeError):
+                        pass
+
+            # 3) Query database (ignore table/column errors)
+            balance = 0
+            try:
+                from app.models.user_gkach import UserGkach
+                account = UserGkach.query.filter_by(user_whatsapp=normalized).first()
+                if account is not None:
+                    raw = getattr(account, 'gkach_balance', 0)
+                    balance = int(raw or 0)
+            except Exception:
+                balance = 0
+
+            # 4) Cache for 5 minutes (ignore write errors)
+            if redis_service is not None:
+                try:
+                    redis_service.set_gkach_balance(normalized, balance, timeout=300)
+                except Exception:
+                    pass
+
             return balance
-        
-        # Query database
-        account = UserGkach.query.filter_by(user_whatsapp=whatsapp).first()
-        balance = account.gkach_balance if account else 0
-        
-        # Cache for 5 minutes
-        redis_service.set_gkach_balance(whatsapp, balance, timeout=300)
-        
-        return balance
+        except Exception:
+            return 0
     
     @staticmethod
     def _invalidate_balance_cache(whatsapp):

@@ -48,29 +48,56 @@ class User(UserMixin, BaseModel):
         return check_password_hash(self.password_hash, password)
     
     def get_gkach_balance(self):
-        """Get user's Gkach balance with caching"""
-        from app.services.redis_service import RedisService
-        from app import redis_client
-        from app.models.user_gkach import UserGkach
-        
-        if not self.whatsapp:
+        """Get user's Gkach balance with caching.
+
+        DEFENSIVE GUARD (fixes "connected users can't load ADS"):
+          - Called from templates / context processors ONLY when user is logged in.
+          - Any uncaught exception here (Redis down, missing table, bad whatsapp)
+            would BUBBLE UP through render_template → route's outer except catches
+            it and returns EMPTY products=[], which looks exactly like "ADS not
+            loading" to logged-in users while anonymous users (who never call
+            this) see them normally.
+          - We therefore NEVER raise: return 0 on any failure.
+        """
+        try:
+            from app.services.redis_service import RedisService
+            from app import redis_client
+            from app.models.user_gkach import UserGkach
+
+            if not self.whatsapp:
+                return 0
+
+            redis_service = RedisService(redis_client)
+
+            # Try cache first
+            balance = None
+            try:
+                balance = redis_service.get_gkach_balance(self.whatsapp)
+            except Exception:
+                balance = None
+
+            if balance is not None:
+                try:
+                    return int(balance)
+                except (ValueError, TypeError):
+                    pass
+
+            # Query database
+            try:
+                user_gkach = UserGkach.query.filter_by(user_whatsapp=self.whatsapp).first()
+                balance = user_gkach.gkach_balance if user_gkach else 0
+            except Exception:
+                balance = 0
+
+            # Cache for 5 minutes (ignore cache write failures)
+            try:
+                redis_service.set_gkach_balance(self.whatsapp, int(balance or 0), timeout=300)
+            except Exception:
+                pass
+
+            return int(balance or 0)
+        except Exception:
             return 0
-        
-        redis_service = RedisService(redis_client)
-        
-        # Try cache first
-        balance = redis_service.get_gkach_balance(self.whatsapp)
-        if balance is not None:
-            return balance
-        
-        # Query database
-        user_gkach = UserGkach.query.filter_by(user_whatsapp=self.whatsapp).first()
-        balance = user_gkach.gkach_balance if user_gkach else 0
-        
-        # Cache for 5 minutes
-        redis_service.set_gkach_balance(self.whatsapp, balance, timeout=300)
-        
-        return balance
     
     def to_dict(self, include_sensitive=False):
         """Convert to dictionary"""

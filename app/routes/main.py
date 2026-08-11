@@ -352,10 +352,15 @@ def health_check():
     }
     
     try:
+        # FIX: SQLAlchemy 2.x rejects raw string SQL — must wrap in text().
+        # Before, db.session.execute('SELECT 1') ALWAYS raised ArgumentError, so
+        # /health returned 503 "database=False" even when the DB was reachable,
+        # making Render's healthCheckPath (/health) permanently "unhealthy".
+        from sqlalchemy import text
         from app import db
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
         health['database'] = True
-    except:
+    except Exception:
         health['database'] = False
         health['status'] = 'unhealthy'
     

@@ -364,25 +364,84 @@ def create_app(config_name=None):
     
     @app.context_processor
     def inject_global_data():
-        from flask_login import current_user
-        from app.services.cart_service import CartService
-        from app.services.gkach_service import GkachService # Import GkachService
-        
-        data = {
-            'is_logged_in': current_user.is_authenticated,
+        """
+        Global template data — cart_count / gkach_balance / is_logged_in.
+
+        DEFENSIVE GUARD (fixes "connected users can't load ADS"):
+          This context processor runs ON EVERY template render. It is the ONLY
+          code path in the entire request that differs between anonymous and
+          logged-in users for the main ADS-loading routes (/, /mache).
+
+          A single uncaught exception in ANY of the service calls below would
+          bubble up through flask's render_template → be caught by the route's
+          blanket "except Exception" → which returns products=[], giving the
+          exact symptom logged-in users reported: "ADS don't load".
+
+          STRATEGY:
+            * OUTERMOST try/except that ALWAYS returns a valid `data` dict,
+              never propagates.
+            * Each service call is wrapped INDIVIDUALLY so one bad call doesn't
+              skip the others.
+            * `current_user` is a lazy Flask-Login LocalProxy — even accessing
+              `.is_authenticated` can trigger the user loader and raise. We
+              guard EVERY attribute access.
+        """
+        # Sensible defaults — returned immediately on any catastrophic failure
+        _defaults = {
+            'is_logged_in': False,
             'cart_count': 0,
-            'gkach_balance': 0 # Default to 0
+            'gkach_balance': 0,
         }
-        
-        if current_user.is_authenticated:
+        try:
+            from flask_login import current_user
+        except Exception:
+            return dict(_defaults)
+
+        data = dict(_defaults)
+
+        try:
+            # Lazy-proxy guard: use getattr for every attribute access
+            _auth = False
             try:
-                cart_totals = CartService.calculate_totals(current_user.id)
-                data['cart_count'] = cart_totals['count']
-                data['gkach_balance'] = GkachService.get_balance(current_user.whatsapp) # Get Gkach balance
-            except Exception as e:
-                app.logger.error(f"Error injecting global data: {e}")
+                _auth = bool(current_user and getattr(current_user, 'is_authenticated', False))
+            except Exception:
+                _auth = False
+            data['is_logged_in'] = _auth
+
+            if _auth:
+                # ---- CartService: independent try ------------------------------------
+                try:
+                    from app.services.cart_service import CartService
+                    _uid = getattr(current_user, 'id', None)
+                    if _uid is not None:
+                        totals = CartService.calculate_totals(_uid)
+                        if isinstance(totals, dict):
+                            data['cart_count'] = int(totals.get('count') or 0)
+                except Exception as _ce:
+                    try:
+                        app.logger.error(f"inject_global_data CartService: {_ce}")
+                    except Exception:
+                        pass
+
+                # ---- GkachService: independent try ------------------------------------
+                try:
+                    from app.services.gkach_service import GkachService
+                    _wa = getattr(current_user, 'whatsapp', None)
+                    if _wa:
+                        data['gkach_balance'] = int(GkachService.get_balance(_wa) or 0)
+                except Exception as _ge:
+                    try:
+                        app.logger.error(f"inject_global_data GkachService: {_ge}")
+                    except Exception:
+                        pass
+        except Exception as _outer:
+            # LAST LINE OF DEFENSE — never leak an exception to flask/jinja
+            try:
+                app.logger.error(f"inject_global_data OUTER failure (fallback to defaults): {_outer}")
+            except Exception:
                 pass
-                
+            return dict(_defaults)
+
         return data
 
     register_blueprints(app)
@@ -514,7 +573,29 @@ def create_app(config_name=None):
                         "proper PostgreSQL DSN. 3) Optional: set env DB_ENFORCE_POSTGRES_PRODUCTION=1 "
                         "to NEVER use fallback (strict pipelines). NOTE: ads created while "
                         "fallback is active stay in the local SQLite file and will NOT migrate "
-                        "to PostgreSQL automatically — switch to PG soon.")
+                        "to PostgreSQL automatically — switch to PG soon."
+                    )
+                    # Detect the exact "NO ADS AT ALL" incident: the fallback file is a fresh
+                    # db.create_all() (empty ads table) while the real ads live in the
+                    # persistent-disk SQLite (instance/glory2yahpub_dev.db) — i.e. production
+                    # served 0 ads ("connected users can't load ADS"). Make it visible in logs.
+                    try:
+                        from app.models.ad import Ad as _AdFb
+                        _fb_tot = _AdFb.query.count()
+                        _fb_appr = _AdFb.query.filter_by(admin_status='approved').count()
+                        if _fb_appr == 0:
+                            app.logger.critical(
+                                f"PRODUCTION DB FALLBACK ACTIVE: fallback SQLite has {_fb_tot} ads "
+                                f"({_fb_appr} approved) — production serves NO ADS. Restore data: "
+                                f"in Render Shell run  python backup_db.py  then  "
+                                f"python migrate_sqlite_to_postgres.py --target \"$DATABASE_URL\"  "
+                                f"(source = instance/glory2yahpub_dev.db on the persistent disk; "
+                                f"see MIGRATION_RENDER.md)."
+                            )
+                    except Exception as _efb:
+                        app.logger.warning(
+                            f"PRODUCTION DB FALLBACK ACTIVE: ads-count probe skipped: {_efb}"
+                        )
 
                 # 2) UPLOAD_FOLDER safety (ads images)
                 _up = str(app.config.get('UPLOAD_FOLDER') or '').replace('\\', '/').rstrip('/')

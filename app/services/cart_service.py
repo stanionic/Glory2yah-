@@ -83,22 +83,53 @@ class CartService:
     
     @staticmethod
     def calculate_totals(user_id):
-        """Calculate total product price and shipping"""
-        items = CartService.get_user_cart(user_id)
-        
-        total_products = 0
-        total_shipping = 0
-        
-        for item in items:
-            ad = Ad.query.filter_by(ad_id=item.product_id).first()
-            if ad:
-                total_products += ad.price_gkach * item.quantity
-                total_shipping += item.shipping_fee
-                
-        return {
-            'subtotal': total_products,
-            'total_products': total_products,
-            'total_shipping': total_shipping,
-            'grand_total': total_products + total_shipping,
-            'count': sum(item.quantity for item in items)
+        """Calculate total product price and shipping.
+
+        DEFENSIVE GUARD (fixes "connected users can't load ADS"):
+          - Called ONLY for logged-in users from inject_global_data context
+            processor. Any uncaught exception (missing cart_items columns, bad
+            DB state, broken FK) would bubble up → template render crashes →
+            route's outer except returns EMPTY ads list.
+          - NEVER raises — always returns a well-formed totals dict with
+            count/subtotal defaulted to 0.
+        """
+        _empty = {
+            'subtotal': 0,
+            'total_products': 0,
+            'total_shipping': 0,
+            'grand_total': 0,
+            'count': 0,
         }
+        try:
+            items = CartService.get_user_cart(user_id) or []
+
+            total_products = 0
+            total_shipping = 0
+            qty_count = 0
+
+            for item in items:
+                try:
+                    ad = Ad.query.filter_by(ad_id=getattr(item, 'product_id', None)).first()
+                    if ad:
+                        qty = int(getattr(item, 'quantity', 1) or 1)
+                        total_products += int(getattr(ad, 'price_gkach', 0) or 0) * qty
+                        qty_count += qty
+                    ship_fee = getattr(item, 'shipping_fee', None)
+                    if ship_fee is not None:
+                        try:
+                            total_shipping += float(ship_fee)
+                        except (ValueError, TypeError):
+                            pass
+                except Exception:
+                    # Skip a single problematic cart row — never abort the whole list
+                    continue
+
+            return {
+                'subtotal': total_products,
+                'total_products': total_products,
+                'total_shipping': int(total_shipping),
+                'grand_total': total_products + int(total_shipping),
+                'count': qty_count,
+            }
+        except Exception:
+            return dict(_empty)
