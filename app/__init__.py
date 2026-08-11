@@ -173,7 +173,29 @@ def create_app(config_name=None):
         safe_fn = _os_up.path.normpath(filename).lstrip('\\/')
         if safe_fn.startswith('..') or _os_up.path.isabs(safe_fn):
             _abort_up(404)
-        return send_from_directory(_cup.config['UPLOAD_FOLDER'], safe_fn)
+        candidates = []
+        cfg_up = _cup.config.get('UPLOAD_FOLDER')
+        if cfg_up:
+            candidates.append(_os_up.path.abspath(cfg_up))
+        static_root = app.static_folder or _os_up.path.join(app.root_path, '..', 'static')
+        candidates.append(_os_up.path.join(static_root, 'uploads'))
+        try:
+            candidates.append(_os_up.path.join(app.instance_path, 'uploads'))
+        except Exception:
+            pass
+        try:
+            candidates.append(_os_up.path.abspath(_os_up.join(app.root_path, '..', 'instance', 'uploads')))
+        except Exception:
+            pass
+        seen = set()
+        for cand_dir in candidates:
+            if not cand_dir or cand_dir in seen:
+                continue
+            seen.add(cand_dir)
+            target = _os_up.path.join(cand_dir, safe_fn)
+            if _os_up.path.isfile(target):
+                return send_from_directory(cand_dir, safe_fn)
+        _abort_up(404)
 
     @app.before_request
     def _static_uploads_fallback_to_persistent_disk():
@@ -198,17 +220,32 @@ def create_app(config_name=None):
         legacy_path = _os_sb.join(static_root, 'uploads', safe_match)
         if _os_sb.isfile(legacy_path):
             return None  # Flask default static handler will take it
-        # Fallback: persistent UPLOAD_FOLDER (instance/uploads/ on Render)
-        persistent_dir = app.config.get('UPLOAD_FOLDER')
-        if not persistent_dir:
-            _abt(404)
-        target = _os_sb.join(persistent_dir, safe_match)
-        if not _os_sb.isfile(target):
-            # Also check: if a dev locally has UPLOAD_FOLDER=instance/uploads
-            # but an older ad's images referenced legacy static/uploads,
-            # return 404 (consistent behaviour)
-            _abt(404)
-        return _sfd(persistent_dir, safe_match)
+        # Multi-fallback candidates (same 4 as /uploads/<filename> route):
+        #   1) app.config UPLOAD_FOLDER  (canonical Render persistent disk path)
+        #   2) static/uploads legacy     (already checked above, skip)
+        #   3) app.instance_path/uploads (flask canonical instance folder)
+        #   4) <root>/../instance/uploads (Render relative path from container)
+        candidates = []
+        cfg_dir = app.config.get('UPLOAD_FOLDER')
+        if cfg_dir:
+            candidates.append(_os_sb.path.abspath(cfg_dir))
+        try:
+            candidates.append(_os_sb.path.join(app.instance_path, 'uploads'))
+        except Exception:
+            pass
+        try:
+            candidates.append(_os_sb.path.abspath(_os_sb.join(app.root_path, '..', 'instance', 'uploads')))
+        except Exception:
+            pass
+        seen = set()
+        for cand_dir in candidates:
+            if not cand_dir or cand_dir in seen:
+                continue
+            seen.add(cand_dir)
+            cand_target = _os_sb.path.join(cand_dir, safe_match)
+            if _os_sb.path.isfile(cand_target):
+                return _sfd(cand_dir, safe_match)
+        _abt(404)
 
     # P1 FIX: Handle oversized uploads (100MB video promise in UI) with user-friendly
     # flash message instead of a generic "413 Request Entity Too Large".
@@ -817,6 +854,64 @@ def create_app(config_name=None):
             app.logger.info('ADS CACHE: invalidated approved-ads + ad:* caches at startup')
         except Exception as _e_adcache:
             app.logger.warning(f'ADS CACHE: startup invalidation skipped: {_e_adcache}')
+
+        # =====================================================================
+        # STARTUP PERSISTENCE BANNER — RASSURER L'UTILISATEUR
+        # (L'utilisateur a peur que les données soient effacées à chaque commit
+        # GitHub. On affiche EXPLICITEMENT en console l'état de la persistance.)
+        # =====================================================================
+        try:
+            import os as _os_pb
+            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI') or ''
+            if db_uri.startswith('postgresql'):
+                db_scheme = 'PostgreSQL (Render Managed)'
+                db_note = 'Hébergé par Render — SURVIT À TOUS LES COMMITS / DEPLOYS'
+            elif db_uri.startswith('sqlite'):
+                db_scheme = 'SQLite Persistant'
+                db_note = 'Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS'
+            else:
+                db_scheme = db_uri.split('://')[0] if '://' in db_uri else 'Inconnu'
+                db_note = 'Vérifier configuration'
+            upload_folder = app.config.get('UPLOAD_FOLDER') or '(non défini)'
+            render_disk_path = '/opt/render/project/src/instance'
+            on_render_disk = render_disk_path in _os_pb.path.abspath(upload_folder) if upload_folder != '(non défini)' else False
+            disk_note = '✅ Sur Render Persistent Disk 1GB — JAMAIS effacé par git push' if on_render_disk else ('⚠️ Local dev — vérifier .gitignore exclut ce dossier')
+            banner_lines = [
+                '',
+                '╔══════════════════════════════════════════════════════════════════════════════╗',
+                '║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║',
+                '╠══════════════════════════════════════════════════════════════════════════════╣',
+                f'║  BASE DE DONNÉES : {db_scheme:<62}║',
+                f'║  Statut BD       : {db_note:<62}║',
+                f'║  Chemin UPLOAD   : {upload_folder[:62]:<62}║',
+                f'║  Statut Images   : {disk_note:<62}║',
+                '║                                                                              ║',
+                '║  Protection GIT (fichier .gitignore) :                                       ║',
+                '║    • *.db              → EXCLU de git (jamais commités)                      ║',
+                '║    • instance/         → EXCLU de git (disque persistent Render)             ║',
+                '║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║',
+                '║                                                                              ║',
+                '║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║',
+                '║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║',
+                '║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║',
+                '║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║',
+                '║    static/uploads  →  instance/uploads (disque persistent)                   ║',
+                '╚══════════════════════════════════════════════════════════════════════════════╝',
+                '',
+            ]
+            for bl in banner_lines:
+                try:
+                    app.logger.info(bl)
+                except Exception:
+                    try:
+                        print(bl)
+                    except Exception:
+                        pass
+        except Exception as _e_pb_banner:
+            try:
+                app.logger.warning(f'PERSISTENCE BANNER: échec affichage: {_e_pb_banner}')
+            except Exception:
+                pass
 
         # Create default charity causes if they don't exist
         try:

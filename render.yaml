@@ -14,10 +14,34 @@ services:
       # also live on the persistent disk so they are NOT wiped between deploys.
       mkdir -p instance/recordings
       mkdir -p instance/submissions
-      # Legacy upload dir (symlink target compatibility; also created for safety)
-      mkdir -p static/uploads
+      # ================================================================
+      # PERSISTENCE / IMAGE-LOADING FIX (CRITICAL):
+      #   Flask's built-in static handler serves <static_folder>/<path>.
+      #   All our templates reference uploaded media via hardcoded
+      #   "/static/uploads/<filename>" or url_for('static', filename='uploads/X').
+      #   BUT actual user uploads live on the persistent disk at
+      #   instance/uploads (UPLOAD_FOLDER env), NOT inside static/uploads
+      #   (which lives on the EPHEMERAL build container and is WIPED on
+      #   every deploy / commit).
+      #
+      # FIX: Replace the empty static/uploads directory with a SYMLINK
+      # pointing at the persistent-disk uploads folder. This makes:
+      #   (a) Flask's native static handler serve the real files correctly.
+      #   (b) The before_request fallback layer catch any remaining edge
+      #       cases (e.g. a symlink not created / broken in a new deploy).
+      #   (c) User-uploaded images survive 100% of git commits / pushes /
+      #       container rebuilds (because the *target* of the symlink is
+      #       the persistent Render disk at mountPath /opt/render/project/src/instance).
+      # ================================================================
+      rm -rf static/uploads
+      ln -sfn /opt/render/project/src/instance/uploads static/uploads
+      # Also symlink legacy session/log dirs (compatibility / debug)
       mkdir -p .flask_session
       mkdir -p logs
+      ln -sfn /opt/render/project/src/instance/.flask_session .flask_session || true
+      ln -sfn /opt/render/project/src/instance/logs logs || true
+      # Legacy upload dir (symlink target compatibility; also created for safety)
+      mkdir -p static/uploads
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --worker-class sync --timeout 120 --log-level info
     healthCheckPath: /health
     envVars:
