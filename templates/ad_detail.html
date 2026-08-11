@@ -5,11 +5,39 @@
  # {% block title %} and {% block extra_head %} see the same values.
  # Jinja's default(var, True) triggers the default on UNDEFINED AND on
  # falsy values (empty string, None, 0, etc).
+ #
+ # OPENGRAPH PREVIEW BUG — DEFENSE LAYER B (Jinja2 side).
+ # Historical bug: ad.images on legacy Redis cache hits may be a comma-
+ # separated STRING ("a.jpg,b.jpg"). Naive `og_images[0]` then becomes
+ # the FIRST CHARACTER of the string ("p") → 404 og:image URL → crawler
+ # falls back to generic site logo (title/price OK, but image WRONG —
+ # exactly what the user reported on Facebook).
+ # Layer A (AdService._repair_ad_dict_images) guarantees list form on
+ # every dict that crosses the service boundary. Layer B re-normalizes
+ # in every template so ANY ad dict handed to ANY preview template is
+ # always safe, regardless of dict provenance.
  # ===================================================================== #}
 {% set og_title = (ad.title | default('Annonce Glory2YahPub', true)) | string | truncate(120, True, '...') %}
 {% set og_desc = ((ad.description | default('', true)) | striptags | replace('\n', ' ') | truncate(200, True, '...')) %}
-{% set og_images = (ad.images if ad.images else []) %}
-{% set og_first_image = (og_images[0] if og_images else None) %}
+{% set _og_raw_images = (ad.images if ad.images else []) %}
+{% if _og_raw_images is string and _og_raw_images %}
+    {% set og_images = (_og_raw_images.split(',') | map('trim') | reject('equalto', '') | list) %}
+{% elif _og_raw_images is sequence and _og_raw_images is not mapping %}
+    {% set og_images = [] %}
+    {% for _x in _og_raw_images %}
+        {% if _x is string and _x.strip() | length >= 4 and '.' in _x %}
+            {% set _ = og_images.append(_x.strip().replace('\\', '/').lstrip('/')) %}
+        {% endif %}
+    {% endfor %}
+{% else %}
+    {% set og_images = [] %}
+{% endif %}
+{% set og_first_image = og_images[0] if og_images else None %}
+{# Last sanity: reject image names < 4 chars or without a dot — never a
+   real upload filename. This is the last guard before the og:image tags. #}
+{% if og_first_image is string and (og_first_image | length < 4 or '.' not in og_first_image) %}
+    {% set og_first_image = None %}
+{% endif %}
 {% set og_ad_type = (ad.ad_type | default('publish', true)) %}
 {% set og_type = 'product' if og_ad_type == 'sell' else 'article' %}
 {% set og_price_gkach = (ad.price_gkach | default(0, true) or 0) %}

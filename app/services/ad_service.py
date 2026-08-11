@@ -12,6 +12,95 @@ import uuid
 
 class AdService:
     """Service for Ad operations"""
+
+    # ------------------------------------------------------------------
+    # OpenGraph / Crawler preview helpers.
+    #
+    # HISTORICAL BUG CAUSE (Facebook showed generic logo instead of ad image):
+    #   - Old code stored `ad.images` as a comma-separated STRING both in
+    #     the Ad model column AND when dict-serialized into Redis cache.
+    #   - Later Ad.to_dict() was fixed to return `images` as a Python LIST
+    #     via Ad.get_images_list() (split + trim + reject empty).
+    #   - BUT Redis cache entries written BEFORE the fix STILL contain the
+    #     comma-separated STRING form. When a crawler (Facebook/WhatsApp)
+    #     hits such a stale cached dict, Jinja templates do:
+    #         og_images = ad.images          # STRING (truthy)
+    #         og_first  = og_images[0]       # "p" (FIRST CHARACTER OF STRING!)
+    #     → absolute_upload_url("p") → URL to a 404 → crawler falls back to
+    #       the site logo, producing exactly the symptom the user reported:
+    #       correct title/price but PREVIEW IMAGE = generic Glory2Yah banner.
+    #
+    # FIX STRATEGY (defense in depth, 3 layers):
+    #   (A) HERE (Python/service layer) — repair `images` on every dict that
+    #       crosses the AdService boundary (cache hits AND db to_dict()).
+    #   (B) Jinja templates — normalize STRING→LIST in share_shortlink.html
+    #       and ad_detail.html (catches any remaining dict we missed).
+    #   (C) App startup — purge all `ad:*` Redis keys via
+    #       AdService.invalidate_all_ad_caches() (one-time reset on deploy).
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_images_field(value):
+        """Take `images` in any historical shape (str, list, None, junk) and
+        always return a clean list[str] of image filenames.
+          * None / empty / junk → []
+          * str "a.jpg, b.jpg , , c.JPG" → ["a.jpg", "b.jpg", "c.JPG"]
+          * list / tuple → trimmed, non-empty, strings-only, filtered for
+            minimum plausible filename length (>= 4 chars AND contains ".").
+        """
+        import re as _re
+        _safe_ext = lambda s: (
+            isinstance(s, str)
+            and len(s.strip()) >= 4
+            and '.' in s
+            and not _re.search(r'[^\w\-\. /+@]', s)  # conservative sanity
+        )
+        if value is None:
+            return []
+        if isinstance(value, (list, tuple)):
+            out = []
+            for item in value:
+                if isinstance(item, str):
+                    s = item.strip().replace('\\', '/')
+                    if s.startswith('/'):
+                        s = s.lstrip('/')
+                    if _safe_ext(s):
+                        out.append(s)
+            return out
+        if isinstance(value, str):
+            s = value.strip()
+            if not s:
+                return []
+            parts = [p.strip() for p in s.split(',')]
+            out = []
+            for p in parts:
+                if not p:
+                    continue
+                pp = p.replace('\\', '/')
+                if pp.startswith('/'):
+                    pp = pp.lstrip('/')
+                if _safe_ext(pp):
+                    out.append(pp)
+            return out
+        # Anything else (int, dict, ...)
+        return []
+
+    @staticmethod
+    def _repair_ad_dict_images(ad_dict):
+        """Ensure the `images` key of a cached ad dict is ALWAYS a clean list.
+        Mutates & returns the dict (idempotent, safe to call repeatedly)."""
+        if not isinstance(ad_dict, dict):
+            return ad_dict
+        ad_dict['images'] = AdService._normalize_images_field(ad_dict.get('images'))
+        # Ensure extra helper fields remain sane for templates:
+        # Ad.get_first_image() equivalent on a dict (never raises).
+        try:
+            imgs = ad_dict.get('images') or []
+            first = imgs[0] if imgs else None
+            ad_dict.setdefault('first_image', first)
+        except Exception:
+            ad_dict['first_image'] = None
+        return ad_dict
     
     @staticmethod
     def create_ad(user_whatsapp, title, description, media_type, images=None, 
@@ -270,7 +359,7 @@ class AdService:
             Ad.created_at.desc()
         ).paginate(page=page, per_page=per_page, error_out=False)
         
-        return [ad.to_dict() for ad in pagination.items]
+        return [AdService._repair_ad_dict_images(ad.to_dict()) for ad in pagination.items]
     
     @staticmethod
     def get_stats():

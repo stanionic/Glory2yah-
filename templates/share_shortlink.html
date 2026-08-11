@@ -3,10 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{# ============================================================
+   # OPENGRAPH PREVIEW BUG — DEFENSE LAYER B (Jinja2 side).
+   #
+   # Historical bug: ad.images on a legacy Redis cache hit may be a
+   # comma-separated STRING ("a.jpg,b.jpg") instead of a Python list.
+   # When ad.images is a truthy STRING the naive expression:
+   #     og_first = og_images[0]
+   # becomes the FIRST CHARACTER of the string ("p"), yielding a 404
+   # og:image URL → crawler silently falls back to generic site logo.
+   #
+   # Layer A fixes this in Python (AdService._repair_ad_dict_images on
+   # every cache/db boundary). Layer B re-normalizes here in Jinja so
+   # ANY ad dict handed to ANY preview template always produces the
+   # right og:images output, regardless of dict provenance.
+   # ============================================================ #}
+{% set _og_raw_images = ad.images if ad.images else [] %}
+{% if _og_raw_images is string and _og_raw_images %}
+    {# Jinja2: split on comma, trim whitespace, drop empty entries #}
+    {% set og_images = (_og_raw_images.split(',') | map('trim') | reject('equalto', '') | list) %}
+{% elif _og_raw_images is sequence and _og_raw_images is not mapping %}
+    {% set og_images = [] %}
+    {% for _x in _og_raw_images %}
+        {% if _x is string and _x.strip() | length >= 4 and '.' in _x %}
+            {% set _ = og_images.append(_x.strip().replace('\\', '/').lstrip('/')) %}
+        {% endif %}
+    {% endfor %}
+{% else %}
+    {% set og_images = [] %}
+{% endif %}
+{% set og_first = og_images[0] if og_images else None %}
+{# Final sanity: reject any "image" shorter than 4 chars or missing '.' —
+   these can never be a real upload filename (prevents the old 1-char bug
+   from ever leaking into the meta tags). #}
+{% if og_first is string and (og_first | length < 4 or '.' not in og_first) %}
+    {% set og_first = None %}
+{% endif %}
 {% set og_title = (ad.title or 'Annonce Glory2YahPub') | string | truncate(120, True, '...') %}
 {% set og_desc = (ad.description or '') | striptags | replace('\n', ' ') | truncate(200, True, '...') %}
-{% set og_images = ad.images if ad.images else [] %}
-{% set og_first = og_images[0] if og_images else None %}
 {% set og_type = 'product' if (ad.ad_type | default('publish')) == 'sell' else 'article' %}
 {% set og_price_gkach = ad.price_gkach | default(0) %}
 {% set og_price_htg = (og_price_gkach | gkach_to_htg) if og_price_gkach else 0.0 %}
