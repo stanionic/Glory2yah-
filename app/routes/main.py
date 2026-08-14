@@ -848,6 +848,7 @@ def view_ad(ad_id):
 
 
 @main_bp.route('/submit_ad', methods=['GET', 'POST'])
+@login_required
 def submit_ad():
     """Submit a new ad/post.
 
@@ -862,18 +863,14 @@ def submit_ad():
     that match the HTML5 `required` attributes so submit never fails silently
     when someone bypasses client-side validation.
     """
-    from flask_login import login_required, current_user
     from app.services.ad_service import AdService
-    from app.utils.validators import sanitize_text, ValidationError
+    from app.utils.validators import sanitize_text, validate_url, ValidationError
     import os
     import uuid
     from flask import flash, redirect, url_for
     
     if request.method == 'POST':
         try:
-            if not current_user.is_authenticated:
-                flash('Ou dwe konekte pou soumèt yon piblisite!', 'error')
-                return redirect(url_for('auth.login'))
 
             whatsapp = current_user.whatsapp
             media_type = request.form.get('media_type', 'images')
@@ -936,7 +933,17 @@ def submit_ad():
             # Back-end required-field guards (matches the HTML5 `required`).
             if not title or not title.strip():
                 raise ValidationError('Tanpri ekri yon tit pou piblisite w la.')
-            if not description or not description.strip():
+
+            # Description guard: for media_type='url', description TEXT is optional
+            # because the external_url itself is always stored inside description
+            # (combined: URL + "\n\n" + text). So the guard only fires if:
+            #   - NOT url type AND text description empty  OR
+            #   - url type AND no external_url was provided (will be caught in url branch too but keep belt+braces)
+            _has_url_fallback = (
+                media_type == 'url' and
+                bool((request.form.get('external_url') or '').strip())
+            )
+            if (not description or not description.strip()) and not _has_url_fallback:
                 raise ValidationError('Tanpri ekri yon deskripsyon pou piblisite w la.')
             if ad_type == 'sell' and price_gkach <= 0:
                 raise ValidationError('Tanpri mete yon pri val pou piblisite sa a (VANN bezwen pri).')
@@ -948,12 +955,131 @@ def submit_ad():
                     "Ou dwe li epi aksepte Kondisyon ak Règleman anvan ou soumèt."
                 )
 
-            # Upload folder: resolve relative to instance dir robustly.
+            # Upload folders: resolve relative to instance dir robustly.
+            #
+            # THREE-LAYER PERSISTENCE (belt + suspenders + harness):
+            #   1. STAGING_UPLOAD_FOLDER  → raw bytes land here FIRST (before PostgreSQL commit)
+            #   2. UPLOAD_FOLDER (FINAL)  → moved here ONLY after the bytes are confirmed
+            #                           on disk and passed extension/size checks.
+            #                           → This is what PostgreSQL stores.
+            #   3. BACKUP_UPLOAD_FOLDER  → shutil.copy2 snapshot of the FINAL file
+            #                           → disaster-recovery mirror on the SAME disk.
             upload_folder = os.path.join(
                 current_app.root_path, '..', current_app.config['UPLOAD_FOLDER']
             )
             upload_folder = os.path.abspath(upload_folder)
             os.makedirs(upload_folder, exist_ok=True)
+            _stage_cfg = current_app.config.get('STAGING_UPLOAD_FOLDER')
+            _backup_cfg = current_app.config.get('BACKUP_UPLOAD_FOLDER')
+            staging_folder = os.path.abspath(os.path.join(
+                current_app.root_path, '..', (_stage_cfg or os.path.join('instance', 'uploads_staging'))
+            ))
+            backup_folder = os.path.abspath(os.path.join(
+                current_app.root_path, '..', (_backup_cfg or os.path.join('instance', 'uploads_backup'))
+            ))
+            try:
+                os.makedirs(staging_folder, exist_ok=True)
+            except Exception:
+                staging_folder = upload_folder  # graceful fallback
+            try:
+                os.makedirs(backup_folder, exist_ok=True)
+            except Exception:
+                backup_folder = None  # backup is optional
+
+            def _stage_and_persist_upload(file_storage, ext_expected, label='file'):
+                """Stage file in staging dir, validate bytes, move → final, copy → backup.
+
+                Returns final filename (UUID.ext).  Raises ValidationError on any I/O
+                failure so the submit is blocked and the filename never reaches
+                PostgreSQL (this way an empty / missing blob can never produce a
+                dangling 404 path in the DB)."""
+                import shutil as _shutil
+                import hashlib as _hashlib
+                if not file_storage or not file_storage.filename:
+                    raise ValidationError(f'Fichye {label} a manke.')
+                # 1) Read bytes into staging area
+                final_name = f'{uuid.uuid4().hex}.{ext_expected.lower()}'
+                stage_path = os.path.join(staging_folder, final_name)
+                # Write from start to staging (explicit seek start for safety)
+                try:
+                    file_storage.seek(0)
+                    file_storage.save(stage_path)
+                except Exception as _e_io:
+                    try:
+                        if os.path.exists(stage_path):
+                            os.unlink(stage_path)
+                    except Exception:
+                        pass
+                    raise ValidationError(
+                        f'Pa ka sovegade fichye {label} a nan zòn staging. Eseye ankò.'
+                        f' ({_e_io!r})'
+                    )
+                # 2) Validate: exists, non-zero, bytes non-empty, compute quick MD5 sanity hash
+                if not os.path.exists(stage_path):
+                    raise ValidationError(f'Fichye {label} a pa finn sovegade nan staging.')
+                stage_bytes = os.path.getsize(stage_path)
+                if stage_bytes <= 0:
+                    try:
+                        os.unlink(stage_path)
+                    except Exception:
+                        pass
+                    raise ValidationError(f'Fichye {label} a vid. Tanpri chwazi yon lòt.')
+                # Hash sanity (not for security — just to verify bytes didn't corrupt)
+                try:
+                    _h = _hashlib.md5()
+                    with open(stage_path, 'rb') as _fh_stage:
+                        while True:
+                            _c = _fh_stage.read(1024 * 1024)
+                            if not _c:
+                                break
+                            _h.update(_c)
+                    _md5_digest = _h.hexdigest()
+                except Exception:
+                    _md5_digest = ''
+                if not _md5_digest:
+                    try:
+                        os.unlink(stage_path)
+                    except Exception:
+                        pass
+                    raise ValidationError(
+                        f'Pa ka kalkile MD5 fichye {label} a — done yo kòronp.'
+                    )
+                # 3) Atomic move (same disk → rename(2) instant) from staging → final
+                final_path = os.path.join(upload_folder, final_name)
+                try:
+                    _shutil.move(stage_path, final_path)
+                except Exception as _e_move:
+                    try:
+                        if os.path.exists(stage_path) and os.path.abspath(stage_path) != os.path.abspath(final_path):
+                            try:
+                                _shutil.copy2(stage_path, final_path)
+                                try:
+                                    os.unlink(stage_path)
+                                except Exception:
+                                    pass
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    if not os.path.exists(final_path):
+                        raise ValidationError(
+                            f'Pa ka deplase fichye {label} a nan dosye final. Eseye ankò.'
+                            f' ({_e_move!r})'
+                        )
+                # 4) Backup mirror (best-effort — log only on failure, allow submit)
+                if backup_folder:
+                    try:
+                        backup_path = os.path.join(backup_folder, final_name)
+                        _shutil.copy2(final_path, backup_path)
+                    except Exception:
+                        pass  # backup is belt+suspenders, not a hard failure
+
+                _dbg_vlog('H1', f'upload persist-3l ok — {label}={final_name} bytes={stage_bytes}',
+                         {'filename': final_name, 'label': label,
+                          'bytes': stage_bytes, 'md5_prefix': _md5_digest[:8],
+                          'final_exists': os.path.exists(final_path)},
+                         location='main.py:submit_ad:stage_and_persist')
+                return final_name
 
             images = []
             video = None
@@ -966,9 +1092,7 @@ def submit_ad():
                             file.filename.rsplit('.', 1)[-1].lower()
                             if '.' in file.filename else 'jpg'
                         )
-                        filename = f'{uuid.uuid4().hex}.{ext}'
-                        dest = os.path.join(upload_folder, filename)
-                        file.save(dest)
+                        filename = _stage_and_persist_upload(file, ext, label=f'imaj{i}')
                         images.append(filename)
                 if not images:
                     raise ValidationError('Tanpri telechaje omwen yon imaj.')
@@ -993,15 +1117,45 @@ def submit_ad():
                         raise ValidationError(
                             f'Videyo a twò gwo (≈{round(video_bytes/1024/1024,1)} MB). Maksimòm otorize: {max_bytes//1024//1024} MB (100MB).'
                         )
-                    filename = f'{uuid.uuid4().hex}.{ext}'
-                    dest_path = os.path.join(upload_folder, filename)
-                    file.save(dest_path)
+                    filename = _stage_and_persist_upload(file, ext, label='videyo')
                     video = filename
                     _dbg_vlog('H1', f'video upload saved: {filename} ext={ext} bytes={video_bytes}',
-                             {'filename': filename, 'ext': ext, 'bytes': video_bytes, 'dest_exists': os.path.exists(dest_path)},
+                             {'filename': filename, 'ext': ext, 'bytes': video_bytes,
+                              'dest_exists': os.path.exists(os.path.join(upload_folder, filename))},
                              location='main.py:submit_ad:video-saved')
                 else:
                     raise ValidationError('Tanpri telechaje yon videyo.')
+
+            elif media_type == 'url':
+                external_url_raw = (request.form.get('external_url') or '').strip()
+                if not external_url_raw:
+                    raise ValidationError(
+                        'Tanpri kole lien videyo a (YouTube, TikTok, Vimeo, Facebook, Instagram Reels).'
+                    )
+                try:
+                    external_url_validated = validate_url(external_url_raw)
+                except ValidationError:
+                    raise ValidationError(
+                        'Lien videyo a pa valab. Li dwe kòmanse ak https:// oswa http:// '
+                        '(egzanp: https://youtube.com/watch?v=XYZ).'
+                    )
+                combined_description = external_url_validated
+                if description and description.strip() and description.strip().lower() != external_url_validated.lower():
+                    combined_description = external_url_validated + "\n\n" + description.strip()
+                description = combined_description
+                _dbg_vlog('H1', f'URL media validated ok len_url={len(external_url_validated)}',
+                         {'external_url': external_url_validated,
+                          'desc_len': len(description or ''),
+                          'platforms_detected': [
+                              p for p, has in (
+                                  ('youtube', 'youtube' in external_url_validated.lower() or 'youtu.be' in external_url_validated.lower()),
+                                  ('vimeo', 'vimeo' in external_url_validated.lower()),
+                                  ('tiktok', 'tiktok' in external_url_validated.lower()),
+                                  ('instagram', 'instagram' in external_url_validated.lower() or 'instagr.am' in external_url_validated.lower()),
+                                  ('facebook', 'facebook' in external_url_validated.lower() or 'fb.watch' in external_url_validated.lower()),
+                              ) if has
+                          ]},
+                         location='main.py:submit_ad:url-media-ok')
 
             ad = AdService.create_ad(
                 user_whatsapp=whatsapp,

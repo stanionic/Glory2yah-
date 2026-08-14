@@ -18,6 +18,10 @@
                     <input type="radio" name="media_type" value="video">
                     <span>1 Videyo (maks 30 segonn, 100MB)</span>
                 </label>
+                <label class="media-option">
+                    <input type="radio" name="media_type" value="url">
+                    <span>🔗 Lien Videyo (YouTube, TikTok, Vimeo, FB...)</span>
+                </label>
             </div>
         </div>
 
@@ -49,6 +53,27 @@
                 </span>
             </div>
             <small>Videyo dwe gen maksimòm 30 segonn ak 100MB. Tip aksepte: MP4, AVI, MOV, MKV, WEBM.</small>
+        </div>
+
+        <div class="form-group" id="url-section" style="display: none;">
+            <label for="external_url">Kole Lien Videyo a *</label>
+            <input type="url" id="external_url" name="external_url"
+                   placeholder="https://youtube.com/watch?v=...  oswa https://tiktok.com/@user/..."
+                   maxlength="500" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+            <small>
+                ✅ Liens aksepte: YouTube (shorts/long), TikTok, Vimeo, Facebook, Instagram Reels.
+                Videyo ap jwe otomatikman (autoplay) lè yo montre l nan Glory2YahPub.
+            </small>
+            <div id="url-preview" style="margin-top:12px;display:none;">
+                <div class="url-preview-card" style="display:flex;gap:12px;padding:10px;border:1px solid #eee;border-radius:8px;background:#fafafa;">
+                    <img id="url-preview-img" src="" alt="" style="width:140px;height:90px;object-fit:cover;border-radius:6px;background:#ddd;">
+                    <div style="flex:1;min-width:0;">
+                        <div id="url-preview-site" style="font-size:11px;color:#888;margin-bottom:4px;"></div>
+                        <div id="url-preview-title" style="font-weight:600;font-size:14px;margin-bottom:4px;overflow:hidden;"></div>
+                        <div id="url-preview-desc" style="font-size:12px;color:#666;overflow:hidden;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="form-group">
@@ -153,26 +178,96 @@ document.addEventListener('DOMContentLoaded', function() {
     const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
     const imagesSection = document.getElementById('images-section');
     const videoSection = document.getElementById('video-section');
+    const urlSection = document.getElementById('url-section');
     const image1Input = document.querySelector('input[name="image_1"]');
     const videoInput = document.querySelector('input[name="video"]');
+    const externalUrlInput = document.getElementById('external_url');
 
     function toggleMediaSection() {
         const selected = document.querySelector('input[name="media_type"]:checked').value;
         if (selected === 'images') {
             imagesSection.style.display = 'block';
             videoSection.style.display = 'none';
+            urlSection.style.display = 'none';
             image1Input.required = true;
             if (videoInput) videoInput.required = false;
-        } else {
+            if (externalUrlInput) externalUrlInput.required = false;
+        } else if (selected === 'video') {
             imagesSection.style.display = 'none';
             videoSection.style.display = 'block';
+            urlSection.style.display = 'none';
             image1Input.required = false;
             if (videoInput) videoInput.required = true;
+            if (externalUrlInput) externalUrlInput.required = false;
+        } else if (selected === 'url') {
+            imagesSection.style.display = 'none';
+            videoSection.style.display = 'none';
+            urlSection.style.display = 'block';
+            image1Input.required = false;
+            if (videoInput) videoInput.required = false;
+            if (externalUrlInput) externalUrlInput.required = true;
         }
     }
 
     mediaTypeRadios.forEach(r => r.addEventListener('change', toggleMediaSection));
     toggleMediaSection();
+
+    // ===== Live URL preview via /api/posts/preview-url =====
+    let previewTimer = null;
+    if (externalUrlInput) {
+        externalUrlInput.addEventListener('input', function() {
+            const val = (this.value || '').trim();
+            const previewBox = document.getElementById('url-preview');
+            const previewImg = document.getElementById('url-preview-img');
+            const previewSite = document.getElementById('url-preview-site');
+            const previewTitle = document.getElementById('url-preview-title');
+            const previewDesc = document.getElementById('url-preview-desc');
+
+            // Reset if empty
+            if (!val) {
+                if (previewBox) previewBox.style.display = 'none';
+                return;
+            }
+
+            // Debounce
+            if (previewTimer) clearTimeout(previewTimer);
+            previewTimer = setTimeout(() => {
+                // Quick client-side sanity: must start with http
+                if (!/^https?:\/\//i.test(val)) {
+                    if (previewBox) previewBox.style.display = 'none';
+                    return;
+                }
+                if (previewBox) previewBox.style.display = 'block';
+                if (previewSite) { previewSite.style.color = '#888'; previewSite.textContent = '🔍 Analiz link la...'; }
+                if (previewTitle) previewTitle.textContent = '';
+                if (previewDesc) previewDesc.textContent = '';
+                if (previewImg) previewImg.src = '';
+
+                fetch('/api/posts/preview-url?url=' + encodeURIComponent(val))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data || !data.success) {
+                            if (previewSite) { previewSite.style.color = '#e74c3c'; previewSite.textContent = '❌ Link la pa ka founi oswa pa valab. Men Glory2Yah ap eseye l kan menm.'; }
+                            return;
+                        }
+                        const m = data.metadata || {};
+                        if (previewSite) { previewSite.style.color = '#27ae60'; previewSite.textContent = '✅ ' + (m.site_name || 'Link valab'); }
+                        if (previewTitle) previewTitle.textContent = m.title || '';
+                        if (previewDesc) previewDesc.textContent = m.description || '';
+                        if (previewImg && m.image) {
+                            previewImg.src = m.image;
+                            previewImg.onerror = () => { previewImg.style.display = 'none'; };
+                            previewImg.style.display = 'block';
+                        } else if (previewImg) {
+                            previewImg.style.display = 'none';
+                        }
+                    })
+                    .catch(() => {
+                        if (previewSite) { previewSite.style.color = '#f39c12'; previewSite.textContent = '⚠️ Pa ka jwenn enfòmasyon link la. Men ou ka kontinye.'; }
+                    });
+            }, 500);
+        });
+    }
 
     // ===== Video upload button: show selected filename + success style =====
     const videoInputEl = document.getElementById('videoFileInput');
@@ -267,10 +362,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!img1 || !(img1.files && img1.files.length > 0)) {
                 missing.push("Imaj 1 obliigatwa");
             }
-        } else {
+        } else if (mediaType === 'video') {
             const v = document.querySelector('input[name="video"]');
             if (!v || !(v.files && v.files.length > 0)) {
                 missing.push("Videyo obliigatwa");
+            }
+        } else if (mediaType === 'url') {
+            const u = (document.getElementById('external_url') || {}).value || '';
+            const trimmedUrl = u.trim();
+            if (!trimmedUrl) {
+                missing.push("Lien videyo obliigatwa (kole link YouTube/TikTok/Vimeo/FB/IG yo)");
+            } else if (!/^https?:\/\//i.test(trimmedUrl)) {
+                missing.push("Lien videyo dwe kòmanse ak https:// oswa http://");
             }
         }
         const title = (document.getElementById('title') || {}).value || '';

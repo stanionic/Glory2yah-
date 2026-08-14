@@ -143,7 +143,7 @@
 
 .quick-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     padding: 0 30px 30px;
 }
@@ -396,6 +396,10 @@
             <a href="{{ url_for('gkach.wallet') }}" class="action-card">
                 <div class="action-icon" style="background: linear-gradient(135deg, #fef3c7, #fcd34d);">💰</div>
                 <span class="action-label">Bous</span>
+            </a>
+            <a href="{{ url_for('gkach.rewards_dashboard') }}" class="action-card">
+                <div class="action-icon" style="background: linear-gradient(135deg, #ede9fe, #8b5cf6);">🏆</div>
+                <span class="action-label">Rekonpans</span>
             </a>
             <a href="{{ url_for('delivery.my_deliveries') }}" class="action-card">
                 <div class="action-icon" style="background: linear-gradient(135deg, #dbeafe, #60a5fa);">🚚</div>

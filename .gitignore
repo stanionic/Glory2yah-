@@ -60,6 +60,13 @@ debug-*.md
 instance/
 instance/*
 !/instance/.gitkeep
+# Staging: raw uploads BEFORE committing a verified path into PostgreSQL
+# (anti-corruption belt + suspenders — never commit user media binaries)
+instance/uploads_staging/
+instance/uploads_backup/
+instance/stage_guard_*.txt
+instance/.uploads_persistent_marker.txt
+instance/.staging_integrity_*.md5
 
 # Local persistence test artifacts (not for repo)
 _test_config_persistence.py

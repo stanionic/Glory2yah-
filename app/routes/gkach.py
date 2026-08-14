@@ -32,6 +32,72 @@ def wallet():
     )
 
 
+@gkach_bp.route('/rewards/dashboard')
+@login_required
+def rewards_dashboard():
+    """Tableau de bord rekonpans itilizatè: klik pataje yo, vant, balans Gkach,
+    pwogre pou chak 100 klik pou rekonpans prochain."""
+    from app import db
+    from app.models.ad import Ad
+    from sqlalchemy import func as _sa_fn
+
+    whatsapp = current_user.whatsapp
+
+    _bc_clicks = 0
+    try:
+        from app.models.batch_click import BatchClick
+        _bc_clicks = int(
+            db.session.query(_sa_fn.count(BatchClick.id))
+            .filter(BatchClick.referrer == whatsapp)
+            .scalar() or 0
+        )
+    except Exception:
+        _bc_clicks = 0
+
+    _own_clicks = 0
+    try:
+        q = db.session.query(_sa_fn.coalesce(_sa_fn.sum(Ad.share_count), 0)).filter(Ad.user_whatsapp == whatsapp)
+        if hasattr(Ad, 'deleted_at'):
+            q = q.filter(Ad.deleted_at.is_(None))
+        _own_clicks = int(q.scalar() or 0)
+    except Exception:
+        _own_clicks = 0
+
+    total_clicks = _bc_clicks + _own_clicks
+
+    trackings = []
+    try:
+        q_ads = Ad.query.filter_by(user_whatsapp=whatsapp)
+        if hasattr(Ad, 'created_at'):
+            q_ads = q_ads.order_by(Ad.created_at.desc())
+        elif hasattr(Ad, 'ad_id'):
+            q_ads = q_ads.order_by(Ad.ad_id.desc())
+        for a in q_ads.limit(25).all():
+            trackings.append({'ad': a, 'clicks': int(a.share_count or 0), 'sales': 0,
+                              'title': a.title, 'ad_id': a.ad_id})
+    except Exception:
+        trackings = []
+
+    gkach_balance = GkachService.get_balance(whatsapp)
+    recent_txns = GkachService.get_transactions(whatsapp, limit=20)
+    total_sales = 0
+    try:
+        s = GkachService.get_transaction_summary(whatsapp)
+        if isinstance(s, dict):
+            total_sales = int((s.get('sale') or {}).get('total') or 0)
+    except Exception:
+        total_sales = 0
+
+    return render_template(
+        'reward_dashboard.html',
+        total_clicks=total_clicks,
+        total_sales=total_sales,
+        gkach_balance=gkach_balance,
+        trackings=trackings,
+        recent_txns=recent_txns,
+    )
+
+
 @gkach_bp.route('/request', methods=['GET', 'POST'])
 @login_required
 def request_gkach():
@@ -126,13 +192,35 @@ def transfer():
 @gkach_bp.route('/api/summary')
 @login_required
 def api_summary():
-    """API endpoint for earnings summary"""
+    """API endpoint for earnings summary.
+    `total_clicks` is computed LIVE from BatchClick unique referrals +
+    Ad.share_count for the user's own ads (replaces the old zero TODO)."""
+    from app import db
+    from app.models.ad import Ad
+    from sqlalchemy import func as _sa_fn2
     try:
         summary = GkachService.get_transaction_summary(current_user.whatsapp)
-        
+        whatsapp = current_user.whatsapp
+        tc = 0
+        try:
+            from app.models.batch_click import BatchClick
+            tc += int(
+                db.session.query(_sa_fn2.count(BatchClick.id))
+                .filter(BatchClick.referrer == whatsapp)
+                .scalar() or 0
+            )
+        except Exception:
+            pass
+        try:
+            q2 = db.session.query(_sa_fn2.coalesce(_sa_fn2.sum(Ad.share_count), 0)).filter(Ad.user_whatsapp == whatsapp)
+            if hasattr(Ad, 'deleted_at'):
+                q2 = q2.filter(Ad.deleted_at.is_(None))
+            tc += int(q2.scalar() or 0)
+        except Exception:
+            pass
         return jsonify({
             'success': True,
-            'total_clicks': 0,  # TODO: Implement click tracking
+            'total_clicks': int(tc or 0),
             'reward_earnings': summary.get('reward', {}).get('total', 0),
             'sales_earnings': summary.get('sale', {}).get('total', 0),
             'referral_earnings': summary.get('transfer_in', {}).get('total', 0)

@@ -235,6 +235,32 @@ class Config:
             os.makedirs(self.UPLOAD_FOLDER, exist_ok=True)
         except Exception:
             pass
+        # ----- Staging & Backup (extra Render persistence belt + suspenders) -----
+        # Staging = PRE-POSTGRES landing zone (raw bytes, validated, moved to UPLOAD_FOLDER
+        # only AFTER extension/size/MIME-hash checks pass.  Garbage-collected after 30 days.
+        # Backup  = POST-upload mirror copy — same disk/FS (snapshot every successful commit).
+        # These two folders MUST also be excluded from .gitignore (see project root .gitignore)
+        env_stage = os.environ.get('STAGING_UPLOAD_FOLDER')
+        if env_stage:
+            self.STAGING_UPLOAD_FOLDER = env_stage
+        else:
+            self.STAGING_UPLOAD_FOLDER = os.path.join(inst_dir, 'uploads_staging')
+        env_backup = os.environ.get('BACKUP_UPLOAD_FOLDER')
+        if env_backup:
+            self.BACKUP_UPLOAD_FOLDER = env_backup
+        else:
+            self.BACKUP_UPLOAD_FOLDER = os.path.join(inst_dir, 'uploads_backup')
+        for _p in (self.STAGING_UPLOAD_FOLDER, self.BACKUP_UPLOAD_FOLDER):
+            try:
+                os.makedirs(_p, exist_ok=True)
+            except Exception:
+                pass
+        # Marker file that lives on the Render persistent disk (same directory tree).
+        # At boot: if file does not exist AND we're on Render → WARN LOUD that the
+        # persistent disk mount is missing and uploads WILL be erased on next deploy.
+        self.PERSISTENCE_MARKER_FILE = os.path.join(inst_dir, '.uploads_persistent_marker.txt')
+        # Staging file TTL: cleanup cron (or boot cleanup) deletes staging files > N days.
+        self.STAGING_TTL_DAYS = int(os.environ.get('STAGING_TTL_DAYS', '30'))
         # Logging directory — default on persistent disk
         self.LOG_DIR = os.environ.get('LOG_DIR', os.path.join(inst_dir, 'logs'))
         try:

@@ -39,6 +39,42 @@
 {% if og_first is string and (og_first | length < 4 or '.' not in og_first) %}
     {% set og_first = None %}
 {% endif %}
+{# ============= OG VIDEO TAGS (Facebook inline player) =============
+   Same detection rules as ad_detail.html — share_shortlink.html is
+   the one Facebook's crawler hits FIRST (because social shares use
+   /s/<short_id>) so these og:video tags are the MOST critical for
+   inline autoplay in FB/WA feeds.
+   ==================================================================== #}
+{% set _og_media_type = (ad.media_type | default('images', true)) %}
+{% set _og_v = None %}
+{% set _og_vtype = None %}
+{% set _og_vw = 1280 %}
+{% set _og_vh = 720 %}
+{% set _og_vf = (ad.video if ad else None) %}
+{% if _og_vf is string and _og_vf | length > 4 and '.' in _og_vf %}
+    {% set _og_v = absolute_upload_url(_og_vf) %}
+    {% set _x = _og_vf.rsplit('.', 1) | last | lower | string %}
+    {% if _x in ['mp4','m4v'] %}{% set _og_vtype = 'video/mp4' %}
+    {% elif _x == 'webm' %}{% set _og_vtype = 'video/webm' %}
+    {% else %}{% set _og_vtype = 'video/mp4' %}{% endif %}
+{% elif _og_media_type == 'url' %}
+    {% set _dict_emb = ad.embed_url if ad else None %}
+    {% if _dict_emb is string and _dict_emb | length > 10 %}
+        {% set _og_v = _dict_emb %}
+    {% else %}
+        {% set _desc = (ad.description if ad else '') | string | trim %}
+        {% if _desc | length > 10 %}
+            {% set _og_v = _desc | get_embed_url | string %}
+            {% if _og_v | length < 8 %}{% set _og_v = None %}{% endif %}
+        {% endif %}
+    {% endif %}
+    {% if _og_v is string and _og_v | length > 10 %}
+        {% set _og_vtype = 'text/html' %}
+        {% if 'tiktok' in _og_v | lower or 'instagram' in _og_v | lower %}
+            {% set _og_vw = 1080 %}{% set _og_vh = 1920 %}
+        {% endif %}
+    {% endif %}
+{% endif %}
 {% set og_title = (ad.title or 'Annonce Glory2YahPub') | string | truncate(120, True, '...') %}
 {% set og_desc = (ad.description or '') | striptags | replace('\n', ' ') | truncate(200, True, '...') %}
 {% set og_type = 'product' if (ad.ad_type | default('publish')) == 'sell' else 'article' %}
@@ -86,6 +122,21 @@
 {% for img in og_images[1:5] %}
 <meta property="og:image" content="{{ absolute_upload_url(img) }}">
 {% endfor %}
+{# ---- OG VIDEO: Facebook inline video player (for videos uploaded or URL-type) ---- #}
+{% if _og_v is string and _og_v | length > 10 and _og_vtype is string %}
+<meta property="og:video" content="{{ _og_v }}">
+<meta property="og:video:secure_url" content="{{ _og_v }}">
+<meta property="og:video:type" content="{{ _og_vtype }}">
+<meta property="og:video:width" content="{{ _og_vw }}">
+<meta property="og:video:height" content="{{ _og_vh }}">
+<meta property="og:video:alt" content="{{ og_title }}">
+{% if _og_vtype == 'text/html' %}
+<meta property="og:video:url" content="{{ _og_v }}">
+<meta property="og:video:iframe" content="{{ _og_v }}">
+{% endif %}
+{% endif %}
+<meta property="og:locale:alternate" content="ht_HT">
+<meta property="fb:app_id" content="">
 {# ---- Twitter / X summary_large_image ---- #}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@Glory2YahPub">

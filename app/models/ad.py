@@ -96,23 +96,125 @@ class Ad(BaseModel):
         redis_service.cache_delete(f"ad:{self.ad_id}")
     
     def to_dict(self):
-        """Convert to dictionary"""
+        """Convert to dictionary.
+
+        embed_url generator supports:
+          • YouTube (watch/shorts/embed/youtu.be/live/m/music/nocookie)
+          • Vimeo  (player.vimeo.com with autoplay+muted+loop)
+          • TikTok (www/@user/video/ID, vm.tiktok.com/SHORT via embed/v2)
+          • Instagram (reel/reels/p/tv/{CODE})
+          • Facebook / fb.watch / Meta Watch / video.php / groups posts
+
+        All embeds include autoplay=1 + mute=1 + playsinline=1 + loop=1 so
+        mobile browsers honor autoplay in viewport (cross-origin iframes
+        refuse autoplay unless BOTH the iframe src opts-in AND the allow
+        attribute has 'autoplay').
+        """
         import re
+        import urllib.parse as _urlp
         url = self.description.strip() if self.media_type == 'url' else None
         video_id = None
         embed_url = None
         if url:
-            youtube_regex = r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
-            youtube_match = re.search(youtube_regex, url)
-            if youtube_match:
-                video_id = youtube_match.group(1)
-                embed_url = f'https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1'
-            else:
-                vimeo_regex = r'(?:vimeo\.com\/)([0-9]+)'
-                vimeo_match = re.search(vimeo_regex, url)
-                if vimeo_match:
-                    video_id = vimeo_match.group(1)
-                    embed_url = f'https://player.vimeo.com/video/{video_id}?autoplay=1&muted=1'
+            # ----- YouTube (all variants) -----
+            yt_re = (
+                r'(?:(?:https?:)?//)?'
+                r'(?:www\.|m\.|music\.)?'
+                r'(?:youtube(?:-nocookie)?\.com/'
+                r'(?:watch\?(?:.*?&)?v=|shorts/|embed/|live/|v/)'
+                r'|youtu\.be/)'
+                r'([A-Za-z0-9_-]{11})'
+            )
+            m = re.search(yt_re, url)
+            if m:
+                vid = m.group(1)
+                video_id = vid
+                params = {
+                    'autoplay': '1', 'mute': '1', 'playsinline': '1',
+                    'rel': '0', 'enablejsapi': '1', 'modestbranding': '1',
+                    'loop': '1', 'playlist': vid, 'hl': 'ht', 'cc_lang_pref': 'ht'
+                }
+                qs = _urlp.urlencode(params, safe='', quote_via=_urlp.quote)
+                embed_url = f'https://www.youtube-nocookie.com/embed/{vid}?{qs}'
+
+            # ----- Vimeo -----
+            if not embed_url:
+                vm_re = r'(?:https?:)?//(?:www\.)?vimeo\.com/(?:video/)?(\d+)'
+                mv = re.search(vm_re, url)
+                if mv:
+                    vid = mv.group(1)
+                    video_id = vid
+                    params = {
+                        'autoplay': '1', 'muted': '1', 'playsinline': '1',
+                        'loop': '1', 'title': '0', 'byline': '0', 'portrait': '0',
+                        'speed': '0', 'transparent': '0', 'background': '0'
+                    }
+                    qs = _urlp.urlencode(params)
+                    embed_url = f'https://player.vimeo.com/video/{vid}?{qs}'
+
+            # ----- TikTok (full URL /video/<id> OR vm.tiktok.com/SHORT) -----
+            if not embed_url:
+                tt_re = (
+                    r'(?:https?:)?//(?:www\.)?tiktok\.com/'
+                    r'(?:@[\w.]+/video|v)/([0-9A-Za-z]{8,25})'
+                )
+                mt = re.search(tt_re, url)
+                if mt:
+                    vid = mt.group(1)
+                    video_id = vid
+                    params = {'autoplay': '1', 'muted': 'true', 'playsinline': '1',
+                              'loop': '1', 'controls': '1', 'enablejsapi': '1'}
+                    qs = _urlp.urlencode(params)
+                    embed_url = f'https://www.tiktok.com/embed/v2/{vid}?{qs}'
+                else:
+                    tt_short = r'(?:https?:)?//vm\.tiktok\.com/([A-Za-z0-9]{3,16})'
+                    mts = re.search(tt_short, url)
+                    if mts:
+                        sc = mts.group(1)
+                        video_id = sc
+                        params = {'autoplay': '1', 'muted': 'true', 'playsinline': '1',
+                                  'loop': '1', 'controls': '1', 'enablejsapi': '1'}
+                        qs = _urlp.urlencode(params)
+                        embed_url = f'https://www.tiktok.com/embed/v2/{sc}?{qs}'
+
+            # ----- Instagram: reels/ p/ tv/ -----
+            if not embed_url:
+                ig_re = (
+                    r'(?:https?:)?//(?:www\.)?instagram\.com/'
+                    r'(reel|reels|p|tv)/([A-Za-z0-9_-]{5,})'
+                )
+                mi = re.search(ig_re, url)
+                if mi:
+                    kind = mi.group(1)
+                    code = mi.group(2)
+                    video_id = code
+                    embed_url = (
+                        f'https://www.instagram.com/{kind}/{code}/embed/'
+                        f'?autoplay=1&mute=1&loop=1&playsinline=1&v=2'
+                    )
+
+            # ----- Facebook / Meta: watch/ video.php groups share fb.watch -----
+            if not embed_url:
+                fb_re = (
+                    r'(?:https?:)?//(?:www\.|m\.|business\.)?'
+                    r'(?:facebook|fb)\.com/'
+                    r'(?:watch/?\?v=|video\.php\?v=|'
+                    r'(?:[\w.%-]+/)?videos/|groups/[\w.%-]+/posts/|share/[vr]/|reel/|'
+                    r'story\.php\?story_fbid=)'
+                    r'(\d{5,})'
+                )
+                mf = re.search(fb_re, url)
+                if mf:
+                    vid = mf.group(1)
+                    video_id = vid
+                    fb_src = _urlp.quote(url, safe='')
+                    params = {
+                        'href': fb_src, 'show_captions': 'false',
+                        'allowfullscreen': 'true', 'autoplay': '1', 'mute': '1',
+                        'playsinline': '1', 'loop': '1'
+                    }
+                    qs = _urlp.urlencode(params)
+                    embed_url = f'https://www.facebook.com/plugins/video.php?{qs}'
         return {
             'id': self.id,
             'ad_id': self.ad_id,

@@ -38,8 +38,62 @@
 {% if og_first_image is string and (og_first_image | length < 4 or '.' not in og_first_image) %}
     {% set og_first_image = None %}
 {% endif %}
-{% set og_ad_type = (ad.ad_type | default('publish', true)) %}
-{% set og_type = 'product' if og_ad_type == 'sell' else 'article' %}
+{% set og_ad_type = (ad.media_type | default('images', true)) %}
+{# ---- OG VIDEO DETECTION for Facebook embed player in news feed ----
+   Without og:video:* tags Facebook will NOT render an inline player —
+   users only see the thumbnail image.  With og:video they tap the PLAY
+   ▶ button directly inside the FB/WA/Discord feed card.
+   Three sources supported:
+     (a) media_type='video' → an uploaded MP4/WEBM file on our server
+     (b) media_type='url'   → an embed URL computed via Ad.to_dict()
+         (youtube-nocookie, Vimeo player, TikTok embed v2, IG embed, FB plugins)
+     (c) fallback:  ad dict carries a precomputed 'embed_url' key (from cache)
+#}
+{% set og_has_video = False %}
+{% set og_video_url = None %}
+{% set og_video_type = None %}
+{% set og_video_w = 1280 %}
+{% set og_video_h = 720 %}
+{% set og_uploaded_video_filename = (ad.video if ad else None) %}
+{% if og_uploaded_video_filename is string and og_uploaded_video_filename | length > 4 and '.' in og_uploaded_video_filename %}
+    {% set og_video_url = absolute_upload_url(og_uploaded_video_filename) %}
+    {% set _ext = og_uploaded_video_filename.rsplit('.', 1) | last | lower | string %}
+    {% if _ext in ['mp4','m4v'] %}
+        {% set og_video_type = 'video/mp4' %}
+    {% elif _ext in ['webm'] %}
+        {% set og_video_type = 'video/webm' %}
+    {% elif _ext in ['mov','avi','mkv'] %}
+        {% set og_video_type = 'video/quicktime' %}
+    {% else %}
+        {% set og_video_type = 'video/mp4' %}
+    {% endif %}
+    {% set og_has_video = True %}
+{% elif og_ad_type == 'url' %}
+    {# Compute via to_dict() results, then fall back to Jinja get_embed_url filter. #}
+    {% set dict_embed = ad.embed_url if ad else None %}
+    {% if dict_embed is string and dict_embed | length > 10 %}
+        {% set og_video_url = dict_embed %}
+    {% else %}
+        {% set raw_desc = (ad.description if ad else '') | string | trim %}
+        {% if raw_desc | length > 10 %}
+            {% set og_video_url = raw_desc | get_embed_url | string %}
+            {# get_embed_url returns '' when platform is unsupported — keep as None then #}
+            {% if og_video_url | length < 8 %}
+                {% set og_video_url = None %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+    {% if og_video_url is string and og_video_url | length > 10 %}
+        {# Iframe embeds (YT/TikTok/IG/Vimeo/FB) → MIME = text/html #}
+        {% set og_video_type = 'text/html' %}
+        {% set og_has_video = True %}
+        {% if 'tiktok' in og_video_url | lower or 'instagram' in og_video_url | lower %}
+            {% set og_video_w = 1080 %}
+            {% set og_video_h = 1920 %} {# portrait 9:16 short-form video #}
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% set og_type = 'product' if (ad.ad_type | default('publish')) == 'sell' else 'article' %}
 {% set og_price_gkach = (ad.price_gkach | default(0, true) or 0) %}
 {% set og_price_htg = ((og_price_gkach | gkach_to_htg) if og_price_gkach else 0.0) %}
 {% set og_price_display = (og_price_htg | format_htg) %}
@@ -93,6 +147,24 @@
 {% for img in og_images[1:5] %}
 <meta property="og:image" content="{{ absolute_upload_url(img) }}">
 {% endfor %}
+{# ---- OPENGRAPH VIDEO (Facebook/WA inline player) — ONLY if we detected video above ---- #}
+{% if og_has_video and og_video_url is string and og_video_url | length > 10 %}
+<meta property="og:video" content="{{ og_video_url }}">
+<meta property="og:video:secure_url" content="{{ og_video_url }}">
+<meta property="og:video:type" content="{{ og_video_type }}">
+<meta property="og:video:width" content="{{ og_video_w }}">
+<meta property="og:video:height" content="{{ og_video_h }}">
+<meta property="og:video:alt" content="{{ og_title }}">
+{% if og_video_type == 'text/html' %}
+{# og:video tag for iframe embeds needs og:video:iframe — FB often needs both #}
+<meta property="og:video:url" content="{{ og_video_url }}">
+<meta property="og:video:iframe" content="{{ og_video_url }}">
+{% endif %}
+{% endif %}
+{# ---- Locale: primary fr_HT, alternate ht_HT (Créole Haïtien IETF tag) #}
+<meta property="og:locale:alternate" content="ht_HT">
+{# ---- Facebook App-ID placeholder (FB sharing docs recommend presence; empty keeps it SEO-safe) #}
+<meta property="fb:app_id" content="">
 {# ---- Twitter / X card (summary_large_image) --------------- #}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@Glory2YahPub">

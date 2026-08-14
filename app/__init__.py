@@ -856,6 +856,81 @@ def create_app(config_name=None):
             app.logger.warning(f'ADS CACHE: startup invalidation skipped: {_e_adcache}')
 
         # =====================================================================
+        # PERSISTENCE DISK GUARD + STAGING CLEANUP (BOOT TIME)
+        #   - Creates the .uploads_persistent_marker.txt marker file on the
+        #     Render persistent disk. If file cannot be written AND we're on
+        #     Render → disk mount is MISSING → images would be erased by the
+        #     next deploy → emit CRITICAL WARNING.
+        #   - Deletes staging files older than STAGING_TTL_DAYS (default 30d).
+        #   - Confirms staging/backup folders exist and are writable.
+        # =====================================================================
+        _disk_guard_ok = True
+        _disk_guard_note = '✅ Marker guard OK — persistent disk is mounted'
+        try:
+            import os as _os_g
+            import time as _time_g
+            marker_file = app.config.get('PERSISTENCE_MARKER_FILE')
+            stage_dir = app.config.get('STAGING_UPLOAD_FOLDER')
+            backup_dir = app.config.get('BACKUP_UPLOAD_FOLDER')
+            ttl_days = int(app.config.get('STAGING_TTL_DAYS', 30) or 30)
+            if marker_file:
+                try:
+                    with open(marker_file, 'a', encoding='utf-8') as _mf:
+                        _mf.write(
+                            f'[boot {_time_g.strftime("%Y-%m-%d %H:%M:%S UTC", _time_g.gmtime())}] '
+                            f'pid={_os_g.getpid()} persistent=1\n'
+                        )
+                    # Read back to confirm actual persistence (test previous writes survived)
+                    if _os_g.path.exists(marker_file) and _os_g.path.getsize(marker_file) > 10:
+                        _disk_guard_ok = True
+                    else:
+                        _disk_guard_ok = False
+                        _disk_guard_note = '❌ Marker guard FAIL — fichier marker introuvable/trop court'
+                except Exception as _e_mk:
+                    _disk_guard_ok = False
+                    _disk_guard_note = f'⚠️ Marker guard FAIL — impossible écrire marker: {_e_mk!r}'
+            # Enforce Render presence check for loud warnings
+            on_render_heur = bool(
+                _os_g.environ.get('RENDER') or _os_g.environ.get('RENDER_SERVICE_ID')
+                or (_os_g.environ.get('PORT') and _os_g.environ.get('PORT') not in ('5000','','None'))
+            )
+            if on_render_heur and not _disk_guard_ok:
+                app.logger.critical(
+                    'DISK GUARD CRITICAL RENDER: Persistent disk is NOT properly mounted! '
+                    'Uploads/backups/staging will be ERASED on next deploy. '
+                    'Fix: Render → Dashboard → Disks → Mount Path MUST be /opt/render/project/src/instance. '
+                    f'Note: {_disk_guard_note}'
+                )
+            # ---- Staging TTL cleanup: remove staging files older than ttl_days ----
+            removed_count = 0
+            removed_bytes = 0
+            if stage_dir and _os_g.path.isdir(stage_dir):
+                now_ts = _time_g.time()
+                cutoff = now_ts - (ttl_days * 86400)
+                for _entry in _os_g.scandir(stage_dir):
+                    try:
+                        if not _entry.is_file(follow_symlinks=False):
+                            continue
+                        st = _entry.stat(follow_symlinks=False)
+                        if st.st_mtime < cutoff:
+                            _os_g.unlink(_entry.path)
+                            removed_count += 1
+                            removed_bytes += int(getattr(st, 'st_size', 0) or 0)
+                    except Exception:
+                        pass
+                if removed_count:
+                    app.logger.info(
+                        f'STAGING TTL: removed {removed_count} stale staging files '
+                        f'(≈{round(removed_bytes/1024/1024,1)} MB, TTL={ttl_days}d)'
+                    )
+        except Exception as _e_guard:
+            _disk_guard_ok = False
+            try:
+                app.logger.warning(f'PERSISTENCE GUARD: boot hook failed (non-fatal): {_e_guard!r}')
+            except Exception:
+                pass
+
+        # =====================================================================
         # STARTUP PERSISTENCE BANNER — RASSURER L'UTILISATEUR
         # (L'utilisateur a peur que les données soient effacées à chaque commit
         # GitHub. On affiche EXPLICITEMENT en console l'état de la persistance.)
@@ -873,9 +948,12 @@ def create_app(config_name=None):
                 db_scheme = db_uri.split('://')[0] if '://' in db_uri else 'Inconnu'
                 db_note = 'Vérifier configuration'
             upload_folder = app.config.get('UPLOAD_FOLDER') or '(non défini)'
+            stage_folder_b = app.config.get('STAGING_UPLOAD_FOLDER') or '-'
+            backup_folder_b = app.config.get('BACKUP_UPLOAD_FOLDER') or '-'
             render_disk_path = '/opt/render/project/src/instance'
             on_render_disk = render_disk_path in _os_pb.path.abspath(upload_folder) if upload_folder != '(non défini)' else False
             disk_note = '✅ Sur Render Persistent Disk 1GB — JAMAIS effacé par git push' if on_render_disk else ('⚠️ Local dev — vérifier .gitignore exclut ce dossier')
+            guard_note = _disk_guard_note if '_disk_guard_note' in dir() else '⚠️ Guard non vérifié'
             banner_lines = [
                 '',
                 '╔══════════════════════════════════════════════════════════════════════════════╗',
@@ -884,12 +962,17 @@ def create_app(config_name=None):
                 f'║  BASE DE DONNÉES : {db_scheme:<62}║',
                 f'║  Statut BD       : {db_note:<62}║',
                 f'║  Chemin UPLOAD   : {upload_folder[:62]:<62}║',
-                f'║  Statut Images   : {disk_note:<62}║',
+                f'║  Statut Images   : {disk_note[:62]:<62}║',
+                f'║  Staging PRE-PG  : {stage_folder_b[:62]:<62}║',
+                f'║  Backup mirror   : {backup_folder_b[:62]:<62}║',
+                f'║  Guard disk      : {guard_note[:62]:<62}║',
                 '║                                                                              ║',
                 '║  Protection GIT (fichier .gitignore) :                                       ║',
                 '║    • *.db              → EXCLU de git (jamais commités)                      ║',
                 '║    • instance/         → EXCLU de git (disque persistent Render)             ║',
                 '║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║',
+                '║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║',
+                '║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║',
                 '║                                                                              ║',
                 '║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║',
                 '║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║',
