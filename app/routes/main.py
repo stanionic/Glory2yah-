@@ -955,28 +955,43 @@ def submit_ad():
                     "Ou dwe li epi aksepte Kondisyon ak Règleman anvan ou soumèt."
                 )
 
-            # Upload folders: resolve relative to instance dir robustly.
+            # Upload folders: resolve robustly.
             #
-            # THREE-LAYER PERSISTENCE (belt + suspenders + harness):
-            #   1. STAGING_UPLOAD_FOLDER  → raw bytes land here FIRST (before PostgreSQL commit)
-            #   2. UPLOAD_FOLDER (FINAL)  → moved here ONLY after the bytes are confirmed
-            #                           on disk and passed extension/size checks.
-            #                           → This is what PostgreSQL stores.
-            #   3. BACKUP_UPLOAD_FOLDER  → shutil.copy2 snapshot of the FINAL file
-            #                           → disaster-recovery mirror on the SAME disk.
-            upload_folder = os.path.join(
-                current_app.root_path, '..', current_app.config['UPLOAD_FOLDER']
-            )
-            upload_folder = os.path.abspath(upload_folder)
-            os.makedirs(upload_folder, exist_ok=True)
-            _stage_cfg = current_app.config.get('STAGING_UPLOAD_FOLDER')
-            _backup_cfg = current_app.config.get('BACKUP_UPLOAD_FOLDER')
-            staging_folder = os.path.abspath(os.path.join(
-                current_app.root_path, '..', (_stage_cfg or os.path.join('instance', 'uploads_staging'))
-            ))
-            backup_folder = os.path.abspath(os.path.join(
-                current_app.root_path, '..', (_backup_cfg or os.path.join('instance', 'uploads_backup'))
-            ))
+            # THREE-LAYER PERSISTENCE (belt + suspenders + harness),
+            # **ULTRA-FAST + ULTRA-GRACEFUL**:
+            #   1. STAGING_UPLOAD_FOLDER → raw bytes land here FIRST
+            #   2. UPLOAD_FOLDER (FINAL) → moved here AFTER checks (what PostgreSQL stores)
+            #   3. BACKUP_UPLOAD_FOLDER → shutil.copy2 mirror (background thread for big files)
+            #
+            # PERFORMANCE FIX vs earlier version:
+            #   - MD5 is computed INLINE WHILE writing staging bytes
+            #     (NO SECOND FULL RE-READ OF 21MB+ VIDEOS on slow Render disk)
+            #   - Paths: DON'T re-join with root_path/.. when config path IS ALREADY ABSOLUTE
+            #     (that double-join was harmless but wasteful + wrong for Windows abs paths)
+            #   - Backup on files > 5 MB: runs in a background daemon thread so the
+            #     HTTP response does NOT wait on a second 21MB copy on slow Render disk
+            #     (this alone was a primary cause of Render 30s → ERR_CONNECTION_ABORTED).
+            #   - **FALLBACK CHAIN**: ANY exception in staging/backup layers →
+            #     we fall back to the DIRECT classic file.save(UPLOAD_FOLDER) path.
+            #     We NEVER let persistence infra crash a user upload.
+
+            def _resolve_upload_dir(key_env, fallback_rel):
+                raw = current_app.config.get(key_env)
+                if raw and os.path.isabs(raw):
+                    return os.path.abspath(raw)
+                # env-var overridden explicitly, or relative path — resolve vs project root
+                candidate = raw or fallback_rel
+                if os.path.isabs(candidate):
+                    return os.path.abspath(candidate)
+                return os.path.abspath(os.path.join(current_app.root_path, '..', candidate))
+
+            upload_folder = _resolve_upload_dir('UPLOAD_FOLDER', os.path.join('static', 'uploads'))
+            staging_folder = _resolve_upload_dir('STAGING_UPLOAD_FOLDER', os.path.join('instance', 'uploads_staging'))
+            backup_folder = _resolve_upload_dir('BACKUP_UPLOAD_FOLDER', os.path.join('instance', 'uploads_backup'))
+            try:
+                os.makedirs(upload_folder, exist_ok=True)
+            except Exception:
+                pass
             try:
                 os.makedirs(staging_folder, exist_ok=True)
             except Exception:
@@ -986,100 +1001,150 @@ def submit_ad():
             except Exception:
                 backup_folder = None  # backup is optional
 
-            def _stage_and_persist_upload(file_storage, ext_expected, label='file'):
-                """Stage file in staging dir, validate bytes, move → final, copy → backup.
+            import threading as _thr
 
-                Returns final filename (UUID.ext).  Raises ValidationError on any I/O
-                failure so the submit is blocked and the filename never reaches
-                PostgreSQL (this way an empty / missing blob can never produce a
-                dangling 404 path in the DB)."""
+            def _bg_backup_copy(src_path, dst_path):
+                """Daemon-thread backup so Render HTTP 30s timeout is not hit."""
+                try:
+                    import shutil as _shutil_bg
+                    _shutil_bg.copy2(src_path, dst_path)
+                except Exception:
+                    pass  # backup is best-effort
+
+            def _stage_and_persist_upload(file_storage, ext_expected, label='file'):
+                """Stage file, inline MD5 while saving, move → final, backup in bg if large.
+
+                **Guaranteed to never raise a non-ValidationError that would crash the upload**.
+                On ANY I/O / disk failure → falls back to the classic direct save into
+                upload_folder (the pre-persistence behaviour)."""
                 import shutil as _shutil
                 import hashlib as _hashlib
                 if not file_storage or not file_storage.filename:
                     raise ValidationError(f'Fichye {label} a manke.')
-                # 1) Read bytes into staging area
+
                 final_name = f'{uuid.uuid4().hex}.{ext_expected.lower()}'
-                stage_path = os.path.join(staging_folder, final_name)
-                # Write from start to staging (explicit seek start for safety)
-                try:
-                    file_storage.seek(0)
-                    file_storage.save(stage_path)
-                except Exception as _e_io:
-                    try:
-                        if os.path.exists(stage_path):
-                            os.unlink(stage_path)
-                    except Exception:
-                        pass
-                    raise ValidationError(
-                        f'Pa ka sovegade fichye {label} a nan zòn staging. Eseye ankò.'
-                        f' ({_e_io!r})'
-                    )
-                # 2) Validate: exists, non-zero, bytes non-empty, compute quick MD5 sanity hash
-                if not os.path.exists(stage_path):
-                    raise ValidationError(f'Fichye {label} a pa finn sovegade nan staging.')
-                stage_bytes = os.path.getsize(stage_path)
-                if stage_bytes <= 0:
-                    try:
-                        os.unlink(stage_path)
-                    except Exception:
-                        pass
-                    raise ValidationError(f'Fichye {label} a vid. Tanpri chwazi yon lòt.')
-                # Hash sanity (not for security — just to verify bytes didn't corrupt)
-                try:
-                    _h = _hashlib.md5()
-                    with open(stage_path, 'rb') as _fh_stage:
-                        while True:
-                            _c = _fh_stage.read(1024 * 1024)
-                            if not _c:
-                                break
-                            _h.update(_c)
-                    _md5_digest = _h.hexdigest()
-                except Exception:
-                    _md5_digest = ''
-                if not _md5_digest:
-                    try:
-                        os.unlink(stage_path)
-                    except Exception:
-                        pass
-                    raise ValidationError(
-                        f'Pa ka kalkile MD5 fichye {label} a — done yo kòronp.'
-                    )
-                # 3) Atomic move (same disk → rename(2) instant) from staging → final
                 final_path = os.path.join(upload_folder, final_name)
+
+                # ============ FAST PATH 1) — stream + inline MD5 = 1 pass over the bytes ============
                 try:
-                    _shutil.move(stage_path, final_path)
-                except Exception as _e_move:
+                    stage_path = os.path.join(staging_folder, final_name)
+                    _h = _hashlib.md5()
+                    _total_written = 0
                     try:
-                        if os.path.exists(stage_path) and os.path.abspath(stage_path) != os.path.abspath(final_path):
-                            try:
-                                _shutil.copy2(stage_path, final_path)
+                        file_storage.seek(0)
+                    except Exception:
+                        pass
+                    with open(stage_path, 'wb') as _sfh:
+                        while True:
+                            _chunk = file_storage.read(1024 * 1024)  # 1 MB chunks, streamed
+                            if not _chunk:
+                                break
+                            _sfh.write(_chunk)
+                            _h.update(_chunk)
+                            _total_written += len(_chunk)
+                    _md5_digest = _h.hexdigest()
+                    stage_bytes = _total_written
+
+                    if stage_bytes <= 0:
+                        try:
+                            os.unlink(stage_path)
+                        except Exception:
+                            pass
+                        raise ValidationError(f'Fichye {label} a vid. Tanpri chwazi yon lòt.')
+                    if not _md5_digest:
+                        try:
+                            os.unlink(stage_path)
+                        except Exception:
+                            pass
+                        raise ValidationError(
+                            f'Pa ka kalkile MD5 fichye {label} a — done yo kòronp.'
+                        )
+
+                    # ============ 2) move staging → final (atomic on same FS / disk Render) ============
+                    try:
+                        _shutil.move(stage_path, final_path)
+                    except Exception as _e_move:
+                        try:
+                            if (
+                                os.path.exists(stage_path)
+                                and os.path.abspath(stage_path) != os.path.abspath(final_path)
+                            ):
                                 try:
-                                    os.unlink(stage_path)
+                                    _shutil.copy2(stage_path, final_path)
+                                    try:
+                                        os.unlink(stage_path)
+                                    except Exception:
+                                        pass
                                 except Exception:
                                     pass
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
-                    if not os.path.exists(final_path):
-                        raise ValidationError(
-                            f'Pa ka deplase fichye {label} a nan dosye final. Eseye ankò.'
-                            f' ({_e_move!r})'
-                        )
-                # 4) Backup mirror (best-effort — log only on failure, allow submit)
-                if backup_folder:
-                    try:
-                        backup_path = os.path.join(backup_folder, final_name)
-                        _shutil.copy2(final_path, backup_path)
-                    except Exception:
-                        pass  # backup is belt+suspenders, not a hard failure
+                        except Exception:
+                            pass
+                        if not os.path.exists(final_path):
+                            raise ValidationError(
+                                f'Pa ka deplase fichye {label} a nan dosye final. Eseye ankò.'
+                                f' ({_e_move!r})'
+                            )
 
-                _dbg_vlog('H1', f'upload persist-3l ok — {label}={final_name} bytes={stage_bytes}',
-                         {'filename': final_name, 'label': label,
-                          'bytes': stage_bytes, 'md5_prefix': _md5_digest[:8],
-                          'final_exists': os.path.exists(final_path)},
-                         location='main.py:submit_ad:stage_and_persist')
-                return final_name
+                    # ============ 3) Backup mirror — bg thread for > 5 MB, else inline ============
+                    if backup_folder and os.path.exists(final_path):
+                        try:
+                            backup_path = os.path.join(backup_folder, final_name)
+                            if stage_bytes > 5 * 1024 * 1024:
+                                # Large files (videos): don't block the HTTP response.
+                                # This single change fixes the Render 30s → ERR_CONNECTION_ABORTED.
+                                try:
+                                    t = _thr.Thread(
+                                        target=_bg_backup_copy,
+                                        args=(final_path, backup_path),
+                                        daemon=True,
+                                    )
+                                    t.start()
+                                except Exception:
+                                    # Thread spawn failed (unusual): best effort, try inline tiny.
+                                    try:
+                                        _shutil.copy2(final_path, backup_path)
+                                    except Exception:
+                                        pass
+                            else:
+                                # Small images: inline copy is fine (<<1s).
+                                try:
+                                    _shutil.copy2(final_path, backup_path)
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass  # backup is belt+suspenders, never a hard failure
+
+                    _dbg_vlog('H1', f'upload persist-3l ok — {label}={final_name} bytes={stage_bytes}',
+                             {'filename': final_name, 'label': label,
+                              'bytes': stage_bytes, 'md5_prefix': _md5_digest[:8],
+                              'final_exists': os.path.exists(final_path)},
+                             location='main.py:submit_ad:stage_and_persist')
+                    return final_name
+                except ValidationError:
+                    raise  # re-raise explicit user-facing validation errors cleanly
+                except Exception as _e_fallback:
+                    # ============= FALLBACK CHAIN — any persistence/permission error → OLD DIRECT SAVE =============
+                    try:
+                        try:
+                            file_storage.seek(0)
+                        except Exception:
+                            pass
+                        file_storage.save(final_path)
+                        if os.path.exists(final_path) and os.path.getsize(final_path) > 0:
+                            _dbg_vlog('H1',
+                                     f'upload FALLBACK ok (staging failed {_e_fallback!r}) — {label}={final_name}',
+                                     {'filename': final_name, 'label': label,
+                                      'bytes': os.path.getsize(final_path),
+                                      'fallback_reason': str(_e_fallback)[:80]},
+                                     location='main.py:submit_ad:stage_and_persist:fallback')
+                            return final_name
+                    except Exception as _e_last:
+                        pass
+                    # Could not save even via direct path: hard error
+                    raise ValidationError(
+                        f'Pa ka sovegade fichye {label} a. Eseye ankò oswa eseye yon fichye ki pi piti.'
+                        f' ({_e_fallback!r})'
+                    )
 
             images = []
             video = None
@@ -1109,18 +1174,25 @@ def submit_ad():
                         raise ValidationError(
                             f'Tip videyo a pa aksepte. Aksepte sèlman: {", ".join(sorted(allowed_video_ext)).upper()}.'
                         )
-                    file.seek(0, 2)
-                    video_bytes = file.tell()
-                    file.seek(0)
-                    max_bytes = int(current_app.config.get('MAX_CONTENT_LENGTH', 100*1024*1024))
-                    if video_bytes > max_bytes:
-                        raise ValidationError(
-                            f'Videyo a twò gwo (≈{round(video_bytes/1024/1024,1)} MB). Maksimòm otorize: {max_bytes//1024//1024} MB (100MB).'
-                        )
+                    # Video size pre-check: use the already-buffered werkzeug stream length if available.
+                    _video_pre_bytes = None
+                    try:
+                        file.seek(0, 2)
+                        _video_pre_bytes = file.tell()
+                        file.seek(0)
+                    except Exception:
+                        _video_pre_bytes = None
+                    if _video_pre_bytes is not None:
+                        max_bytes = int(current_app.config.get('MAX_CONTENT_LENGTH', 100*1024*1024))
+                        if _video_pre_bytes > max_bytes:
+                            raise ValidationError(
+                                f'Videyo a twò gwo (≈{round(_video_pre_bytes/1024/1024,1)} MB).'
+                                f' Maksimòm otorize: {max_bytes//1024//1024} MB.'
+                            )
                     filename = _stage_and_persist_upload(file, ext, label='videyo')
                     video = filename
-                    _dbg_vlog('H1', f'video upload saved: {filename} ext={ext} bytes={video_bytes}',
-                             {'filename': filename, 'ext': ext, 'bytes': video_bytes,
+                    _dbg_vlog('H1', f'video upload saved: {filename} ext={ext}',
+                             {'filename': filename, 'ext': ext,
                               'dest_exists': os.path.exists(os.path.join(upload_folder, filename))},
                              location='main.py:submit_ad:video-saved')
                 else:
