@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} - Glory2YahPub{% endblock %}
+{% block extra_css %}
+<style>
+    .ev-wrap { max-width: 720px; margin: 0 auto; padding: 70px 14px 90px; }
+    .ev-hero { background: linear-gradient(135deg,#2b2d42,#667eea);
+        border-radius: 20px; color: #fff; padding: 26px 20px; text-align: center; }
+    .ev-hero .kicker { letter-spacing: 2px; font-size: 11px; opacity: .8; text-transform: uppercase; }
+    .ev-hero h1 { font-size: 26px; margin: 8px 0; line-height: 1.15; }
+    .ev-hero .sub { font-size: 15px; opacity: .92; margin: 0 0 12px; }
+    .ev-hero .when { background: rgba(255,255,255,.16); display: inline-block;
+        padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .ev-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+        margin: 14px 0 22px; }
+    .ev-stat { background: #fff; border: 1px solid #eee; border-radius: 14px;
+        padding: 12px 6px; text-align: center; }
+    .ev-stat b { display: block; font-size: 20px; color: #667eea; }
+    .ev-stat span { font-size: 11px; color: #888; }
+    .ev-card { background: #fff; border: 1px solid #eee; border-radius: 16px;
+        padding: 18px; margin-bottom: 16px; }
+    .ev-card h3 { margin: 0 0 12px; font-size: 16px; color: #1a1a1a;
+        display: flex; align-items: center; gap: 8px; }
+    .leader { display: inline-flex; width: calc(50% - 8px); box-sizing: border-box;
+        vertical-align: top; align-items: center; gap: 12px; padding: 8px 0;
+        border-bottom: 0; }
+    .leader:last-child { border-bottom: 0; }
+    .leader .ava { width: 42px; height: 42px; border-radius: 50%; flex: 0 0 auto;
+        background: #667eea; color: #fff; display: flex; align-items: center;
+        justify-content: center; font-weight: 700; }
+    .leader .nm { font-weight: 700; font-size: 14px; }
+    .leader .rl { font-size: 12px; color: #888; }
+    .leader-profile { display: grid; grid-template-columns: 150px 1fr; gap: 18px;
+        align-items: start; }
+    .leader-profile img { width: 150px; aspect-ratio: 3 / 4; object-fit: cover;
+        object-position: center top; border-radius: 14px; display: block; }
+    .leader-profile h4 { margin: 0 0 8px; color: #1a1a1a; font-size: 17px; }
+    .leader-profile p { margin: 0; color: #444; font-size: 13px; line-height: 1.65; }
+    .leader-profile a { color: #667eea; font-weight: 700; text-decoration: underline; }
+    .prog { display: flex; gap: 12px; padding: 8px 0; }
+    .prog .t { flex: 0 0 52px; font-weight: 700; color: #667eea; }
+    .faq-d { padding: 8px 0 8px 14px; border-left: 3px solid #eef; margin-bottom: 6px; }
+    .faq-d b { color: #1a1a1a; display: block; margin-bottom: 3px; font-size: 13.5px; }
+    .faq-d p { margin: 0; color: #667; font-size: 13px; }
+    .btn-ev { display: block; width: 100%; text-align: center; padding: 13px;
+        border-radius: 999px; border: 0; background: #667eea; color: #fff;
+        font-size: 15px; font-weight: 700; text-decoration: none; margin-top: 8px; }
+    .btn-ev.alt { background: #fff; color: #667eea; border: 1px solid #667eea; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; font-weight: 700; color: #444;
+        margin-bottom: 4px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 11px 12px;
+        border: 1px solid #ddd; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .hint { font-size: 11px; color: #999; }
+    .share-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nearby-results { margin-top: 12px; color: #444; font-size: 13px; }
+    .nearby-location { padding: 10px 0; border-top: 1px solid #f0f0f0; }
+    .nearby-location strong { color: #1a1a1a; }
+    @media (max-width: 520px) {
+        .leader { width: 100%; }
+        .leader-profile { grid-template-columns: 100px 1fr; gap: 12px; }
+        .leader-profile img { width: 100px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ev-wrap">
+    <!-- HERO -->
+    <div class="ev-hero">
+        <div class="kicker">✨ Evènman</div>
+        <h1>{{ event.title }}</h1>
+        {% if event.subtitle %}<p class="sub">{{ event.subtitle }}</p>{% endif %}
+        <div class="when">
+            🗓️ {{ event.start_at.strftime('%d %b %Y') if event.start_at else '—' }}
+            · {{ event.start_at.strftime('%H:%M') if event.start_at else '' }} –
+            {{ event.end_at.strftime('%H:%M') if event.end_at else '' }}
+            {% if event.location_label %} · {{ event.location_label }}{% endif %}
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="ev-stats">
+        <div class="ev-stat"><b>{{ participants_count }}</b><span>Partisipan</span></div>
+        <div class="ev-stat"><b>{{ orgs_count }}</b><span>Egliz/Òganizasyon</span></div>
+        <div class="ev-stat"><b>{{ regions|length }}</b><span>Rejyon</span></div>
+    </div>
+
+    {% if event.summary %}
+    <div class="ev-card">
+        <h3>📖 Apèsi</h3>
+        <p style="margin:0;color:#444;font-size:14px;line-height:1.6">{{ event.summary }}</p>
+    </div>
+    {% endif %}
+
+    {% if leaders %}
+    <div class="ev-card">
+        <h3>👥 Lide yo</h3>
+        {% for l in leaders %}
+        <div class="leader">
+            <div class="ava">{{ l.full_name[0] if l.full_name else '?' }}</div>
+            <div>
+                <div class="nm">{{ l.full_name }}</div>
+                <div class="rl">{{ l.role_label }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="ev-card leader-profile">
+        <img src="{{ url_for('static', filename='images/Pasteur Nixon.jpeg') }}"
+             alt="Rev Dr Nixon Dieudonne">
+        <div>
+            <h4>Rev Dr Nixon Dieudonne</h4>
+            <p>President MEDNV: Mission Eglise de Dieu de la Nouvelle Vision en Haiti et Aux Etats unis. President FEDNOVHA: Federation de la Diaspora pour une Nouvelle Haiti. Animateur Emission: Eduquer pour Changer sou YouTube, Facebook and tiktok atravers radiotelenouvellevision, Ancien Directeur, prof, censeur et inspecteur Lycee Antoine et Georges Izmery, Avocat ayant un Master en Sciences de l'education, membre Fondateur Conquerant et Membre de la FPH.</p>
+        </div>
+    </div>
+
+    <div class="ev-card leader-profile">
+        <img src="{{ url_for('static', filename='images/Apotre Stanley.jpg') }}"
+             alt="Apôtre Stanley Désinat">
+        <div>
+            <h4>Apôtre Stanley Désinat</h4>
+            <p>Apôtre Stanley Désinat est Membre du Comité executif de ALO LEGLIZ et Fondateur des Ministères Evangéliques de la Gloire de Dieu qui implantent des Eglises, oeuvrant en social et Formant des Leaders à Travers <a href="{{ url_for('ecole_biblique.index') }}">l'Ecole Biblique international MEGD-HAITI en collaboration avec GLOBAL CONNECTION NETWORK BIBLE SCHOOL depuis ALABAMA</a>. L'Apotre est mari &amp; Père de Famille, aussi Polytechnicien en Informatique (spécialiste en IA), Énergie renouvelable et Naturopathe.</p>
+        </div>
+    </div>
+
+    {% if program %}
+    <div class="ev-card">
+        <h3>🕒 Pwogram</h3>
+        {% for p in program %}
+        <div class="prog">
+            <div class="t">{{ p.time_label }}</div>
+            <div>{{ p.title }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if faq %}
+    <div class="ev-card">
+        <h3>❓ Kesyon yo poze souvan</h3>
+        {% for f in faq %}
+        <div class="faq-d">
+            <b>{{ f.question }}</b>
+            <p>{{ f.answer }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- REGISTRATION: ORGANIZATION -->
+    <div class="ev-card" id="enskri_org">
+        <h3>🏛️ Enskri Egliz/Òganizasyon</h3>
+        <form method="post" action="{{ url_for('events.landing', slug=event.slug) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="form_type" value="organization">
+            <input type="hidden" name="website" value=""> {# honeypot #}
+            <div class="row2">
+                <div class="field">
+                    <label>Non Egliz/Òganizasyon *</label>
+                    <input type="text" name="org_name" required>
+                </div>
+                <div class="field">
+                    <label>Tip</label>
+                    <select name="org_type">
+                        {% for t in ORG_TYPES %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>Telefòn *</label>
+                <input type="tel" name="phone" required placeholder="+509...">
+            </div>
+            <div class="row2">
+                <div class="field">
+                    <label>WhatsApp</label>
+                    <input type="text" name="whatsapp">
+                </div>
+            </div>
+            <div class="row2">
+                <div class="field">
+                    <label>Vil</label>
+                    <input type="text" name="city">
+                </div>
+                <div class="field">
+                    <label>Rejyon</label>
+                    <select name="region">
+                        <option value="">Chwazi...</option>
+                        {% for r in regions %}
+                        <option value="{{ r.name }}">{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+                <div class="field">
+                    <label>Adres</label>
+                    <input type="text" name="address">
+                </div>
+            <div class="field">
+                <label>Konbyen moun ap patisipe (approx)</label>
+                <input type="number" name="approx_participants" min="0">
+            </div>
+            <button class="btn-ev" type="submit">Voye enskripsyon</button>
+            <button class="btn-ev alt" type="button" id="findLocalBtn">Jwenn yon lokal ki pi pre w</button>
+            <div class="nearby-results" id="nearbyResults" aria-live="polite"></div>
+        </form>
+    </div>
+
+        <div class="share-panel">
+            <button class="btn-ev alt" type="button" id="shareFormBtn">Pataje Form lan</button>
+            <div class="share-row" id="shareOptions" hidden>
+                <button class="btn-ev alt" type="button" onclick="shareEv('whatsapp')">📲 WhatsApp</button>
+                <button class="btn-ev alt" type="button" onclick="shareEv('facebook')">📘 Facebook</button>
+                <button class="btn-ev alt" type="button" onclick="shareEv('messenger')">💬 Messenger</button>
+                <button class="btn-ev alt" type="button" onclick="shareEv('x')">𝕏 X</button>
+                <button class="btn-ev alt" type="button" onclick="shareEv('telegram')">✈️ Telegram</button>
+                <button class="btn-ev alt" type="button" onclick="copyFormLink()">🔗 Kopye lyen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareEv(channel) {
+    const url = window.location.href;
+    let target = '';
+    if (channel === 'whatsapp') target = 'https://wa.me/?text=' + encodeURIComponent('{{ event.title }} - ' + url);
+    else if (channel === 'facebook') target = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+    else if (channel === 'messenger') target = 'fb-messenger://share/?link=' + encodeURIComponent(url);
+    else if (channel === 'x') target = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent('{{ event.title }}') + '&url=' + encodeURIComponent(url);
+    else if (channel === 'telegram') target = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('{{ event.title }}');
+    if (target) window.open(target, '_blank', 'width=600,height=600');
+    try {
+        fetch('{{ url_for("events.share", slug=event.slug) }}', {
+            document.getElementById('shareFormBtn').addEventListener('click', async function() {
+                const options = document.getElementById('shareOptions');
+                if (navigator.share) {
+                    try {
+                        await navigator.share({ title: '{{ event.title }}', url: window.location.href });
+                        return;
+                    } catch (e) {}
+                }
+                options.hidden = !options.hidden;
+            });
+
+            async function copyFormLink() {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    document.getElementById('shareOptions').textContent = 'Lyen an kopye.';
+                } catch (e) {
+                    window.prompt('Kopye lyen fòm sa a:', window.location.href);
+                }
+            }
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel: channel })
+        });
+    } catch (e) {}
+}
+
+document.getElementById('findLocalBtn').addEventListener('click', async function() {
+    const form = this.form;
+    const results = document.getElementById('nearbyResults');
+    const city = form.elements.city.value.trim();
+    const region = form.elements.region.value;
+    if (!city && !region) {
+        results.textContent = 'Antre yon vil oswa chwazi yon rejyon anvan.';
+        return;
+    }
+    results.textContent = 'Nap chèche lokal ki pi pre w...';
+    const params = new URLSearchParams({ city, region });
+    try {
+        const response = await fetch('{{ url_for("events.nearby_locations", slug=event.slug) }}?' + params);
+        const data = await response.json();
+        results.replaceChildren();
+        if (!data.locations.length) {
+            results.textContent = data.message;
+            return;
+        }
+        data.locations.forEach(location => {
+            const item = document.createElement('div');
+            item.className = 'nearby-location';
+            const name = document.createElement('strong');
+            name.textContent = location.name;
+            item.appendChild(name);
+            const details = [location.address, location.city, location.region]
+                .filter(Boolean).join(' · ');
+            if (details) item.appendChild(document.createTextNode('\n' + details));
+            if (location.phone) {
+                item.appendChild(document.createTextNode('\nTelefòn: ' + location.phone));
+            }
+            if (location.whatsapp) {
+                item.appendChild(document.createTextNode('\nWhatsApp: ' + location.whatsapp));
+            }
+            results.appendChild(item);
+        });
+    } catch (error) {
+        results.textContent = 'Nou pa kapab chèche lokal yo kounye a.';
+    }
+});
+</script>
+{% endblock %}

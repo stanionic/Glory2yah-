@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Evènman - Glory2YahPub{% endblock %}
+{% block extra_css %}
+<style>
+    .events-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 90px; }
+    .events-head { text-align: center; margin-bottom: 24px; }
+    .events-head h1 { font-size: 22px; font-weight: 800; color: #1a1a1a; margin: 0 0 6px; }
+    .events-head p { color: #667eea; font-weight: 600; margin: 0; }
+    .event-card {
+        display: block; background: #fff; border: 1px solid #eee;
+        border-radius: 16px; padding: 18px; margin-bottom: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-decoration: none; color: inherit;
+    }
+    .event-card:active { transform: scale(0.99); }
+    .event-card .tag { display: inline-block; background: #f0f4ff; color: #667eea;
+        font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; }
+    .event-card h2 { font-size: 18px; margin: 0 0 4px; color: #1a1a1a; }
+    .event-card .sub { color: #667; font-size: 13px; margin: 0 0 8px; }
+    .event-card .meta { color: #999; font-size: 12px; }
+    .empty { text-align: center; color: #999; padding: 40px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="events-wrap">
+    <div class="events-head">
+        <h1>🗓️ Evènman</h1>
+        <p>Pati nan mobilizasyon ak rasanbleman yo</p>
+    </div>
+
+    {% if events %}
+        {% for ev in events %}
+        <a class="event-card" href="{{ url_for('events.landing', slug=ev.slug) }}">
+            <span class="tag">{% if ev.location_label %}📍{% else %}🕊️{% endif %}
+                {{ ev.location_label or 'Evènman' }}</span>
+            <h2>{{ ev.title }}</h2>
+            <p class="sub">{{ ev.subtitle or ev.summary }}</p>
+            <div class="meta">
+                🗓️ {{ ev.start_at.strftime('%d %b %Y') if ev.start_at else '' }}
+                · ⏰ {{ ev.start_at.strftime('%H:%M') if ev.start_at else '' }}
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="empty">Pa gen evènman pibliye pou kounye a.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Partisipan - {{ event.title }}{% endblock %}
+{% block content %}
+<div style="max-width:840px;margin:0 auto;padding:90px 16px;">
+    <p><a href="{{ url_for('admin_events.admin_events') }}" style="color:#667eea">&larr; Tout evènman</a></p>
+    <h2 style="color:#1a1a1a">🙋 Partisipan yo - {{ event.title }}</h2>
+    <p style="color:#888">{{ pagination.total }} patisipan</p>
+    <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #eee;border-radius:12px;overflow:hidden;font-size:13px">
+        <thead>
+            <tr style="background:#f7f8fa;color:#555;text-align:left">
+                <th style="padding:8px">Non</th><th>Telefòn</th><th>Vil</th>
+                <th>Rejyon</th><th>Wòl</th><th>Tip</th><th>Dat</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in pagination.items %}
+            <tr style="border-top:1px solid #f0f0f0">
+                <td style="padding:8px">{{ p.full_name }}{% if p.organization_name %}<div style="color:#999;font-size:11px">{{ p.organization_name }}</div>{% endif %}</td>
+                <td>{{ p.phone }}</td><td>{{ p.city or '' }}</td>
+                <td>{{ p.region.name if p.region else '' }}</td>
+                <td>{{ p.role_label }}</td><td>{{ p.participation_type }}</td>
+                <td>{{ p.created_at.strftime('%d/%m %H:%M') if p.created_at else '' }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}" style="color:#667eea">Précédent</a>{% endif %}
+    {% if pagination.has_next %}<a href="?page={{ pagination.next_num }}" style="color:#667eea">Suivant</a>{% endif %}
+</div>
+{% endblock %}

@@ -514,7 +514,22 @@ def create_app(config_name=None):
         from app.models.charity import CharityDonation, CharityCause
         # Import bank models
         from app.models.bank import LoanProduct, Loan, LoanRepayment, InvestmentProduct, Investment
+        # Import events models (EVENTS / SOS ALO LEGLIZ module) so their tables
+        # are created by db.create_all() and relationships resolve.
+        from app.models.events import (
+            Event, EventLeader, EventProgramItem, EventFaq, EventNews,
+            EventMedia, EventRegion, EventCoordinator, EventParticipant,
+            EventOrganization, seed_events,
+        )
         db.create_all()
+
+        # Seed the SOS ALO LEGLIZ event (idempotent, safe to re-run)
+        try:
+            seed_events()
+        except Exception as _ev_seed_e:
+            db.session.rollback()
+            app.logger.warning(
+                f'EVENTS seed skipped ({type(_ev_seed_e).__name__}): {_ev_seed_e}')
 
         # =====================================================================
         # ADS PERSISTENCE GUARD (Summary §6 + user explicit request 2026-08-10)
@@ -647,6 +662,26 @@ def create_app(config_name=None):
                         app.logger.info(f"ADS PERSISTENCE: UPLOAD_FOLDER OK on Render disk: {_up}")
         except Exception as _e_pg2:
             app.logger.warning(f"ADS PERSISTENCE (Render guard skipped): {type(_e_pg2).__name__}: {_e_pg2}")
+
+        # =====================================================================
+        # EVENTS MIGRATION: add the organization address field to existing
+        # databases. db.create_all() does not alter existing tables.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _event_inspect
+            from sqlalchemy import text as _event_text
+            _event_insp = _event_inspect(db.engine)
+            if _event_insp.has_table('event_organizations'):
+                _event_org_cols = {c['name'] for c in _event_insp.get_columns('event_organizations')}
+                if 'address' not in _event_org_cols:
+                    db.session.execute(_event_text(
+                        'ALTER TABLE event_organizations ADD COLUMN address VARCHAR(255)'))
+                    db.session.commit()
+                    app.logger.info('EVENTS MIGRATION: added event_organizations.address column')
+        except Exception as _event_migration_error:
+            db.session.rollback()
+            app.logger.warning(
+                f'EVENTS MIGRATION: could not add organization address column: {_event_migration_error}')
 
         # =====================================================================
         # BATCH_CLICKS MIGRATION: add `clicker_ip` column if missing (anti-fraud
@@ -1473,6 +1508,15 @@ def register_blueprints(app):
     app.register_blueprint(gkach_bp, url_prefix='/gkach')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(share_bp, url_prefix='/s')
+    
+    # Register EVENTS blueprint (public) + admin events blueprint
+    try:
+        from app.routes.events import events_bp, admin_events_bp
+        app.register_blueprint(events_bp)
+        app.register_blueprint(admin_events_bp)
+        app.logger.info('Registered EVENTS blueprint at /events (+ /admin/events)')
+    except Exception as e:
+        app.logger.warning(f"Could not register EVENTS blueprint: {e}")
     
     # Register PWA blueprint
     try:

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Jesyon Evènman - Admin{% endblock %}
+{% block content %}
+<div style="max-width:840px;margin:0 auto;padding:90px 16px;">
+    <h2 style="color:#1a1a1a">⚙️ Evènman (Admin)</h2>
+    <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #eee;border-radius:12px;overflow:hidden;font-size:14px">
+        <thead>
+            <tr style="background:#f7f8fa;color:#555;text-align:left">
+                <th style="padding:10px">Tit</th>
+                <th>Slug</th>
+                <th>Statut</th>
+                <th>Partisipan</th>
+                <th>Egliz</th>
+                <th>Rejyon</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in events %}
+            <tr style="border-top:1px solid #f0f0f0">
+                <td style="padding:10px">{{ e.title }}</td>
+                <td>{{ e.slug }}</td>
+                <td>{{ e.status }}</td>
+                <td>{{ stats[e.id]['participants'] }}</td>
+                <td>{{ stats[e.id]['organizations'] }}</td>
+                <td>{{ stats[e.id]['regions'] }}</td>
+                <td>
+                    <a href="{{ url_for('admin_events.admin_participants', slug=e.slug) }}" style="color:#667eea">Partisipan</a>
+                    &middot;
+                    <a href="{{ url_for('admin_events.admin_organizations', slug=e.slug) }}" style="color:#667eea">Egliz</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

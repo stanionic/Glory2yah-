@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Egliz/Òganizasyon - {{ event.title }}{% endblock %}
+{% block content %}
+<div style="max-width:840px;margin:0 auto;padding:90px 16px;">
+    <p><a href="{{ url_for('admin_events.admin_events') }}" style="color:#667eea">&larr; Tout evènman</a></p>
+    <h2 style="color:#1a1a1a">🏛️ Egliz/Òganizasyon yo - {{ event.title }}</h2>
+    {% for o in orgs %}
+    <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>{{ o.org_name }}</strong>
+            <span style="color:{% if o.status=='pending' %}#eaa300{% elif o.status=='confirmed' %}#2e8b57{% else %}#c0392b{% endif %};font-weight:700">
+                {{ o.status }}
+            </span>
+        </div>
+        <div style="color:#666;font-size:13px;margin-top:6px">
+            {{ o.contact_name }} · {{ o.phone }}
+            {% if o.whatsapp %} · WA {{ o.whatsapp }}{% endif %}
+            {% if o.email %} · {{ o.email }}{% endif %}
+            {% if o.city or o.region %}<br>📍 {{ o.city or '' }} {{ o.region.name if o.region else '' }}{% endif %}
+            {% if o.approx_participants %}<br>👥 ~{{ o.approx_participants }} moun{% endif %}
+            {% if o.message %}<br><em>{{ o.message }}</em>{% endif %}
+        </div>
+        <form method="post" style="margin-top:10px"
+              action="{{ url_for('admin_events.admin_org_status', slug=event.slug, oid=o.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="status">
+                <option value="pending" {% if o.status=='pending' %}selected{% endif %}>pending</option>
+                <option value="confirmed" {% if o.status=='confirmed' %}selected{% endif %}>confirmed</option>
+                <option value="rejected" {% if o.status=='rejected' %}selected{% endif %}>rejected</option>
+            </select>
+            <button style="margin-left:6px;padding:6px 14px;border:0;border-radius:999px;background:#667eea;color:#fff" type="submit">Valide</button>
+        </form>
+    </div>
+    {% else %}
+    <p style="color:#888">Pa gen enskripsyon.</p>
+    {% endfor %}
+</div>
+{% endblock %}
