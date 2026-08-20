@@ -188,7 +188,7 @@
             </div>
             <div class="row2">
                 <div class="field">
-                    <label>Vil</label>
+                    <label>Komin</label>
                     <input type="text" name="city">
                 </div>
                 <div class="field">
@@ -210,9 +210,8 @@
                 <input type="number" name="approx_participants" min="0">
             </div>
             <button class="btn-ev" type="submit">Voye enskripsyon</button>
-            <button class="btn-ev alt" type="button" id="findLocalBtn">Jwenn yon lokal ki pi pre w</button>
-            <p class="hint">Lokal ki konfime yo ap parèt nan lòd alfabetik selon vil la.</p>
-            <div class="nearby-results" id="nearbyResults" aria-live="polite"></div>
+            <a class="btn-ev alt" href="{{ url_for('events.locations', slug=event.slug) }}">Jwenn yon lokal ki pi pre w</a>
+            <a class="btn-ev alt" href="{{ url_for('events.coordinators', slug=event.slug) }}">Lis Kowodonate nan Chak depatman yo</a>
         </form>
     </div>
 
@@ -253,9 +252,14 @@ function shareEv(channel) {
 
 document.getElementById('shareFormBtn').addEventListener('click', async function() {
     const options = document.getElementById('shareOptions');
-    if (navigator.share) {
+    const shareData = {
+        title: '{{ event.title|e }}',
+        text: 'Enskri nan {{ event.title|e }}',
+        url: window.location.href
+    };
+    if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
         try {
-            await navigator.share({ title: '{{ event.title }}', url: window.location.href });
+            await navigator.share(shareData);
             return;
         } catch (e) {}
     }
@@ -263,65 +267,14 @@ document.getElementById('shareFormBtn').addEventListener('click', async function
 });
 
 async function copyFormLink() {
+    const shareOptions = document.getElementById('shareOptions');
     try {
         await navigator.clipboard.writeText(window.location.href);
-        document.getElementById('shareOptions').textContent = 'Lyen an kopye.';
+        shareOptions.textContent = 'Lyen an kopye. Kole li sou nenpòt rezo.';
     } catch (e) {
         window.prompt('Kopye lyen fòm sa a:', window.location.href);
     }
 }
 
-async function loadNearbyLocations(form, results) {
-    const city = form.elements.city.value.trim();
-    const region = form.elements.region.value;
-    results.textContent = city || region
-        ? 'Nap chèche lokal ki pi pre w...'
-        : 'Nap chèche tout lokal konfime yo...';
-    const params = new URLSearchParams({ city, region });
-    try {
-        const response = await fetch('{{ url_for("events.nearby_locations", slug=event.slug) }}?' + params);
-        const data = await response.json();
-        results.replaceChildren();
-        if (!data.locations.length) {
-            results.textContent = data.message;
-            return;
-        }
-        data.locations.sort((left, right) => {
-            const leftCity = (left.city || '').trim();
-            const rightCity = (right.city || '').trim();
-            if (!leftCity && rightCity) return 1;
-            if (leftCity && !rightCity) return -1;
-            return leftCity.localeCompare(rightCity, 'ht', { sensitivity: 'base' }) ||
-                (left.name || '').localeCompare(right.name || '', 'ht', { sensitivity: 'base' });
-        });
-        data.locations.forEach(location => {
-            const item = document.createElement('div');
-            item.className = 'nearby-location';
-            const name = document.createElement('strong');
-            name.textContent = location.name;
-            item.appendChild(name);
-            const details = [location.address, location.city, location.region]
-                .filter(Boolean).join(' · ');
-            if (details) item.appendChild(document.createTextNode('\n' + details));
-            if (location.phone) {
-                item.appendChild(document.createTextNode('\nTelefòn: ' + location.phone));
-            }
-            if (location.whatsapp) {
-                item.appendChild(document.createTextNode('\nWhatsApp: ' + location.whatsapp));
-            }
-            results.appendChild(item);
-        });
-    } catch (error) {
-        results.textContent = 'Nou pa kapab chèche lokal yo kounye a.';
-    }
-}
-
-const findLocalBtn = document.getElementById('findLocalBtn');
-const nearbyForm = findLocalBtn.form;
-const nearbyResults = document.getElementById('nearbyResults');
-findLocalBtn.addEventListener('click', function() {
-    loadNearbyLocations(nearbyForm, nearbyResults);
-});
-loadNearbyLocations(nearbyForm, nearbyResults);
 </script>
 {% endblock %}

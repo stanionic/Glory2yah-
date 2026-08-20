@@ -15,6 +15,7 @@ Admin blueprint ``admin_events_bp`` (login_required + admin_required):
     POST /admin/events/<slug>/organizations/<oid>/status -> set status
 """
 import hashlib
+import hmac
 import re
 
 from flask import (Blueprint, render_template, redirect, url_for, flash,
@@ -24,7 +25,7 @@ from flask_login import login_required
 from app import db
 from app.models.events import (Event, EventLeader, EventProgramItem, EventFaq,
                                EventRegion, EventParticipant, EventOrganization,
-                               EventShare)
+                               EventShare, EventCoordinator)
 from app.utils.security import admin_required
 
 events_bp = Blueprint('events', __name__)
@@ -37,6 +38,7 @@ PARTICIPATION_TYPES = {'individuelle', 'eglise', 'mission', 'organisation',
 ORG_TYPES = {'eglise', 'mission', 'organisation', 'ligue_de_pasteurs',
              'groupe_de_priere'}
 SHARE_CHANNELS = {'whatsapp', 'facebook', 'messenger', 'x', 'telegram', 'link'}
+COORDINATOR_ACCESS_CODE = '300826'
 
 
 def _hash_ip(ip):
@@ -94,6 +96,75 @@ def landing(slug):
         ROLE_LABELS=sorted(ROLE_LABELS),
         PARTICIPATION_TYPES=sorted(PARTICIPATION_TYPES),
         ORG_TYPES=sorted(ORG_TYPES),
+    )
+
+
+@events_bp.route('/events/<slug>/coordinators', methods=['GET', 'POST'])
+def coordinators(slug):
+    """Register and publicly list departmental ALO LEGLIZ coordinators."""
+    event = Event.query.filter_by(slug=slug, status='published').first_or_404()
+    regions = EventRegion.query.filter_by(event_id=event.id).all()
+
+    if request.method == 'POST':
+        body = request.form
+        access_code = (body.get('access_code') or '').strip()
+        org_type = body.get('org_type') or 'eglise'
+        if not hmac.compare_digest(access_code, COORDINATOR_ACCESS_CODE):
+            flash('Kòd aksè a pa valab.', 'error')
+            return redirect(url_for('events.coordinators', slug=slug))
+        if not body.get('org_name') or org_type not in ORG_TYPES:
+            flash('Non egliz/òganizasyon ak tip li obligatwa.', 'error')
+            return redirect(url_for('events.coordinators', slug=slug))
+        leader_name = body.get('leader_name') or body.get('full_name')
+        if not leader_name or not _is_valid_phone(body.get('phone')):
+            flash('Non lide a ak telefòn obligatwa.', 'error')
+            return redirect(url_for('events.coordinators', slug=slug))
+
+        region = None
+        if body.get('region'):
+            region = EventRegion.query.filter_by(
+                event_id=event.id, name=body.get('region')
+            ).first()
+        approx = body.get('approx_participants')
+        try:
+            approx = int(approx) if approx else None
+        except (TypeError, ValueError):
+            approx = None
+        db.session.add(EventCoordinator(
+            event_id=event.id,
+            region_id=region.id if region else None,
+            full_name=_clean(leader_name, 255),
+            org_name=_clean(body.get('org_name'), 255),
+            org_type=org_type,
+            phone_professional=_clean(body.get('phone'), 40),
+            whatsapp=_clean(body.get('whatsapp'), 40),
+            city=_clean(body.get('city'), 120),
+            address=_clean(body.get('address'), 255),
+            approx_participants=approx,
+            status='active',
+            is_public_contact=True,
+        ))
+        db.session.commit()
+        flash('Enfòmasyon kowòdonatè a anrejistre.', 'success')
+        return redirect(url_for('events.coordinators', slug=slug))
+
+    coordinator_list = (EventCoordinator.query
+                         .filter_by(event_id=event.id, status='active')
+                         .all())
+    coordinator_list.sort(key=lambda coordinator: (
+        (coordinator.region.name if coordinator.region else 'San depatman').casefold(),
+        (coordinator.full_name or '').casefold(),
+    ))
+    grouped_coordinators = {}
+    for coordinator in coordinator_list:
+        department = coordinator.region.name if coordinator.region else 'San depatman'
+        grouped_coordinators.setdefault(department, []).append(coordinator)
+    grouped_coordinators = dict(sorted(
+        grouped_coordinators.items(), key=lambda item: item[0].casefold()
+    ))
+    return render_template(
+        'events/coordinators.html', event=event, regions=regions,
+        grouped_coordinators=grouped_coordinators,
     )
 
 
@@ -178,7 +249,7 @@ def _register_organization(event):
 
 @events_bp.route('/events/<slug>/nearby-locations')
 def nearby_locations(slug):
-    """Return confirmed enrolled churches and organizations by city."""
+    """Return enrolled churches and organizations by city."""
     event = Event.query.filter_by(slug=slug, status='published').first_or_404()
     city = _clean(request.args.get('city'), 120)
     region = _clean(request.args.get('region'), 120)
@@ -187,7 +258,8 @@ def nearby_locations(slug):
     region_key = region.casefold() if region else ''
     locations = []
     for organization in (EventOrganization.query
-                          .filter_by(event_id=event.id, status='confirmed')
+                          .filter(EventOrganization.event_id == event.id,
+                                  EventOrganization.status != 'rejected')
                           .all()):
         organization_city = (organization.city or '').casefold()
         organization_region = (organization.region.name if organization.region else '').casefold()
@@ -211,8 +283,34 @@ def nearby_locations(slug):
             'phone': organization.phone,
             'whatsapp': organization.whatsapp,
         } for organization in locations],
-        'message': None if locations else 'Pa gen lokal konfime pou zòn sa a ankò.',
+        'message': None if locations else 'Pa gen lokal enskri pou zòn sa a ankò.',
     })
+
+
+@events_bp.route('/events/<slug>/locations')
+def locations(slug):
+    """Render enrolled churches and organizations grouped by department."""
+    event = Event.query.filter_by(slug=slug, status='published').first_or_404()
+    organizations = (EventOrganization.query
+                     .filter(EventOrganization.event_id == event.id,
+                             EventOrganization.status != 'rejected')
+                     .all())
+    organizations.sort(key=lambda organization: (
+        (organization.region.name if organization.region else '').casefold(),
+        (organization.city or '').casefold(),
+        (organization.org_name or '').casefold(),
+    ))
+
+    grouped_locations = {}
+    for organization in organizations:
+        department = organization.region.name if organization.region else 'San depatman'
+        grouped_locations.setdefault(department, []).append(organization)
+
+    grouped_locations = dict(sorted(
+        grouped_locations.items(), key=lambda item: item[0].casefold()
+    ))
+    return render_template('events/locations.html', event=event,
+                           grouped_locations=grouped_locations)
 
 
 # ---------------------------------------------------------------------------

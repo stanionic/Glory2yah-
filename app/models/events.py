@@ -235,10 +235,15 @@ class EventCoordinator(db.Model):
     event_id = db.Column(db.String(36), db.ForeignKey('events.id', ondelete='CASCADE'), nullable=False)
     region_id = db.Column(db.String(36), db.ForeignKey('event_regions.id', ondelete='SET NULL'), nullable=True)
     full_name = db.Column(db.String(255), nullable=False)
+    org_name = db.Column(db.String(255), nullable=True)
+    org_type = db.Column(db.String(30), nullable=True)
     photo_url = db.Column(db.Text, nullable=True)
     phone_professional = db.Column(db.String(40), nullable=True)
     whatsapp = db.Column(db.String(40), nullable=True)
     email = db.Column(db.String(255), nullable=True)
+    city = db.Column(db.String(120), nullable=True)
+    address = db.Column(db.String(255), nullable=True)
+    approx_participants = db.Column(db.Integer, nullable=True)
     status = db.Column(db.String(20), nullable=False, default='active')
     is_public_contact = db.Column(db.Boolean, nullable=False, default=False)
 
@@ -248,8 +253,13 @@ class EventCoordinator(db.Model):
         data = {
             'id': self.id,
             'full_name': self.full_name,
+            'org_name': self.org_name,
+            'org_type': self.org_type,
             'photo_url': self.photo_url,
             'region': self.region.name if self.region else None,
+            'city': self.city,
+            'address': self.address,
+            'approx_participants': self.approx_participants,
             'status': self.status,
             'is_public_contact': self.is_public_contact,
         }

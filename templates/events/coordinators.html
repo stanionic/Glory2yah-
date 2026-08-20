@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Kowòdonatè ALO LEGLIZ - Glory2YahPub{% endblock %}
+{% block extra_css %}
+<style>
+    .coord-wrap { max-width: 760px; margin: 0 auto; padding: 70px 14px 90px; }
+    .coord-head { margin-bottom: 22px; }
+    .coord-head h1 { margin: 0 0 6px; color: #1a1a1a; font-size: 25px; }
+    .coord-head p { margin: 0; color: #667; font-size: 14px; }
+    .coord-card { background: #fff; border: 1px solid #eee; border-radius: 16px;
+        padding: 18px; margin-bottom: 18px; }
+    .coord-card h2 { margin: 0 0 14px; color: #2b2d42; font-size: 18px; }
+    .coord-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .coord-field { margin-bottom: 10px; }
+    .coord-field.full { grid-column: 1 / -1; }
+    .coord-field label { display: block; margin-bottom: 4px; color: #444;
+        font-size: 12px; font-weight: 700; }
+    .coord-field input, .coord-field select { width: 100%; box-sizing: border-box;
+        padding: 11px 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
+    .coord-submit { width: 100%; padding: 13px; border: 0; border-radius: 999px;
+        background: #667eea; color: #fff; font-size: 15px; font-weight: 700; }
+    .department { background: #fff; border: 1px solid #eee; border-radius: 16px;
+        margin-bottom: 16px; overflow: hidden; }
+    .department h3 { margin: 0; padding: 14px 18px; background: #f4f5ff;
+        color: #2b2d42; font-size: 18px; }
+    .coordinator { padding: 14px 18px; border-top: 1px solid #f0f0f0; }
+    .coordinator strong { display: block; color: #1a1a1a; font-size: 15px; }
+    .coordinator span { display: block; color: #667; font-size: 13px; margin-top: 4px; }
+    .back-link { display: inline-block; margin-bottom: 18px; color: #667eea;
+        font-weight: 700; text-decoration: none; }
+    @media (max-width: 520px) { .coord-grid { grid-template-columns: 1fr; } .coord-field.full { grid-column: auto; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="coord-wrap">
+    <a class="back-link" href="{{ url_for('events.landing', slug=event.slug) }}">&larr; Retounen</a>
+    <div class="coord-head">
+        <h1>Lis Kowodonate nan Chak depatman yo</h1>
+        <p>Antre enfòmasyon kowòdonatè a. Lis la piblik epi li klase pa depatman.</p>
+    </div>
+
+    <div class="coord-card">
+        <h2>Anrejistre kòm kowòdonatè</h2>
+        <form method="post" action="{{ url_for('events.coordinators', slug=event.slug) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="coord-grid">
+                <div class="coord-field">
+                    <label for="coord-org">Non Egliz/Òganizasyon *</label>
+                    <input id="coord-org" type="text" name="org_name" required>
+                </div>
+                <div class="coord-field">
+                    <label for="coord-type">Tip</label>
+                    <select id="coord-type" name="org_type">
+                        <option value="eglise">eglise</option>
+                        <option value="mission">mission</option>
+                        <option value="organisation">organisation</option>
+                        <option value="ligue_de_pasteurs">ligue_de_pasteurs</option>
+                        <option value="groupe_de_priere">groupe_de_priere</option>
+                    </select>
+                </div>
+                <div class="coord-field">
+                    <label for="coord-phone">Telefòn *</label>
+                    <input id="coord-phone" type="tel" name="phone" required placeholder="+509...">
+                </div>
+                <div class="coord-field">
+                    <label for="coord-whatsapp">WhatsApp</label>
+                    <input id="coord-whatsapp" type="text" name="whatsapp">
+                </div>
+                <div class="coord-field">
+                    <label for="coord-city">Komin</label>
+                    <input id="coord-city" type="text" name="city">
+                </div>
+                <div class="coord-field">
+                    <label for="coord-region">Rejyon</label>
+                    <select id="coord-region" name="region">
+                        <option value="">Chwazi...</option>
+                        {% for region in regions %}<option value="{{ region.name }}">{{ region.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="coord-field full">
+                    <label for="coord-address">Adres</label>
+                    <input id="coord-address" type="text" name="address">
+                </div>
+                <div class="coord-field">
+                    <label for="coord-count">Konbyen moun ap patisipe (approx)</label>
+                    <input id="coord-count" type="number" name="approx_participants" min="0">
+                </div>
+                <div class="coord-field">
+                    <label for="coord-leader">Non Lide a</label>
+                    <input id="coord-leader" type="text" name="leader_name" required
+                           autocomplete="section-coordinator name" value="">
+                </div>
+                <div class="coord-field full">
+                    <label for="coord-code">Kòd aksè *</label>
+                    <input id="coord-code" type="password" name="access_code" required autocomplete="off">
+                </div>
+            </div>
+            <button class="coord-submit" type="submit">Anrejistre kowòdonatè a</button>
+        </form>
+    </div>
+
+    {% for department, coordinators in grouped_coordinators.items() %}
+    <section class="department">
+        <h3>{{ department }}</h3>
+        {% for coordinator in coordinators %}
+        <div class="coordinator">
+            <strong>{{ coordinator.org_name or 'Egliz/Òganizasyon' }}</strong>
+            <span>Non Lide a: {{ coordinator.full_name }}</span>
+            {% if coordinator.city %}<span>Komin: {{ coordinator.city }}</span>{% endif %}
+            {% if coordinator.address %}<span>Adres: {{ coordinator.address }}</span>{% endif %}
+            {% if coordinator.approx_participants is not none %}<span>Patisipan: {{ coordinator.approx_participants }}</span>{% endif %}
+            {% if coordinator.phone_professional %}<span>Telefòn: {{ coordinator.phone_professional }}</span>{% endif %}
+            {% if coordinator.whatsapp %}<span>WhatsApp: {{ coordinator.whatsapp }}</span>{% endif %}
+            {% if coordinator.email %}<span>Imèl: {{ coordinator.email }}</span>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

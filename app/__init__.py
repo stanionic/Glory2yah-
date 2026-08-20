@@ -66,7 +66,8 @@ def create_app(config_name=None):
         redis_client = None
         # Fallback cache and limiter configs if Redis is down
         app.config['CACHE_TYPE'] = 'simple'
-        app.config['RATELIMIT_STORAGE_URL'] = 'memory://'
+        # Correct key for flask-limiter >=3.5 (RATELIMIT_STORAGE_URL is legacy/ignored)
+        app.config['RATELIMIT_STORAGE_URI'] = 'memory://'
     
     # Configure session settings explicitly before initializing extensions
     from datetime import timedelta
@@ -678,6 +679,20 @@ def create_app(config_name=None):
                         'ALTER TABLE event_organizations ADD COLUMN address VARCHAR(255)'))
                     db.session.commit()
                     app.logger.info('EVENTS MIGRATION: added event_organizations.address column')
+            if _event_insp.has_table('event_coordinators'):
+                _event_coord_cols = {c['name'] for c in _event_insp.get_columns('event_coordinators')}
+                _event_coord_additions = {
+                    'org_name': 'VARCHAR(255)',
+                    'org_type': 'VARCHAR(30)',
+                    'city': 'VARCHAR(120)',
+                    'address': 'VARCHAR(255)',
+                    'approx_participants': 'INTEGER',
+                }
+                for _event_coord_col, _event_coord_type in _event_coord_additions.items():
+                    if _event_coord_col not in _event_coord_cols:
+                        db.session.execute(_event_text(
+                            f'ALTER TABLE event_coordinators ADD COLUMN {_event_coord_col} {_event_coord_type}'))
+                db.session.commit()
         except Exception as _event_migration_error:
             db.session.rollback()
             app.logger.warning(
@@ -1058,25 +1073,22 @@ def create_app(config_name=None):
             app.logger.warning(f"Could not create default charity causes: {e}")
         
         # =====================================================================
-        # Admin user bootstrap — IDEMPOTENT (cf pattern StanD ci-dessous):
-        #   - Pseudo/WhatsApp par défaut: pseudo="Admin509" whatsapp="+50942882076"
-        #     (User feedback: connexion par pseudo Admin509 attendue, pas le numéro.)
-        #   - Password par défaut: "StanGlory2YahPub1986"
-        #   - Sécurité: JAMAIS en PROD le MDP par défaut n'est créé si
-        #     ADMIN_PASSWORD est setté dans .env (override).
-        #   - Idempotent: si le compte existe déjà par whatsapp ou pseudo
-        #     (même créé à la main), on force is_admin=True, is_active=True,
-        #     on met à jour pseudo/admin_pseudo ET on réécrit toujours le
-        #     password_hash (sécurité: synchro garantie avec la config).
+        # Admin user bootstrap — SECURE & IDEMPOTENT:
+        #   SECURITY FIX v2.0:
+        #   - Password is ONLY set on initial creation, NOT on every boot
+        #   - Password defaults to 'StanGlory2YahPub1986' ONLY in development
+        #   - In production: ADMIN_PASSWORD environment variable is REQUIRED
+        #   - Existing admin passwords are NEVER overwritten
+        #   - Pseudo/WhatsApp fields MAY be synchronized (non-critical)
         # =====================================================================
         try:
             admin_phone    = _os.environ.get('ADMIN_WHATSAPP', '+50942882076')
-            admin_password = _os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
+            admin_password = _os.environ.get('ADMIN_PASSWORD', None)  # Changed: None instead of default
             admin_pseudo   = _os.environ.get('ADMIN_PSEUDO',   'Admin509')
             admin_name     = _os.environ.get('ADMIN_NAME',     'Glory2YahPub')
             admin_user = None
-            # Recherche : d'abord par pseudo (Admin509 — cas nominal),
-            # ensuite par whatsapp (compatibilité legacy), puis n'importe quel admin existant.
+            
+            # Search for existing admin: first by pseudo, then by phone, then any admin
             if admin_pseudo:
                 admin_user = User.query.filter(User.pseudo.ilike(admin_pseudo)).first()
             if (not admin_user) and admin_phone:
@@ -1085,13 +1097,25 @@ def create_app(config_name=None):
                 any_admin = User.query.filter_by(is_admin=True).first()
                 if any_admin:
                     admin_user = any_admin
+            
             if not admin_user:
-                # Aucun admin du tout → CREATE
-                if not (admin_phone and admin_password):
-                    app.logger.warning(
-                        "Aucun administrateur existant. Définissez ADMIN_WHATSAPP + ADMIN_PASSWORD dans .env pour créer le compte admin initial."
-                    )
-                else:
+                # No admin exists → CREATE (password is REQUIRED)
+                if not admin_password:
+                    # In development: use default; in production: REQUIRE env var
+                    if config_name == 'production':
+                        app.logger.error(
+                            "SECURITY: No admin exists and ADMIN_PASSWORD not set. "
+                            "In production, ADMIN_PASSWORD environment variable is REQUIRED."
+                        )
+                    else:
+                        # Development only: use default
+                        admin_password = 'StanGlory2YahPub1986'
+                        app.logger.warning(
+                            "Development mode: using default admin password. "
+                            "Set ADMIN_PASSWORD environment variable to override."
+                        )
+                
+                if admin_password:
                     admin_user = User(
                         whatsapp=admin_phone,
                         pseudo=admin_pseudo,
@@ -1109,10 +1133,10 @@ def create_app(config_name=None):
                     db.session.commit()
                     app.logger.info(
                         f"Admin user CREATED: pseudo={admin_pseudo!r} whatsapp={admin_phone!r} "
-                        f"password={'<from env ADMIN_PASSWORD>' if _os.environ.get('ADMIN_PASSWORD') else 'default StanGlory2YahPub1986 (DEV/DEMO only)'}"
+                        f"(password set from {'ADMIN_PASSWORD env var' if _os.environ.get('ADMIN_PASSWORD') else 'development default'})"
                     )
             else:
-                # Admin existe → UPGRADE IDEMPOTENT (synchronise champs)
+                # Admin exists → SYNCHRONIZE non-critical fields only (NO password reset)
                 changed = False
                 if admin_user.is_admin is not True:
                     admin_user.is_admin = True
@@ -1129,16 +1153,13 @@ def create_app(config_name=None):
                 if admin_name and (admin_user.name != admin_name):
                     admin_user.name = admin_name
                     changed = True
-                # Password: toujours sync pour garantir user request "StanGlory2YahPub1986"
-                # (set_password idempotent au niveau UX, rien ne change si même MDP)
-                if admin_password:
-                    admin_user.set_password(admin_password)
-                    changed = True
+                # SECURITY FIX: Do NOT reset password on every boot
+                # Password is only set during account creation, not synchronized on boot
                 if admin_user.auth_provider != 'whatsapp':
                     admin_user.auth_provider = 'whatsapp'
                     changed = True
                 if changed:
-                    # Si UserGkach row manque (migrations anciennes), créé
+                    # Ensure UserGkach row exists (for old migrations)
                     g = UserGkach.query.filter(
                         (UserGkach.user_id == admin_user.id) |
                         (UserGkach.user_whatsapp == admin_user.whatsapp)
@@ -1147,8 +1168,9 @@ def create_app(config_name=None):
                         db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
                     db.session.commit()
                     app.logger.info(
-                        f"Admin user IDEMPOTENT UPGRADED: pseudo={admin_user.pseudo!r} "
-                        f"whatsapp={admin_user.whatsapp!r} is_admin={admin_user.is_admin} pw_sync=OK"
+                        f"Admin user SYNCHRONIZED: pseudo={admin_user.pseudo!r} "
+                        f"whatsapp={admin_user.whatsapp!r} is_admin={admin_user.is_admin} "
+                        f"(password NOT reset - preserved from previous boot)"
                     )
         except Exception as e:
             app.logger.warning(f"Could not process admin user setup: {e}")
@@ -1631,7 +1653,19 @@ def register_error_handlers(app):
     def inject_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # Permissions-Policy: restrict access to powerful APIs
+        response.headers['Permissions-Policy'] = (
+            'geolocation=(), '
+            'microphone=(), '
+            'camera=(), '
+            'payment=(), '
+            'usb=(), '
+            'magnetometer=(), '
+            'gyroscope=(), '
+            'accelerometer=()'
+        )
         if request.is_secure or app.config.get('SESSION_COOKIE_SECURE'):
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         nonce = getattr(request, '_csp_nonce', None)

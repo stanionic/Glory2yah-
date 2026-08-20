@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Lokal ALO LEGLIZ - Glory2YahPub{% endblock %}
+{% block extra_css %}
+<style>
+    .locations-wrap { max-width: 760px; margin: 0 auto; padding: 70px 14px 90px; }
+    .locations-head { margin-bottom: 22px; }
+    .locations-head h1 { margin: 0 0 6px; color: #1a1a1a; font-size: 25px; }
+    .locations-head p { margin: 0; color: #667; font-size: 14px; }
+    .department { background: #fff; border: 1px solid #eee; border-radius: 16px;
+        margin-bottom: 16px; overflow: hidden; }
+    .department h2 { margin: 0; padding: 14px 18px; background: #f4f5ff;
+        color: #2b2d42; font-size: 18px; }
+    .location { padding: 14px 18px; border-top: 1px solid #f0f0f0; }
+    .location strong { display: block; color: #1a1a1a; font-size: 15px; }
+    .location span { display: block; color: #667; font-size: 13px; margin-top: 4px; }
+    .back-link { display: inline-block; margin-bottom: 18px; color: #667eea;
+        font-weight: 700; text-decoration: none; }
+    .empty { background: #fff; border: 1px solid #eee; border-radius: 16px;
+        padding: 22px; color: #667; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="locations-wrap">
+    <a class="back-link" href="{{ url_for('events.landing', slug=event.slug) }}">&larr; Retounen</a>
+    <div class="locations-head">
+        <h1>Lokal ALO LEGLIZ</h1>
+        <p>Egliz ak òganizasyon ki enskri yo, klase alfabetikman pa depatman.</p>
+    </div>
+    {% if grouped_locations %}
+        {% for department, locations in grouped_locations.items() %}
+        <section class="department">
+            <h2>{{ department }}</h2>
+            {% for location in locations %}
+            <div class="location">
+                <strong>{{ location.org_name }}</strong>
+                <span>
+                    {% if location.city %}{{ location.city }}{% endif %}
+                    {% if location.address %} · {{ location.address }}{% endif %}
+                </span>
+                {% if location.phone %}<span>Telefòn: {{ location.phone }}</span>{% endif %}
+                {% if location.whatsapp %}<span>WhatsApp: {{ location.whatsapp }}</span>{% endif %}
+            </div>
+            {% endfor %}
+        </section>
+        {% endfor %}
+    {% else %}
+        <div class="empty">Pa gen lokal enskri pou kounye a.</div>
+    {% endif %}
+</div>
+{% endblock %}
