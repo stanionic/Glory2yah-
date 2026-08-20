@@ -56,6 +56,8 @@
     .nearby-results { margin-top: 12px; color: #444; font-size: 13px; }
     .nearby-location { padding: 10px 0; border-top: 1px solid #f0f0f0; }
     .nearby-location strong { color: #1a1a1a; }
+    .alo-direction { text-align: center; color: #444; font-size: 14px; line-height: 1.6; }
+    .alo-direction strong { display: block; color: #1a1a1a; font-size: 16px; }
     @media (max-width: 520px) {
         .leader { width: 100%; }
         .leader-profile { grid-template-columns: 100px 1fr; gap: 12px; }
@@ -77,6 +79,11 @@
             {{ event.end_at.strftime('%H:%M') if event.end_at else '' }}
             {% if event.location_label %} · {{ event.location_label }}{% endif %}
         </div>
+    </div>
+
+    <div class="ev-card alo-direction">
+        <strong>ALO LEGLIZ</strong>
+        Coordination générale présidée par Pasteur Moise JOSEPH &amp; le Comité Exécutif
     </div>
 
     <!-- STATS -->
@@ -204,6 +211,7 @@
             </div>
             <button class="btn-ev" type="submit">Voye enskripsyon</button>
             <button class="btn-ev alt" type="button" id="findLocalBtn">Jwenn yon lokal ki pi pre w</button>
+            <p class="hint">Lokal ki konfime yo ap parèt nan lòd alfabetik selon vil la.</p>
             <div class="nearby-results" id="nearbyResults" aria-live="polite"></div>
         </form>
     </div>
@@ -236,25 +244,6 @@ function shareEv(channel) {
     if (target) window.open(target, '_blank', 'width=600,height=600');
     try {
         fetch('{{ url_for("events.share", slug=event.slug) }}', {
-            document.getElementById('shareFormBtn').addEventListener('click', async function() {
-                const options = document.getElementById('shareOptions');
-                if (navigator.share) {
-                    try {
-                        await navigator.share({ title: '{{ event.title }}', url: window.location.href });
-                        return;
-                    } catch (e) {}
-                }
-                options.hidden = !options.hidden;
-            });
-
-            async function copyFormLink() {
-                try {
-                    await navigator.clipboard.writeText(window.location.href);
-                    document.getElementById('shareOptions').textContent = 'Lyen an kopye.';
-                } catch (e) {
-                    window.prompt('Kopye lyen fòm sa a:', window.location.href);
-                }
-            }
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ channel: channel })
@@ -262,16 +251,32 @@ function shareEv(channel) {
     } catch (e) {}
 }
 
-document.getElementById('findLocalBtn').addEventListener('click', async function() {
-    const form = this.form;
-    const results = document.getElementById('nearbyResults');
+document.getElementById('shareFormBtn').addEventListener('click', async function() {
+    const options = document.getElementById('shareOptions');
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: '{{ event.title }}', url: window.location.href });
+            return;
+        } catch (e) {}
+    }
+    options.hidden = !options.hidden;
+});
+
+async function copyFormLink() {
+    try {
+        await navigator.clipboard.writeText(window.location.href);
+        document.getElementById('shareOptions').textContent = 'Lyen an kopye.';
+    } catch (e) {
+        window.prompt('Kopye lyen fòm sa a:', window.location.href);
+    }
+}
+
+async function loadNearbyLocations(form, results) {
     const city = form.elements.city.value.trim();
     const region = form.elements.region.value;
-    if (!city && !region) {
-        results.textContent = 'Antre yon vil oswa chwazi yon rejyon anvan.';
-        return;
-    }
-    results.textContent = 'Nap chèche lokal ki pi pre w...';
+    results.textContent = city || region
+        ? 'Nap chèche lokal ki pi pre w...'
+        : 'Nap chèche tout lokal konfime yo...';
     const params = new URLSearchParams({ city, region });
     try {
         const response = await fetch('{{ url_for("events.nearby_locations", slug=event.slug) }}?' + params);
@@ -281,6 +286,14 @@ document.getElementById('findLocalBtn').addEventListener('click', async function
             results.textContent = data.message;
             return;
         }
+        data.locations.sort((left, right) => {
+            const leftCity = (left.city || '').trim();
+            const rightCity = (right.city || '').trim();
+            if (!leftCity && rightCity) return 1;
+            if (leftCity && !rightCity) return -1;
+            return leftCity.localeCompare(rightCity, 'ht', { sensitivity: 'base' }) ||
+                (left.name || '').localeCompare(right.name || '', 'ht', { sensitivity: 'base' });
+        });
         data.locations.forEach(location => {
             const item = document.createElement('div');
             item.className = 'nearby-location';
@@ -301,6 +314,14 @@ document.getElementById('findLocalBtn').addEventListener('click', async function
     } catch (error) {
         results.textContent = 'Nou pa kapab chèche lokal yo kounye a.';
     }
+}
+
+const findLocalBtn = document.getElementById('findLocalBtn');
+const nearbyForm = findLocalBtn.form;
+const nearbyResults = document.getElementById('nearbyResults');
+findLocalBtn.addEventListener('click', function() {
+    loadNearbyLocations(nearbyForm, nearbyResults);
 });
+loadNearbyLocations(nearbyForm, nearbyResults);
 </script>
 {% endblock %}

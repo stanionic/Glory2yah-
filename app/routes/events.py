@@ -178,12 +178,10 @@ def _register_organization(event):
 
 @events_bp.route('/events/<slug>/nearby-locations')
 def nearby_locations(slug):
-    """Return confirmed registered locations matching city or region."""
+    """Return confirmed enrolled churches and organizations by city."""
     event = Event.query.filter_by(slug=slug, status='published').first_or_404()
     city = _clean(request.args.get('city'), 120)
     region = _clean(request.args.get('region'), 120)
-    if not city and not region:
-        return jsonify({'locations': [], 'message': 'Chwazi yon vil oswa yon rejyon.'})
 
     city_key = city.casefold() if city else ''
     region_key = region.casefold() if region else ''
@@ -195,11 +193,15 @@ def nearby_locations(slug):
         organization_region = (organization.region.name if organization.region else '').casefold()
         city_match = bool(city_key and organization_city == city_key)
         region_match = bool(region_key and organization_region == region_key)
-        if not city_match and not region_match:
+        if (city_key or region_key) and not city_match and not region_match:
             continue
-        locations.append((0 if city_match else 1, organization))
+        locations.append(organization)
 
-    locations.sort(key=lambda item: (item[0], (item[1].org_name or '').casefold()))
+    locations.sort(key=lambda organization: (
+        not bool((organization.city or '').strip()),
+        (organization.city or '').casefold(),
+        (organization.org_name or '').casefold(),
+    ))
     return jsonify({
         'locations': [{
             'name': organization.org_name,
@@ -208,7 +210,7 @@ def nearby_locations(slug):
             'address': organization.address,
             'phone': organization.phone,
             'whatsapp': organization.whatsapp,
-        } for _, organization in locations],
+        } for organization in locations],
         'message': None if locations else 'Pa gen lokal konfime pou zòn sa a ankò.',
     })
 
