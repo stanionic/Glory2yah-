@@ -93,28 +93,32 @@
        that extend base.html (defensive — image ① "Error/Go Home minimal card" fix
        root cause was exactly this TypeError inside nav render). #}
     {% set _ep = request.endpoint or '' %}
-    <nav class="modern-bottom-nav" id="bottomNav">
-        <a href="{{ url_for('main.index') }}" class="nav-item {% if _ep == 'main.index' %}active{% endif %}" data-label="Akèy">
-            <span class="nav-icon">🏠</span>
+    <nav class="g2y-bottom-nav" id="bottomNav">
+        <a href="{{ url_for('main.index') }}" class="g2y-nav-item {% if _ep == 'main.index' %}active{% endif %}" data-label="Akèy">
+            <span class="g2y-nav-icon">🏠</span>
             <span class="nav-label">Akèy</span>
         </a>
-        <a href="{{ url_for('marketplace.index') }}" class="nav-item {% if 'marketplace' in _ep %}active{% endif %}" data-label="Mache">
-            <span class="nav-icon">🛒</span>
+        <a href="{{ url_for('marketplace.index') }}" class="g2y-nav-item {% if 'marketplace' in _ep %}active{% endif %}" data-label="Mache">
+            <span class="g2y-nav-icon">🛒</span>
             <span class="nav-label">Mache</span>
         </a>
-        <button class="nav-item nav-services" onclick="toggleServicesMenu()" data-label="Sèvis">
-            <span class="nav-icon">🚀</span>
+        <a href="{{ url_for('events.index') }}" class="g2y-nav-item {% if 'events' in _ep %}active{% endif %}" data-label="Evènman">
+            <span class="g2y-nav-icon">🗓️</span>
+            <span class="nav-label">Evènman</span>
+        </a>
+        <button class="g2y-nav-item nav-services" onclick="toggleServicesMenu()" data-label="Sèvis">
+            <span class="g2y-nav-icon">🚀</span>
             <span class="nav-label">Sèvis</span>
         </button>
-        <a href="{{ url_for('cart.index') }}" class="nav-item {% if 'cart' in _ep %}active{% endif %}" data-label="Panyen">
-            <span class="nav-icon">🛍️</span>
+        <a href="{{ url_for('cart.index') }}" class="g2y-nav-item {% if 'cart' in _ep %}active{% endif %}" data-label="Panyen">
+            <span class="g2y-nav-icon">🛍️</span>
             <span class="nav-label">Panyen</span>
             {% if cart_count and cart_count > 0 %}
             <span class="notification-badge" id="cartBadge">{{ cart_count }}</span>
             {% endif %}
         </a>
-        <a href="{{ url_for('auth.profile') }}" class="nav-item {% if 'auth' in _ep or 'gkach' in _ep %}active{% endif %}" data-label="Pwofil">
-            <span class="nav-icon">👤</span>
+        <a href="{{ url_for('auth.profile') }}" class="g2y-nav-item {% if 'auth' in _ep or 'gkach' in _ep %}active{% endif %}" data-label="Pwofil">
+            <span class="g2y-nav-icon">👤</span>
             <span class="nav-label">Pwofil</span>
         </a>
     </nav>
@@ -147,6 +151,11 @@
                     <span class="service-icon">📹</span>
                     <span class="service-name">Konferans</span>
                     <span class="service-desc">Reyinyon videyo</span>
+                </a>
+                <a href="{{ url_for('events.index') }}" class="service-item">
+                    <span class="service-icon">🗓️</span>
+                    <span class="service-name">Evènman</span>
+                    <span class="service-desc">SOS ALO LEGLIZ</span>
                 </a>
                 <a href="/ecole_biblique" class="service-item">
                     <span class="service-icon">🎓</span>
