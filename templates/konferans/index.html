@@ -1,7 +1,7 @@
-ake it {% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block head %}
-<link rel="stylesheet" href="/static/css/konferans.css?v=2">
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/konferans.css?v=5">
 <style>
     /* Additional modern styles for the index page */
     .konf-hero-icon {
@@ -61,9 +61,9 @@ ake it {% extends "base.html" %}
     }
 
     .konf-btn-outline:hover {
-        border-color: var(--g2y-primary-light);
-        color: var(--g2y-primary-light);
-        background: rgba(74, 111, 199, 0.05);
+        border-color: var(--konf-accent-light);
+        color: var(--konf-accent-light);
+        background: rgba(42, 63, 143, 0.05);
     }
 
     .konf-features {
@@ -90,7 +90,7 @@ ake it {% extends "base.html" %}
 
     .konf-feature-item i {
         font-size: 1.5rem;
-        color: var(--g2y-primary-light);
+        color: var(--konf-accent-light);
         margin-bottom: 6px;
         display: block;
     }
@@ -144,7 +144,7 @@ ake it {% extends "base.html" %}
                     <small style="color:var(--g2y-text-muted);font-size:0.75rem;margin-top:4px;display:block">
                         Kreye pa <strong>{{ (current_user.name or current_user.pseudo or 'User') | e }}</strong>
                         {% if current_user.whatsapp %}
-                        • WhatsApp: <code style="color:var(--g2y-primary-light)">{{ current_user.whatsapp }}</code>
+                        • WhatsApp: <code style="color:var(--konf-accent-light)">{{ current_user.whatsapp }}</code>
                         {% endif %}
                     </small>
                 </div>
@@ -164,8 +164,8 @@ ake it {% extends "base.html" %}
                 <div class="konferans-section-title">
                     <i class="fas fa-user-lock"></i> Kreye yon Sal
                 </div>
-                <div id="create_room_anon_warn" style="padding:20px;border-radius:12px;background:linear-gradient(135deg,rgba(74,111,199,0.08),rgba(94,136,232,0.05));border:1px dashed var(--g2y-primary-light);text-align:center;margin-bottom:16px">
-                    <i class="fas fa-sign-in-alt" style="font-size:2.2rem;color:var(--g2y-primary-light);margin-bottom:10px;display:block"></i>
+                <div id="create_room_anon_warn" style="padding:20px;border-radius:12px;background:linear-gradient(135deg,rgba(74,111,199,0.08),rgba(94,136,232,0.05));border:1px dashed var(--konf-accent-light);text-align:center;margin-bottom:16px">
+                    <i class="fas fa-sign-in-alt" style="font-size:2.2rem;color:var(--konf-accent-light);margin-bottom:10px;display:block"></i>
                     <p style="color:var(--g2y-text-secondary);margin-bottom:14px;line-height:1.5">
                         <strong>Ou dwe konekte avan ou kapab kreye yon sal Konferans.</strong><br>
                         Kont ou pral devni pwopriyetè sal la e modérateur dirèk.
@@ -231,6 +231,154 @@ ake it {% extends "base.html" %}
             </div>
         </div>
     </div>
+
+    {% if showcase_media %}
+    <!-- ===== BBC-STYLE MEDIA SHOWCASE (Split Layout + Scroll Bar) ===== -->
+    <div class="konferans-container" style="margin-top: 32px;">
+        <div class="konf-media-showcase-card">
+            <div class="konf-showcase-header">
+                <div class="konf-showcase-brand">
+                    <span class="konf-showcase-logo">G2Y</span>
+                    <div>
+                        <span class="konf-showcase-label">MEDYA KONFERANS</span>
+                        <span class="konf-showcase-count">{{ showcase_media|length }} dokiman disponib</span>
+                    </div>
+                </div>
+                <div class="konf-showcase-actions">
+                    <button class="konf-scroll-btn" id="scrollLeftBtn" aria-label="Scroll Left">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="konf-scroll-btn" id="scrollRightBtn" aria-label="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BBC Split Layout: Media Left + Content Right (Featured) -->
+            <div class="konf-split-layout" id="konfSplitLayout">
+                <div class="konf-split-media" id="konfSplitMedia">
+                    {% set featured = showcase_media[0] %}
+                    {% if featured.type == 'video' %}
+                        <video controls preload="metadata" src="{{ featured.url }}" poster="">
+                            Videyo pa ka jwe nan navigatè ou a.
+                        </video>
+                    {% elif featured.type == 'audio' %}
+                        <div class="konf-split-audio-wrap">
+                            <i class="fas fa-podcast"></i>
+                            <audio controls src="{{ featured.url }}"></audio>
+                            <span>{{ featured.title }}</span>
+                        </div>
+                    {% elif featured.type == 'image' %}
+                        <img src="{{ featured.url }}" alt="{{ featured.title | e }}" loading="lazy">
+                    {% else %}
+                        <div class="konf-split-doc-wrap">
+                            <i class="fas fa-file-alt"></i>
+                            <h4>{{ featured.title }}</h4>
+                            <p>{{ featured.description }}</p>
+                            <a href="{{ featured.url }}" target="_blank" class="konf-btn konf-btn-primary" style="width:auto;text-decoration:none;margin-top:8px;">
+                                <i class="fas fa-download"></i> Louvri Dokiman
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="konf-split-content">
+                    <div class="konf-split-brand-mark">G2Y · KONFERANS</div>
+                    <h2 class="konf-split-title" id="konfSplitTitle">{{ featured.title | e }}</h2>
+                    <div class="konf-split-thumb-row" id="konfSplitThumbRow">
+                        {% if showcase_media|length > 1 %}
+                            {% set thumb2 = showcase_media[1] %}
+                            {% if thumb2.type == 'image' %}
+                                <img src="{{ thumb2.url }}" alt="{{ thumb2.title | e }}" loading="lazy">
+                            {% elif thumb2.type == 'video' %}
+                                <div class="konf-split-thumb-video">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            {% elif thumb2.type == 'audio' %}
+                                <div class="konf-split-thumb-audio">
+                                    <i class="fas fa-volume-up"></i>
+                                </div>
+                            {% else %}
+                                <div class="konf-split-thumb-doc">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <h3 class="konf-split-subtitle" id="konfSplitSubtitle">
+                        {% if featured.room_name %}
+                            Sal: {{ featured.room_name | e }}
+                        {% else %}
+                            {% if featured.type == 'video' %}Kòman pou itilize videyo konferans lan?{% elif featured.type == 'audio' %}Kòman pou itilize odyo konferans lan?{% elif featured.type == 'image' %}Kòman pou itilize imaj konferans lan?{% else %}Kòman pou itilize dokiman konferans lan?{% endif %}
+                        {% endif %}
+                    </h3>
+                    <p class="konf-split-description" id="konfSplitDescription">
+                        {% if featured.room_name %}
+                            Patisipan: <strong>{{ featured.description | e }}</strong>
+                            {% if featured.created_at %}• Pibliye: {{ featured.created_at.split('T')[0] }}{% endif %}
+                            {% if featured.file_size %}• Gwosè: {{ (featured.file_size / 1024 / 1024) | round(2) }} MB{% endif %}
+                            <br><br>
+                            Medya sa a soti nan yon sesyon Konferans Glory2Yah. Ou ka gade l, ekoute l, oubyen telechaje l pou w itilize l apre. Tout medya konferans yo pwoteje e disponib pou patisipan yo sèlman ki gen aksè.
+                        {% else %}
+                            Pataje pa: <strong>{{ featured.description | e }}</strong>
+                            {% if featured.created_at %}• Pibliye: {{ featured.created_at.split('T')[0] }}{% endif %}
+                            {% if featured.file_size %}• Gwosè: {{ (featured.file_size / 1024 / 1024) | round(2) }} MB{% endif %}
+                            <br><br>
+                            Medya sa a te pataje nan yon sal Konferans. Ou ka wè preview la a epi chwazi l nan galri ki anba a pou plis detay.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Horizontal Scrollable Media Bar (Scrolling Gallery) -->
+            <div class="konf-scrollbar-container">
+                <div class="konf-scrollbar-track" id="konfScrollbarTrack">
+                    {% for media in showcase_media %}
+                    <div class="konf-scroll-item {% if loop.index == 1 %}active{% endif %}"
+                         data-index="{{ loop.index0 }}"
+                         data-type="{{ media.type }}"
+                         data-title="{{ media.title | e }}"
+                         data-description="{{ media.description | e }}"
+                         data-room="{{ media.room_name | e if media.room_name else '' }}"
+                         data-url="{{ media.url }}"
+                         data-created="{{ media.created_at.split('T')[0] if media.created_at else '' }}"
+                         data-size="{{ (media.file_size / 1024 / 1024) | round(2) if media.file_size else '0' }}">
+                        <div class="konf-scroll-thumb">
+                            {% if media.type == 'video' %}
+                                <div class="konf-thumb-video">
+                                    <i class="fas fa-play-circle"></i>
+                                    <span>VID</span>
+                                </div>
+                            {% elif media.type == 'audio' %}
+                                <div class="konf-thumb-audio">
+                                    <i class="fas fa-podcast"></i>
+                                    <span>OD</span>
+                                </div>
+                            {% elif media.type == 'image' %}
+                                <img src="{{ media.url }}" alt="{{ media.title | e }}" loading="lazy">
+                            {% else %}
+                                <div class="konf-thumb-doc">
+                                    <i class="fas fa-file-alt"></i>
+                                    <span>DOC</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="konf-scroll-info">
+                            <span class="konf-scroll-type konf-type-{{ media.type }}">
+                                {% if media.type == 'video' %}VIDEYO{% elif media.type == 'audio' %}ODYO{% elif media.type == 'image' %}IMAJ{% else %}DOK{% endif %}
+                            </span>
+                            <span class="konf-scroll-title">{{ media.title | e }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Custom Scroll Indicator / Progress Bar -->
+            <div class="konf-scroll-progress" id="konfScrollProgress">
+                <div class="konf-scroll-progress-fill" id="konfScrollProgressFill"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <script>
@@ -351,5 +499,106 @@ ake it {% extends "base.html" %}
             alert('Yon erè rezo rive. Eseye ankò.');
         }
     }
+
+    // ===== BBC-STYLE SHOWCASE: Scroll Bar + Split Media Interactions =====
+    (function () {
+        const track = document.getElementById('konfScrollbarTrack');
+        const leftBtn = document.getElementById('scrollLeftBtn');
+        const rightBtn = document.getElementById('scrollRightBtn');
+        const progressFill = document.getElementById('konfScrollProgressFill');
+        const splitMedia = document.getElementById('konfSplitMedia');
+        const splitTitle = document.getElementById('konfSplitTitle');
+        const splitSubtitle = document.getElementById('konfSplitSubtitle');
+        const splitDescription = document.getElementById('konfSplitDescription');
+        const splitThumbRow = document.getElementById('konfSplitThumbRow');
+        const items = document.querySelectorAll('.konf-scroll-item');
+        if (!track || items.length === 0) return;
+
+        function updateProgress() {
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            const ratio = maxScroll > 0 ? track.scrollLeft / maxScroll : 0;
+            if (progressFill) progressFill.style.width = (ratio * 100) + '%';
+        }
+
+        track.addEventListener('scroll', function () {
+            updateProgress();
+        }, { passive: true });
+
+        if (leftBtn) {
+            leftBtn.addEventListener('click', function () {
+                track.scrollBy({ left: -320, behavior: 'smooth' });
+            });
+        }
+        if (rightBtn) {
+            rightBtn.addEventListener('click', function () {
+                track.scrollBy({ left: 320, behavior: 'smooth' });
+            });
+        }
+
+        function setFeatured(mediaData) {
+            if (!mediaData) return;
+            const type = mediaData.type;
+            const url = mediaData.url;
+            const title = mediaData.title;
+            const description = mediaData.description;
+            const room = mediaData.room;
+            const created = mediaData.created;
+            const size = mediaData.size;
+
+            if (splitMedia) {
+                let html = '';
+                if (type === 'video') {
+                    html = `<video controls preload="metadata" src="${url}">Videyo pa ka jwe nan navigatè ou a.</video>`;
+                } else if (type === 'audio') {
+                    html = `<div class="konf-split-audio-wrap"><i class="fas fa-podcast"></i><audio controls src="${url}"></audio><span>${title}</span></div>`;
+                } else if (type === 'image') {
+                    html = `<img src="${url}" alt="${title}" loading="lazy">`;
+                } else {
+                    html = `<div class="konf-split-doc-wrap"><i class="fas fa-file-alt"></i><h4>${title}</h4><p>${description}</p><a href="${url}" target="_blank" class="konf-btn konf-btn-primary" style="width:auto;text-decoration:none;margin-top:8px;"><i class="fas fa-download"></i> Louvri Dokiman</a></div>`;
+                }
+                splitMedia.innerHTML = html;
+            }
+            if (splitTitle) splitTitle.textContent = title;
+            if (splitSubtitle) {
+                splitSubtitle.textContent = room ? ('Sal: ' + room) : (
+                    type === 'video' ? 'Kòman pou itilize videyo konferans lan?' :
+                    type === 'audio' ? 'Kòman pou itilize odyo konferans lan?' :
+                    type === 'image' ? 'Kòman pou itilize imaj konferans lan?' :
+                    'Kòman pou itilize dokiman konferans lan?'
+                );
+            }
+            if (splitDescription) {
+                const prefix = room ? 'Patisipan:' : 'Pataje pa:';
+                splitDescription.innerHTML =
+                    `${prefix} <strong>${description}</strong>` +
+                    (created ? ` • Pibliye: ${created}` : '') +
+                    (size ? ` • Gwosè: ${size} MB` : '') +
+                    '<br><br>Medya sa a soti nan yon sesyon Konferans Glory2Yah. Ou ka gade l, ekoute l, oubyen telechaje l pou w itilize l apre. Tout medya konferans yo pwoteje e disponib pou patisipan yo sèlman ki gen aksè.';
+            }
+            if (splitThumbRow) {
+                splitThumbRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        items.forEach(function (el) {
+            el.addEventListener('click', function () {
+                items.forEach(function (x) { x.classList.remove('active'); });
+                el.classList.add('active');
+                const data = {
+                    type: el.dataset.type,
+                    url: el.dataset.url,
+                    title: el.dataset.title,
+                    description: el.dataset.description,
+                    room: el.dataset.room,
+                    created: el.dataset.created,
+                    size: el.dataset.size,
+                };
+                setFeatured(data);
+                el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            });
+        });
+
+        updateProgress();
+    })();
 </script>
 {% endblock %}
