@@ -14,6 +14,7 @@ from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
 from app.models.admin_settings import AdminSettings # Import AdminSettings
 from app.utils.security import admin_required
+from app.services.notification_service import alert_admin
 import io as _io
 
 
@@ -214,6 +215,7 @@ def admin_login():
             flash('Kont sa a pa yon kont administrateur.', 'error')
         elif user.check_password(password):
             login_user(user)
+            alert_admin(f'[LOGIN] Admin {user.pseudo} konekte nan panno admin lan.')
             flash('Byenveni Administratè!', 'success')
             return redirect(url_for('admin.dashboard'))
         else:
@@ -461,9 +463,11 @@ def admin_delete_user(user_id):
         return redirect(url_for('admin.manage_users'))
     
     user = User.query.get_or_404(user_id)
+    pseudo = user.pseudo or user.whatsapp
     UserGkach.query.filter_by(user_id=user.id).delete()
     db.session.delete(user)
     db.session.commit()
+    alert_admin(f'[EFASE ITILIZATE] Admin efase kont: {pseudo}')
     flash('Itilizatè efase avèk siksè!', 'success')
     return redirect(url_for('admin.manage_users'))
 
@@ -484,6 +488,7 @@ def toggle_user_status(user_id):
     db.session.commit()
 
     action = 'bloke' if not user.is_active else 'debloke'
+    alert_admin(f'[ITILIZATE {action.upper()}] Kont "{user.pseudo or user.whatsapp}" {action} pa admin.')
     flash(f'Kont "{user.pseudo or user.whatsapp}" {action} avèk siksè!', 'success')
     return redirect(url_for('admin.manage_users'))
 
@@ -516,6 +521,7 @@ def block_user_by_pseudo():
 
     user.is_active = False
     db.session.commit()
+    alert_admin(f'[BLOKE] Kont "{user.pseudo}" bloke pa admin (by-pseudo).')
     flash(f'Kont "{user.pseudo}" bloke avèk siksè! Li pa ka konekte ankò.', 'success')
     return redirect(url_for('admin.manage_users'))
 
@@ -724,6 +730,7 @@ def approve_ad(ad_id):
     """Approve an ad"""
     try:
         AdService.approve_ad(ad_id)
+        alert_admin(f'[APWOUVE] Piblisite {ad_id} apwouve pa admin.')
         flash('Piblisite apwouve!', 'success')
         return jsonify({'success': True})
     except Exception as e:
@@ -741,6 +748,7 @@ def reject_ad(ad_id):
     try:
         reason = sanitize_text(request.form.get('reason', ''))
         AdService.reject_ad(ad_id, reason)
+        alert_admin(f'[REJTE] Piblisite {ad_id} rejete pa admin. Rezon: {reason or "pa bay"}')
         flash('Piblisite rejete.', 'info')
         return jsonify({'success': True})
     except ValidationError as e:
@@ -779,6 +787,7 @@ def manage_gkach():
                         break
                 account.gkach_requests = json.dumps(requests_list)
                 db.session.commit()
+                alert_admin(f'[GKACH] Demann {action} pou {user_whatsapp} (ID: {request_id}) traite pa admin.')
                 flash('Demann traite avèk siksè!', 'success')
         elif action == 'edit_balance':
             user_whatsapp = request.form.get('whatsapp')
@@ -806,23 +815,47 @@ def manage_gkach():
                     except ValidationError as ve:
                         flash(f'Impossible de débiter: {str(ve)}', 'error')
                         return redirect(url_for('admin.manage_gkach'))
+                alert_admin(f'[GKACH EDIT] Balans {user_whatsapp} chanje -> {new_balance} Gkach pa admin.')
                 flash('Balans modifye avèk siksè!', 'success')
         elif action == 'add_balance':
             user_whatsapp = request.form.get('whatsapp')
             add_amount = int(request.form.get('amount', 0))
             if add_amount > 0:
                 GkachService.add_balance(user_whatsapp, add_amount, f'Admin added balance: {add_amount} Gkach', 'admin_credit')
+                alert_admin(f'[GKACH ADD] +{add_amount} Gkach ajoute pou {user_whatsapp} pa admin.')
                 flash('Balans ajoute avèk siksè!', 'success')
         elif action == 'delete_user':
             user_whatsapp = request.form.get('whatsapp')
             UserGkach.query.filter_by(user_whatsapp=user_whatsapp).delete()
             db.session.commit()
             flash('Kont Gkach efase avèk siksè!', 'success')
+        elif action in ('approve_withdrawal', 'reject_withdrawal'):
+            from app.utils.validators import ValidationError
+            tx_id = request.form.get('transaction_id')
+            reviewer_note = request.form.get('reviewer_note', '')
+            admin_action = 'approve' if action == 'approve_withdrawal' else 'reject'
+            try:
+                GkachService.review_withdrawal(tx_id, admin_action, reviewer_note=reviewer_note)
+                if admin_action == 'approve':
+                    flash('Retriz apwouve avèk siksè! Lajan retire nan kont itilizatè a.', 'success')
+                else:
+                    flash('Demann retriz rejete.', 'info')
+            except ValidationError as ve:
+                flash(str(ve), 'error')
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"review_withdrawal failed id={tx_id}: {e}")
+                flash(f'Erè nan tretman retriz: {str(e)}', 'error')
         
         return redirect(url_for('admin.manage_gkach'))
     
     users_gkach = UserGkach.query.all()
-    return render_template('admin_manage_gkach.html', users_gkach=users_gkach)
+    pending_withdrawals = GkachService.get_pending_withdrawals(limit=100)
+    return render_template(
+        'admin_manage_gkach.html',
+        users_gkach=users_gkach,
+        pending_withdrawals=pending_withdrawals,
+    )
 
 
 @admin_bp.route('/batches/create', methods=['POST'])
@@ -851,6 +884,7 @@ def create_batch():
             ad.batch_id = batch_id
 
         db.session.commit()
+        alert_admin(f'[NOUVO BATCH] Gwoup {batch_id} kreye avèk {len(available_ads)} piblisite pa admin.')
         flash('Nouvo pakèt piblisite kreye avèk siksè!', 'success')
         
     except Exception as e:
@@ -991,6 +1025,7 @@ def update_ad_status():
             pass
 
     db.session.commit()
+    alert_admin(f'[ESTATI AD] Piblisite {ad_id} | admin_status={ad.admin_status} | payment_status={ad.payment_status}')
 
     # ---------- INVALIDATE CACHE ----------
     from app.services.redis_service import RedisService
@@ -1027,6 +1062,7 @@ def admin_delete_ad(ad_id):
     """Delete ad (admin only)"""
     try:
         AdService.delete_ad(ad_id=ad_id)
+        alert_admin(f'[EFASE AD] Piblisite {ad_id} efase pa admin.')
         flash('Piblisite efase avèk siksè!', 'success')
     except Exception as e:
         current_app.logger.error(f"Admin delete_ad failed for ad_id={ad_id}: {e}")
@@ -1055,7 +1091,7 @@ def delete_batch(batch_id):
     # Delete the batch
     db.session.delete(batch)
     db.session.commit()
-    
+    alert_admin(f'[EFASE BATCH] Gwoup {batch_id} efase pa admin.')
     flash('Gwoup efase avèk siksè!', 'success')
     return redirect(url_for('admin.dashboard'))
 

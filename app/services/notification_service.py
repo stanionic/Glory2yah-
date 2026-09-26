@@ -4,7 +4,37 @@ Handles WhatsApp link generation and user notifications
 """
 import logging
 import urllib.parse
+import threading
 from flask import url_for, current_app
+
+logger = logging.getLogger(__name__)
+
+
+def _send_whatsapp_alert(message: str):
+    """Send a WhatsApp message to the admin via CallMeBot API (fire-and-forget).
+    Register your number once at https://www.callmebot.com/blog/free-api-whatsapp-messages/
+    then set CALLMEBOT_APIKEY in .env.
+    Falls back silently if not configured.
+    """
+    import os, requests as _req
+    phone = os.environ.get('ADMIN_WHATSAPP', '+50942882076').replace('+', '')
+    apikey = os.environ.get('CALLMEBOT_APIKEY', '')
+    if not apikey:
+        logger.debug('CALLMEBOT_APIKEY not set — WhatsApp alert skipped.')
+        return
+    try:
+        url = (
+            f"https://api.callmebot.com/whatsapp.php"
+            f"?phone={phone}&text={urllib.parse.quote(message)}&apikey={apikey}"
+        )
+        _req.get(url, timeout=8)
+    except Exception as e:
+        logger.warning(f'WhatsApp alert failed: {e}')
+
+
+def alert_admin(message: str):
+    """Fire-and-forget WhatsApp alert to admin. Never blocks the request."""
+    threading.Thread(target=_send_whatsapp_alert, args=(message,), daemon=True).start()
 
 
 class NotificationService:
