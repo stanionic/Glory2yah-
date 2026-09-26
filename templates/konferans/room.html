@@ -1313,6 +1313,7 @@
                     <button type="button" class="konf-ann-btn" id="annPenBtn" onclick="setAnnTool('pen')" title="Stylos - trase lib"><i class="fas fa-pen"></i> Stylos</button>
                     <button type="button" class="konf-ann-btn" id="annHighlightBtn" onclick="setAnnTool('highlight')" title="Flambo - souliyè pou souliye"><i class="fas fa-highlighter"></i> Flambo</button>
                     <button type="button" class="konf-ann-btn" id="annRectBtn" onclick="setAnnTool('rect')" title="Kadran seleksyon - trase kadran pou seleksyone pati"><i class="far fa-square"></i> Kadran</button>
+                    <button type="button" class="konf-ann-btn" id="annSelectBtn" onclick="setAnnTool('select')" title="Seleksyon Rejyon — trase pou zoume sou yon pati espesifik (S)"><i class="fas fa-crop-alt"></i> Seleksyon</button>
                     <button type="button" class="konf-ann-btn" id="annArrowBtn" onclick="setAnnTool('arrow')" title="Flèch - montre yon pati espesifik"><i class="fas fa-arrow-right"></i> Flèch</button>
                     <div style="width:1px;background:rgba(255,255,255,0.15);margin:0 6px;height:28px;"></div>
                     <label class="konf-ann-color-label" title="Koulè stylos">
@@ -3111,7 +3112,7 @@
     let annWindowBound = false;
 
     function annCursorFor(tool) {
-        if (tool === 'rect' || tool === 'arrow' || tool === 'eraser') return 'crosshair';
+        if (tool === 'rect' || tool === 'arrow' || tool === 'eraser' || tool === 'select') return 'crosshair';
         return 'cell';
     }
 
@@ -3125,7 +3126,7 @@
     }
 
     function syncAnnButtons() {
-        const map = {pen:'annPenBtn', highlight:'annHighlightBtn', rect:'annRectBtn', arrow:'annArrowBtn', eraser:'annEraserBtn'};
+        const map = {pen:'annPenBtn', highlight:'annHighlightBtn', rect:'annRectBtn', arrow:'annArrowBtn', eraser:'annEraserBtn', select:'annSelectBtn'};
         document.querySelectorAll('.konf-ann-btn').forEach(b => b.classList.remove('active'));
         const active = document.getElementById(map[currentAnnTool] || '');
         if (active) active.classList.add('active');
@@ -3156,12 +3157,158 @@
         const canvas = document.getElementById('mediaAnnotationCanvas');
         if (canvas) canvas.style.cursor = annCursorFor(tool);
         syncAnnButtons();
-        const names = {pen:'Stylos', highlight:'Flambo', rect:'Kadran', arrow:'Flèch', eraser:'Gom'};
+        const names = {pen:'Stylos', highlight:'Flambo', rect:'Kadran', arrow:'Flèch', eraser:'Gom', select:'Seleksyon Rejyon'};
         showToast('<i class="fas fa-mouse-pointer"></i> Zouti: <b>' + (names[tool] || tool) + '</b>', 'info', 1500);
     }
 
     function setAnnColor(c) { currentAnnColor = c; }
     function setAnnSize(s) { currentAnnSize = s; }
+
+    // ===== Region Selection Tool =====
+    // Draws a dashed selection box. On mouseup:
+    //   - Zooms the viewport to that region (local + broadcast to room if owner)
+    //   - Shows a mini popup with Zoom/Copy/Cancel actions
+    let selectionOverlay = null;
+
+    function _drawSelectionRect(ctx, x1, y1, x2, y2) {
+        ctx.save();
+        ctx.setLineDash([8, 4]);
+        ctx.strokeStyle = 'rgba(232,200,116,0.95)';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(232,200,116,0.08)';
+        const rx = Math.min(x1, x2), ry = Math.min(y1, y2);
+        const rw = Math.abs(x2 - x1), rh = Math.abs(y2 - y1);
+        ctx.fillRect(rx, ry, rw, rh);
+        ctx.strokeRect(rx, ry, rw, rh);
+        // Corner handles
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#E8C874';
+        [[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]].forEach(([cx,cy]) => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, Math.PI*2);
+            ctx.fill();
+        });
+        ctx.restore();
+    }
+
+    function _applyRegionZoom(selNorm) {
+        // selNorm: {x1,y1,x2,y2} in 0..1 normalized coords
+        const vp = getMediaViewport();
+        const media = getActiveMediaEl();
+        if (!vp || !media) return;
+        const mw = media.offsetWidth || 1;
+        const mh = media.offsetHeight || 1;
+        const vpW = vp.clientWidth || 1;
+        const vpH = vp.clientHeight || 1;
+        const rx = Math.min(selNorm.x1, selNorm.x2);
+        const ry = Math.min(selNorm.y1, selNorm.y2);
+        const rw = Math.abs(selNorm.x2 - selNorm.x1);
+        const rh = Math.abs(selNorm.y2 - selNorm.y1);
+        if (rw < 0.01 || rh < 0.01) return;
+        // Compute zoom so the selection fills the viewport
+        const scaleX = vpW / (rw * mw);
+        const scaleY = vpH / (rh * mh);
+        const scale = Math.min(scaleX, scaleY, 4);
+        const newZoom = Math.round(scale * 100);
+        setMediaZoom(newZoom, { keepScroll: false, silent: true });
+        // Scroll to center the selection
+        requestAnimationFrame(() => {
+            const newMw = media.offsetWidth || 1;
+            const newMh = media.offsetHeight || 1;
+            const cx = (rx + rw / 2) * newMw;
+            const cy = (ry + rh / 2) * newMh;
+            vp.scrollLeft = Math.max(0, cx - vpW / 2);
+            vp.scrollTop = Math.max(0, cy - vpH / 2);
+            if (isOwner) emitMediaView();
+        });
+    }
+
+    function _showSelectionPopup(selNorm, canvasPx) {
+        // Remove any existing popup
+        document.getElementById('konfSelPopup')?.remove();
+        const popup = document.createElement('div');
+        popup.id = 'konfSelPopup';
+        popup.style.cssText = `
+            position:fixed;z-index:10200;
+            background:rgba(15,23,42,0.97);border:1px solid rgba(232,200,116,0.5);
+            border-radius:12px;padding:10px 14px;display:flex;gap:8px;align-items:center;
+            box-shadow:0 12px 40px rgba(0,0,0,0.5);backdrop-filter:blur(12px);
+            font-size:0.82rem;color:#fff;
+        `;
+        // Position near bottom-right of canvas
+        const canvas = document.getElementById('mediaAnnotationCanvas');
+        if (canvas) {
+            const r = canvas.getBoundingClientRect();
+            popup.style.left = Math.min(r.right - 280, window.innerWidth - 290) + 'px';
+            popup.style.top = Math.min(r.bottom + 8, window.innerHeight - 60) + 'px';
+        }
+        const btnStyle = 'padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-size:0.8rem;font-weight:700;';
+        popup.innerHTML = `
+            <i class="fas fa-crop-alt" style="color:#E8C874"></i>
+            <span>Rejyon seleksyone</span>
+            <button id="konfSelZoom" style="${btnStyle}background:linear-gradient(135deg,#2A3F8F,#182A66);color:#fff">
+                <i class="fas fa-search-plus"></i> Zoume
+            </button>
+            <button id="konfSelCopy" style="${btnStyle}background:rgba(16,185,129,0.2);color:#6ee7b7;border:1px solid rgba(16,185,129,0.4)">
+                <i class="fas fa-copy"></i> Kopye
+            </button>
+            <button id="konfSelCancel" style="${btnStyle}background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        document.body.appendChild(popup);
+        document.getElementById('konfSelZoom').onclick = () => {
+            _applyRegionZoom(selNorm);
+            popup.remove();
+            showToast('<i class="fas fa-search-plus"></i> Zoume sou rejyon seleksyone a.', 'success', 2200);
+        };
+        document.getElementById('konfSelCopy').onclick = () => {
+            _copyRegionToClipboard(selNorm);
+            popup.remove();
+        };
+        document.getElementById('konfSelCancel').onclick = () => {
+            popup.remove();
+            redrawAnnotations();
+        };
+        // Auto-dismiss after 8s
+        setTimeout(() => popup.remove(), 8000);
+    }
+
+    function _copyRegionToClipboard(selNorm) {
+        const media = getActiveMediaEl();
+        if (!media || (media.tagName !== 'IMG' && media.tagName !== 'VIDEO')) {
+            showToast('<i class="fas fa-info-circle"></i> Kopye rejyon disponib pou imaj ak videyo sèlman.', 'info', 3000);
+            return;
+        }
+        try {
+            const mw = media.naturalWidth || media.videoWidth || media.offsetWidth || 1;
+            const mh = media.naturalHeight || media.videoHeight || media.offsetHeight || 1;
+            const rx = Math.min(selNorm.x1, selNorm.x2) * mw;
+            const ry = Math.min(selNorm.y1, selNorm.y2) * mh;
+            const rw = Math.abs(selNorm.x2 - selNorm.x1) * mw;
+            const rh = Math.abs(selNorm.y2 - selNorm.y1) * mh;
+            const out = document.createElement('canvas');
+            out.width = Math.max(1, Math.round(rw));
+            out.height = Math.max(1, Math.round(rh));
+            out.getContext('2d').drawImage(media, rx, ry, rw, rh, 0, 0, out.width, out.height);
+            out.toBlob(blob => {
+                if (!blob) { showToast('<i class="fas fa-exclamation-triangle"></i> Pa ka kopye rejyon an.', 'warn', 3000); return; }
+                try {
+                    navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+                    showToast('<i class="fas fa-copy"></i> Rejyon kopye nan clipboard (PNG).', 'success', 2500);
+                } catch(_) {
+                    // Fallback: download
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'selection_' + Date.now() + '.png';
+                    a.click();
+                    showToast('<i class="fas fa-download"></i> Rejyon telechaje kòm PNG.', 'success', 2500);
+                }
+            }, 'image/png');
+        } catch(e) {
+            showToast('<i class="fas fa-exclamation-triangle"></i> Erè nan kopye rejyon an.', 'warn', 3000);
+        }
+    }
 
     // The canvas is re-created on demand: showMediaInMain() empties the stage
     // (which used to destroy the old canvas and silently break the pen tool),
@@ -3334,6 +3481,21 @@
                     arrow: { x1: annStartPt.x, y1: annStartPt.y, x2: endPt.x, y2: endPt.y },
                     sid: newStrokeId()
                 };
+            } else if (currentAnnTool === 'select' && annStartPt) {
+                const endPt = (e && (e.clientX !== undefined || (e.touches && e.touches.length))) ? canvasPoint(e) : annStartPt;
+                const selNorm = { x1: annStartPt.x, y1: annStartPt.y, x2: endPt.x, y2: endPt.y };
+                redrawAnnotations();
+                _showSelectionPopup(selNorm, null);
+                annStartPt = null;
+                annDrawing = false;
+                return;
+            } else if (currentAnnTool === 'select' && annStartPt) {
+                const endPt = (e && (e.clientX !== undefined || (e.touches && e.touches.length))) ? canvasPoint(e) : annStartPt;
+                const selNorm = { x1: annStartPt.x, y1: annStartPt.y, x2: endPt.x, y2: endPt.y };
+                redrawAnnotations();
+                _showSelectionPopup(selNorm, null);
+                annStartPt = null;
+                return; // don't create a persistent stroke
             }
             if (stroke) {
                 stroke._ts = Date.now();
@@ -3529,6 +3691,8 @@
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
+        } else if (currentAnnTool === 'select') {
+            _drawSelectionRect(ctx, x1, y1, x2, y2);
         }
         ctx.restore();
     }
@@ -3621,7 +3785,7 @@
             }
             return;
         }
-        const tools = { p: 'pen', h: 'highlight', r: 'rect', a: 'arrow', e: 'eraser' };
+        const tools = { p: 'pen', h: 'highlight', r: 'rect', a: 'arrow', e: 'eraser', s: 'select' };
         const key = (e.key || '').toLowerCase();
         if (tools[key]) {
             if (!isOwner) return;
