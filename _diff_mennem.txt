@@ -1,0 +1,114 @@
+﻿git : warning: in the working copy of 'mennem/app.py', LF will be replaced by 
+CRLF the next time Git touches it
+At line:1 char:36
++ ... HONIOENCODING='utf-8'; git diff --no-color mennem/app.py 2>&1 | Out-F ...
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+diff --git a/mennem/app.py b/mennem/app.py
+index 91a7819..c4ec4b8 100644
+--- a/mennem/app.py
++++ b/mennem/app.py
+@@ -1,13 +1,18 @@
+-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
++from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+ from flask_login import login_required, current_user
+ from app import db
+ from app.models.mennem_trip import MennemTrip
+ from app.services.gkach_service import GkachService
+ from app.utils.validators import ValidationError
++import os
+ 
+ # Create blueprint
+ mennem_bp = Blueprint('mennem', __name__, template_folder='templates', static_folder='static')
+ 
++# SECURITY: Mennem uses MOCK DRIVERS and should NEVER debit real Gkach
++# Set MENNEM_DEMO_MODE=1 to disable real debits and test only
++MENNEM_DEMO_MODE = os.environ.get('MENNEM_DEMO_MODE', '1') == '1'
++
+ # Routes
+ @mennem_bp.route('/')
+ def index():
+@@ -64,31 +69,55 @@ def book(driver_index, from_loc, to_loc):
+             return redirect(url_for('auth.login', next=request.url))
+         
+         try:
+-            # Deduct Gkach from passenger
+-            GkachService.deduct_balance(
+-                current_user.whatsapp,
+-                driver['price_gkach'],
+-                f"Voyaj MENNEM M: {from_loc} ΓåÆ {to_loc}",
+-                'mennem_m'
+-            )
+-            
+-            # Create trip record
+-            trip = MennemTrip(
+-                from_location=from_loc,
+-                to_location=to_loc,
+-                price_gkach=driver['price_gkach'],
+-                driver_name=driver['name'],
+-                driver_phone=driver['phone'],
+-                driver_rating=driver['rating'],
+-                passenger_id=current_user.id,
+-                passenger_whatsapp=current_user.whatsapp,
+-                status='paid'
+-            )
+-            db.session.add(trip)
+-            db.session.commit()
+-            
+-            flash(f'Peman an reyisi! Ou te peye {driver["price_gkach"]} Gkach! Kontakte chof├¿ a sou WhatsApp.', 'success')
+-            return redirect(url_for('mennem.success', trip_id=trip.id))
++            # SECURITY FIX: Mennem drivers are MOCK/FICTIONAL
++            # Never debit real Gkach to fictional accounts
++            if MENNEM_DEMO_MODE:
++                # Demo mode: create trip record but DO NOT debit Gkach
++                flash('ΓÜá∩╕Å DEMO MODE: Voyaj MENNEM yo se pou t├¿st s├¿lman. Gkach yo pa debite.', 'warning')
++                
++                trip = MennemTrip(
++                    from_location=from_loc,
++                    to_location=to_loc,
++                    price_gkach=driver['price_gkach'],
++                    driver_name=driver['name'],
++                    driver_phone=driver['phone'],
++                    driver_rating=driver['rating'],
++                    passenger_id=current_user.id,
++                    passenger_whatsapp=current_user.whatsapp,
++                    status='demo'  # Mark as demo, not real payment
++                )
++                db.session.add(trip)
++                db.session.commit()
++                
++                flash(f'Γ£à DEMO COMPLETED: Voyaj ki soti {from_loc} ale {to_loc}. (Pa gen debi Gkach en demo mode)', 'success')
++                return redirect(url_for('mennem.success', trip_id=trip.id))
++            else:
++                # Real mode: debit Gkach (only if explicitly enabled)
++                current_app.logger.warning(f"MENNEM REAL MODE ENABLED: This should only be used if real drivers are implemented!")
++                
++                GkachService.deduct_balance(
++                    current_user.whatsapp,
++                    driver['price_gkach'],
++                    f"Voyaj MENNEM M: {from_loc} ΓåÆ {to_loc}",
++                    'mennem_payment'
++                )
++                
++                trip = MennemTrip(
++                    from_location=from_loc,
++                    to_location=to_loc,
++                    price_gkach=driver['price_gkach'],
++                    driver_name=driver['name'],
++                    driver_phone=driver['phone'],
++                    driver_rating=driver['rating'],
++                    passenger_id=current_user.id,
++                    passenger_whatsapp=current_user.whatsapp,
++                    status='paid'
++                )
++                db.session.add(trip)
++                db.session.commit()
++                
++                flash(f'Peman an reyisi! Ou te peye {driver["price_gkach"]} Gkach! Kontakte chof├¿ a sou WhatsApp.', 'success')
++                return redirect(url_for('mennem.success', trip_id=trip.id))
+         except ValidationError as e:
+             flash(str(e), 'error')
+             return redirect(url_for('mennem.find'))

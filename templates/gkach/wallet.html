@@ -22,6 +22,10 @@
                 <span>↗</span>
                 <span>Transfere</span>
             </a>
+            <a href="/gkach/withdraw" class="balance-btn balance-btn-danger">
+                <span>💸</span>
+                <span>Retire Lajan</span>
+            </a>
         </div>
     </div>
 
@@ -51,6 +55,14 @@
                 <div class="earning-info">
                     <div class="earning-label">Vant</div>
                     <div class="earning-value" id="salesEarnings">0</div>
+                </div>
+            </div>
+            
+            <div class="earning-card">
+                <div class="earning-icon">💳</div>
+                <div class="earning-info">
+                    <div class="earning-label">Cashback</div>
+                    <div class="earning-value" id="cashbackEarnings">0</div>
                 </div>
             </div>
             
@@ -93,12 +105,18 @@
             {% for tx in transactions %}
             <div class="transaction-item">
                 <div class="tx-icon">
-                    {% if tx.transaction_type == 'credit' or tx.transaction_type == 'reward' %}
+                    {% if tx.transaction_type in ['credit', 'reward', 'cashback', 'transfer_in', 'admin_credit'] %}
                     <span class="tx-icon-in">⬇️</span>
-                    {% elif tx.transaction_type == 'debit' or tx.transaction_type == 'purchase' %}
+                    {% elif tx.transaction_type in ['debit', 'purchase', 'transfer_out', 'admin_debit'] %}
                     <span class="tx-icon-out">⬆️</span>
                     {% elif tx.transaction_type == 'sale' %}
                     <span class="tx-icon-sale">💰</span>
+                    {% elif tx.transaction_type == 'withdrawal' %}
+                    <span class="tx-icon-withdraw">💸</span>
+                    {% elif tx.transaction_type == 'donation' %}
+                    <span class="tx-icon-charity">❤️</span>
+                    {% elif tx.transaction_type == 'commission' %}
+                    <span class="tx-icon-commission">🏛️</span>
                     {% else %}
                     <span class="tx-icon-neutral">↔️</span>
                     {% endif %}
@@ -106,18 +124,32 @@
                 <div class="tx-info">
                     <div class="tx-type">
                         {% if tx.transaction_type == 'reward' %}Rekonpans
+                        {% elif tx.transaction_type == 'cashback' %}Cashback
                         {% elif tx.transaction_type == 'purchase' %}Achte
                         {% elif tx.transaction_type == 'sale' %}Vant
                         {% elif tx.transaction_type == 'transfer_in' %}Resevwa
                         {% elif tx.transaction_type == 'transfer_out' %}Voye
+                        {% elif tx.transaction_type == 'withdrawal' %}
+                            {% if tx.status == 'pending' %}Demann Retriz (antan)
+                            {% elif tx.status == 'rejected' %}Retriz Rejete
+                            {% else %}Retriz
+                            {% endif %}
+                        {% elif tx.transaction_type == 'donation' %}Don
+                        {% elif tx.transaction_type == 'commission' %}Komisyon
+                        {% elif tx.transaction_type == 'admin_credit' %}Kredi Admin
+                        {% elif tx.transaction_type == 'admin_debit' %}Debi Admin
                         {% else %}{{ tx.transaction_type }}
                         {% endif %}
                     </div>
-                    <div class="tx-desc">{{ tx.description[:50] }}</div>
-                    <div class="tx-date">{{ tx.created_at[:10] if tx.created_at is string else tx.created_at.strftime('%d %b %Y') }}</div>
+                    <div class="tx-desc">{{ tx.description[:60] }}</div>
+                    <div class="tx-date">{{ tx.created_at[:10] if tx.created_at is string else tx.created_at.strftime('%d %b %Y') }}
+                        {% if tx.status and tx.status != 'completed' %}
+                            · <b>{{ tx.status }}</b>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="tx-amount {% if tx.transaction_type in ['credit', 'reward', 'sale', 'transfer_in'] %}tx-amount-in{% else %}tx-amount-out{% endif %}">
-                    {% if tx.transaction_type in ['credit', 'reward', 'sale', 'transfer_in'] %}+{% else %}-{% endif %}{{ tx.amount }}
+                <div class="tx-amount {% if tx.transaction_type in ['credit', 'reward', 'sale', 'transfer_in', 'cashback', 'donation', 'commission', 'admin_credit'] %}tx-amount-in{% else %}tx-amount-out{% endif %}">
+                    {% if tx.transaction_type in ['credit', 'reward', 'sale', 'transfer_in', 'cashback', 'donation', 'commission', 'admin_credit'] %}+{% else %}-{% endif %}{{ tx.amount }}
                 </div>
             </div>
             {% endfor %}
@@ -229,6 +261,18 @@
 .balance-btn-secondary:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: translateY(-2px);
+}
+
+.balance-btn-danger {
+    background: rgba(255, 82, 82, 0.95);
+    color: white;
+    box-shadow: 0 4px 14px rgba(255, 82, 82, 0.45);
+}
+
+.balance-btn-danger:hover {
+    background: #ff3b3b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 82, 82, 0.55);
 }
 
 /* Section Title */
@@ -400,6 +444,21 @@
     color: #f57c00;
 }
 
+.tx-icon-withdraw {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.tx-icon-charity {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.tx-icon-commission {
+    background: #ede7f6;
+    color: #5e35b1;
+}
+
 .tx-icon-neutral {
     background: #e3f2fd;
     color: #1976d2;
@@ -511,13 +570,14 @@ function shareReferralLink() {
 }
 
 // Load earnings summary
-fetch('/api/gkach/summary')
+fetch('/gkach/api/summary')
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             document.getElementById('totalClicks').textContent = data.total_clicks || 0;
             document.getElementById('rewardEarnings').textContent = data.reward_earnings || 0;
             document.getElementById('salesEarnings').textContent = data.sales_earnings || 0;
+            document.getElementById('cashbackEarnings').textContent = data.cashback_earnings || 0;
             document.getElementById('referralEarnings').textContent = data.referral_earnings || 0;
         }
     })

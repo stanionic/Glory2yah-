@@ -1,0 +1,92 @@
+fix(og): Facebook/WhatsApp preview shows GENERIC LOGO instead of the AD IMAGE
+
+## User-visible symptom (Facebook screenshot)
+  When sharing a /s/<ad_id> short-link to Facebook, the preview card
+  shows:
+    ✓ CORRECT title ("Vitara 2003 à Vendre")
+    ✓ CORRECT domain (glory2yah.onrender.com)
+    ✗ WRONG image → the generic Glory2Yah banner/logo instead of the
+      actual car photo uploaded with the ad.
+
+## Root cause — CACHE LEGACY STRING + naive `images[0]` indexing.
+  The `ads.images` DB column is a TEXT column containing comma-separated
+  filenames. Ad model has had `Ad.get_images_list()` (split + trim) AND
+  `Ad.to_dict()` returning a Python LIST (not the raw string) for a while.
+
+  However Redis cache entries (`ad:<ad_id>` and the `approved_ads` list)
+  written BEFORE that fix (1) still hold the ORIGINAL comma-separated
+  STRING form for the `images` dict key. At request time both Jinja
+  templates (`share_shortlink.html` and `ad_detail.html`) did:
+
+      og_images = ad.images              # STRING, truthy ("a.jpg,b.jpg")
+      og_first  = og_images[0]           # "a" -> FIRST CHARACTER of string!
+
+  Resulting og:image URL emitted → `https://.../uploads/a` → HTTP 404.
+  Crawlers (Facebook, WhatsApp, Discord, Telegram, LinkedIn) silently
+  fall back to either `<body>`'s first `<img>` or the generic site logo.
+  For 404 og:images, Meta's scraper has always preferred the logo — so
+  title/price render correctly but the PREVIEW IMAGE IS ALWAYS WRONG.
+
+  This is a classic off-by-one-boundary bug: index [0] on a truthy STRING
+  vs a truthy LIST produces two wildly different outputs.
+
+## Fix strategy — DEFENSE IN DEPTH (3 layers, all idempotent)
+  LAYER A (Python service boundary):
+    * Added AdService._normalize_images_field() — takes ANYTHING (None,
+      comma-separated STRING, list, tuple, junk types), always returns a
+      clean list[str]. Filter rule: length >= 4 chars AND contains "."
+      (never a valid upload filename otherwise). Invalid values are
+      silently dropped, never passed through.
+    * Added AdService._repair_ad_dict_images() — mutates any dict coming
+      out of AdService so `images` is ALWAYS a clean list and
+      `first_image` holds the first entry.
+    * Wired these in on EVERY dict that crosses AdService.get_* boundary:
+        - get_ad()            → BOTH cache-hit AND db-to_dict paths.
+        - get_approved_ads()  → BOTH cached list AND paginated list.
+        - get_user_ads()      → paginated list.
+        - search_ads()        → search paginated list.
+
+  LAYER B (Jinja2 templates — belt-and-braces for any dict handed in):
+    share_shortlink.html + ad_detail.html now RE-NORMALIZE `ad.images`
+    UP FRONT:
+      * If STRING → split(",") → map trim → reject empties → list.
+      * If list/tuple → filter each entry: must be string, >= 4 chars,
+        contain a ".", backslash → forward slash, drop leading "/".
+      * After extracting og_first / og_first_image: FINAL sanity check —
+        if < 4 chars OR no "." → set to None so the meta tags emit the
+        og_site_logo FALLBACK (predictable) instead of a 404 URL.
+
+  LAYER C (Redis cache reset at boot — already existed):
+    app/__init__.py startup calls AdService.invalidate_all_ad_caches()
+    which deletes key pattern ad:* + approved_ads cache entry. Combined
+    with LAYER A this means the first GET after deploy either:
+      (a) hits an empty cache → DB read → normalized images dict written
+          back to cache cleanly, OR
+      (b) hits a legacy STRING cache entry → repaired in-place by
+          _repair_ad_dict_images() before returning (no 404 og:image).
+
+## Files changed
+  app/services/ad_service.py            | +115 helpers + 4x boundary wires
+  templates/share_shortlink.html        | +37 (LAYER B normalization in jinja)
+  templates/ad_detail.html              | +36 (same LAYER B normalization)
+
+## Validation
+  * Syntax / imports: OK (no pycache SyntaxError).
+  * Diagnostics: 0 lint / 0 type errors.
+  * Regression test_render_prod_db_guard: Ran 6 tests → OK (production
+    DSN fallback behavior untouched).
+  * Smoke _smoke_og_preview.py (exit 0, assertions):
+      - AdService._normalize_images_field("p") → [] (filters 1char junk).
+      - AdService._normalize_images_field("a.jpg,b.jpg,c.JPG ") →
+             ["a.jpg", "b.jpg", "c.JPG"] (correct split).
+      - BUG REPRODUCTION scenario (mock_ad dict with images AS STRING
+        "vitara1.jpg,vitara2.jpg,vitara3.jpg"):
+          * share_shortlink.html og:image meta → ALL meta tags contain
+            filenames >= 4 chars + a dot; ASSERT: "vitara1.jpg" MUST be
+            present in FIRST meta og:image (not some 1char fall-back).
+          * ad_detail.html → same assertions pass.
+  * Expected user result AFTER Render deploys this commit:
+      Re-share the ad /s/<ad_id> on Facebook (or use FB Sharing Debugger
+      "Scrape again" button to purge their own OG cache). The card now
+      shows the real uploaded photo of the Vitara as the large preview,
+      not the generic Glory2Yah banner.

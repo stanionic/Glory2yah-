@@ -1,0 +1,158 @@
+[2026-08-07 12:56:13,975] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_limiter\extension.py:336: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+[2026-08-07 12:56:14,221] WARNING in __init__: SocketIO running without Redis message queue
+[2026-08-07 12:56:15,871] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-08-07 12:56:16,001] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-08-07 12:56:16,062] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-08-07 12:56:16,092] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-08-07 12:56:16,155] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-08-07 12:56:18,368] INFO in __init__: Admin user IDEMPOTENT UPGRADED: pseudo='Admin509' whatsapp='+50942882076' is_admin=True pw_sync=OK
+[2026-08-07 12:56:18,389] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-08-07 12:56:18,399] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-08-07 12:56:18,399] INFO in __init__: Glory2YahPub started in development mode
+[2026-08-07 12:56:18,402] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_limiter\extension.py:336: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+[2026-08-07 12:56:18,437] WARNING in __init__: SocketIO running without Redis message queue
+[2026-08-07 12:56:18,603] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-08-07 12:56:18,652] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-08-07 12:56:18,690] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-08-07 12:56:18,698] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-08-07 12:56:18,713] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-08-07 12:56:20,065] INFO in __init__: Admin user IDEMPOTENT UPGRADED: pseudo='Admin509' whatsapp='+50942882076' is_admin=True pw_sync=OK
+[2026-08-07 12:56:20,095] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-08-07 12:56:20,105] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-08-07 12:56:20,106] INFO in __init__: Glory2YahPub started in development mode
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://172.19.100.244:8080
+Press CTRL+C to quit
+127.0.0.1 - - [07/Aug/2026 12:57:00] "GET /health HTTP/1.1" 503 -
+127.0.0.1 - - [07/Aug/2026 12:57:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:57:13] "GET /mache/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:45] "GET /mache/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:48] "GET /about HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:51] "GET /terms HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:53] "GET /privacy HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:56] "GET /contact HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 12:59:58] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:00] "GET /auth/register HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:02] "GET /submit_ad HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:05] "GET /gkach/ HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:00:07] "GET /gkach/wallet HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:00:09] "GET /auth/login?next=/gkach/wallet HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:11] "GET /gadematch HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:13] "GET /tv HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:16] "GET /bank/ HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:00:18] "GET /auth/login?next=/bank/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:20] "GET /forms/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:23] "GET /konferans HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:00:25] "GET /konferans/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:27] "GET /ecole_biblique HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:00:29] "GET /ecole_biblique/ HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:00:31] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:33] "GET /mennenm HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:00:35] "GET /mennenm/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:37] "GET /dok HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:00:39] "GET /dok/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:41] "GET /fet HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:00:43] "GET /fet/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:45] "GET /pwa/offline HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:47] "GET /qr HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:50] "GET /demo HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:52] "GET /api/stories HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:54] "GET /api/feed HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:00:56] "GET /mache/categories HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:01:09] "GET /health HTTP/1.1" 503 -
+127.0.0.1 - - [07/Aug/2026 13:01:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:01:20] "GET /mache/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:31] "GET /mache/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:33] "GET /about HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:35] "GET /terms HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:37] "GET /privacy HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:39] "GET /contact HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:41] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:43] "GET /auth/register HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:45] "GET /submit_ad HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:47] "GET /gkach/ HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:04:49] "GET /gkach/wallet HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:04:51] "GET /auth/login?next=/gkach/wallet HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:53] "GET /gadematch HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:55] "GET /tv HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:04:57] "GET /bank/ HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:04:59] "GET /auth/login?next=/bank/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:02] "GET /forms/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:04] "GET /konferans HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:05:06] "GET /konferans/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:08] "GET /ecole_biblique HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:05:10] "GET /ecole_biblique/ HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:05:12] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:14] "GET /mennenm HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:05:16] "GET /mennenm/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:18] "GET /dok HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:05:20] "GET /dok/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:22] "GET /fet HTTP/1.1" 308 -
+127.0.0.1 - - [07/Aug/2026 13:05:24] "GET /fet/ HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:26] "GET /pwa/offline HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:28] "GET /qr HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:30] "GET /demo HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:33] "GET /api/stories HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:35] "GET /api/feed HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:05:37] "GET /mache/categories HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:02] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:02] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:02] "GET /static/css/variables.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/css/g2y-app.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/css/pwa.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/css/admin.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/images/logo.png HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/js/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/js/g2y-app.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:03] "GET /static/js/install.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:05] "GET /static/uploads/8a0a9376-3811-4dfe-ad08-6fb6d4e79129_360_F_305138768_MjmFQI9ZfW6jLcJHgpqJs2rqH0a5FZzR.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:05] "GET /static/uploads/85a21894-185b-428c-8715-d67d90699151_WhatsApp_Image_2025-10-18_at_08.50.02_1ec9a08c.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:06] "GET /static/uploads/2d84470e-3ef6-44e8-9d51-3f6843b29bd6_IMG-20250918-WA0002.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:06] "GET /static/uploads/73dd6277-8ca7-4d93-9263-d6ae98da5e30_WhatsApp_Image_2025-02-20_at_16.14.43_0a75676e.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:06] "GET /static/uploads/1ef6a721-36b2-4f61-8c65-9e077ade834b_IMG-20250918-WA0003.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:06] "GET /static/uploads/3cf898ad-492a-4798-b53b-f25f8a6ed32d_IMG-20250918-WA0001.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:06] "GET /api/pwa/settings HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:06] "GET /api/cart/count HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:07] "GET /api/stories HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:07] "GET /static/uploads/sable-3kg.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:07] "GET /static/uploads/sample-video-2.mp4 HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:07] "GET /static/uploads/sample-video-1.mp4 HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:13] "POST /api/pwa/analytics HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:14] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/css/variables.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/css/g2y-app.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/css/pwa.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/css/admin.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/js/script.js HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/images/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/js/g2y-app.js HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /static/js/install.js HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /api/pwa/settings HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:18] "GET /api/cart/count HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:24] "POST /api/pwa/analytics HTTP/1.1" 404 -
+127.0.0.1 - - [07/Aug/2026 13:29:41] "POST /auth/login HTTP/1.1" 302 -
+127.0.0.1 - - [07/Aug/2026 13:29:46] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Aug/2026 13:29:46] "GET /static/css/variables.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:47] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:47] "GET /static/css/g2y-app.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:47] "GET /static/css/pwa.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:47] "GET /static/css/admin.css HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:47] "GET /static/images/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:47] "GET /static/js/script.js HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:48] "GET /static/js/g2y-app.js HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:49] "GET /static/js/install.js HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:53] "GET /static/uploads/8a0a9376-3811-4dfe-ad08-6fb6d4e79129_360_F_305138768_MjmFQI9ZfW6jLcJHgpqJs2rqH0a5FZzR.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:54] "GET /static/uploads/85a21894-185b-428c-8715-d67d90699151_WhatsApp_Image_2025-10-18_at_08.50.02_1ec9a08c.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:56] "GET /static/uploads/2d84470e-3ef6-44e8-9d51-3f6843b29bd6_IMG-20250918-WA0002.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:57] "GET /static/uploads/73dd6277-8ca7-4d93-9263-d6ae98da5e30_WhatsApp_Image_2025-02-20_at_16.14.43_0a75676e.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:58] "GET /static/uploads/1ef6a721-36b2-4f61-8c65-9e077ade834b_IMG-20250918-WA0003.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [07/Aug/2026 13:29:59] "GET /static/uploads/3cf898ad-492a-4798-b53b-f25f8a6ed32d_IMG-20250918-WA0001.jpg HTTP/1.1" 304 -

@@ -35,7 +35,7 @@
                         <div class="card-body">
                             <!-- Add Food -->
                             <form method="POST" class="mb-3">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="action" value="add_food">
                                 <div class="input-group">
                                     <input type="text" name="food_name" class="form-control" placeholder="Add new food option..." required>
@@ -55,7 +55,7 @@
                                         </button>
                                         <!-- Delete Form -->
                                         <form method="POST" style="display: inline;">
-                                            {{ csrf_token() }}
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="action" value="remove_food">
                                             <input type="hidden" name="food_name" value="{{ food }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
@@ -71,7 +71,7 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <form method="POST">
-                                                    {{ csrf_token() }}
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <input type="hidden" name="action" value="update_food">
                                                     <input type="hidden" name="old_name" value="{{ food }}">
                                                     <div class="modal-body">
@@ -103,7 +103,7 @@
                         <div class="card-body">
                             <!-- Add Drink -->
                             <form method="POST" class="mb-3">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="action" value="add_drink">
                                 <div class="input-group">
                                     <input type="text" name="drink_name" class="form-control" placeholder="Add new drink option..." required>
@@ -123,7 +123,7 @@
                                         </button>
                                         <!-- Delete Form -->
                                         <form method="POST" style="display: inline;">
-                                            {{ csrf_token() }}
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="action" value="remove_drink">
                                             <input type="hidden" name="drink_name" value="{{ drink }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
@@ -139,7 +139,7 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <form method="POST">
-                                                    {{ csrf_token() }}
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <input type="hidden" name="action" value="update_drink">
                                                     <input type="hidden" name="old_name" value="{{ drink }}">
                                                     <div class="modal-body">

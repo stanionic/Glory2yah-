@@ -1,0 +1,17 @@
+APP CREATED OK
+Notification/Push routes:
+ - /api/notifications
+ - /api/notifications/<int:notif_id>
+ - /api/notifications/<int:notif_id>/read
+ - /api/notifications/preferences
+ - /api/notifications/preferences
+ - /api/notifications/read-all
+ - /api/notifications/unread-count
+ - /api/push/devices
+ - /api/push/public-key
+ - /api/push/subscribe
+ - /api/push/unsubscribe
+ - /jere-biznis/api/sync/push
+Total routes: 265
+category_label test: gkach/ht => GKACH
+category_label test: orders/fr => Commandes

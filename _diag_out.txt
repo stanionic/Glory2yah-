@@ -1,0 +1,31 @@
+logged in, url = http://127.0.0.1:5000/
+STATE: {"hasIO": true, "hasSimplePeer": true, "socketConnected": true, "localStreamTracks": 2, "videoWrappers": 1}
+CLICK toggleVideo: ok (new page errors: 0)
+CLICK toggleAudio: ok (new page errors: 0)
+CLICK sendChat: ok (new page errors: 0)
+chat children after 3s wait: 0
+participants listed: 0
+
+=== HTTP >=400 responses ===
+
+=== PAGE ERRORS ===
+
+=== CONSOLE (errors/warnings) ===
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+  [error] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR)
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+  [error] Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+
+=== FAILED REQUESTS ===
+  HTTP 404 http://127.0.0.1:5000/api/pwa/settings
+  HTTP 404 http://127.0.0.1:5000/api/cart/count
+  HTTP 404 http://127.0.0.1:5000/api/pwa/analytics
+  HTTP 500 http://127.0.0.1:5000/static/uploads/8bc4c85a209340e5966415f331adfcf6.png
+  HTTP 404 http://127.0.0.1:5000/api/cart/count
+  HTTP 404 http://127.0.0.1:5000/api/pwa/settings
+  HTTP 404 http://127.0.0.1:5000/api/cart/count
+  HTTP 404 http://127.0.0.1:5000/api/pwa/settings

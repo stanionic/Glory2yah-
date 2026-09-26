@@ -14,6 +14,10 @@ class UserGkach(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     user_whatsapp = db.Column(db.String(20), nullable=False, unique=True, index=True)
     gkach_balance = db.Column(db.Integer, default=0, nullable=False)
+    welcome_balance = db.Column(db.Integer, default=0, nullable=False)
+    regular_balance = db.Column(db.Integer, default=0, nullable=False)
+    earned_balance = db.Column(db.Integer, default=0, nullable=False)
+    promotional_balance = db.Column(db.Integer, default=0, nullable=False)
     gkach_requests = db.Column(db.Text)  # JSON string for pending requests
     
     # Relationships

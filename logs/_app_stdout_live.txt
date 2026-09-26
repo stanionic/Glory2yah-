@@ -1,0 +1,4 @@
+>>> serving on http://127.0.0.1:5000 (async_mode=threading)
+ * Serving Flask app 'app'
+ * Debug mode: off
+EXIT_CODE=1073807364 

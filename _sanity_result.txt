@@ -1,0 +1,12 @@
+Buyer start: 1000
+Seller start: 0
+Purchase success: True
+Buyer end: 510 Seller end: 500
+OK CASHBACK
+Seller + bonus: 1500
+OK MIN 500: Retrait minimòm: 500 Gkach. Ou mande 450.
+Withdraw req id: 756b2191-e4fe-4586-aa08-50b68cffe619
+Seller after approve: 1000
+OK WITHDRAW
+OK IDEMPOTENT: Demann sa deja trete: status=completed
+ALL TESTS PASSED

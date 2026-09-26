@@ -1,10 +1,7 @@
-"""
-Models package for MANDEMMAPBAW AI generators
+"""Optional AI generators for MANDEMMAPBAW.
+
+Generators are imported by their callers so missing optional dependencies,
+such as OpenCV for video generation, do not disable text chat.
 """
 
-from .text_generator import TextGenerator
-from .image_generator import ImageGenerator
-from .video_generator import VideoGenerator
-from .code_generator import CodeGenerator
-
-__all__ = ['TextGenerator', 'ImageGenerator', 'VideoGenerator', 'CodeGenerator']
+__all__ = []

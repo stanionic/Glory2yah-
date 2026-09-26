@@ -1,0 +1,126 @@
+[2026-09-09 11:24:00,095] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-09-09 11:24:00,245] WARNING in __init__: SocketIO running without Redis message queue
+[2026-09-09 11:24:01,096] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-09-09 11:24:01,112] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-09-09 11:24:01,179] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-09-09 11:24:01,212] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-09-09 11:24:01,246] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-09-09 11:24:01,263] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-09-09 11:24:01,296] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-09-09 11:24:01,312] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+Traceback (most recent call last):
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 674, in __init__
+    self.__connect()
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_run_local.py", line 12, in <module>
+    from app import create_app, socketio
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2025, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 547, in create_app
+    db.create_all()
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_sqlalchemy\extension.py", line 900, in create_all
+    self._call_for_binds(bind_key, "create_all")
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_sqlalchemy\extension.py", line 881, in _call_for_binds
+    getattr(metadata, op_name)(bind=engine)
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\sql\schema.py", line 5868, in create_all
+    bind._run_ddl_visitor(
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3252, in _run_ddl_visitor
+    with self.begin() as conn:
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3242, in begin
+    with self.connect() as conn:
+         ^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3278, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 148, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2442, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 146, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3302, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1263, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 712, in checkout
+    rec = pool._do_get()
+          ^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 179, in _do_get
+    with util.safe_reraise():
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+    return self._create_connection()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 390, in _create_connection
+    return _ConnectionRecord(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 674, in __init__
+    self.__connect()
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 900, in __connect
+    with util.safe_reraise():
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 643, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 621, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
+(Background on this error at: https://sqlalche.me/e/20/e3q8)

@@ -1,0 +1,20 @@
+﻿http://localhost:8080/health => ERROR HTTP Error 503: SERVICE UNAVAILABLE
+http://localhost:8080/ => 200 len=181697
+http://localhost:8080/mache/ => 200 len=80272
+python.exe : Traceback (most recent call last):
+At line:1 char:61
++ ... ub - Copy"; & ".venv\Scripts\python.exe" 
+_health_check.py 2>&1 | Out- ...
++                 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most 
+    recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - 
+Copy\_health_check.py", line 13, in <module>
+    with open("_health_check.txt", "w", encoding="utf-8") as 
+f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 
+'_health_check.txt'

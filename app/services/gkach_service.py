@@ -12,7 +12,128 @@ import uuid
 
 class GkachService:
     """Service for Gkach operations"""
-    
+
+    @staticmethod
+    def gkach_transaction_model():
+        return GkachTransaction
+
+    @staticmethod
+    def issue_welcome_bonus(whatsapp, _commit=True):
+        """Issue exactly one WELCOME_BONUS award per user.
+
+        Idempotent and atomic: the method acquires a DB row lock, checks for an
+        existing completed WELCOME_BONUS transaction, and only creates the record
+        once. This prevents double-click / refresh / concurrent request issues.
+        """
+        whatsapp = validate_whatsapp(whatsapp)
+        account = db.session.query(UserGkach).filter_by(user_whatsapp=whatsapp).with_for_update().first()
+        if not account:
+            account = UserGkach(user_whatsapp=whatsapp, gkach_balance=0, welcome_balance=0,
+                               regular_balance=0, earned_balance=0, promotional_balance=0)
+            db.session.add(account)
+            db.session.flush()
+
+        existing = db.session.query(GkachTransaction).filter_by(
+            user_whatsapp=whatsapp,
+            transaction_type='WELCOME_BONUS',
+            status='completed',
+        ).first()
+        if existing:
+            return int(getattr(account, 'welcome_balance', 0) or 0)
+
+        old_total = int(getattr(account, 'gkach_balance', 0) or 0)
+        old_welcome = int(getattr(account, 'welcome_balance', 0) or 0)
+        bonus_amount = 50
+
+        account.gkach_balance = old_total + bonus_amount
+        account.welcome_balance = old_welcome + bonus_amount
+        account.promotional_balance = int(getattr(account, 'promotional_balance', 0) or 0) + bonus_amount
+        account.regular_balance = max(0, account.gkach_balance - account.welcome_balance)
+
+        tx = GkachTransaction(
+            transaction_id=str(uuid.uuid4()),
+            user_whatsapp=whatsapp,
+            transaction_type='WELCOME_BONUS',
+            amount=bonus_amount,
+            old_balance=old_total,
+            new_balance=account.gkach_balance,
+            description='Welcome bonus 50 Gkach',
+            status='completed',
+            meta_data='{"source":"welcome_bonus"}',
+        )
+        db.session.add(tx)
+
+        if _commit:
+            db.session.commit()
+            GkachService._invalidate_balance_cache(whatsapp)
+
+        return int(account.gkach_balance)
+
+    @staticmethod
+    def can_use_welcome_gkach_for_purchase(whatsapp, ad_id):
+        """Return True if the product is certified and welcome Gkach can be used."""
+        try:
+            from app.models.ad import Ad
+            whatsapp = validate_whatsapp(whatsapp)
+            product = Ad.query.filter_by(ad_id=ad_id).first()
+            if not product:
+                return False
+            if not getattr(product, 'is_certified', False) and getattr(product, 'certification_status', 'NONE') != 'CERTIFIED':
+                return False
+            account = UserGkach.query.filter_by(user_whatsapp=whatsapp).first()
+            if not account:
+                return False
+            return int(getattr(account, 'welcome_balance', 0) or 0) > 0
+        except Exception:
+            return False
+
+    @staticmethod
+    def apply_welcome_priority_purchase(whatsapp, ad_id, amount):
+        """Deduct welcome Gkach first and then regular Gkach for a certified product."""
+        from app.models.ad import Ad
+        whatsapp = validate_whatsapp(whatsapp)
+        amount = validate_amount(amount, min_amount=1)
+        product = Ad.query.filter_by(ad_id=ad_id).first()
+        if not product:
+            raise ValidationError('Podwi sa pa jwenn.')
+        if not getattr(product, 'is_certified', False) and getattr(product, 'certification_status', 'NONE') != 'CERTIFIED':
+            raise ValidationError('Vos Gkach Welcome peuvent uniquement être utilisés pour acheter des produits certifiés sur Glory2YahPub.')
+
+        account = db.session.query(UserGkach).filter_by(user_whatsapp=whatsapp).with_for_update().first()
+        if not account:
+            raise ValidationError('Kont Gkach pa jwenn')
+
+        welcome_available = int(getattr(account, 'welcome_balance', 0) or 0)
+        if welcome_available <= 0:
+            raise ValidationError('Ou pa gen Gkach Welcome disponib.')
+
+        total_available = int(getattr(account, 'gkach_balance', 0) or 0)
+        if total_available < amount:
+            raise ValidationError(f'Balans ensifisan. Ou gen {total_available} Gkach, ou bezwen {amount}.')
+
+        welcome_used = min(welcome_available, amount)
+        regular_used = amount - welcome_used
+
+        account.welcome_balance = max(0, welcome_available - welcome_used)
+        account.gkach_balance = total_available - amount
+        account.regular_balance = max(0, account.gkach_balance - account.welcome_balance)
+
+        GkachTransaction(
+            transaction_id=str(uuid.uuid4()),
+            user_whatsapp=whatsapp,
+            transaction_type='GKACH_DEBIT',
+            amount=amount,
+            old_balance=total_available,
+            new_balance=account.gkach_balance,
+            description=f'Purchase {amount} Gkach with {welcome_used} welcome + {regular_used} regular for product {ad_id}',
+            status='completed',
+            meta_data=f'{{"source":"purchase","welcome_used":{welcome_used},"regular_used":{regular_used},"product_id":"{ad_id}"}}'
+        )
+
+        db.session.commit()
+        GkachService._invalidate_balance_cache(whatsapp)
+        return {'welcome_used': welcome_used, 'regular_used': regular_used, 'remaining': account.gkach_balance}
+
     @staticmethod
     def get_or_create_account(whatsapp):
         """Get or create Gkach account for user
@@ -304,16 +425,167 @@ class GkachService:
             reason,
             'reward'
         )
+
+    @staticmethod
+    def request_withdrawal(whatsapp, amount, payment_method='moncash', payout_details='', note=''):
+        """
+        Request a cash withdrawal (Gkach -> real cash).
+        Rules:
+          - Min amount = GKACH_WITHDRAW_MIN (default 500 Gkach)
+          - Balance must be >= amount
+          - Creates a 'withdrawal' GkachTransaction with status='pending'.
+          - The actual deduction happens ONLY when Admin approves it.
+        """
+        from flask import current_app as _ca
+        import json as _json
+
+        whatsapp = validate_whatsapp(whatsapp)
+        amount = validate_amount(amount, min_amount=1)
+        min_withdraw = int(_ca.config.get('GKACH_WITHDRAW_MIN', 500) or 500)
+        if amount < min_withdraw:
+            raise ValidationError(
+                f"Retrait minimòm: {min_withdraw} Gkach. Ou mande {amount}."
+            )
+
+        account = db.session.query(UserGkach).filter_by(
+            user_whatsapp=whatsapp
+        ).with_for_update().first()
+        if not account:
+            raise ValidationError("Kont Gkach pa jwenn")
+
+        if account.gkach_balance < amount:
+            raise ValidationError(
+                f"Balans ensifisan. Ou gen {account.gkach_balance} Gkach, ou vle retire {amount}."
+            )
+
+        payment_method = (payment_method or 'moncash').strip().lower()[:20]
+        payout_details = (payout_details or '').strip()[:200]
+        note = (note or '').strip()[:300]
+
+        meta = {
+            'payment_method': payment_method,
+            'payout_details': payout_details,
+            'note': note,
+        }
+
+        tx = GkachTransaction(
+            transaction_id=str(uuid.uuid4()),
+            user_whatsapp=whatsapp,
+            transaction_type='withdrawal',
+            amount=amount,
+            old_balance=account.gkach_balance,
+            new_balance=account.gkach_balance,
+            description=f"Demann retriz {amount} Gkach ({payment_method})" + (f" - {note}" if note else ""),
+            status='pending',
+            meta_data=_json.dumps(meta, ensure_ascii=False),
+        )
+        db.session.add(tx)
+        db.session.commit()
+        return tx.transaction_id
+
+    @staticmethod
+    def get_pending_withdrawals(limit=100):
+        """Admin helper: list all withdrawal requests that are still pending (newest first)."""
+        return (
+            GkachTransaction.query.filter_by(
+                transaction_type='withdrawal',
+                status='pending',
+            )
+            .order_by(GkachTransaction.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+    @staticmethod
+    def review_withdrawal(transaction_id, action, reviewer_note=''):
+        """
+        Admin: approve or reject a pending withdrawal.
+        action in {'approve', 'reject'}
+        Approve → deduct the user's balance (atomic with status update).
+        Reject  → just mark status='rejected' and keep meta/reviewer_note.
+        """
+        import json as _json
+
+        if action not in ('approve', 'reject'):
+            raise ValidationError("Aksyon inval id: approve oubyen reject")
+
+        tx = (
+            db.session.query(GkachTransaction)
+            .filter_by(transaction_id=transaction_id, transaction_type='withdrawal')
+            .with_for_update().first()
+        )
+        if not tx:
+            raise ValidationError("Demann retriz pa jwenn")
+        if tx.status != 'pending':
+            raise ValidationError(f"Demann sa deja trete: status={tx.status}")
+
+        whatsapp = tx.user_whatsapp
+        amount = int(tx.amount or 0)
+        reviewer_note = (reviewer_note or '').strip()[:300]
+
+        try:
+            meta = {}
+            if tx.meta_data:
+                try:
+                    meta = _json.loads(tx.meta_data) if isinstance(tx.meta_data, str) else dict(tx.meta_data)
+                except Exception:
+                    meta = {}
+            meta['reviewer_note'] = reviewer_note
+
+            if action == 'approve':
+                account = db.session.query(UserGkach).filter_by(
+                    user_whatsapp=whatsapp
+                ).with_for_update().first()
+                if not account:
+                    raise ValidationError("Kont Gkach pa jwenn")
+                if account.gkach_balance < amount:
+                    raise ValidationError(
+                        f"Balans kounye a pa ase: {account.gkach_balance} < {amount}. Rejete demann lan."
+                    )
+
+                old = account.gkach_balance
+                account.gkach_balance -= amount
+
+                tx.old_balance = old
+                tx.new_balance = account.gkach_balance
+                tx.status = 'completed'
+                tx.description = (
+                    f"Retriz {amount} Gkach apwouve"
+                    + (f" - {reviewer_note}" if reviewer_note else "")
+                )
+                tx.meta_data = _json.dumps(meta, ensure_ascii=False)
+            else:  # reject
+                tx.status = 'rejected'
+                tx.description = (
+                    f"Demann retriz {amount} Gkach rejete"
+                    + (f" - {reviewer_note}" if reviewer_note else "")
+                )
+                tx.meta_data = _json.dumps(meta, ensure_ascii=False)
+
+            db.session.commit()
+            GkachService._invalidate_balance_cache(whatsapp)
+            return True
+        except Exception as e:
+            db.session.rollback()
+            raise ValidationError(f"Revizyon retriz echwe: {str(e)}")
     
     @staticmethod
     def process_purchase(buyer_whatsapp, seller_whatsapp, amount, ad_id, delivery_id, donation_amount=0, donation_cause='general'):
         """
-        Process purchase transaction with optional charitable donation
-        Atomic: deduct from buyer, add to seller, process donation if any
+        Process purchase transaction with optional charitable donation + buyer cashback.
+        Atomic: deduct from buyer, add to seller, process donation if any, cashback to buyer.
         """
+        from flask import current_app as _ca
         buyer_whatsapp = validate_whatsapp(buyer_whatsapp)
         seller_whatsapp = validate_whatsapp(seller_whatsapp)
         amount = validate_amount(amount, min_amount=1)
+
+        cashback_pct = float(_ca.config.get('GKACH_CASHBACK_PCT', 2) or 2)
+        cashback_amount = 0
+        if cashback_pct > 0:
+            cashback_amount = int(round(float(amount) * (cashback_pct / 100.0)))
+            if cashback_amount < 0:
+                cashback_amount = 0
         
         # Validate donation amount
         if donation_amount > 0:
@@ -328,7 +600,8 @@ class GkachService:
                 buyer_whatsapp,
                 total_to_deduct,
                 f"Achte piblisite {ad_id}" + (f" + don {donation_amount} Gkach" if donation_amount > 0 else ""),
-                'purchase'
+                'purchase',
+                _commit=False
             )
             
             # Add purchase amount to seller
@@ -336,8 +609,19 @@ class GkachService:
                 seller_whatsapp,
                 amount,
                 f"Vann piblisite {ad_id}",
-                'sale'
+                'sale',
+                _commit=False
             )
+
+            # Buyer cashback (2% default) on the pre-donation purchase amount
+            if cashback_amount > 0:
+                GkachService.add_balance(
+                    buyer_whatsapp,
+                    cashback_amount,
+                    f"Cashback {cashback_pct:.0f}% sou achat piblisite {ad_id}",
+                    'cashback',
+                    _commit=False
+                )
             
             # Process donation if any
             if donation_amount > 0:
@@ -423,6 +707,10 @@ class GkachService:
                 seller_tx.delivery_id = delivery_id
             
             db.session.commit()
+            GkachService._invalidate_balance_cache(buyer_whatsapp)
+            GkachService._invalidate_balance_cache(seller_whatsapp)
+            if donation_amount > 0:
+                GkachService._invalidate_balance_cache('+509CHARITY')
             return True
         except Exception as e:
             db.session.rollback()

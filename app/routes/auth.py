@@ -174,6 +174,9 @@ def register():
             db.session.add(user_gkach)
             db.session.commit()
 
+            from app.services.gkach_service import GkachService
+            GkachService.issue_welcome_bonus(user.whatsapp, _commit=True)
+
             # Auto-login the user right after registration
             login_user(user, remember=True)
             session.permanent = True  # auto-register keep session

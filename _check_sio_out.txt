@@ -1,0 +1,3 @@
+server type: Server
+server.handlers: dict
+NS: '/' EVENTS: ['breakout_create', 'breakout_join', 'breakout_return', 'chat_message', 'connection_stats', 'disconnect', 'join', 'lower_hand', 'poll_close', 'poll_create', 'poll_vote', 'raise_hand', 'room_name_updated', 'screen_answer', 'screen_ice_candidate', 'screen_offer', 'sending_signal', 'start_recording', 'start_screen_share', 'stop_recording', 'stop_screen_share', 'whiteboard_clear', 'whiteboard_draw', 'whiteboard_undo']

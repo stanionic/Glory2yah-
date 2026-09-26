@@ -185,7 +185,7 @@ def create_app(config_name=None):
         except Exception:
             pass
         try:
-            candidates.append(_os_up.path.abspath(_os_up.join(app.root_path, '..', 'instance', 'uploads')))
+            candidates.append(_os_up.path.abspath(_os_up.path.join(app.root_path, '..', 'instance', 'uploads')))
         except Exception:
             pass
         seen = set()
@@ -217,9 +217,9 @@ def create_app(config_name=None):
         if safe_match.startswith('..') or _os_sb.path.isabs(safe_match):
             _abt(404)
         # First, try legacy static/uploads/ on the current filesystem
-        static_root = app.static_folder or _os_sb.join(app.root_path, '..', 'static')
-        legacy_path = _os_sb.join(static_root, 'uploads', safe_match)
-        if _os_sb.isfile(legacy_path):
+        static_root = app.static_folder or _os_sb.path.join(app.root_path, '..', 'static')
+        legacy_path = _os_sb.path.join(static_root, 'uploads', safe_match)
+        if _os_sb.path.isfile(legacy_path):
             return None  # Flask default static handler will take it
         # Multi-fallback candidates (same 4 as /uploads/<filename> route):
         #   1) app.config UPLOAD_FOLDER  (canonical Render persistent disk path)
@@ -235,7 +235,7 @@ def create_app(config_name=None):
         except Exception:
             pass
         try:
-            candidates.append(_os_sb.path.abspath(_os_sb.join(app.root_path, '..', 'instance', 'uploads')))
+            candidates.append(_os_sb.path.abspath(_os_sb.path.join(app.root_path, '..', 'instance', 'uploads')))
         except Exception:
             pass
         seen = set()
@@ -504,6 +504,7 @@ def create_app(config_name=None):
         from app.models.party import Party, PartyParticipant
         from app.models.konferans import KonferansRoom, KonferansRecording
         from app.models.mennem_trip import MennemTrip
+        from app.models.mennem_driver import MennemDriver
         try:
             from app.models.app_installation import AppInstallation  # PWA tracking model
         except ImportError:
@@ -522,6 +523,27 @@ def create_app(config_name=None):
             EventMedia, EventRegion, EventCoordinator, EventParticipant,
             EventOrganization, seed_events,
         )
+
+        # =====================================================================
+        # JERE BIZNIS MODULE - isolated offline-first vitrines (co-admin roles)
+        # Imported here (guarded try/except) so the jb_* tables are ALWAYS
+        # created by db.create_all() even if the blueprint registration above
+        # failed. A failure here only logs a warning - it never blocks startup
+        # and it cannot affect the rest of the application.
+        # =====================================================================
+        try:
+            from app.models.jere_biznis import (
+                JereBiznisAdmin,
+                JereBiznisLandingPage,
+                JereBiznisPayment,
+                JereBiznisSubscription,
+                JereBiznisSyncOperation,
+            )
+        except Exception as _jb_models_e:
+            app.logger.warning(
+                f"Jere Biznis models unavailable: {type(_jb_models_e).__name__}: {_jb_models_e}"
+            )
+
         db.create_all()
 
         # Seed the SOS ALO LEGLIZ event (idempotent, safe to re-run)
@@ -793,6 +815,58 @@ def create_app(config_name=None):
             app.logger.warning(f'SOFT DELETE MIGRATION: could not run: {_sd_exc}')
 
         # =====================================================================
+        # WELCOME BONUS + CERTIFICATION MIGRATION (idempotent): extend legacy
+        # tables missing the welcome and certification columns required by the
+        # certified-product + welcome Gkach rules.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_welcome_inspect
+            from sqlalchemy import text as _sa_welcome_text
+            _welcome_insp = _sa_welcome_inspect(db.engine)
+
+            if _welcome_insp.has_table('user_gkach'):
+                _ug_cols = {c['name'] for c in _welcome_insp.get_columns('user_gkach')}
+                for _col, _dtype in {
+                    'welcome_balance': 'INTEGER DEFAULT 0',
+                    'regular_balance': 'INTEGER DEFAULT 0',
+                    'earned_balance': 'INTEGER DEFAULT 0',
+                    'promotional_balance': 'INTEGER DEFAULT 0',
+                }.items():
+                    if _col not in _ug_cols:
+                        db.session.execute(_sa_welcome_text(f'ALTER TABLE user_gkach ADD COLUMN {_col} {_dtype}'))
+                db.session.commit()
+
+            if _welcome_insp.has_table('ads'):
+                _ads_cols = {c['name'] for c in _welcome_insp.get_columns('ads')}
+                for _col, _dtype in {
+                    'is_certified': 'BOOLEAN DEFAULT FALSE',
+                    'certification_status': 'VARCHAR(30) DEFAULT "NONE"',
+                    'certified_at': 'DATETIME DEFAULT NULL',
+                    'certified_by': 'VARCHAR(50) DEFAULT NULL',
+                    'certification_notes': 'TEXT DEFAULT NULL',
+                }.items():
+                    if _col not in _ads_cols:
+                        db.session.execute(_sa_welcome_text(f'ALTER TABLE ads ADD COLUMN {_col} {_dtype}'))
+                db.session.commit()
+
+            if _welcome_insp.has_table('users'):
+                _user_cols = {c['name'] for c in _welcome_insp.get_columns('users')}
+                for _col, _dtype in {
+                    'seller_certification_status': 'VARCHAR(20) DEFAULT "PENDING"',
+                    'seller_certified_at': 'DATETIME DEFAULT NULL',
+                    'seller_certified_by': 'VARCHAR(50) DEFAULT NULL',
+                    'seller_certification_notes': 'TEXT DEFAULT NULL',
+                    'seller_certification_suspended_at': 'DATETIME DEFAULT NULL',
+                    'seller_certification_revoked_at': 'DATETIME DEFAULT NULL',
+                }.items():
+                    if _col not in _user_cols:
+                        db.session.execute(_sa_welcome_text(f'ALTER TABLE users ADD COLUMN {_col} {_dtype}'))
+                db.session.commit()
+        except Exception as _welcome_migration_error:
+            db.session.rollback()
+            app.logger.warning(f'WELCOME/CERTIFICATION MIGRATION: skipped: {_welcome_migration_error}')
+
+        # =====================================================================
         # KONFERANS → E-LEARNING MIGRATION (idempotent): extend konferans_rooms
         # table with new columns introduced by PHASE 2.
         # Existing classic rooms keep room_type='classic' (NULL = classic as well
@@ -818,6 +892,10 @@ def create_app(config_name=None):
                     ('chat_locked',    "BOOLEAN DEFAULT FALSE"),
                     ('class_locked',   "BOOLEAN DEFAULT FALSE"),
                     ('whiteboard_id',  "INTEGER DEFAULT NULL"),
+                    ('gkach_charged_total', "INTEGER DEFAULT 0"),
+                    ('credit_bought_minutes', "INTEGER DEFAULT 0"),
+                    ('gkach_per_hour', "INTEGER DEFAULT 250"),
+                    ('free_minutes',   "INTEGER DEFAULT 45"),
                 ]
                 _kr_altered = 0
                 for _col, _dcl in _kr_adds:
@@ -854,7 +932,45 @@ def create_app(config_name=None):
         except Exception as _elkr_e:
             db.session.rollback()
             app.logger.warning(f'KONFERANS E-LEARNING MIGRATION: skipped: {_elkr_e}')
-        
+
+        # =====================================================================
+        # MENNEM MIGRATION (idempotent): extend mennem_trips with the price
+        # negotiation columns (price negotiation à la MACHE checkout).
+        # db.create_all() does NOT alter existing tables.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect_mn
+            from sqlalchemy import text as _sa_text_mn
+            _insp_mn = _sa_inspect_mn(db.engine)
+            if _insp_mn.has_table('mennem_trips'):
+                _mn_cols = {c['name'] for c in _insp_mn.get_columns('mennem_trips')}
+                _mn_adds = [
+                    ('driver_id',          "INTEGER DEFAULT NULL"),
+                    ('proposed_price',     "INTEGER DEFAULT NULL"),
+                    ('counter_price',      "INTEGER DEFAULT NULL"),
+                    ('accepted_price',     "INTEGER DEFAULT NULL"),
+                    ('negotiation_history', "TEXT DEFAULT NULL"),
+                ]
+                _mn_altered = 0
+                for _col, _dcl in _mn_adds:
+                    if _col not in _mn_cols:
+                        try:
+                            db.session.execute(
+                                _sa_text_mn(f'ALTER TABLE mennem_trips ADD COLUMN {_col} {_dcl}')
+                            )
+                            db.session.commit()
+                            _mn_altered += 1
+                        except Exception:
+                            db.session.rollback()
+                if _mn_altered:
+                    app.logger.info(
+                        f'MENNEM MIGRATION: added {_mn_altered} negotiation columns to mennem_trips '
+                        f'({", ".join(c for c,_ in _mn_adds if c not in _mn_cols)})'
+                    )
+        except Exception as _mn_e:
+            db.session.rollback()
+            app.logger.warning(f'MENNEM MIGRATION: skipped: {_mn_e}')
+
         # Create default loan products if they don't exist
         try:
             default_loan_products = [
@@ -1550,13 +1666,19 @@ def register_blueprints(app):
         pass
     
     # Register old blueprints
+    # NOTE: blueprint registration and Socket.IO handler registration are kept
+    # separate and idempotent. A duplicate-blueprint error (create_app called
+    # twice, e.g. module-level app + _run_server.py) must NOT skip the Socket.IO
+    # handler registration — that silently killed all conference real-time
+    # features (join, chat, WebRTC signaling, recording).
     try:
         from konferans.routes import konferans_bp, register_socketio_handlers
-        app.register_blueprint(konferans_bp)
+        if konferans_bp.name not in app.blueprints:
+            app.register_blueprint(konferans_bp)
         register_socketio_handlers(socketio)
-    except:
-        pass
-    
+    except Exception as e:
+        app.logger.warning(f"Konferans blueprint/socket registration issue: {e}")
+
     try:
         from ecole_biblique.app import ecole_biblique_bp
         app.register_blueprint(ecole_biblique_bp, url_prefix='/ecole_biblique')
@@ -1568,7 +1690,9 @@ def register_blueprints(app):
     try:
         from party.app import party_bp
         app.register_blueprint(party_bp, url_prefix='/fet')
-    except:
+        app.logger.info("Registered party_bp (Party/Fèt module) at /fet")
+    except Exception as e:
+        app.logger.warning(f"Could not register party_bp: {e}")
         pass
     
     try:
@@ -1579,12 +1703,31 @@ def register_blueprints(app):
         app.logger.error(f"Failed to register mennem_bp: {type(e).__name__}: {str(e)}")
         import traceback
         app.logger.error(traceback.format_exc())
+
+    # Register Jere Biznis as an isolated offline-first module.  Its browser
+    # IndexedDB remains the admin device's local store; no second app/db is created.
+    try:
+        from app.routes.jere_biznis import jere_biznis_api, jere_biznis_web
+        app.register_blueprint(jere_biznis_web, url_prefix='/jere-biznis')
+        app.register_blueprint(jere_biznis_api, url_prefix='/jere-biznis/api')
+        app.logger.info("Registered Jere Biznis blueprint at /jere-biznis")
+    except Exception as e:
+        app.logger.error(f"Failed to register Jere Biznis blueprint: {type(e).__name__}: {str(e)}")
+        import traceback as _tb_jb
+        app.logger.error(_tb_jb.format_exc())
     
     try:
         from dok.app import dok_bp
         app.register_blueprint(dok_bp)
     except:
         pass
+
+    try:
+        from app.routes.gloryah_ia import gloryah_ia_bp
+        app.register_blueprint(gloryah_ia_bp)
+        app.logger.info("Registered GlorYah IA blueprint at /gloryah-ia")
+    except Exception as e:
+        app.logger.warning(f"Could not register GlorYah IA blueprint: {e}")
     
     # =====================================================================
     # Register G-Forms blueprint (LOUD traceback if fails)
@@ -1655,11 +1798,12 @@ def register_error_handlers(app):
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        # Permissions-Policy: restrict access to powerful APIs
+        # Permissions-Policy: restrict powerful APIs, but allow camera/mic same-origin
+        # (required by Konferans/WebRTC video conference — blocking them breaks the module)
         response.headers['Permissions-Policy'] = (
             'geolocation=(), '
-            'microphone=(), '
-            'camera=(), '
+            'microphone=(self), '
+            'camera=(self), '
             'payment=(), '
             'usb=(), '
             'magnetometer=(), '

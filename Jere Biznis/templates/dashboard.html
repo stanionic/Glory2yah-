@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ht"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jere Biznis | Glory2YahPub</title><meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{ url_for('jere_biznis_web.static', filename='app.css') }}"></head>
+<body>
+<header class="jb-topbar">
+  <div class="jb-brand"><span class="jb-brand-mark">JB</span><span>Jere Biznis</span><small>Glory2YahPub</small></div>
+  <div class="jb-topbar-tools"><span id="network" class="jb-network"></span><span class="jb-user-chip">Espas administratè</span></div>
+</header>
+<div class="jb-shell">
+<aside class="jb-sidebar" aria-label="Navigasyon prensipal">
+  <div class="jb-sidebar-label">Travay</div>
+  <button class="jb-nav-item is-active" data-view="overview" onclick="switchView('overview')"><span>01</span>Apèsi</button>
+  <button class="jb-nav-item" data-view="operations" onclick="switchView('operations')"><span>02</span>Operasyon</button>
+  <button class="jb-nav-item" data-view="team" onclick="switchView('team')"><span>03</span>Ekip ak aksè</button>
+  <button class="jb-nav-item" data-view="finance" onclick="switchView('finance')"><span>04</span>Finans</button>
+  <div class="jb-sidebar-label jb-sidebar-label-lower">Prezans</div>
+  <button class="jb-nav-item" data-view="showcases" onclick="switchView('showcases')"><span>05</span>Vitrin piblik</button>
+  <div class="jb-sidebar-footer"><span class="jb-status-dot"></span><span>Done yo an sekirite<br><small>Offline pare</small></span></div>
+</aside>
+<main class="jb-main">
+  <section class="jb-view" data-view-panel="overview">
+    <div class="jb-page-intro"><div><p class="jb-eyebrow">Jere Biznis / Apèsi</p><h1>Bonjou, administratè.</h1><p class="jb-lede">Yon sèl kote pou suiv enstitisyon ou yo, ekip ou ak aktivite chak jou.</p></div><button type="button" class="jb-btn jb-btn-primary" onclick="switchView('showcases'); showLandingBuilder()">+ Nouvo vitrin</button></div>
+    <div class="jb-kpi-grid"><article class="jb-kpi"><span>Vitrin total</span><strong id="metricBusinesses">—</strong><small>Paj biznis yo</small></article><article class="jb-kpi"><span>Prezans piblik</span><strong id="metricPublished">—</strong><small>Vitrin pibliye</small></article><article class="jb-kpi"><span>Ekip aktif</span><strong id="metricTeam">—</strong><small>Administratè ak ko-admin</small></article><article class="jb-kpi"><span>Abonman</span><strong id="metricSubscription">—</strong><small>Eta sèvis la</small></article></div>
+    <div class="jb-overview-grid"><section class="jb-panel"><div class="jb-panel-heading"><div><p class="jb-eyebrow">Sant kontwòl</p><h2>Sa k ap pase</h2></div><span class="jb-live-label"><span class="jb-status-dot"></span>Live</span></div><div class="jb-activity"><div class="jb-activity-icon">01</div><div><strong>Espas la pare pou òganize travay ou</strong><p>Kòmanse avèk yon vitrin, ajoute moun ki bezwen aksè epi suiv sèvis ou yo.</p></div></div><div class="jb-quick-actions"><button class="jb-quick-action" onclick="switchView('showcases'); showLandingBuilder()"><strong>+ Kreye yon vitrin</strong><span>Prezante yon biznis oswa enstitisyon</span></button><button class="jb-quick-action" onclick="switchView('team')"><strong>Ajoute yon ko-admin</strong><span>Pataje responsablite ak ekip ou</span></button></div></section><section class="jb-panel"><div class="jb-panel-heading"><div><p class="jb-eyebrow">Dènye aktivite</p><h2>Vitrin resan yo</h2></div><button class="jb-text-button" onclick="switchView('showcases')">Gade tout</button></div><div id="recentPages" class="jb-recent-list"><p class="jb-muted">Ap chaje...</p></div></section></div>
+  </section>
+  <section class="jb-view hidden" data-view-panel="operations"><div class="jb-page-intro"><div><p class="jb-eyebrow">Jere Biznis / Operasyon</p><h1>Operasyon yo</h1><p class="jb-lede">Mete baz la pou aktivite, sèvis ak desizyon chak jou yo.</p></div></div><div class="jb-empty-workspace"><span class="jb-empty-number">02</span><h2>Travay operasyonèl yo ap vini isit la</h2><p>Vitrin ou yo deja anba a. Pwochen etap la se suiv kliyan, sèvis, dokiman ak travay ekip la nan menm espas la.</p><button class="jb-btn" onclick="switchView('showcases')">Ouvri vitrin yo</button></div></section>
+  <section class="jb-view hidden" data-view-panel="team"><div class="jb-page-intro"><div><p class="jb-eyebrow">Jere Biznis / Ekip ak aksè</p><h1>Ekip ak aksè</h1><p class="jb-lede">Kontwole kiyès ki ka travay sou chak vitrin.</p></div></div><div class="jb-panel"><div class="jb-panel-heading"><div><p class="jb-eyebrow">Administrasyon</p><h2>Ko-admin yo</h2></div></div><p class="jb-muted">Chwazi yon vitrin anba a pou ajoute oswa retire ko-admin yo.</p><div id="teamPages" class="jb-team-pages"></div></div></section>
+  <section class="jb-view hidden" data-view-panel="finance"><div class="jb-page-intro"><div><p class="jb-eyebrow">Jere Biznis / Finans</p><h1>Finans ak abonman</h1><p class="jb-lede">Kenbe sèvis la aktif epi suiv peman Jere Biznis yo.</p></div><button type="button" class="jb-btn jb-btn-primary" onclick="openBilling()">Peye avèk Gkach</button></div><section class="jb-panel"><h2>Abonman Jere Biznis</h2><p class="jb-muted">500 Gkach / mwa. Chwazi kantite mwa ou vle a pou soutni espas administrasyon an.</p><button class="jb-btn" onclick="openBilling()">Gade detay peman</button></section></section>
+  <section class="jb-view hidden" data-view-panel="showcases">
+  <section id="reminder" class="card warning hidden">
+    <h2>⚠️ Rappel Abonman</h2>
+    <p id="reminderText"></p>
+    <button type="button" class="jb-btn jb-btn-primary" onclick="openBilling()">Peye avèk Gkach</button>
+  </section>
+
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <h2>Vitrin mwen yo</h2>
+        <p>Kreye ak jere paj vitrin pou biznis oswa enstitisyon ou yo. Se ou ki mèt vitrin lan depi lè ou kreye li — epi ou ka otorize ko-admin pou ede w jere li.</p>
+      </div>
+      <button type="button" class="jb-btn jb-btn-primary" onclick="showLandingBuilder()">+ Nouvo vitrin</button>
+    </div>
+
+    <form id="landingForm" class="hidden" onsubmit="saveLandingPage(event)">
+      <h3 id="landingFormTitle">Nouvo vitrin</h3>
+      <input type="hidden" id="landingId">
+      <label>Non biznis/enstitisyon <input id="landingName" required maxlength="160" placeholder="Pa egzanp: Lekòl Lespwa"></label>
+      <label>Kalté
+        <select id="landingType">
+          <option value="school">Lekòl</option>
+          <option value="store">Magazen</option>
+          <option value="church">Legliz</option>
+          <option value="organization">Òganizasyon</option>
+          <option value="other">Lòt</option>
+        </select>
+      </label>
+      <label>Deskripsyon <textarea id="landingDescription" maxlength="1000" placeholder="Kisa òganizasyon an ofri?"></textarea></label>
+      <label>Telefòn <input id="landingPhone" maxlength="40"></label>
+      <label>Adrès <input id="landingAddress" maxlength="255"></label>
+      <div class="jb-row">
+        <button type="submit" class="jb-btn jb-btn-primary">Sove</button>
+        <button type="button" class="jb-btn" onclick="closeLandingBuilder()">Anile</button>
+      </div>
+      <p id="landingResult" role="status"></p>
+    </form>
+
+    <ul id="landingList" class="jb-landing-list"></ul>
+    <p id="landingEmpty" class="jb-empty hidden">Ou poko gen vitrin. Kreye premye paj ou an!</p>
+  </section>
+
+  <section id="billing" class="card hidden">
+    <div class="section-heading">
+      <div>
+        <h2>Abonman Jere Biznis</h2>
+        <p>500 Gkach / mwa. Chwazi kantite mwa ou vle a (1, 3, 6, 12 oswa plis).</p>
+      </div>
+      <button type="button" class="jb-btn" onclick="closeBilling()">Fèmen</button>
+    </div>
+    <p>Balans Gkach ou : <strong id="gkachBalance">...</strong></p>
+    <div class="jb-row jb-quick-months">
+      <button type="button" class="jb-btn jb-btn-sm" onclick="setMonths(1)">1 mwa</button>
+      <button type="button" class="jb-btn jb-btn-sm" onclick="setMonths(3)">3 mwa</button>
+      <button type="button" class="jb-btn jb-btn-sm" onclick="setMonths(6)">6 mwa</button>
+      <button type="button" class="jb-btn jb-btn-sm" onclick="setMonths(12)">12 mwa</button>
+    </div>
+    <label>Kantite mwa (1-120) <input id="subMonths" type="number" min="1" max="120" value="1" oninput="updateTotal()"></label>
+    <p>Total : <strong id="subTotal">500</strong> Gkach</p>
+    <button type="button" class="jb-btn jb-btn-primary" onclick="paySubscription()">Peye avèk Gkach</button>
+    <p id="subResult" role="status"></p>
+  </section>
+
+  <section id="adminPanel" class="card hidden">
+    <div class="section-heading">
+      <div>
+        <h2 id="adminPanelTitle">Ko-Admin yo</h2>
+        <p id="adminPanelSub"></p>
+      </div>
+      <button type="button" class="jb-btn" onclick="closeAdminPanel()">Fèmen</button>
+    </div>
+    <ul id="adminList" class="jb-admin-list"></ul>
+    <form id="adminForm" class="jb-row" onsubmit="addAdmin(event)">
+      <input id="adminLookup" required maxlength="64" placeholder="Pseudo oswa nimewo WhatsApp">
+      <input type="hidden" id="adminLandingId">
+      <button type="submit" class="jb-btn jb-btn-primary">Ajoute Ko-Admin</button>
+    </form>
+    <p id="adminResult" role="status"></p>
+  </section>
+  </section>
+</main>
+</div>
+<script>window.JERE_BIZNIS_BASE={{ jere_biznis_base|tojson }};</script>
+<script src="{{ url_for('jere_biznis_web.static', filename='app.js') }}"></script>
+</body></html>

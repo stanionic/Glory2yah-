@@ -1,0 +1,74 @@
+fix(ads): DEFENSIVE GUARDS for logged-in ADS loading + SQLAlchemy 2.x health_check
+
+## Root cause (user report: "connected users can't load ADS")
+Anonymous users saw ads normally; logged-in users saw EMPTY products=[].
+Hypothesis confirmed through code-path analysis:
+  - inject_global_data context processor runs on EVERY render, but the
+    CartService + GkachService branches execute ONLY when is_authenticated.
+  - Any UNCAUGHT exception in these services (Redis transient, missing
+    legacy DB column, validate_whatsapp strict on old formats, a single
+    bad cart_item row, flask_login LocalProxy raising on attribute access)
+    would bubble UP through jinja's render_template, hit the route's
+    blanket `except Exception` handler, which safely swallows it and
+    returns EMPTY products=[] / marketplace_ads=[].
+  - That silent fall-back LOOKS exactly like "ADS not loading" to the
+    user, even though the Ad query itself ran fine.
+
+## Fixes (Preserve-First: targeted patches, no existing logic removed)
+
+1. [app/models/user.py] User.get_gkach_balance()
+   - Wrap ENTIRE method in try/except → NEVER raises, returns 0.
+   - Internal Redis / DB / cast sub-sections wrapped individually.
+   - Previously: 0 error handling, would crash on any redis / table issue.
+
+2. [app/services/cart_service.py] CartService.calculate_totals(user_id)
+   - Outer try/except → ALWAYS returns well-formed {count:0, subtotal:0 ...}
+     dict, never propagates.
+   - Loop body: single-row try/except + getattr() guards on every column
+     access so one corrupted cart_item never aborts the whole list.
+
+3. [app/services/gkach_service.py] GkachService.get_balance(whatsapp)
+   - Outer try/except → ALWAYS returns int (default 0).
+   - validate_whatsapp now has a LENIENT fallback: if validator raises but
+     the raw number has >= 7 numeric digits we use a cleaned version
+     instead of aborting (fixes old users with pre-validator formats).
+   - Redis / DB / cache sections each have their own guards.
+
+4. [app/__init__.py] @app.context_processor inject_global_data()
+   - TOTAL rewrite. NOW:
+     * `_defaults` dict used as immediate return on catastrophic failure.
+     * OUTERMOST try/except wraps EVERYTHING; last line of defense always
+       returns a valid data dict.
+     * current_user LocalProxy attribute access guarded with getattr +
+       micro try/except because even `.is_authenticated` can trigger the
+       user_loader and raise in edge cases.
+     * CartService / GkachService calls wrapped INDIVIDUALLY so one
+       failing service doesn't prevent the other from populating.
+     * Logger calls inside except blocks themselves wrapped in try/except
+       to prevent logger.encode(Unicode CP1252) from cascading.
+
+## Additional (unrelated, important for Render health)
+5. [app/routes/main.py] health_check()
+   - db.session.execute('SELECT 1') → wrap in sqlalchemy.text() because
+     SQLAlchemy 2.x raises ArgumentError on raw-string SQL statements.
+   - Previously: /health ALWAYS returned database=False / status=503 so
+     Render's healthCheckPath considered the service permanently
+     unhealthy even when PostgreSQL was fully reachable.
+
+## Validation
+  * Syntax / import smoke: OK (all 4 patched modules import cleanly;
+    GkachService.get_balance(None|+509 valid) → 0; CartService.calculate_totals
+    on non-existent user → {count:0}; User dummy.get_gkach_balance() → 0)
+  * Diagnostics: 0 lint / 0 type errors.
+  * Regression test_render_prod_db_guard.py: Ran 6 tests → OK (ProductionConfig
+    Render fallback behavior 100% unchanged).
+  * Routes / DB query path untouched (Ad filter logic is identical for
+    anonymous and logged-in users — the bug was never in the WHERE clause).
+
+## Files changed
+  app/__init__.py                    | 113 +++++++++++++++++++++++-------
+  app/models/user.py                 |  71 ++++++++++++-------
+  app/routes/main.py                 |   9 ++-
+  app/services/cart_service.py       |  67 +++++++++++++----
+  app/services/gkach_service.py      |  87 ++++++++++++++++++----
+  5 files changed, 270 insertions(+), 77 deletions(-)

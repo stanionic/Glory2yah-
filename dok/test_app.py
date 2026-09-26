@@ -6,6 +6,7 @@ Tests pour Dòk GlorYah
 
 import sys
 import os
+from flask import Flask
 
 # Ajoute le dossier parent au path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -23,17 +24,17 @@ def test_ai_model():
         
         # Test urgence
         urgent = ai.analyze("Mwen pa ka respire e pwatrin fè m mal")
-        assert "🔴" in urgent or "WOUJ" in urgent
+        assert urgent['icon'] == "🔴" and urgent['level'] == "WOUJ"
         print("✅ Détection urgence OK")
         
         # Test modéré
         moderate = ai.analyze("Mwen gen lafyèv ak touse")
-        assert "🟡" in moderate or "JÒN" in moderate
+        assert moderate['icon'] == "🟡" and moderate['level'] == "JÒN"
         print("✅ Détection modéré OK")
         
         # Test léger
         minor = ai.analyze("Tèt fè m yon ti jan mal")
-        assert "🟢" in minor or "VÈ" in minor
+        assert minor['icon'] == "🟢" and minor['level'] == "VÈT"
         print("✅ Détection léger OK")
         
         print("\n✅ Module IA fonctionne")
@@ -50,28 +51,39 @@ def test_flask_app():
     print("="*60)
     
     try:
-        import app as flask_app
-        print("✅ Module Flask importé")
+        from app import dok_bp
+        flask_app = Flask(__name__)
+        flask_app.config['TESTING'] = True
+        flask_app.register_blueprint(dok_bp)
+        print("✅ Blueprint Flask importé")
         
-        with flask_app.app.test_client() as client:
+        with flask_app.test_client() as client:
             # Test route principale
-            response = client.get('/')
+            response = client.get('/dok/')
             assert response.status_code == 200
             print("✅ Route / accessible")
             
             # Test route health
-            response = client.get('/health')
+            response = client.get('/dok/health')
             assert response.status_code == 200
             print("✅ Route /health accessible")
             
             # Test route analyze
-            response = client.post('/analyze',
+            response = client.post('/dok/analyze',
                                   json={'symptoms': 'tèt fè m mal'},
                                   content_type='application/json')
             assert response.status_code == 200
             data = response.get_json()
             assert 'response' in data
             print("✅ Route /analyze fonctionne")
+
+            response = client.post('/dok/analyze', json={'symptoms': 'x' * 1001})
+            assert response.status_code == 400
+            print("✅ Limite symptômes côté serveur OK")
+
+            response = client.post('/dok/analyze', data='not-json', content_type='application/json')
+            assert response.status_code == 400
+            print("✅ JSON invalide géré correctement")
         
         print("\n✅ Application Flask fonctionne")
         return True

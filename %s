@@ -1,0 +1,23 @@
+PASS: to_dict embed — YouTube long
+PASS:   autoplay+mute in src — YouTube long
+PASS: to_dict embed — YouTube short
+PASS:   autoplay+mute in src — YouTube short
+FAIL: to_dict embed — YouTube Shorts
+PASS: to_dict embed — Vimeo
+PASS:   autoplay+mute in src — Vimeo
+PASS: to_dict embed — TikTok /video
+FAIL:   autoplay+mute in src — TikTok /video
+PASS: to_dict embed — TikTok vm
+FAIL:   autoplay+mute in src — TikTok vm
+PASS: to_dict embed — Instagram reel
+PASS:   autoplay+mute in src — Instagram reel
+PASS: to_dict embed — FB Watch
+PASS:   autoplay+mute in src — FB Watch
+PASS: create_ad media_type=url OK
+FAIL: combine URL+text → extract embed OK
+PASS: /submit_ad anon → 302 login redirect (login_required)
+POST url-type submit_ad status=302 location=/upload_payment/f6c95430-50ee-46da-9dd4-d69f7eaa0864
+PASS: /submit_ad logged-in url-type → 200/302
+PASS:   → redirect to upload_payment flow
+
+=== RESULTAT: 16 PASS, 4 ECHEC ===

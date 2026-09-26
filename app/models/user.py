@@ -33,6 +33,14 @@ class User(UserMixin, BaseModel):
     is_admin = db.Column(db.Boolean, default=False)
     email_verified = db.Column(db.Boolean, default=False)
     phone_verified = db.Column(db.Boolean, default=False)
+
+    # Seller certification
+    seller_certification_status = db.Column(db.String(20), default='PENDING', nullable=False, index=True)
+    seller_certified_at = db.Column(db.DateTime, nullable=True)
+    seller_certified_by = db.Column(db.String(50), nullable=True)
+    seller_certification_notes = db.Column(db.Text, nullable=True)
+    seller_certification_suspended_at = db.Column(db.DateTime, nullable=True)
+    seller_certification_revoked_at = db.Column(db.DateTime, nullable=True)
     
     # Timestamps
     last_login = db.Column(db.DateTime)

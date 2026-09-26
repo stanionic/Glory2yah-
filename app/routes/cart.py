@@ -97,6 +97,11 @@ def checkout():
     
     items = CartService.get_user_cart(current_user.id)
     if not items:
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': False,
+                'error': 'Panier ou vid. Tanpri ajoute yon pwodui anvan ou konfime kòmand la.'
+            }), 400
         flash('Panier ou vid.', 'error')
         return redirect(url_for('main.index'))
     
@@ -112,6 +117,12 @@ def checkout():
             sellers = {}
             for item in items:
                 ad = item.ad
+                if not ad or not ad.user_whatsapp:
+                    db.session.rollback()
+                    return jsonify({
+                        'success': False,
+                        'error': 'Yon pwodui nan panier la pa disponib ankò. Retire li epi eseye ankò.'
+                    }), 400
                 if ad.user_whatsapp not in sellers:
                     sellers[ad.user_whatsapp] = []
                 sellers[ad.user_whatsapp].append(item)

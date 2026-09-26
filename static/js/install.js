@@ -395,14 +395,21 @@
     /**
      * Schedule popup display with delay
      */
+    function isConferenceRoom() {
+        // Never block the video-conference room with the install popup —
+        // its full-screen overlay intercepts all clicks on the controls.
+        return window.location.pathname.indexOf('/konferans/room/') === 0;
+    }
+
     function schedulePopup() {
         if (isInstalled) return;
+        if (isConferenceRoom()) return;
         if (!shouldShowPrompt()) return;
         
         const delay = settings ? (settings.popup_delay_seconds || 5) * 1000 : CONFIG.POPUP_DELAY;
         
         setTimeout(function() {
-            if (!isInstalled) {
+            if (!isInstalled && !isConferenceRoom()) {
                 if (isIOSSafari()) {
                     showIOSGuide();
                 } else {
@@ -422,7 +429,7 @@
         if (state && state.prompt_displayed) return;
         
         setTimeout(function() {
-            if (!isInstalled && shouldShowPrompt()) {
+            if (!isInstalled && shouldShowPrompt() && !isConferenceRoom()) {
                 if (isIOSSafari()) {
                     showIOSGuide();
                 } else {

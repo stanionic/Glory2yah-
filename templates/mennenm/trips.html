@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Vwayaj - Mennen M{% endblock %}
+
+{% block content %}
+<style>
+.mn-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 40%,#ffedd5 100%); }
+.mn-card { background:#fff; border-radius:26px; padding:26px 30px; box-shadow:0 16px 48px rgba(180,83,9,.12); max-width:860px; margin:0 auto }
+.mn-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; align-items:center; margin-bottom:20px }
+.mn-ttl { margin:0; font-size:23px; font-weight:900; color:#78350f }
+.mn-btn { padding:12px 18px; border-radius:16px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s; justify-content:center }
+.mn-btn-primary { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow:0 10px 26px rgba(217,119,6,.32) }
+.mn-btn-primary:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(217,119,6,.42) }
+.mn-btn-ghost { background:#fef3c7; color:#92400e }
+.mn-btn-ghost:hover { background:#fde68a; transform:translateY(-2px) }
+.mn-chip { display:inline-flex; align-items:center; gap:7px; font-weight:800; font-size:12.5px; padding:6px 13px; border-radius:999px }
+.mn-chip.negotiating { background:#fef3c7; color:#92400e; border:1.5px solid #fcd34d }
+.mn-chip.accepted { background:#dbeafe; color:#1e40af; border:1.5px solid #93c5fd }
+.mn-chip.paid, .mn-chip.demo, .mn-chip.completed { background:#d1fae5; color:#047857; border:1.5px solid #6ee7b7 }
+.mn-chip.cancelled { background:#fee2e2; color:#b91c1c; border:1.5px solid #fca5a5 }
+.mn-trip { display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; border:1.5px solid #fed7aa; border-radius:20px; padding:16px 18px; margin-bottom:14px; background:linear-gradient(135deg,#fff,#fffbeb); transition:transform .18s ease, box-shadow .18s ease }
+.mn-trip:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(180,83,9,.14) }
+.mn-trip-route { font-weight:900; color:#78350f; font-size:15.5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+.mn-trip-route i { color:#d97706 }
+.mn-trip-meta { color:#b45309; font-size:12.5px; font-weight:700; margin-top:5px; display:flex; gap:14px; flex-wrap:wrap }
+.mn-trip-price { font-size:20px; font-weight:900; color:#1e40af; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap }
+.mn-trip-price small { font-size:12px; font-weight:800 }
+.mn-empty { text-align:center; padding:40px 20px; color:#92400e; font-weight:700 }
+.mn-empty i { font-size:44px; color:#f59e0b; margin-bottom:14px; display:block }
+</style>
+
+<div class="mn-wrap">
+<div class="mn-card">
+    <div class="mn-head">
+        <div>
+            <h1 class="mn-ttl"><i class="fas fa-route" style="color:#d97706"></i> Mes Vwayaj
+                {% if pending_count and pending_count > 0 %}
+                <span style="display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 7px; border-radius:999px; background:#dc2626; color:#fff; font-size:13px; font-weight:900; vertical-align:middle; box-shadow:0 4px 10px rgba(220,38,38,.4)">{{ pending_count }}</span>
+                {% endif %}
+            </h1>
+            <p style="color:#b45309; font-size:13px; font-weight:700; margin:6px 0 0">Vwayaj kòm kliyan ak kòm chofè — negosyasyon, peman ak konple.</p>
+        </div>
+        <a href="{{ url_for('mennem.index') }}" class="mn-btn mn-btn-ghost">
+            <i class="fas fa-search"></i> Chèche yon Chofè
+        </a>
+    </div>
+
+    {% if trips %}
+        {% for trip in trips %}
+        <a href="{{ url_for('mennem.trip', trip_id=trip.id) }}" style="text-decoration:none">
+        <div class="mn-trip">
+            <div style="flex:1 1 300px; min-width:240px">
+                <div class="mn-trip-route">
+                    <i class="fas fa-map-marker-alt"></i> {{ trip.from_location }}
+                    <i class="fas fa-long-arrow-alt-right"></i>
+                    <i class="fas fa-flag-checkered"></i> {{ trip.to_location }}
+                </div>
+                <div class="mn-trip-meta">
+                    <span>
+                        {% if is_client_trip(trip) %}
+                            <i class="fas fa-user"></i> Kliyan — Chofè: {{ trip.driver_name }}
+                        {% else %}
+                            <i class="fas fa-car"></i> Chofè — Kliyan: {{ trip.passenger_whatsapp }}
+                        {% endif %}
+                    </span>
+                    <span><i class="fas fa-clock"></i> {{ trip.created_at.strftime('%d/%m/%Y %H:%M') if trip.created_at }}</span>
+                </div>
+            </div>
+            <div style="text-align:right">
+                <div class="mn-trip-price">
+                    {% if trip.accepted_price or trip.price_gkach %}
+                        {{ trip.accepted_price or trip.price_gkach }} <small>Gk</small>
+                    {% elif trip.counter_price %}
+                        ~{{ trip.counter_price }} <small>Gk (chòf)</small>
+                    {% elif trip.proposed_price %}
+                        ~{{ trip.proposed_price }} <small>Gk (pwopozisyon)</small>
+                    {% else %}
+                        — <small>Gk</small>
+                    {% endif %}
+                </div>
+                <span class="mn-chip {{ trip.status }}" style="margin-top:6px">
+                    {% if trip.status == 'negotiating' %}<i class="fas fa-comments"></i> Negosyasyon
+                    {% elif trip.status == 'accepted' %}<i class="fas fa-handshake"></i> Aksepte
+                    {% elif trip.status == 'paid' %}<i class="fas fa-credit-card"></i> Peye
+                    {% elif trip.status == 'demo' %}<i class="fas fa-flask"></i> Demo Konfime
+                    {% elif trip.status == 'completed' %}<i class="fas fa-check-circle"></i> Konplete
+                    {% else %}<i class="fas fa-ban"></i> Anile{% endif %}
+                </span>
+            </div>
+        </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="mn-empty">
+            <i class="fas fa-car-side"></i>
+            Ou pa gen okenn vwayaj pou kounye a.<br>
+            Chèche yon chofè epi fè yon demann — ou ka negosye pri a dirèkteman!
+            <div style="margin-top:18px">
+                <a href="{{ url_for('mennem.index') }}" class="mn-btn mn-btn-primary">
+                    <i class="fas fa-search"></i> Kòmanse Chèche
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

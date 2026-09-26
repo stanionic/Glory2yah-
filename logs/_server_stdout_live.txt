@@ -1,0 +1,13 @@
+
+================================================================
+  GLORY2YAHPUB — LOKAL SERVER LANSE
+================================================================
+  URL      : http://127.0.0.1:5000
+  Konferans: ws://127.0.0.1:5000/socket.io/
+  async_mode= threading
+  PID      : 1924  -> C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\logs\run_pid.txt
+  LOG FILE : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\logs\run_manual_app.log
+================================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: off

@@ -1,0 +1,2 @@
+V-2 GET /konferans/            status: 200
+V-3 GET /konferans/room/dummy   status: 404

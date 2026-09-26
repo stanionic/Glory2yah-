@@ -1,0 +1,3491 @@
+﻿<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#002366">
+    <meta name="csrf-token" content="ImFlMDRmMjZmMTlmOWU4MWQ1YzZhMGUzYzJhMmRlZmYxMWNlOTE1NDIi.apsreQ.Clck4ncbXWAfpRd14w7uombfq1M">
+    
+    <title>Glory2YahPub</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="/static/images/logo.png">
+    <link rel="apple-touch-icon" href="/static/images/logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GloryYah">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/g2y-app.css">
+    <link rel="stylesheet" href="/static/css/pwa.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    
+<link rel="stylesheet" href="/static/css/konferans.css?v=4">
+<style>
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+    }
+
+    .konf-room-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 20px;
+        min-height: calc(100vh - 60px);
+        padding: 20px;
+        background: #111827;
+    }
+
+    .konf-main-area {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .konf-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .konf-room-header {
+        background: #1F2937;
+        backdrop-filter: blur(20px);
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    .konf-room-header:hover {
+        background: #273449;
+        border-color: #4B5563;
+    }
+
+    .konf-room-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .konf-room-info h3 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 800;
+        background: linear-gradient(120deg, #E8C874, #C9A24B);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .konf-room-code {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, rgba(42,63,143,0.15), rgba(201,162,75,0.1));
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,0.9);
+        border: 1px solid rgba(42,63,143,0.3);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        font-family: ui-monospace, monospace;
+    }
+    .konf-room-code:hover {
+        background: linear-gradient(135deg, rgba(42,63,143,0.25), rgba(201,162,75,0.2));
+        border-color: rgba(42,63,143,0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(42,63,143,0.2);
+    }
+    .konf-room-code.copied {
+        background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.1));
+        border-color: rgba(16,185,129,0.6);
+        box-shadow: 0 8px 16px rgba(16,185,129,0.15);
+    }
+
+    .konf-room-code i {
+        color: #E8C874;
+    }
+
+    .konf-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .konf-status-badge.recording {
+        background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1));
+        border: 1px solid rgba(239,68,68,0.5);
+        color: #fca5a5;
+        animation: konfPulse 1.5s infinite;
+    }
+    @keyframes konfPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.02); }
+    }
+
+    .konf-status-badge.eco {
+        background: linear-gradient(135deg, rgba(234,179,8,0.15), rgba(234,179,8,0.05));
+        border: 1px solid rgba(234,179,8,0.4);
+        color: #fde047;
+    }
+
+    .konf-status-badge.hd {
+        background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+        border: 1px solid rgba(59,130,246,0.4);
+        color: #93c5fd;
+    }
+
+    .konf-status-badge.uhd {
+        background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
+        border: 1px solid rgba(34,197,94,0.4);
+        color: #86efac;
+    }
+
+    .konf-timer-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.5px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .konf-timer-badge.free {
+        background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.1));
+        border: 1px solid rgba(34,197,94,0.5);
+        color: #86efac;
+    }
+    .konf-timer-badge.warning {
+        background: linear-gradient(135deg, rgba(234,179,8,0.2), rgba(234,179,8,0.1));
+        border: 1px solid rgba(234,179,8,0.5);
+        color: #fde047;
+        animation: konfPulse 1.2s infinite;
+    }
+    .konf-timer-badge.danger {
+        background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1));
+        border: 1px solid rgba(239,68,68,0.5);
+        color: #fca5a5;
+        animation: konfPulse 0.8s infinite;
+    }
+    .konf-timer-badge.paid {
+        background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(59,130,246,0.1));
+        border: 1px solid rgba(59,130,246,0.5);
+        color: #93c5fd;
+    }
+
+    .konf-invite-panel {
+        padding: 16px;
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 14px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .konf-invite-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .konf-invite-row input {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #374151;
+        background: rgba(0,0,0,0.4);
+        color: #fff;
+        font-size: 0.85rem;
+        font-family: ui-monospace, monospace;
+        transition: all 0.3s ease;
+    }
+    .konf-invite-row input:focus {
+        outline: none;
+        border-color: rgba(42,63,143,0.6);
+        background: rgba(0,0,0,0.5);
+        box-shadow: 0 0 12px rgba(42,63,143,0.2);
+    }
+    
+    .konf-mini-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: linear-gradient(135deg, rgba(42,63,143,0.2), rgba(42,63,143,0.1));
+        color: #fff;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 700;
+        transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .konf-mini-btn:hover {
+        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.2));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(42,63,143,0.2);
+        border-color: rgba(42,63,143,0.5);
+    }
+    .konf-mini-btn.success { 
+        background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.1));
+        border-color: rgba(16,185,129,0.3);
+    }
+    .konf-mini-btn.success:hover { 
+        background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(16,185,129,0.2));
+        box-shadow: 0 6px 16px rgba(16,185,129,0.2);
+    }
+    .konf-mini-btn.danger { 
+        background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1));
+        border-color: rgba(239,68,68,0.3);
+    }
+    .konf-mini-btn.danger:hover { 
+        background: linear-gradient(135deg, rgba(239,68,68,0.3), rgba(239,68,68,0.2));
+        box-shadow: 0 6px 16px rgba(239,68,68,0.2);
+    }
+
+    .konf-avmode-group {
+        display: inline-flex;
+        padding: 6px;
+        background: #1F2937;
+        border-radius: 14px;
+        border: 1px solid #374151;
+        gap: 4px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .konf-avmode-btn {
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: none;
+        background: transparent;
+        color: rgba(255,255,255,0.6);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 700;
+        transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .konf-avmode-btn:hover { 
+        color: rgba(255,255,255,0.9);
+        transform: translateY(-1px);
+    }
+    .konf-avmode-btn.active {
+        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.15));
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(42,63,143,0.2);
+        border: 1px solid rgba(42,63,143,0.3);
+    }
+
+    .konf-chat-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 300px;
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 14px;
+        backdrop-filter: blur(20px);
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .konf-chat-header {
+        padding: 14px 16px;
+        font-weight: 800;
+        border-bottom: 1px solid #374151;
+        background: #273449;
+    }
+    .konf-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.2) transparent;
+    }
+    .konf-chat-messages::-webkit-scrollbar { width: 6px; }
+    .konf-chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .konf-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+    .konf-chat-input-area {
+        display: flex;
+        gap: 8px;
+        padding: 12px 14px;
+        border-top: 1px solid #374151;
+        background: rgba(0,0,0,0.2);
+    }
+    .konf-chat-input {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.3);
+        color: #fff;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    .konf-chat-input:focus { 
+        outline: none; 
+        border-color: rgba(42,63,143,0.6);
+        background: rgba(0,0,0,0.4);
+        box-shadow: 0 0 12px rgba(42,63,143,0.15);
+    }
+    .konf-chat-send-btn {
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #2A3F8F, #182A66);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 700;
+        transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        box-shadow: 0 4px 12px rgba(42,63,143,0.25);
+    }
+    .konf-chat-send-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(42,63,143,0.35);
+    }
+
+    .konf-chat-bubble {
+        max-width: 92%;
+        margin-bottom: 10px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+        animation: g2y-fadeInUp 0.3s ease;
+    }
+    .konf-chat-bubble.konf-chat-system {
+        background: #273449;
+        color: rgba(255,255,255,0.55);
+        text-align: center;
+        font-size: 0.75rem;
+        margin: 6px auto;
+        border-radius: 10px;
+    }
+    .konf-chat-bubble.konf-chat-own {
+        background: linear-gradient(135deg, #2A3F8F, #182A66);
+        color: #fff;
+        margin-left: auto;
+        border-bottom-right-radius: 2px;
+        box-shadow: 0 4px 12px rgba(42,63,143,0.2);
+    }
+    .konf-chat-bubble.konf-chat-other {
+        background: #273449;
+        color: #fff;
+        border-bottom-left-radius: 2px;
+    }
+    .konf-chat-sender {
+        font-size: 0.7rem;
+        font-weight: 700;
+        opacity: 0.8;
+        margin-bottom: 3px;
+        color: rgba(255,255,255,0.7);
+    }
+
+    .konf-participants {
+        max-height: 240px;
+        overflow-y: auto;
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 14px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .konf-participants::-webkit-scrollbar { width: 6px; }
+    .konf-participants::-webkit-scrollbar-track { background: transparent; }
+    .konf-participants::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    
+    .konf-participants-header {
+        padding: 12px 16px;
+        font-weight: 800;
+        border-bottom: 1px solid #374151;
+        font-size: 0.9rem;
+        background: #273449;
+    }
+    .konf-participants-list { padding: 8px; }
+    .konf-participant-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin-bottom: 4px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .konf-participant-item:hover { 
+        background: #273449;
+        transform: translateX(3px);
+    }
+    .konf-participant-avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2A3F8F, #182A66);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(42,63,143,0.2);
+    }
+    .konf-participant-name {
+        flex: 1;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.9);
+    }
+    .konf-participant-status {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 8px rgba(16,185,129,0.6);
+        animation: konfPulse 2s infinite;
+    }
+
+    /* === Modern Billing Modal === */
+    .konf-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .konf-modal-backdrop.show { display: flex; animation: g2y-fadeIn 0.3s ease; }
+    
+    .konf-modal {
+        background: linear-gradient(180deg, #1F2937 0%, #0f172a 100%);
+        border-radius: 24px;
+        padding: 32px;
+        max-width: 480px;
+        width: 100%;
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+        backdrop-filter: blur(20px);
+    }
+    
+    .konf-modal-icon {
+        width: 80px; height: 80px;
+        border-radius: 24px;
+        margin: 0 auto 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.4rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .konf-modal-icon.warn { 
+        background: linear-gradient(135deg, rgba(234,179,8,0.2), rgba(234,179,8,0.1));
+        color: #fde047;
+    }
+    .konf-modal-icon.danger { 
+        background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1));
+        color: #fca5a5;
+    }
+    .konf-modal-icon.success { 
+        background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.1));
+        color: #6ee7b7;
+    }
+    
+    .konf-modal h3 {
+        margin: 0 0 12px;
+        font-size: 1.5rem;
+        font-weight: 800;
+        text-align: center;
+    }
+    
+    .konf-modal p {
+        color: rgba(255,255,255,0.75);
+        margin: 0 0 20px;
+        text-align: center;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    
+    .konf-modal-pricing {
+        padding: 18px;
+        border-radius: 16px;
+        background: #273449;
+        border: 1px solid #374151;
+        margin-bottom: 20px;
+    }
+    .konf-modal-pricing-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 0.95rem;
+    }
+    .konf-modal-pricing-row .k { color: rgba(255,255,255,0.6); }
+    .konf-modal-pricing-row .v { font-weight: 700; }
+    .konf-modal-pricing-row.total {
+        border-top: 1px dashed rgba(255,255,255,0.15);
+        margin-top: 10px;
+        padding-top: 12px;
+        font-size: 1.1rem;
+    }
+    .konf-modal-pricing-row.total .v { 
+        color: #fde047;
+        font-size: 1.3rem;
+    }
+    
+    .konf-modal-actions { display: flex; gap: 12px; }
+    .konf-modal-actions > * { flex: 1; }
+
+    .konf-toast-container {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 400px;
+    }
+    
+    .konf-toast {
+        padding: 14px 18px;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.95);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        backdrop-filter: blur(20px);
+        font-size: 0.9rem;
+        animation: konfToastIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        font-weight: 500;
+    }
+    @keyframes konfToastIn {
+        from { opacity: 0; transform: translateX(50px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .konf-toast.warn { 
+        border-color: rgba(234,179,8,0.4);
+        background: linear-gradient(135deg, rgba(120,90,10,0.9), rgba(100,70,0,0.85));
+    }
+    .konf-toast.danger { 
+        border-color: rgba(239,68,68,0.5);
+        background: linear-gradient(135deg, rgba(120,30,30,0.9), rgba(100,20,20,0.85));
+    }
+    .konf-toast.success { 
+        border-color: rgba(16,185,129,0.5);
+        background: linear-gradient(135deg, rgba(10,90,60,0.9), rgba(5,70,50,0.85));
+    }
+    .konf-toast.info { 
+        border-color: rgba(59,130,246,0.5);
+        background: linear-gradient(135deg, rgba(20,60,120,0.9), rgba(10,40,100,0.85));
+    }
+
+    .konf-video-grid {
+        display: grid;
+        gap: 14px;
+        flex: 1;
+        min-height: 420px;
+    }
+    
+    .konf-video-wrapper {
+        position: relative;
+        background: #000;
+        border-radius: 16px;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+        border: 2px solid #374151;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        transition: all 0.3s ease;
+    }
+    .konf-video-wrapper:hover {
+        border-color: #4B5563;
+        box-shadow: 0 16px 50px rgba(0,0,0,0.5);
+    }
+    
+    .konf-video-wrapper.audio-only {
+        aspect-ratio: 1 / 1;
+        background: radial-gradient(circle at center, rgba(42,63,143,0.15), rgba(0,0,0,0.95));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .konf-video-wrapper.audio-only::before {
+        content: '';
+        width: 60%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2A3F8F, #182A66);
+        opacity: 0.35;
+        animation: konfPulse 2.5s infinite;
+    }
+    .konf-video-wrapper.audio-only video { display: none; }
+
+    .konf-video-wrapper video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+    }
+    
+    .konf-video-label {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.6));
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .konf-controls-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 18px;
+        margin-top: 14px;
+        background: #1F2937;
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    
+    .konf-ctrl-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #fff;
+        transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        position: relative;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .konf-ctrl-btn:hover { 
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    .konf-ctrl-btn:active { transform: translateY(-1px); }
+    .konf-ctrl-btn .konf-ctrl-icon { font-size: 1.1rem; }
+    
+    .konf-ctrl-primary { 
+        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.2));
+        border: 1px solid rgba(42,63,143,0.4);
+    }
+    .konf-ctrl-primary:hover { 
+        background: linear-gradient(135deg, rgba(42,63,143,0.4), rgba(42,63,143,0.3));
+        box-shadow: 0 8px 20px rgba(42,63,143,0.2);
+    }
+    
+    .konf-ctrl-secondary { 
+        background: #273449;
+        border: 1px solid #374151;
+        color: rgba(255,255,255,0.9);
+    }
+    .konf-ctrl-secondary:hover { 
+        background: rgba(255,255,255,0.14);
+        box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+    }
+    
+    .konf-ctrl-danger { 
+        background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(239,68,68,0.15));
+        border: 1px solid rgba(239,68,68,0.4);
+    }
+    .konf-ctrl-danger:hover { 
+        background: linear-gradient(135deg, rgba(239,68,68,0.35), rgba(239,68,68,0.25));
+        box-shadow: 0 8px 20px rgba(239,68,68,0.2);
+    }
+    
+    .konf-ctrl-info { 
+        background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(6,182,212,0.15));
+        border: 1px solid rgba(6,182,212,0.4);
+    }
+    .konf-ctrl-info:hover { 
+        background: linear-gradient(135deg, rgba(6,182,212,0.35), rgba(6,182,212,0.25));
+        box-shadow: 0 8px 20px rgba(6,182,212,0.2);
+    }
+    
+    .konf-ctrl-success { 
+        background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.15));
+        border: 1px solid rgba(16,185,129,0.4);
+    }
+    .konf-ctrl-success:hover { 
+        background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(16,185,129,0.25));
+        box-shadow: 0 8px 20px rgba(16,185,129,0.2);
+    }
+
+    .konf-quality-dropdown {
+        position: relative;
+    }
+    
+    .konf-quality-menu {
+        position: absolute;
+        bottom: calc(100% + 12px);
+        left: 0;
+        min-width: 220px;
+        background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(10,15,30,0.95));
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 8px;
+        display: none;
+        z-index: 100;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        backdrop-filter: blur(20px);
+    }
+    .konf-quality-dropdown:hover .konf-quality-menu { display: block; }
+    
+    .konf-quality-item {
+        display: block;
+        padding: 12px 16px;
+        border-radius: 10px;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .konf-quality-item:hover { 
+        background: rgba(42,63,143,0.2);
+        transform: translateX(3px);
+    }
+    .konf-quality-item.active { 
+        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.2));
+        box-shadow: 0 4px 12px rgba(42,63,143,0.2);
+    }
+
+    @keyframes g2y-fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes g2y-fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1024px) {
+        .konf-room-layout { 
+            grid-template-columns: 1fr;
+            gap: 16px;
+            padding: 16px;
+        }
+        .konf-sidebar { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .konf-room-layout { 
+            grid-template-columns: 1fr;
+            gap: 14px;
+            padding: 12px;
+        }
+        .konf-sidebar { 
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .konf-room-header { 
+            flex-direction: column; 
+            gap: 12px; 
+            align-items: flex-start;
+        }
+        .konf-video-grid { 
+            grid-template-columns: 1fr;
+            min-height: 300px;
+        }
+        .konf-controls-bar {
+            gap: 10px;
+            padding: 12px 14px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .konf-room-container { padding: 8px; }
+        .konf-controls-bar { 
+            flex-wrap: nowrap; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+            justify-content: flex-start;
+            padding: 10px 12px;
+            gap: 8px;
+        }
+        .konf-ctrl-btn span:not(.konf-ctrl-icon) { display: none; }
+        .konf-ctrl-btn { 
+            padding: 10px;
+            min-width: 44px;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        .konf-avmode-group { display: none; }
+        .konf-room-info h3 {
+            font-size: 1.1rem;
+        }
+        .konf-room-code {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+        }
+    }
+
+    /* ===== Media Display Area ===== */
+    .konf-media-display {
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 16px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    .konf-media-display-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #374151;
+    }
+    .konf-media-display-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #fff;
+    }
+    .konf-media-display-title i {
+        color: #E8C874;
+        margin-right: 6px;
+    }
+    .konf-media-display-close {
+        background: none;
+        border: none;
+        color: #9CA3AF;
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .konf-media-display-close:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.1);
+    }
+    .konf-media-display-content {
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .konf-media-display-content img {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 12px;
+    }
+    .konf-media-display-content video {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 12px;
+    }
+    .konf-media-audio-player {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 20px;
+        width: 100%;
+    }
+    .konf-media-audio-player i {
+        font-size: 2.5rem;
+        color: #E8C874;
+    }
+    .konf-media-audio-player audio {
+        width: 100%;
+        max-width: 400px;
+    }
+    .konf-media-audio-player span {
+        color: #D1D5DB;
+        font-size: 0.85rem;
+    }
+    .konf-media-file-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px;
+    }
+    .konf-media-file-link i {
+        font-size: 2rem;
+        color: #E8C874;
+    }
+    .konf-media-file-link a {
+        color: #60A5FA;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+    .konf-media-file-link a:hover {
+        color: #93C5FD;
+    }
+
+    /* ===== Media Share Dialog ===== */
+    .konf-media-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+    .konf-media-dialog-content {
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .konf-media-dialog-preview {
+        margin-bottom: 20px;
+        text-align: center;
+        max-height: 250px;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #111827;
+    }
+    .konf-media-dialog-preview img,
+    .konf-media-dialog-preview video {
+        max-width: 100%;
+        max-height: 250px;
+        border-radius: 12px;
+    }
+    .konf-media-dialog-preview audio {
+        margin: 20px 0;
+    }
+    .konf-media-dialog-file {
+        padding: 30px;
+        font-size: 1.1rem;
+        color: #D1D5DB;
+    }
+    .konf-media-dialog-file i {
+        font-size: 2rem;
+        color: #E8C874;
+        margin-right: 10px;
+    }
+    .konf-media-dialog-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .konf-media-dialog-actions .konf-btn {
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .konf-btn-primary {
+        background: linear-gradient(135deg, #2A3F8F, #182A66);
+        color: #fff;
+    }
+    .konf-btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(42,63,143,0.4);
+        transform: translateY(-1px);
+    }
+    .konf-btn-secondary {
+        background: #374151;
+        color: #fff;
+        border: 1px solid #4B5563;
+    }
+    .konf-btn-secondary:hover {
+        background: #4B5563;
+    }
+    .konf-btn-outline {
+        background: transparent;
+        color: #D1D5DB;
+        border: 1px solid #4B5563;
+    }
+    .konf-btn-outline:hover {
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+    }
+
+    /* ===== Chat Media ===== */
+    .konf-chat-media-image {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 4px 0;
+    }
+    .konf-chat-media-video {
+        max-width: 220px;
+        max-height: 160px;
+        border-radius: 8px;
+        margin: 4px 0;
+    }
+    .konf-chat-media-audio {
+        max-width: 220px;
+        margin: 4px 0;
+    }
+    .konf-chat-media-file {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(42,63,143,0.15);
+        border: 1px solid rgba(42,63,143,0.3);
+        border-radius: 8px;
+        color: #60A5FA;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 4px 0;
+    }
+    .konf-chat-media-file:hover {
+        background: rgba(42,63,143,0.25);
+        color: #93C5FD;
+    }
+    .konf-chat-media-file i {
+        color: #E8C874;
+    }
+
+    /* ===== Media Display Area ===== */
+    .konf-media-display {
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 14px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    .konf-media-display-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #374151;
+    }
+    .konf-media-display-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #E8C874;
+    }
+    .konf-media-display-title i {
+        margin-right: 6px;
+    }
+    .konf-media-display-close {
+        background: rgba(239,68,68,0.15);
+        border: 1px solid rgba(239,68,68,0.3);
+        border-radius: 8px;
+        color: #f87171;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+    .konf-media-display-close:hover {
+        background: rgba(239,68,68,0.25);
+    }
+    .konf-media-display-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        background: #111827;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .konf-media-display-content img {
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+    }
+    .konf-media-display-content video {
+        max-width: 100%;
+        max-height: 400px;
+    }
+    .konf-media-display-content audio {
+        width: 100%;
+    }
+    .konf-media-audio-player {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        width: 100%;
+    }
+    .konf-media-audio-player i {
+        color: #E8C874;
+        font-size: 1.5rem;
+    }
+    .konf-media-audio-player span {
+        color: #e5e7eb;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .konf-media-file-link {
+        padding: 20px;
+        text-align: center;
+    }
+    .konf-media-file-link a {
+        color: #60A5FA;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .konf-media-file-link a:hover {
+        color: #93C5FD;
+        text-decoration: underline;
+    }
+    .konf-media-file-link i {
+        color: #E8C874;
+        margin-right: 8px;
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    /* ===== Media Share Dialog ===== */
+    .konf-media-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .konf-media-dialog-content {
+        background: #1F2937;
+        border: 1px solid #374151;
+        border-radius: 16px;
+        padding: 20px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .konf-media-dialog-preview {
+        margin-bottom: 16px;
+        text-align: center;
+        background: #111827;
+        border-radius: 12px;
+        padding: 12px;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .konf-media-dialog-preview img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+    }
+    .konf-media-dialog-preview video {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+    }
+    .konf-media-dialog-preview audio {
+        width: 100%;
+    }
+    .konf-media-dialog-file {
+        color: #e5e7eb;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .konf-media-dialog-file i {
+        color: #E8C874;
+        margin-right: 8px;
+        font-size: 1.5rem;
+    }
+    .konf-media-dialog-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .konf-media-dialog-actions .konf-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* ===== Chat media styles ===== */
+    .konf-chat-media-image {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 6px;
+        border: 1px solid #374151;
+    }
+    .konf-chat-media-video {
+        max-width: 220px;
+        max-height: 160px;
+        border-radius: 8px;
+        margin-top: 6px;
+    }
+    .konf-chat-media-audio {
+        width: 200px;
+        margin-top: 6px;
+    }
+
+</style>
+
+</head>
+<body class="g2y-body">
+
+    <!-- ═══ TOP HEADER ═══ -->
+    <header class="g2y-header" id="appHeader">
+        <div class="g2y-header-inner">
+            <a href="/" class="g2y-logo">
+                <img src="/static/images/logo.png" alt="Glory2YahPub" class="g2y-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <span class="g2y-logo-fallback" style="display:none">G2Y</span>
+            </a>
+
+            <!-- Search bar (center) -->
+            <div class="g2y-search-wrap">
+                <form action="/search" method="GET" class="g2y-search-form">
+                    <span class="g2y-search-icon">🔍</span>
+                    <input type="text" name="q" placeholder="Chèche" class="g2y-search-input" value="">
+                </form>
+            </div>
+
+            <!-- Header right actions -->
+            <div class="g2y-header-actions">
+                
+                    <a href="/auth/login" class="g2y-btn-outline-sm">Konekte</a>
+                    <a href="/auth/register" class="g2y-btn-primary-sm">Enskri</a>
+                
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══ FLASH MESSAGES ═══ -->
+    
+        
+    
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="g2y-main" id="mainContent">
+        
+<div class="konf-room-body">
+<div class="konf-room-container">
+    <!-- Room Header -->
+    <div class="konf-room-header">
+        <div class="konf-room-info">
+            <div class="konf-room-name">
+                <i class="fas fa-video"></i> Test Sal
+            </div>
+            <span class="konf-room-code" id="roomCodeCopy" title="Klike pou kopye kòd la">
+                <i class="fas fa-key"></i> <span id="roomCodeText">EE8327</span>
+            </span>
+            
+            <div class="konf-timer-badge free" id="billingTimer" title="Tan konferans">
+                <i class="fas fa-clock"></i>
+                <span id="timerText">00:00</span>
+            </div>
+            
+        </div>
+        <div class="konf-room-controls-top">
+            <div id="recordingStatus" style="display: none;">
+                <span class="konf-status-badge recording">
+                    <span class="konf-recording-dot"></span> Anrejistreman
+                </span>
+            </div>
+            <div id="qualityStatus" class="konf-status-badge eco">
+                <i class="fas fa-signal"></i> Eko (360p)
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite panel (owner + participants can see code/link via owner-only extended panel) -->
+    
+    <div class="konf-invite-panel" id="invitePanel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <strong style="font-size:0.9rem"><i class="fas fa-share-alt" style="color:var(--konf-accent-light)"></i> Envite Patisipan</strong>
+            <small style="color:rgba(255,255,255,0.55)" id="gkachBalanceLabel">Gkach: <strong>0</strong></small>
+        </div>
+        <div class="konf-invite-row">
+            <input type="text" id="inviteLinkInput" value="http://127.0.0.1:5000/konferans/room/EE8327" readonly>
+            <button class="konf-mini-btn" id="copyLinkBtn" title="Kopye lyen"><i class="fas fa-link"></i> Lyen</button>
+            <button class="konf-mini-btn success" id="copyCodeBtn" title="Kopye kòd"><i class="fas fa-key"></i> Kòd</button>
+            <a class="konf-mini-btn green" id="whatsappShareBtn" target="_blank" rel="noopener" title="Pataje WhatsApp"><i class="fab fa-whatsapp"></i> WA</a>
+        </div>
+        <small style="display:block;margin-top:8px;color:rgba(255,255,255,0.5);font-size:0.75rem">
+            Patisipan yo ka antre ak kòd <code style="color:var(--konf-accent-light);padding:2px 6px;background:rgba(0,0,0,0.3);border-radius:4px">EE8327</code>
+            ou klike sou lyen an.
+            
+        </small>
+    </div>
+    
+
+    <!-- Main Layout -->
+    <div class="konf-room-layout">
+        <div class="konf-main-area">
+            <!-- Video Grid -->
+            <div class="konf-video-grid" id="videoContainer">
+                <!-- Videos added dynamically -->
+            </div>
+
+            <!-- Media Display Area (shown when owner shares media) -->
+            <div class="konf-media-display" id="mediaDisplay" style="display: none;">
+                <div class="konf-media-display-header">
+                    <span class="konf-media-display-title"><i class="fas fa-photo-video"></i> <span id="mediaDisplayTitle">Medya</span></span>
+                    <button class="konf-media-display-close" onclick="clearMediaDisplay()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="konf-media-display-content" id="mediaDisplayContent">
+                    <!-- Media content inserted here -->
+                </div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="konf-controls-bar">
+                <!-- Quality Dropdown -->
+                <div class="konf-quality-dropdown">
+                    <button class="konf-ctrl-btn konf-ctrl-secondary" title="Chanje kalite video / konsomasyon done">
+                        <span class="konf-ctrl-icon"><i class="fas fa-cog"></i></span> <span>Kalite</span>
+                    </button>
+                    <div class="konf-quality-menu">
+                        <a class="konf-quality-item active" data-quality="low" href="#" onclick="changeQuality('low'); return false;">
+                            <i class="fas fa-signal" style="color:#facc15"></i> Eko (360p) – Faible débit
+                        </a>
+                        <a class="konf-quality-item" data-quality="hd" href="#" onclick="changeQuality('hd'); return false;">
+                            <i class="fas fa-tv" style="color:#E8C874"></i> HD (720p)
+                        </a>
+                        <a class="konf-quality-item" data-quality="uhd" href="#" onclick="changeQuality('uhd'); return false;">
+                            <i class="fas fa-film" style="color:#4ade80"></i> UHD (1080p)
+                        </a>
+                        <div style="height:1px;background:rgba(255,255,255,0.08);margin:6px 0"></div>
+                        <a class="konf-quality-item" data-quality="audio" href="#" onclick="changeQuality('audio'); return false;">
+                            <i class="fas fa-volume-off" style="color:#f472b6"></i> Odio sèlman – Éco max
+                        </a>
+                        <a class="konf-quality-item" href="#" onclick="toggleAutoBandwidth(); return false;" id="autoBWItem">
+                            <i class="fas fa-magic" style="color:#C9A24B"></i> Adaptatif: <span id="autoBWLabel">Aktif</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- A/V Mode Group (Seamless Switch Audio ↔ Video Sans Coupure) -->
+                <div class="konf-avmode-group" title="Chanje mòd san koupe apèl la">
+                    <button class="konf-avmode-btn" data-avmode="video" id="avmodeVideo">🎥 Videyo</button>
+                    <button class="konf-avmode-btn active" data-avmode="mixed" id="avmodeMixed">🎙️+📷</button>
+                    <button class="konf-avmode-btn" data-avmode="audio" id="avmodeAudio">🎧 Odio</button>
+                </div>
+
+                <button id="toggleVideo" class="konf-ctrl-btn konf-ctrl-primary" title="Aktive/Dezaktive Kamera">
+                    <span class="konf-ctrl-icon"><i class="fas fa-video"></i></span> <span>Videyo</span>
+                </button>
+
+                <button id="toggleAudio" class="konf-ctrl-btn konf-ctrl-primary" title="Aktive/Dezaktive Mikwo">
+                    <span class="konf-ctrl-icon"><i class="fas fa-microphone"></i></span> <span>Odio</span>
+                </button>
+
+                
+                <!-- Record -->
+                <button id="startRecording" class="konf-ctrl-btn konf-ctrl-danger" title="Kòmanse anrejistreman">
+                    <span class="konf-ctrl-icon"><i class="fas fa-circle"></i></span> <span>Anrejistre</span>
+                </button>
+                <button id="stopRecording" class="konf-ctrl-btn konf-ctrl-secondary" style="display: none;" title="Sispann anrejistreman">
+                    <span class="konf-ctrl-icon"><i class="fas fa-stop"></i></span> <span>Sispann</span>
+                </button>
+
+                <!-- Media Upload (owner only) -->
+                <button id="uploadMediaBtn" class="konf-ctrl-btn konf-ctrl-success" title="Pataje imaj/videyo/dokiman" onclick="document.getElementById('mediaFileInput').click()">
+                    <span class="konf-ctrl-icon"><i class="fas fa-photo-video"></i></span> <span>Medya</span>
+                </button>
+                <input type="file" id="mediaFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display:none">
+
+                <!-- Enhanced Screen Share: multi-source (sequencer l'écran) -->
+                <div class="konf-quality-dropdown">
+                    <button id="shareScreen" class="konf-ctrl-btn konf-ctrl-info" title="Pataje ekran – chwazi sous">
+                        <span class="konf-ctrl-icon"><i class="fas fa-desktop"></i></span> <span>Pataje ▾</span>
+                    </button>
+                    <div class="konf-quality-menu">
+                        <a class="konf-quality-item" href="#" onclick="startScreenShare('monitor'); return false;">
+                            <i class="fas fa-tv"></i> Ekran Konplè (Monitor)
+                        </a>
+                        <a class="konf-quality-item" href="#" onclick="startScreenShare('window'); return false;">
+                            <i class="fas fa-window-restore"></i> Yon Fènèt Sèlman
+                        </a>
+                        <a class="konf-quality-item" href="#" onclick="startScreenShare('browser'); return false;">
+                            <i class="fas fa-window-maximize"></i> Onglet Navigatè (Tab)
+                        </a>
+                        <div style="height:1px;background:rgba(255,255,255,0.08);margin:6px 0"></div>
+                        <a class="konf-quality-item konf-quality-stop-scr" href="#" id="stopScreenShareItem" style="color:#f87171;display:none" onclick="stopScreenShare(); return false;">
+                            <i class="fas fa-stop-circle"></i> Sispann Pataj
+                        </a>
+                    </div>
+                </div>
+
+                <button id="buyTimeBtn" class="konf-ctrl-btn konf-ctrl-success" title="Achte tan anplis (Gkach)">
+                    <span class="konf-ctrl-icon"><i class="fas fa-coins"></i></span> <span>+Tan</span>
+                </button>
+                
+
+                <button id="leaveRoom" class="konf-ctrl-btn konf-ctrl-danger" style="margin-left: auto;" title="Kite sal la">
+                    <span class="konf-ctrl-icon"><i class="fas fa-sign-out-alt"></i></span> <span>Kite</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="konf-sidebar">
+            <!-- Chat -->
+            <div class="konf-chat-panel">
+                <div class="konf-chat-header">
+                    <i class="fas fa-comments"></i> Chat
+                </div>
+                <div class="konf-chat-messages" id="chatContainer"></div>
+                <div class="konf-chat-input-area">
+                    <input type="text" id="chatInput" class="konf-chat-input" placeholder="Tape mesaj ou...">
+                    <button id="sendChat" class="konf-chat-send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Participants -->
+            <div class="konf-participants">
+                <div class="konf-participants-header">
+                    <i class="fas fa-users"></i> Patisipan yo
+                </div>
+                <div class="konf-participants-list" id="participantsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Billing Modal -->
+<div class="konf-modal-backdrop" id="billingModal">
+    <div class="konf-modal">
+        <div class="konf-modal-icon warn" id="billingModalIcon">⏰</div>
+        <h3 id="billingModalTitle">Tan gratis prèske fini</h3>
+        <p id="billingModalMessage">
+            Ou gen 45 minit gratis nan tout.
+            Peye 250 Gkach pou pwochenn èdtan an pou kontinye.
+        </p>
+        <div class="konf-modal-pricing">
+            <div class="konf-modal-pricing-row"><span class="k">1 Lè Konferans</span><span class="v">250 Gkach</span></div>
+            <div class="konf-modal-pricing-row"><span class="k">Ou gen kounye a</span><span class="v" id="billingModalBalance">0 Gkach</span></div>
+            <div class="konf-modal-pricing-row total"><span class="k">Total pou peye</span><span class="v" id="billingModalTotal">250 Gkach</span></div>
+        </div>
+        <div class="konf-modal-actions">
+            <button class="konf-btn konf-btn-outline" id="billingRemindLater" style="background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.15)">
+                <i class="fas fa-clock"></i> Rapèl m nan 10min
+            </button>
+            <button class="konf-btn konf-btn-success" id="billingPayNow">
+                <i class="fas fa-coins"></i> Peye 250 Gkach
+            </button>
+        </div>
+        <a href="/achte_gkach" target="_blank" style="display:block;text-align:center;margin-top:14px;color:var(--konf-accent-light);font-size:0.8rem;font-weight:600;text-decoration:none">
+            ➕ Ajoute Gkach nan makèt la
+        </a>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="konf-toast-container" id="toastContainer"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
+<script>
+    // ====== Server-provided context ======
+    const roomId = "93b5939d-ba3e-483c-a136-33eda6124177";
+    const roomCode = "EE8327";
+    const userName = "Test User";
+    const isOwner = true;
+    const initialJoinLink = "http://127.0.0.1:5000/konferans/room/EE8327";
+    const FREE_MINUTES = 45;
+    const GKACH_PER_HOUR = 250;
+    const REMINDER_EVERY = 10;
+    const initialBilling = {"elapsed_seconds": 5916, "free_minutes": 45, "gkach_per_hour": 250, "owner_balance": 0, "reminder_every_min": 10};
+
+    const socket = io();
+
+    const videoContainer = document.getElementById('videoContainer');
+    const chatContainer = document.getElementById('chatContainer');
+    const participantsList = document.getElementById('participantsList');
+
+    let localStream = null;
+    const peers = {}; // sid -> {peer, userName}
+
+    // ===== Low-Bandwidth Optimized Quality Profiles =====
+    // Défaut : faible débit (360p, 15fps) avec contraintes agressives et SDP b=AS patch
+    const qualityProfiles = {
+        low: {
+            video: {
+                width: { ideal: 320, max: 480 },
+                height: { ideal: 240, max: 360 },
+                frameRate: { ideal: 15, max: 20 }
+            },
+            audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } },
+            maxBitrateKbps: 400, // ~24 kbit/min
+            label: '<i class="fas fa-signal"></i> Mode Économique (360p) – Faible débit',
+            class: 'eco'
+        },
+        hd: {
+            video: { width: { ideal: 1280, max: 1280 }, height: { ideal: 720, max: 720 }, frameRate: { ideal: 25, max: 30 } },
+            audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true } },
+            maxBitrateKbps: 1600,
+            label: '<i class="fas fa-tv"></i> Mode HD (720p)',
+            class: 'hd'
+        },
+        uhd: {
+            video: { width: { ideal: 1920, max: 1920 }, height: { ideal: 1080, max: 1080 }, frameRate: { ideal: 30, max: 30 } },
+            audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true } },
+            maxBitrateKbps: 3200,
+            label: '<i class="fas fa-film"></i> Mode UHD (1080p)',
+            class: 'uhd'
+        },
+        audio: {
+            video: false,
+            audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } },
+            maxBitrateKbps: 64,
+            label: '<i class="fas fa-volume-off"></i> Mode Odio Sèlman (Éco max)',
+            class: 'eco'
+        }
+    };
+
+    let currentQuality = 'low';
+    let currentAVMode = 'mixed'; // 'audio' = audio only (no video track sent) | 'mixed' = A+V | 'video' = video emphasis
+    let autoBandwidth = true;
+    let poorConnCount = 0;
+
+    function showToast(msg, kind = 'info', duration = 5200) {
+        const tc = document.getElementById('toastContainer');
+        if (!tc) return;
+        const t = document.createElement('div');
+        t.className = `konf-toast ${kind}`;
+        t.innerHTML = msg;
+        tc.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(40px)'; t.style.transition = 'all 0.3s'; }, duration - 300);
+        setTimeout(() => { t.remove(); }, duration);
+    }
+
+    // ===== CSRF helper =====
+    function getCSRFToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    // ===== Replace track across ALL peers (seamless — no reconnect) =====
+    function replaceTrackForAll(oldTrack, newTrack, streamRef) {
+        for (const pid in peers) {
+            try {
+                const p = peers[pid].peer;
+                if (p && p.connected && oldTrack) {
+                    p.replaceTrack(oldTrack, newTrack, streamRef);
+                }
+            } catch (e) { console.warn('replaceTrack peer failed', pid, e); }
+        }
+    }
+
+    // ===== Patch SDP to cap video bitrate (low-bandwidth guard) =====
+    function patchBitrateCap(sdp, kbps) {
+        if (!kbps) return sdp;
+        try {
+            // Patch m=video lines to add b=AS
+            let patched = sdp;
+            const lines = sdp.split('\r\n');
+            const out = [];
+            let mvideoSeen = false;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                out.push(line);
+                if (line.startsWith('m=video')) {
+                    mvideoSeen = true;
+                } else if (mvideoSeen && line.startsWith('m=')) {
+                    // Inject b=AS right before next m= line if not already there
+                    if (!out.slice(out.length-5, out.length).some(l => l.startsWith('b=AS'))) {
+                        out.splice(out.length - 1, 0, `b=AS:${kbps}`);
+                    }
+                    mvideoSeen = false;
+                }
+            }
+            if (mvideoSeen && !out.slice(out.length-5, out.length).some(l => l.startsWith('b=AS'))) {
+                out.push(`b=AS:${kbps}`);
+            }
+            return out.join('\r\n');
+        } catch (e) { return sdp; }
+    }
+
+    // ===== Change Quality (Seamless — no call drop) =====
+    async function changeQuality(level) {
+        if (!(level in qualityProfiles)) return;
+        if (currentQuality === level) return;
+        const profile = qualityProfiles[level];
+        try {
+            // 1) If switching TO audio-only → remove video track
+            if (level === 'audio') {
+                if (localStream) {
+                    const vtrack = localStream.getVideoTracks()[0];
+                    if (vtrack) {
+                        replaceTrackForAll(vtrack, null, localStream);
+                        localStream.removeTrack(vtrack);
+                        vtrack.stop();
+                    }
+                }
+                document.querySelectorAll('.konf-video-wrapper').forEach(w => w.classList.add('audio-only'));
+                currentQuality = level;
+                updateQualityBadge();
+                showToast('<i class="fas fa-volume-off"></i> Mode Odio sèlman aktivé — ekonomize done.', 'info', 4000);
+                return;
+            }
+            
+            // 2) FROM audio-only back to video → re-acquire camera with fallback strategy
+            let hadVideo = localStream && localStream.getVideoTracks().length > 0;
+            const wasAudioOnly = !hadVideo;
+            
+            // Try progressively simpler constraints
+            let newStream = null;
+            const strategies = [
+                { video: profile.video, audio: profile.audio, desc: 'quality' },
+                { video: true, audio: true, desc: 'basic' },
+                { video: true, audio: false, desc: 'video-only' }
+            ];
+            
+            for (const strategy of strategies) {
+                try {
+                    console.log(`Quality change: trying ${strategy.desc} for ${level}`);
+                    newStream = await navigator.mediaDevices.getUserMedia(strategy);
+                    console.log(`✅ Success: ${strategy.desc}`);
+                    break;
+                } catch (e) {
+                    console.warn(`❌ Failed ${strategy.desc}:`, e.message);
+                }
+            }
+            
+            if (!newStream) {
+                throw new Error('No media available for quality change');
+            }
+            
+            const newVideoTrack = newStream.getVideoTracks()[0];
+            const newAudioTrack = newStream.getAudioTracks()[0];
+
+            if (localStream) {
+                const oldVideo = localStream.getVideoTracks()[0];
+                const oldAudio = localStream.getAudioTracks()[0];
+                if (newVideoTrack && oldVideo) {
+                    replaceTrackForAll(oldVideo, newVideoTrack, localStream);
+                    localStream.removeTrack(oldVideo);
+                    oldVideo.stop();
+                } else if (newVideoTrack && !oldVideo) {
+                    replaceTrackForAll(null, newVideoTrack, localStream);
+                }
+                if (newAudioTrack && oldAudio) {
+                    replaceTrackForAll(oldAudio, newAudioTrack, localStream);
+                    localStream.removeTrack(oldAudio);
+                    oldAudio.stop();
+                } else if (newAudioTrack && !oldAudio) {
+                    replaceTrackForAll(null, newAudioTrack, localStream);
+                }
+                if (newVideoTrack) localStream.addTrack(newVideoTrack);
+                if (newAudioTrack) localStream.addTrack(newAudioTrack);
+            } else {
+                localStream = newStream;
+            }
+            document.querySelectorAll('.konf-video-wrapper').forEach(w => w.classList.remove('audio-only'));
+            const localVideo = document.querySelector('#video-local video');
+            if (localVideo) localVideo.srcObject = localStream;
+            currentQuality = level;
+            updateQualityBadge();
+            document.querySelectorAll('.konf-quality-item[data-quality]').forEach(el => {
+                el.classList.toggle('active', el.getAttribute('data-quality') === level);
+            });
+            showToast(`<i class="fas fa-signal"></i> Kalite chanje pou ${profile.label.replace(/<[^>]+>/g,'')}`, 'success', 3200);
+        } catch (err) {
+            console.error('changeQuality error', err);
+            showToast('<i class="fas fa-exclamation-triangle"></i> ❌ Kalite pa ka chanje. Aparèy pa disponib.', 'danger', 5000);
+        }
+    }
+
+    function updateQualityBadge() {
+        const statusDiv = document.getElementById('qualityStatus');
+        const profile = qualityProfiles[currentQuality];
+        if (!statusDiv || !profile) return;
+        statusDiv.className = `konf-status-badge ${profile.class}`;
+        statusDiv.innerHTML = profile.label;
+    }
+
+    function toggleAutoBandwidth() {
+        autoBandwidth = !autoBandwidth;
+        document.getElementById('autoBWLabel').textContent = autoBandwidth ? 'Aktif' : 'Fèmen';
+        showToast(`<i class="fas fa-magic"></i> Mode adaptatif: ${autoBandwidth ? 'AKTIF (ba koneksyon → otomatikman redwi kalite)' : 'FÈMEN'}`, autoBandwidth ? 'success' : 'warn', 4200);
+    }
+
+    // ===== A/V Mode (Seamless switch Audio ↔ Video Sans Coupure) =====
+    async function setAVMode(mode) {
+        if (!['audio', 'mixed', 'video'].includes(mode)) return;
+        if (!localStream) return;
+        if (currentAVMode === mode) return;
+        document.querySelectorAll('.konf-avmode-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-avmode') === mode));
+        try {
+            const hasVideo = localStream.getVideoTracks().length > 0;
+            const hasAudio = localStream.getAudioTracks().length > 0;
+            if (mode === 'audio') {
+                // Switch: désactiver ENVOI vidéo vers peers (mais garde preview locale pour revenir vite)
+                if (hasVideo) {
+                    const vt = localStream.getVideoTracks()[0];
+                    vt.enabled = false; // keep track, just stop sending real frames
+                    replaceTrackForAll(vt, null, localStream);
+                    document.querySelectorAll('.konf-video-wrapper').forEach(w => w.classList.add('audio-only'));
+                }
+                showToast('<i class="fas fa-volume-off"></i> Mòd Odio sèlman — patisipan yo pap wè w, men yo tande w.', 'info', 4000);
+            } else {
+                // mixed or video: ensure video track active and being sent
+                const vt = localStream.getVideoTracks()[0];
+                if (vt) {
+                    if (!vt.enabled) vt.enabled = true;
+                    // Re-send track to peers if it was previously removed
+                    if (!vt.enabled) vt.enabled = true;
+                    const currentlySent = Object.values(peers).some(pp => {
+                        try { return pp.peer && pp.peer.streams && pp.peer.streams[0] && pp.peer.streams[0].getVideoTracks().length > 0; }
+                        catch (e) { return false; }
+                    });
+                    if (!currentlySent) {
+                        replaceTrackForAll(null, vt, localStream);
+                    }
+                } else if (mode !== 'audio') {
+                    // No video track at all? acquire one (switching FROM audio mode)
+                    try {
+                        const prof = qualityProfiles[currentQuality] || qualityProfiles.low;
+                        if (prof.video) {
+                            const cam = await navigator.mediaDevices.getUserMedia({ video: prof.video });
+                            const nvt = cam.getVideoTracks()[0];
+                            replaceTrackForAll(null, nvt, localStream);
+                            localStream.addTrack(nvt);
+                            const lv = document.querySelector('#video-local video');
+                            if (lv) lv.srcObject = localStream;
+                        }
+                    } catch (e) { console.warn('re-acquire camera failed', e); }
+                }
+                document.querySelectorAll('.konf-video-wrapper').forEach(w => w.classList.remove('audio-only'));
+                if (mode === 'video') showToast('<i class="fas fa-video"></i> Mòd Vidéo aktifye — kamera ak odio envoyé.', 'info', 3000);
+                else showToast('<i class="fas fa-microphone"></i> Mòd Odio+Videyo aktifye san koupe apèl la.', 'success', 3000);
+            }
+            currentAVMode = mode;
+        } catch (e) {
+            console.error('setAVMode error', e);
+        }
+    }
+
+    // ===== Initialize Media with PROGRESSIVE FALLBACK STRATEGY =====
+    async function initMedia() {
+        // Strategy: Try progressively simpler constraints until one works
+        const strategies = [
+            // 1. Try video + audio with quality constraints
+            { video: qualityProfiles.low.video, audio: qualityProfiles.low.audio, desc: 'video+audio (quality)' },
+            // 2. Try video + audio with minimal constraints
+            { video: true, audio: true, desc: 'video+audio (basic)' },
+            // 3. Try audio-only with quality constraints
+            { video: false, audio: qualityProfiles.audio.audio, desc: 'audio (quality)' },
+            // 4. Try audio-only with minimal constraints
+            { video: false, audio: true, desc: 'audio (basic)' },
+            // 5. Try video-only (as last resort)
+            { video: true, audio: false, desc: 'video-only' }
+        ];
+
+        let lastError = null;
+        for (const strategy of strategies) {
+            try {
+                console.log(`Trying media strategy: ${strategy.desc}`);
+                localStream = await navigator.mediaDevices.getUserMedia(strategy);
+                console.log(`✅ Success: ${strategy.desc}`);
+                
+                // Determine mode based on what we got
+                const hasVideo = localStream.getVideoTracks().length > 0;
+                const hasAudio = localStream.getAudioTracks().length > 0;
+                
+                if (!hasVideo && hasAudio) {
+                    currentQuality = 'audio';
+                    currentAVMode = 'audio';
+                    showToast('<i class="fas fa-microphone"></i> Mòd Odio Sèlman — Kamera pa disponib', 'info', 5000);
+                } else if (hasVideo && !hasAudio) {
+                    currentQuality = 'low';
+                    currentAVMode = 'video';
+                    showToast('<i class="fas fa-video"></i> Mòd Videyo Sèlman — Mikwofòn pa disponib', 'info', 5000);
+                } else if (hasVideo && hasAudio) {
+                    currentQuality = 'low';
+                    currentAVMode = 'mixed';
+                }
+                
+                // Successfully got a stream
+                addVideoStream('local', localStream, userName + ' (Ou)', currentAVMode === 'audio');
+                socket.emit('join', { room_id: roomId, user_name: userName });
+                return; // SUCCESS
+            } catch (err) {
+                lastError = err;
+                console.warn(`❌ Failed (${strategy.desc}):`, err.name, err.message);
+            }
+        }
+
+        // All strategies failed
+        console.error('All media strategies failed', lastError);
+        const errName = lastError?.name || '';
+        
+        let helpMsg = 'ERÈ: Pa ka jwenn aksè ak kamera oswa mikwofòn.\n\n';
+        
+        if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+            helpMsg += '🔒 PÈMISYON REFIZE\n\n'
+                + 'SOLUSYON:\n'
+                + '1️⃣ Klike sou "🔒" (kadna) nan ba URL\n'
+                + '2️⃣ Twouve "Camera" oswa "Microphone"\n'
+                + '3️⃣ Chwazi "Allow" (Otorize)\n'
+                + '4️⃣ Refare paj la: Press F5\n'
+                + '5️⃣ Oswa restart navigatè a';
+        } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
+            helpMsg += '🔌 PA GEN APARÈY\n\n'
+                + 'SOLUSYON:\n'
+                + '1️⃣ Verifye kamera/mikwo ou branche\n'
+                + '2️⃣ Asire aparèy yo "ON"\n'
+                + '3️⃣ Verifye lòt app pa sèvi yo\n'
+                + '4️⃣ Eseye port USB diferan\n'
+                + '5️⃣ Restar konpiwè a';
+        } else if (errName === 'NotReadableError' || errName === 'TrackStartError') {
+            helpMsg += '⚠️ APARÈY PA AKSESIB\n\n'
+                + 'SOLUSYON:\n'
+                + '1️⃣ Fèmen aplikasiyon ki sèvi kamera/mikwo\n'
+                + '2️⃣ Refare navigatè a\n'
+                + '3️⃣ Restart konpiwè a\n'
+                + '4️⃣ Update driver aparèy yo';
+        } else {
+            helpMsg += '❓ ERÈ ENKONI\n\n'
+                + 'SOLUSYON:\n'
+                + '1️⃣ Refare paj la: Press F5\n'
+                + '2️⃣ Refare navigatè a (close/open)\n'
+                + '3️⃣ Eseye navigatè diferan\n'
+                + '4️⃣ Eseye aparèy diferan\n'
+                + '5️⃣ Kontakte Admin si pwoblem toujou gen';
+        }
+        
+        alert(helpMsg);
+        return;
+    }
+    initMedia();
+
+    // ===== Peer connection with bitrate cap =====
+    function createPeer(userToSignal, callerID, initiator, peerName) {
+        const bitrateCap = (qualityProfiles[currentQuality] || qualityProfiles.low).maxBitrateKbps;
+        const peer = new SimplePeer({
+            initiator: initiator,
+            trickle: true,
+            stream: localStream,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ],
+                iceCandidatePoolSize: 2
+            },
+            sdpTransform: (sdp) => patchBitrateCap(sdp, bitrateCap)
+        });
+
+        peer.on('signal', signal => {
+            socket.emit('sending_signal', {
+                user_to_signal: userToSignal,
+                caller_id: callerID,
+                signal: signal,
+                room_id: roomId
+            });
+        });
+
+        peer.on('stream', stream => {
+            console.log('stream from', peerName);
+            addVideoStream(userToSignal, stream, peerName, false);
+        });
+
+        peer.on('connect', () => {
+            // Periodic bandwidth check (auto down-shift when poor)
+            if (autoBandwidth && currentQuality === 'uhd' || currentQuality === 'hd') {
+                // Simple heuristics: after connect, monitor; user can also switch manually
+                setTimeout(() => checkConnectionQualityFallback(), 8000);
+            }
+        });
+
+        peer.on('error', err => {
+            console.warn('Peer error', err);
+            if (String(err).includes('close') || String(err).includes('destroy')) return;
+            // Attempt soft reconnect for transient ICE errors
+            try { peer.destroy(); } catch (_) {}
+            delete peers[userToSignal];
+            removeVideoStream(userToSignal);
+        });
+
+        peers[userToSignal] = { peer: peer, userName: peerName };
+        return peer;
+    }
+
+    async function checkConnectionQualityFallback() {
+        if (!autoBandwidth) return;
+        try {
+            // Use getStats on any connected peer to estimate quality
+            for (const pid in peers) {
+                const pc = peers[pid].peer && peers[pid].peer._pc;
+                if (!pc) continue;
+                try {
+                    const stats = await pc.getStats();
+                    let rttSum = 0, rttCount = 0, availBw = 0;
+                    stats.forEach(report => {
+                        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+                            if (report.currentRoundTripTime) { rttSum += report.currentRoundTripTime; rttCount++; }
+                            if (report.availableOutgoingBitrate) availBw = Math.max(availBw, report.availableOutgoingBitrate);
+                        }
+                    });
+                    const avgRtt = rttCount ? (rttSum / rttCount * 1000) : 0; // ms
+                    const availKbps = availBw ? availBw / 1000 : 0;
+                    if ((avgRtt > 500) || (availKbps > 0 && availKbps < 250)) {
+                        poorConnCount++;
+                        if (poorConnCount >= 2 && currentQuality !== 'low' && currentQuality !== 'audio') {
+                            showToast('<i class="fas fa-signal"></i> Koneksyon fèb detekte — otomatikman pasaj nan mòd Éco (360p).', 'warn', 5200);
+                            await changeQuality('low');
+                        }
+                    } else {
+                        poorConnCount = Math.max(0, poorConnCount - 1);
+                    }
+                } catch (_) {}
+                break;
+            }
+        } catch (_) {}
+        setTimeout(() => checkConnectionQualityFallback(), 15000);
+    }
+
+    // ===== Video container helpers =====
+    function layoutGrid(count) {
+        const vc = document.getElementById('videoContainer');
+        if (!vc) return;
+        if (count <= 1) vc.style.gridTemplateColumns = '1fr';
+        else if (count === 2) vc.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        else if (count <= 4) vc.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        else if (count <= 6) vc.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        else vc.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    }
+    function addVideoStream(id, stream, name, audioOnly = false) {
+        if (document.getElementById(`video-${id}`)) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'konf-video-wrapper' + (audioOnly ? ' audio-only' : '');
+        wrapper.id = `video-${id}`;
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.autoplay = true;
+        video.playsInline = true;
+        if (id === 'local') video.muted = true;
+        const label = document.createElement('div');
+        label.className = 'konf-video-label';
+        label.innerText = name;
+        wrapper.appendChild(video);
+        wrapper.appendChild(label);
+        videoContainer.appendChild(wrapper);
+        layoutGrid(videoContainer.childElementCount);
+    }
+    function removeVideoStream(id) {
+        const el = document.getElementById(`video-${id}`);
+        if (el) el.remove();
+        layoutGrid(videoContainer.childElementCount);
+    }
+    function updateParticipantsList(participants) {
+        participantsList.innerHTML = '';
+        participants.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'konf-participant-item';
+            const initial = (p || '?').charAt(0).toUpperCase();
+            div.innerHTML = `<div class="konf-participant-avatar">${initial}</div><span class="konf-participant-name">${String(p).replace(/</g,'&lt;')}</span><span class="konf-participant-status"></span>`;
+            participantsList.appendChild(div);
+        });
+    }
+    function addChatMessage(sender, msg, isOwn = false, isSystem = false) {
+        const div = document.createElement('div');
+        if (isSystem) {
+            div.className = 'konf-chat-bubble konf-chat-system';
+            div.innerText = msg;
+        } else if (isOwn) {
+            div.className = 'konf-chat-bubble konf-chat-own';
+            div.innerHTML = `<div class="konf-chat-sender">${String(sender).replace(/</g,'&lt;')}</div>${String(msg).replace(/</g,'&lt;')}`;
+        } else {
+            div.className = 'konf-chat-bubble konf-chat-other';
+            div.innerHTML = `<div class="konf-chat-sender">${String(sender).replace(/</g,'&lt;')}</div>${String(msg).replace(/</g,'&lt;')}`;
+        }
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // ===== Socket event wiring =====
+    socket.on('join_error', (data) => {
+        showToast(`<i class="fas fa-exclamation-triangle"></i> ${data?.message || 'Erè pandan antre nan sal la.'}`, 'danger', 8000);
+    });
+    socket.on('all_users', (users) => {
+        users.forEach(user => { createPeer(user.sid, socket.id, true, user.user_name); });
+    });
+    socket.on('user_joined_signal', (payload) => {
+        const item = peers[payload.caller_id];
+        if (item) { item.peer.signal(payload.signal); }
+        else {
+            const p = createPeer(payload.caller_id, socket.id, false, payload.user_name);
+            p.signal(payload.signal);
+        }
+    });
+    socket.on('user_joined', (data) => {
+        addChatMessage('System', `${data.user_name} rantre nan sal la.`, false, true);
+        updateParticipantsList(data.participants);
+    });
+    socket.on('user_left', (data) => {
+        if (peers[data.sid]) { try { peers[data.sid].peer.destroy(); } catch(_){} delete peers[data.sid]; }
+        removeVideoStream(data.sid);
+        updateParticipantsList(data.participants);
+        addChatMessage('System', `${data.user_name} kite sal la.`, false, true);
+    });
+    socket.on('chat_message', (data) => {
+        addChatMessage(data.user_name, data.message, data.user_name === userName);
+    });
+    socket.on('screen_share_started', (d) => {
+        addChatMessage('System', `${d.sharer} kòmanse pataje ekran li.`, false, true);
+    });
+    socket.on('screen_share_stopped', () => {
+        addChatMessage('System', 'Pataj ekran sispann.', false, true);
+    });
+    socket.on('recording_started', () => {
+        document.getElementById('recordingStatus').style.display = '';
+        addChatMessage('System', 'Anrejistreman kòmanse.', false, true);
+    });
+    socket.on('recording_stopped', () => {
+        document.getElementById('recordingStatus').style.display = 'none';
+        addChatMessage('System', 'Anrejistreman sispann.', false, true);
+    });
+
+    // ===== Media Sharing =====
+    
+    const mediaFileInput = document.getElementById('mediaFileInput');
+    if (mediaFileInput) {
+        mediaFileInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const uploadBtn = document.getElementById('uploadMediaBtn');
+            uploadBtn.innerHTML = '<span class="konf-ctrl-icon"><i class="fas fa-spinner fa-spin"></i></span> <span>Chaje...</span>';
+            uploadBtn.disabled = true;
+            try {
+                const formData = new FormData();
+                formData.append('media', file);
+                formData.append('room_id', roomId);
+                formData.append('user_name', userName);
+                const response = await fetch('/konferans/upload_media', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showMediaShareDialog(result);
+                } else {
+                    showToast(`<i class="fas fa-exclamation-triangle"></i> ${result.message || 'Erè telechajman.'}`, 'danger', 5000);
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                showToast('<i class="fas fa-exclamation-triangle"></i> Erè pandan telechajman.', 'danger', 5000);
+            } finally {
+                uploadBtn.innerHTML = '<span class="konf-ctrl-icon"><i class="fas fa-photo-video"></i></span> <span>Medya</span>';
+                uploadBtn.disabled = false;
+                mediaFileInput.value = '';
+            }
+        });
+    }
+    
+
+    // ===== Media Helper Functions (all users) =====
+    function showMediaShareDialog(mediaData) {
+        const dialog = document.createElement('div');
+        dialog.className = 'konf-media-dialog';
+        dialog.innerHTML = `
+            <div class="konf-media-dialog-content">
+                <div class="konf-media-dialog-preview" id="mediaDialogPreview"></div>
+                <div class="konf-media-dialog-actions">
+                    <button class="konf-btn konf-btn-primary" id="mediaShareMain">
+                        <i class="fas fa-tv"></i> Afiche nan ekran prensipal
+                    </button>
+                    <button class="konf-btn konf-btn-secondary" id="mediaShareChat">
+                        <i class="fas fa-comment"></i> Voye nan chat
+                    </button>
+                    <button class="konf-btn konf-btn-outline" id="mediaShareCancel">
+                        <i class="fas fa-times"></i> Anile
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+        const preview = document.getElementById('mediaDialogPreview');
+        if (mediaData.media_type === 'image') {
+            preview.innerHTML = `<img src="${mediaData.url}" alt="Preview">`;
+        } else if (mediaData.media_type === 'video') {
+            preview.innerHTML = `<video src="${mediaData.url}" controls></video>`;
+        } else if (mediaData.media_type === 'audio') {
+            preview.innerHTML = `<audio src="${mediaData.url}" controls style="width:100%"></audio>`;
+        } else {
+            preview.innerHTML = `<div class="konf-media-dialog-file"><i class="fas fa-file"></i> ${mediaData.original_name}</div>`;
+        }
+        document.getElementById('mediaShareMain').onclick = () => {
+            socket.emit('share_media', {
+                room_id: roomId, user_name: userName,
+                media_url: mediaData.url, media_type: mediaData.media_type,
+                display_mode: 'main', original_name: mediaData.original_name
+            });
+            showMediaInMain(mediaData);
+            dialog.remove();
+        };
+        document.getElementById('mediaShareChat').onclick = () => {
+            socket.emit('share_media', {
+                room_id: roomId, user_name: userName,
+                media_url: mediaData.url, media_type: mediaData.media_type,
+                display_mode: 'chat', original_name: mediaData.original_name
+            });
+            addChatMessage(userName, formatMediaMessage(mediaData), true);
+            dialog.remove();
+        };
+        document.getElementById('mediaShareCancel').onclick = () => dialog.remove();
+    }
+
+    function showMediaInMain(mediaData) {
+        const display = document.getElementById('mediaDisplay');
+        const content = document.getElementById('mediaDisplayContent');
+        const title = document.getElementById('mediaDisplayTitle');
+        const displayName = mediaData.user_name || userName;
+        title.textContent = `${mediaData.original_name || 'Medya'} — ${displayName}`;
+        content.innerHTML = '';
+        if (mediaData.media_type === 'image') {
+            content.innerHTML = `<img src="${mediaData.url}" alt="${mediaData.original_name}">`;
+        } else if (mediaData.media_type === 'video') {
+            content.innerHTML = `<video src="${mediaData.url}" controls autoplay></video>`;
+        } else if (mediaData.media_type === 'audio') {
+            content.innerHTML = `<div class="konf-media-audio-player"><i class="fas fa-music"></i><audio src="${mediaData.url}" controls autoplay></audio><span>${mediaData.original_name}</span></div>`;
+        } else {
+            content.innerHTML = `<div class="konf-media-file-link"><i class="fas fa-file"></i> <a href="${mediaData.url}" target="_blank">${mediaData.original_name}</a></div>`;
+        }
+        display.style.display = 'block';
+    }
+
+    function clearMediaDisplay() {
+        const display = document.getElementById('mediaDisplay');
+        display.style.display = 'none';
+        document.getElementById('mediaDisplayContent').innerHTML = '';
+    }
+
+    function formatMediaMessage(mediaData) {
+        if (mediaData.media_type === 'image') {
+            return `<img src="${mediaData.url}" class="konf-chat-media-image" onclick="window.open(this.src)">`;
+        } else if (mediaData.media_type === 'video') {
+            return `<video src="${mediaData.url}" controls class="konf-chat-media-video"></video>`;
+        } else if (mediaData.media_type === 'audio') {
+            return `<audio src="${mediaData.url}" controls class="konf-chat-media-audio"></audio>`;
+        } else {
+            return `<a href="${mediaData.url}" target="_blank" class="konf-chat-media-file"><i class="fas fa-file"></i> ${mediaData.original_name}</a>`;
+        }
+    }
+
+    // Receive media from other users
+    socket.on('media_shared', (data) => {
+        if (data.display_mode === 'main') {
+            showMediaInMain(data);
+            showToast(`<i class="fas fa-photo-video"></i> ${data.user_name} pataje yon medya.`, 'info', 4000);
+        } else if (data.display_mode === 'chat') {
+            addChatMessage(data.user_name, formatMediaMessage(data), false);
+        }
+    });
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendChat');
+    function sendChat() {
+        const msg = chatInput.value.trim();
+        if (msg) {
+            socket.emit('chat_message', { room_id: roomId, user_name: userName, message: msg });
+            chatInput.value = '';
+        }
+    }
+    sendBtn.addEventListener('click', sendChat);
+    chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendChat(); });
+
+    // ===== Toggle Video / Audio (mute/unmute track locally) =====
+    document.getElementById('toggleVideo').addEventListener('click', function() {
+        if (!localStream) return;
+        const track = localStream.getVideoTracks()[0];
+        if (!track) {
+            showToast('<i class="fas fa-exclamation-triangle"></i> Pa gen kamera. Klike bouton m\u00f2d "🎧 Odio" oswa "🎙️+📷" pou kontinye.', 'warn', 5000);
+            return;
+        }
+        track.enabled = !track.enabled;
+        this.classList.toggle('konf-ctrl-danger', !track.enabled);
+        this.classList.toggle('konf-ctrl-primary', track.enabled);
+        this.innerHTML = track.enabled
+            ? '<span class="konf-ctrl-icon"><i class="fas fa-video"></i></span> <span>Videyo</span>'
+            : '<span class="konf-ctrl-icon"><i class="fas fa-video-slash"></i></span> <span>Videyo</span>';
+    });
+    document.getElementById('toggleAudio').addEventListener('click', function() {
+        if (!localStream) return;
+        const track = localStream.getAudioTracks()[0];
+        if (!track) return;
+        track.enabled = !track.enabled;
+        this.classList.toggle('konf-ctrl-danger', !track.enabled);
+        this.classList.toggle('konf-ctrl-primary', track.enabled);
+        this.innerHTML = track.enabled
+            ? '<span class="konf-ctrl-icon"><i class="fas fa-microphone"></i></span> <span>Odio</span>'
+            : '<span class="konf-ctrl-icon"><i class="fas fa-microphone-slash"></i></span> <span>Odio</span>';
+    });
+
+    // ===== A/V mode buttons (Seamless switch audio ↔ video) =====
+    document.querySelectorAll('.konf-avmode-btn').forEach(btn => {
+        btn.addEventListener('click', () => setAVMode(btn.getAttribute('data-avmode')));
+    });
+
+    // ===== Leave room =====
+    document.getElementById('leaveRoom').addEventListener('click', () => {
+        if (confirm('Èske ou sèten ou vle kite konferans sa a ?')) {
+            try { if (localStream) localStream.getTracks().forEach(t => t.stop()); } catch(_){}
+            window.location.href = '/konferans/';
+        }
+    });
+
+    // ===== Recording (owner only) =====
+    
+    document.getElementById('startRecording').addEventListener('click', () => {
+        socket.emit('start_recording', { room_id: roomId });
+        document.getElementById('startRecording').style.display = 'none';
+        document.getElementById('stopRecording').style.display = '';
+    });
+    document.getElementById('stopRecording').addEventListener('click', () => {
+        socket.emit('stop_recording', { room_id: roomId });
+        document.getElementById('stopRecording').style.display = 'none';
+        document.getElementById('startRecording').style.display = '';
+    });
+    
+
+    // ===== Screen Share — multi-source (séquenceur l'écran : monitor, fenêtre, onglet) =====
+    let screenStream = null;
+    let originalVideoTrack = null;
+    let isScreenSharing = false;
+
+    async function startScreenShare(surfaceHint) {
+        if (isScreenSharing) return;
+        if (!localStream) { showToast('<i class="fas fa-hourglass-start"></i> ⏳ Tann kamera ap inisyalize...', 'info', 4000); return; }
+        try {
+            const displayOpts = { video: true, audio: true };
+            // Set displaySurface hint — browser will pre-select matching tab in the picker
+            if (surfaceHint === 'browser') displayOpts.video = { cursor: 'motion', displaySurface: 'browser' };
+            else if (surfaceHint === 'window') displayOpts.video = { cursor: 'motion', displaySurface: 'window' };
+            else displayOpts.video = { cursor: 'always', displaySurface: 'monitor' };
+            screenStream = await navigator.mediaDevices.getDisplayMedia(displayOpts);
+            const screenTrack = screenStream.getVideoTracks()[0];
+            originalVideoTrack = localStream.getVideoTracks()[0];
+            if (originalVideoTrack) replaceTrackForAll(originalVideoTrack, screenTrack, localStream);
+            else replaceTrackForAll(null, screenTrack, localStream);
+            if (originalVideoTrack) { localStream.removeTrack(originalVideoTrack); }
+            localStream.addTrack(screenTrack);
+            const localVideo = document.querySelector('#video-local video');
+            if (localVideo) localVideo.srcObject = screenStream;
+            const shareBtn = document.getElementById('shareScreen');
+            if (shareBtn) { shareBtn.classList.replace('konf-ctrl-info', 'konf-ctrl-success'); shareBtn.innerHTML = '<span class="konf-ctrl-icon"><i class="fas fa-broadcast-tower"></i></span> <span>Pataje…</span>'; }
+            const stopItem = document.getElementById('stopScreenShareItem');
+            if (stopItem) stopItem.style.display = '';
+            isScreenSharing = true;
+            socket.emit('start_screen_share', { room_id: roomId });
+            screenTrack.onended = () => stopScreenShare();
+            showToast(`<i class="fas fa-desktop"></i> Pataj ekran demare (${surfaceHint || 'ekran'}). Sèvi ak bouton ▾ la pou chanje sous.`, 'success', 4500);
+        } catch (err) {
+            console.error('screen share error', err);
+            showToast('<i class="fas fa-exclamation-triangle"></i> Pataj ekran la pa ka kòmanse. Ou dwe chwazi yon sous nan fenèt ki parèt.', 'danger', 5000);
+        }
+    }
+
+    function stopScreenShare() {
+        if (!isScreenSharing || !screenStream) return;
+        try {
+            const screenTrack = screenStream.getVideoTracks()[0];
+            if (screenTrack) {
+                // Null-safe: replaceTrackForAll already has per-peer try/catch, so null newTrack is fine
+                replaceTrackForAll(screenTrack, originalVideoTrack || null, localStream);
+                screenTrack.stop();
+            }
+            if (screenTrack) localStream.removeTrack(screenTrack);
+            if (originalVideoTrack) localStream.addTrack(originalVideoTrack);
+            const localVideo = document.querySelector('#video-local video');
+            if (localVideo) localVideo.srcObject = localStream;
+            const shareBtn = document.getElementById('shareScreen');
+            if (shareBtn) { shareBtn.classList.replace('konf-ctrl-success', 'konf-ctrl-info'); shareBtn.innerHTML = '<span class="konf-ctrl-icon"><i class="fas fa-desktop"></i></span> <span>Pataje ▾</span>'; }
+            const stopItem = document.getElementById('stopScreenShareItem');
+            if (stopItem) stopItem.style.display = 'none';
+            isScreenSharing = false;
+            socket.emit('stop_screen_share', { room_id: roomId });
+            showToast('<i class="fas fa-stop-circle"></i> Pataj ekran sispann. Kamera ou retounen.', 'info', 3000);
+            originalVideoTrack = null;
+            screenStream = null;
+        } catch (e) { console.error('stop screen err', e); }
+    }
+
+    // ===== Invite Copy / Share =====
+    function setupCopyShare() {
+        const codeCopy = document.getElementById('roomCodeCopy');
+        if (codeCopy) {
+            codeCopy.addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(roomCode); }
+                catch(_){ prompt('Kòd sal la:', roomCode); }
+                codeCopy.classList.add('copied');
+                const t = document.getElementById('roomCodeCopy');
+                const orig = t.innerHTML;
+                t.innerHTML = '<i class="fas fa-check"></i> KOPYE';
+                setTimeout(() => { t.classList.remove('copied'); t.innerHTML = orig; }, 1400);
+            });
+        }
+        const copyLink = document.getElementById('copyLinkBtn');
+        if (copyLink) {
+            copyLink.addEventListener('click', async (ev) => {
+                ev.preventDefault();
+                const input = document.getElementById('inviteLinkInput');
+                const val = input ? input.value : window.location.href;
+                try { await navigator.clipboard.writeText(val); showToast('<i class="fas fa-link"></i> Lyen envitasyon kopye!', 'success', 2500); }
+                catch(_){ prompt('Kopye lyen sa a:', val); }
+            });
+        }
+        const copyCode = document.getElementById('copyCodeBtn');
+        if (copyCode) {
+            copyCode.addEventListener('click', async (ev) => {
+                ev.preventDefault();
+                try { await navigator.clipboard.writeText(roomCode); showToast(`<i class="fas fa-key"></i> Kòd <strong>${roomCode}</strong> kopye!`, 'success', 2500); }
+                catch(_){ prompt('Kòd sal la:', roomCode); }
+            });
+        }
+        // Build WhatsApp share and update href async (so dynamic text uses current host)
+        const waBtn = document.getElementById('whatsappShareBtn');
+        if (waBtn) {
+            const jinjaRoomName = "Test Sal";
+            const link = (document.getElementById('inviteLinkInput') || {}).value || window.location.href;
+            const text = `Renwete m nan Konferans Glory2Yah "${jinjaRoomName.replace(/"/g, '')}" — Kòd: ${roomCode} — Lyen: ${link}`;
+            waBtn.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        }
+    }
+    setupCopyShare();
+
+    // ===== BILLING (owner only) =====
+    let billingTimerHandle = null;
+    let billingElapsedSec = (initialBilling && initialBilling.elapsed_seconds) ? initialBilling.elapsed_seconds : 0;
+    let reminderMinuteMilestonesHit = new Set();
+    let nextChargeDueAtMin = FREE_MINUTES + 1; // minute #46 triggers first buy request
+    let purchasedMinutes = 0;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function fmtTime(totalSec) {
+        const s = Math.max(0, Math.floor(totalSec));
+        return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
+    }
+    function updateTimerUI() {
+        const txt = document.getElementById('timerText');
+        const badge = document.getElementById('billingTimer');
+        if (!txt || !badge) return;
+        const totalMin = Math.floor(billingElapsedSec / 60);
+        txt.textContent = fmtTime(billingElapsedSec);
+        badge.classList.remove('free','warning','danger','paid');
+        if (totalMin >= (FREE_MINUTES + purchasedMinutes)) {
+            badge.classList.add('danger');
+        } else if (totalMin >= (FREE_MINUTES + purchasedMinutes) - 5) {
+            badge.classList.add('warning');
+        } else if (purchasedMinutes > 0) {
+            badge.classList.add('paid');
+        } else {
+            badge.classList.add('free');
+        }
+    }
+    async function billingTick() {
+        billingElapsedSec++;
+        updateTimerUI();
+        const totalMin = Math.floor(billingElapsedSec / 60);
+
+        // Free time almost-up alert at 40min, 45min exact
+        if (totalMin === (FREE_MINUTES - 5) && !reminderMinuteMilestonesHit.has('free_5min')) {
+            reminderMinuteMilestonesHit.add('free_5min');
+            showToast(`<i class="fas fa-hourglass-half"></i> Rete <strong>5 minit gratis</strong> — peye 250 Gkach pou pwochenn èdtan an lè ou pare.`, 'warn', 6000);
+        }
+        if (totalMin === FREE_MINUTES && !reminderMinuteMilestonesHit.has('free_end')) {
+            reminderMinuteMilestonesHit.add('free_end');
+            openBillingModal('danger', 'Tan gratis fini !',
+                `Ou fè ${FREE_MINUTES} minit gratis. Pou kontinye konferans, peye 250 Gkach pou pwochenn èdtan an. Sinon ou pral sispann videyo/pataj ekran.`, 250);
+        }
+        // Every REMINDER_EVERY minutes after FREE_MINUTES -> reminder toast + modal if still unpaid
+        if (totalMin > FREE_MINUTES && ((totalMin - FREE_MINUTES) % REMINDER_EVERY === 0) &&
+            !reminderMinuteMilestonesHit.has(`rem_${totalMin}`)) {
+            reminderMinuteMilestonesHit.add(`rem_${totalMin}`);
+            const minsBeyond = totalMin - FREE_MINUTES - purchasedMinutes;
+            if (minsBeyond >= 0) {
+                // Still beyond purchased credit — reminder
+                showToast(`<i class="fas fa-bell"></i> Rapèl: ou depase tan gratis ak ${minsBeyond} minit. Peye 250 Gkach pou pwochenn èdtan an!`, 'warn', 7000);
+                openBillingModal('warn', 'Rapèl Tan Konferans',
+                    `Sa fè ${minsBeyond} minit w ap depase tan gratis la. Achte 60 minit pou 250 Gkach pou kontinye san entèripsyon.`, 250);
+            }
+        }
+    }
+
+    function openBillingModal(kind, title, message, amountDue) {
+        const backdrop = document.getElementById('billingModal');
+        if (!backdrop) return;
+        // Don't reopen if already shown unless force
+        if (backdrop.classList.contains('show') && kind === 'warn') return;
+        const icon = document.getElementById('billingModalIcon');
+        if (icon) {
+            icon.classList.remove('warn', 'danger', 'success');
+            icon.classList.add(kind);
+            icon.innerHTML = kind === 'danger' ? '⛔' : kind === 'success' ? '✅' : '⏰';
+        }
+        const t = document.getElementById('billingModalTitle'); if (t) t.textContent = title;
+        const m = document.getElementById('billingModalMessage'); if (m) m.textContent = message;
+        const tot = document.getElementById('billingModalTotal'); if (tot) tot.textContent = `${amountDue} Gkach`;
+        // Fetch live balance
+        fetch(`/konferans/api/billing/${encodeURIComponent(roomId)}?user_name=${encodeURIComponent(userName)}`, {
+            headers: { 'Accept': 'application/json' }
+        }).then(r => r.json().then(j => ({ok:r.ok, j}))).catch(() => null).then(res => {
+            const bal = (res && res.ok && res.j && typeof res.j.owner_balance === 'number') ? res.j.owner_balance : 0;
+            const el = document.getElementById('billingModalBalance');
+            if (el) el.textContent = `${bal} Gkach`;
+        });
+        backdrop.classList.add('show');
+    }
+    function closeBillingModal() { const bd = document.getElementById('billingModal'); if (bd) bd.classList.remove('show'); }
+
+    async function doPayHour() {
+        try {
+            const r = await fetch(`/konferans/api/charge_hour/${encodeURIComponent(roomId)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ user_name: userName })
+            });
+            const j = await r.json().catch(() => ({}));
+            if (r.ok && j && j.success) {
+                purchasedMinutes += j.minutes_bought || 60;
+                const lab = document.getElementById('gkachBalanceLabel');
+                if (lab) lab.innerHTML = `Gkach: <strong>${j.new_balance ?? ''}</strong>`;
+                closeBillingModal();
+                showToast(`<i class="fas fa-check-circle"></i> ${j.message || ''} Balans: ${j.new_balance ?? 0} Gkach`, 'success', 5500);
+            } else {
+                if (j && j.insufficient_balance) {
+                    showToast(`<i class="fas fa-coins"></i> Balans ensifisan. Bezwen ${j.required || 250} Gkach — <a href="/achte_gkach" target="_blank" style="color:#fff;text-decoration:underline">Ajoute Gkach la</a>.`, 'danger', 8000);
+                } else if (j && j.login_redirect) {
+                    if (confirm('Ou dwe re-konekte pou peye. Ale nan paj koneksyon?')) window.location.href = j.login_redirect;
+                } else {
+                    showToast(`<i class="fas fa-exclamation-triangle"></i> ${j.error || 'Peman echwe.'}`, 'danger', 6500);
+                }
+            }
+        } catch (e) {
+            showToast('<i class="fas fa-exclamation-triangle"></i> Erè rezo pandan peman an. Tanpri reesaye.', 'danger', 5000);
+        }
+    }
+    document.getElementById('billingRemindLater').addEventListener('click', () => {
+        closeBillingModal();
+        showToast('<i class="fas fa-clock"></i> Rapèl la repouse nan 10 minit. Pense peye !', 'info', 3500);
+    });
+    document.getElementById('billingPayNow').addEventListener('click', () => doPayHour());
+    document.getElementById('billingModal').addEventListener('click', (ev) => {
+        if (ev.target && ev.target.id === 'billingModal') closeBillingModal();
+    });
+    document.getElementById('buyTimeBtn') && document.getElementById('buyTimeBtn').addEventListener('click', () => {
+        openBillingModal('success', 'Achte Tan Anplis',
+            `Achte 60 minit konferans pou ${GKACH_PER_HOUR} Gkach. Tan gratis ou ak tan ou deja peye ap kontinye kout anvan nou soti nan nouvo.`, GKACH_PER_HOUR);
+    });
+
+    // Kick off billing timer (owner)
+    if (isOwner) {
+        updateTimerUI();
+        billingTimerHandle = setInterval(billingTick, 1000);
+        // Initial reminder at FREE_MINUTES - 5
+        if (Math.floor(billingElapsedSec / 60) < FREE_MINUTES) {
+            // Show first-time intro toast about billing rules
+            setTimeout(() => {
+                showToast(`<i class="fas fa-info-circle"></i> <strong>Enfòmasyon Konferans</strong>: Premye ${FREE_MINUTES} minit GRATIS. Apre sa, 250 Gkach pou chak èdtan — rapèl tout ${REMINDER_EVERY} minit.`, 'info', 9000);
+            }, 3500);
+        }
+    }
+
+    // ===== Media Upload & Display (owner only) =====
+    
+    const mediaFileInput = document.getElementById('mediaFileInput');
+    if (mediaFileInput) {
+        mediaFileInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const uploadBtn = document.getElementById('uploadMediaBtn');
+            uploadBtn.innerHTML = '<span class="konf-ctrl-icon"><i class="fas fa-spinner fa-spin"></i></span> <span>Chaje...</span>';
+            uploadBtn.disabled = true;
+            try {
+                const formData = new FormData();
+                formData.append('media', file);
+                formData.append('room_id', roomId);
+                formData.append('user_name', userName);
+                const response = await fetch('/konferans/upload_media', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showMediaShareDialog(result);
+                } else {
+                    showToast(`<i class="fas fa-exclamation-triangle"></i> ${result.message || 'Erè telechajman.'}`, 'danger', 5000);
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                showToast('<i class="fas fa-exclamation-triangle"></i> Erè pandan telechajman.', 'danger', 5000);
+            } finally {
+                uploadBtn.innerHTML = '<span class="konf-ctrl-icon"><i class="fas fa-photo-video"></i></span> <span>Medya</span>';
+                uploadBtn.disabled = false;
+                mediaFileInput.value = '';
+            }
+        });
+    }
+    
+
+    // ===== Media display functions =====
+    function showMediaShareDialog(mediaData) {
+        const dialog = document.createElement('div');
+        dialog.className = 'konf-media-dialog';
+        dialog.innerHTML = `
+            <div class="konf-media-dialog-content">
+                <div class="konf-media-dialog-preview" id="mediaDialogPreview"></div>
+                <div class="konf-media-dialog-actions">
+                    <button class="konf-btn konf-btn-primary" id="mediaShareMain">
+                        <i class="fas fa-tv"></i> Afiche nan ekran prensipal
+                    </button>
+                    <button class="konf-btn konf-btn-secondary" id="mediaShareChat">
+                        <i class="fas fa-comment"></i> Voye nan chat
+                    </button>
+                    <button class="konf-btn konf-btn-outline" id="mediaShareCancel">
+                        <i class="fas fa-times"></i> Anile
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+        const preview = document.getElementById('mediaDialogPreview');
+        if (mediaData.media_type === 'image') {
+            preview.innerHTML = `<img src="${mediaData.url}" alt="Preview">`;
+        } else if (mediaData.media_type === 'video') {
+            preview.innerHTML = `<video src="${mediaData.url}" controls></video>`;
+        } else if (mediaData.media_type === 'audio') {
+            preview.innerHTML = `<audio src="${mediaData.url}" controls style="width:100%"></audio>`;
+        } else {
+            preview.innerHTML = `<div class="konf-media-dialog-file"><i class="fas fa-file"></i> ${mediaData.original_name}</div>`;
+        }
+        document.getElementById('mediaShareMain').onclick = () => {
+            socket.emit('share_media', {
+                room_id: roomId, user_name: userName,
+                media_url: mediaData.url, media_type: mediaData.media_type,
+                display_mode: 'main', original_name: mediaData.original_name
+            });
+            showMediaInMain(mediaData);
+            dialog.remove();
+        };
+        document.getElementById('mediaShareChat').onclick = () => {
+            socket.emit('share_media', {
+                room_id: roomId, user_name: userName,
+                media_url: mediaData.url, media_type: mediaData.media_type,
+                display_mode: 'chat', original_name: mediaData.original_name
+            });
+            addChatMessage(userName, formatMediaMessage(mediaData), true);
+            dialog.remove();
+        };
+        document.getElementById('mediaShareCancel').onclick = () => dialog.remove();
+    }
+
+    function showMediaInMain(mediaData) {
+        const display = document.getElementById('mediaDisplay');
+        const content = document.getElementById('mediaDisplayContent');
+        const title = document.getElementById('mediaDisplayTitle');
+        title.textContent = `${mediaData.original_name || 'Medya'} — ${mediaData.user_name || userName}`;
+        content.innerHTML = '';
+        if (mediaData.media_type === 'image') {
+            content.innerHTML = `<img src="${mediaData.url}" alt="${mediaData.original_name}">`;
+        } else if (mediaData.media_type === 'video') {
+            content.innerHTML = `<video src="${mediaData.url}" controls autoplay></video>`;
+        } else if (mediaData.media_type === 'audio') {
+            content.innerHTML = `<div class="konf-media-audio-player"><i class="fas fa-music"></i><audio src="${mediaData.url}" controls autoplay></audio><span>${mediaData.original_name}</span></div>`;
+        } else {
+            content.innerHTML = `<div class="konf-media-file-link"><i class="fas fa-file"></i> <a href="${mediaData.url}" target="_blank">${mediaData.original_name}</a></div>`;
+        }
+        display.style.display = 'block';
+    }
+
+    function clearMediaDisplay() {
+        document.getElementById('mediaDisplay').style.display = 'none';
+        document.getElementById('mediaDisplayContent').innerHTML = '';
+    }
+
+    function formatMediaMessage(mediaData) {
+        if (mediaData.media_type === 'image') {
+            return `<img src="${mediaData.url}" class="konf-chat-media-image" onclick="window.open(this.src)">`;
+        } else if (mediaData.media_type === 'video') {
+            return `<video src="${mediaData.url}" controls class="konf-chat-media-video"></video>`;
+        } else if (mediaData.media_type === 'audio') {
+            return `<audio src="${mediaData.url}" controls class="konf-chat-media-audio"></audio>`;
+        } else {
+            return `<a href="${mediaData.url}" target="_blank" class="konf-chat-media-file"><i class="fas fa-file"></i> ${mediaData.original_name}</a>`;
+        }
+    }
+
+    // ===== Receive media from other users =====
+    socket.on('media_shared', (data) => {
+        if (data.display_mode === 'main') {
+            showMediaInMain(data);
+            showToast(`<i class="fas fa-photo-video"></i> ${data.user_name} pataje yon medya.`, 'info', 4000);
+        } else if (data.display_mode === 'chat') {
+            addChatMessage(data.user_name, formatMediaMessage(data), false);
+        }
+    });
+
+    // ===== Initialize UI states =====
+    updateQualityBadge();
+    document.querySelectorAll('.konf-quality-item[data-quality]').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-quality') === currentQuality);
+    });
+    document.querySelectorAll('.konf-avmode-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-avmode') === currentAVMode));
+</script>
+</div>
+
+    </main>
+
+    <!-- ═══ MODERN STICKY BOTTOM NAV (TikTok/Facebook style) ═══ -->
+    
+    
+    <nav class="g2y-bottom-nav" id="bottomNav">
+        <a href="/" class="g2y-nav-item " data-label="Akèy">
+            <span class="g2y-nav-icon">🏠</span>
+            <span class="nav-label">Akèy</span>
+        </a>
+        <a href="/mache/" class="g2y-nav-item " data-label="Mache">
+            <span class="g2y-nav-icon">🛒</span>
+            <span class="nav-label">Mache</span>
+        </a>
+        <button class="g2y-nav-item nav-services" onclick="toggleServicesMenu()" data-label="Sèvis">
+            <span class="g2y-nav-icon">🚀</span>
+            <span class="nav-label">Sèvis</span>
+        </button>
+        <a href="/cart/" class="g2y-nav-item " data-label="Panyen">
+            <span class="g2y-nav-icon">🛍️</span>
+            <span class="nav-label">Panyen</span>
+            
+        </a>
+        <a href="/auth/profile" class="g2y-nav-item " data-label="Pwofil">
+            <span class="g2y-nav-icon">👤</span>
+            <span class="nav-label">Pwofil</span>
+        </a>
+    </nav>
+
+    <!-- ═══ SERVICES POPUP MENU ═══ -->
+    <div class="services-popup" id="servicesPopup" style="display:none">
+        <div class="services-overlay" onclick="toggleServicesMenu()"></div>
+        <div class="services-panel">
+            <div class="services-header">
+                <h3>🚀 Sèvis yo</h3>
+                <button class="services-close" onclick="toggleServicesMenu()">✕</button>
+            </div>
+            <div class="services-grid">
+                <a href="/gadematch" class="service-item">
+                    <span class="service-icon">📺</span>
+                    <span class="service-name">GADE TV</span>
+                    <span class="service-desc">TV direk</span>
+                </a>
+                <a href="/achte_gkach" class="service-item">
+                    <span class="service-icon">🪙</span>
+                    <span class="service-name">GKach</span>
+                    <span class="service-desc">Achte Gkach</span>
+                </a>
+                <a href="/fet" class="service-item">
+                    <span class="service-icon">🎉</span>
+                    <span class="service-name">Fèt</span>
+                    <span class="service-desc">Kreye envitasyon</span>
+                </a>
+                <a href="/konferans" class="service-item">
+                    <span class="service-icon">📹</span>
+                    <span class="service-name">Konferans</span>
+                    <span class="service-desc">Reyinyon videyo</span>
+                </a>
+                <a href="/events" class="service-item">
+                    <span class="service-icon">🗓️</span>
+                    <span class="service-name">Evènman</span>
+                    <span class="service-desc">SOS ALO LEGLIZ</span>
+                </a>
+                <a href="/ecole_biblique" class="service-item">
+                    <span class="service-icon">🎓</span>
+                    <span class="service-name">Lekòl Biblik</span>
+                    <span class="service-desc">Etidye Bib</span>
+                </a>
+                <a href="/dok" class="service-item">
+                    <span class="service-icon">🏥</span>
+                    <span class="service-name">Dòk GlorYah</span>
+                    <span class="service-desc">Konsèy sante</span>
+                </a>
+                <a href="/GlorYah_IA" class="service-item">
+                    <span class="service-icon">🤖</span>
+                    <span class="service-name">GlorYah IA</span>
+                    <span class="service-desc">Zouti AI</span>
+                </a>
+                <a href="/bank" class="service-item">
+                    <span class="service-icon">🏦</span>
+                    <span class="service-name">Bank G2Y</span>
+                    <span class="service-desc">Prêt &amp; Envestisman</span>
+                </a>
+                <a href="/forms" class="service-item">
+                    <span class="service-icon">📋</span>
+                    <span class="service-name">G-Forms</span>
+                    <span class="service-desc">Fòmilè</span>
+                </a>
+                <a href="/mennenm" class="service-item">
+                    <span class="service-icon">🚗</span>
+                    <span class="service-name">Mennenm</span>
+                    <span class="service-desc">Jwenn chofè</span>
+                </a>
+                <a href="/admin/login" class="service-item">
+                    <span class="service-icon">⚙️</span>
+                    <span class="service-name">Admin</span>
+                    <span class="service-desc">Jesyon</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ STORY FULLSCREEN MODAL ═══ -->
+    <div class="g2y-story-modal" id="storyModal" style="display:none">
+        <div class="g2y-story-overlay" onclick="closeStory()"></div>
+        <div class="g2y-story-viewer">
+            <div class="g2y-story-progress" id="storyProgress"></div>
+            <button class="g2y-story-close" onclick="closeStory()">✕</button>
+            <div class="g2y-story-content" id="storyContent"></div>
+            <div class="g2y-story-info" id="storyInfo"></div>
+            <button class="g2y-story-prev" onclick="prevStory()">‹</button>
+            <button class="g2y-story-next" onclick="nextStory()">›</button>
+        </div>
+    </div>
+
+<script src="/static/js/script.js"></script>
+    <script src="/static/js/g2y-app.js"></script>
+    
+
+    <!-- ═══ PWA INSTALL POPUP ═══ -->
+    <!-- Glory2YahPub - PWA Install Popup Component -->
+<!-- Android / Desktop Chrome Install Popup -->
+<div class="pwa-popup-wrapper" id="pwa-install-popup">
+    <div class="pwa-popup-overlay"></div>
+    <div class="pwa-popup-container">
+        <!-- Header -->
+        <div class="pwa-popup-header">
+            <div class="pwa-popup-logo">
+                <div class="pwa-popup-logo-img">
+                    <span>G</span>
+                </div>
+                <div class="pwa-popup-logo-text">
+                    <h2>Glory2YahPub</h2>
+                    <span>Social Commerce</span>
+                </div>
+            </div>
+            <button class="pwa-popup-close" aria-label="Fèmen">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="pwa-popup-body">
+            <h3 class="pwa-popup-title">Installer Glory2YahPub</h3>
+            <p class="pwa-popup-description">
+                Accédez rapidement aux boutiques, publications, annonces et services depuis votre téléphone.
+            </p>
+            <div class="pwa-popup-features">
+                <div class="pwa-popup-feature">
+                    <span>🛒</span> Marketplace
+                </div>
+                <div class="pwa-popup-feature">
+                    <span>📱</span> Réseau Social
+                </div>
+                <div class="pwa-popup-feature">
+                    <span>🪙</span> Gkach
+                </div>
+                <div class="pwa-popup-feature">
+                    <span>🚀</span> Rapids
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pwa-popup-actions">
+            <button class="pwa-popup-install-btn">
+                <span class="pwa-btn-icon">📲</span>
+                Installer maintenant
+            </button>
+            <button class="pwa-popup-dismiss-btn">
+                Plita tande
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- iOS Safari Installation Guide -->
+<div class="pwa-ios-guide-wrapper" id="pwa-ios-guide">
+    <div class="pwa-ios-guide-overlay"></div>
+    <div class="pwa-ios-guide-container">
+        <!-- Header -->
+        <div class="pwa-ios-guide-header">
+            <div class="pwa-ios-guide-icon">
+                <span>G</span>
+            </div>
+            <h3 class="pwa-ios-guide-title">Ajoute Glory2YahPub sou Ekran Akèy</h3>
+        </div>
+
+        <!-- Steps -->
+        <div class="pwa-ios-guide-steps">
+            <div class="pwa-ios-guide-step">
+                <div class="pwa-ios-guide-step-number">1</div>
+                <div class="pwa-ios-guide-step-content">
+                    <p>Klike sou bouton <span class="pwa-step-highlight">📤 Pataje</span> anba a</p>
+                </div>
+            </div>
+            <div class="pwa-ios-guide-step">
+                <div class="pwa-ios-guide-step-number">2</div>
+                <div class="pwa-ios-guide-step-content">
+                    <p>Desann epi chwazi <span class="pwa-step-highlight">➕ Ajoute nan Ekran Akèy</span></p>
+                </div>
+            </div>
+            <div class="pwa-ios-guide-step">
+                <div class="pwa-ios-guide-step-number">3</div>
+                <div class="pwa-ios-guide-step-content">
+                    <p>Klike sou <span class="pwa-step-highlight">Ajoute</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pwa-ios-guide-actions">
+            <button class="pwa-ios-close-btn">✅ Mwen konprann</button>
+            <button class="pwa-ios-dismiss-btn">Plita tande</button>
+        </div>
+    </div>
+</div>
+    <script src="/static/js/install.js"></script>
+
+    <script>
+    // Auto-dismiss toasts
+    setTimeout(() => {
+        document.querySelectorAll('.g2y-toast').forEach(t => {
+            t.style.animation = 'toastOut 0.4s ease forwards';
+            setTimeout(() => t.remove(), 400);
+        });
+    }, 4000);
+
+    // Load Gkach balance in header
+    
+
+    // Hide header on scroll down, show on scroll up (TikTok style)
+    let lastScroll = 0;
+    const header = document.getElementById('appHeader');
+    window.addEventListener('scroll', () => {
+        const current = window.scrollY;
+        if (current > lastScroll && current > 80) {
+            header.classList.add('g2y-header-hidden');
+        } else {
+            header.classList.remove('g2y-header-hidden');
+        }
+        lastScroll = current;
+    }, { passive: true });
+
+    // P1 FIX B01 — toggleServicesMenu() was undefined (ReferenceError)
+    (function () {
+        if (typeof window.toggleServicesMenu === 'function') return;
+        window.toggleServicesMenu = function () {
+            try {
+                const popup = document.getElementById('servicesPopup');
+                if (!popup) return;
+                const isHidden = popup.style.display === 'none' || popup.style.display === '';
+                popup.style.display = isHidden ? 'flex' : 'none';
+                const html = document.documentElement;
+                if (isHidden) {
+                    html.style.overflow = 'hidden';
+                } else {
+                    html.style.overflow = '';
+                }
+            } catch (e) {}
+        };
+    })();
+    </script>
+
+<!-- ═══ MODERN BOTTOM NAVIGATION STYLES ═══ -->
+<style>
+/* Modern Bottom Navigation */
+.modern-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #65676b;
+    transition: all 0.3s ease;
+    padding: 4px 8px;
+    border-radius: 12px;
+    min-width: 50px;
+    position: relative;
+    flex: 1;
+}
+
+.nav-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    transform: translateY(-2px);
+}
+
+.nav-item.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #667eea;
+    border-radius: 50%;
+}
+
+.nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+    transition: all 0.3s ease;
+}
+
+.nav-item.active .nav-icon {
+    transform: scale(1.1);
+}
+
+.nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1;
+}
+
+.nav-services {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    border-radius: 16px;
+    padding: 8px 12px;
+    margin: 0 4px;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    transform: scale(1.05);
+    border: none;
+    cursor: pointer;
+}
+
+.nav-services:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.nav-services .nav-icon {
+    font-size: 22px;
+    margin-bottom: 3px;
+}
+
+.nav-services .nav-label {
+    font-weight: 700;
+    font-size: 11px;
+}
+
+/* Services Popup */
+.services-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.services-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.services-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.services-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.services-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.services-close {
+    background: #f0f2f5;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    color: #65676b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.services-close:hover {
+    background: #e4e6eb;
+    transform: rotate(90deg);
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.service-item {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 16px;
+    padding: 16px 12px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.service-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.service-item:active {
+    transform: translateY(-2px);
+}
+
+.service-icon {
+    font-size: 36px;
+}
+
+.service-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.service-desc {
+    font-size: 11px;
+    color: #65676b;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .services-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+    
+    .service-item {
+        padding: 12px 8px;
+    }
+    
+    .service-icon {
+        font-size: 32px;
+    }
+    
+    .service-name {
+        font-size: 12px;
+    }
+    
+    .service-desc {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .services-panel {
+        padding: 16px;
+    }
+    
+    .services-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    
+    .service-item {
+        padding: 10px 6px;
+        border-radius: 12px;
+    }
+    
+    .service-icon {
+        font-size: 28px;
+    }
+    
+    .service-name {
+        font-size: 11px;
+    }
+    
+    .service-desc {
+        font-size: 9px;
+    }
+}
+
+/* Notification Badge */
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 8px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.2;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+    animation: pulse 2s infinite;
+}
+
+.notification-badge:empty {
+    display: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Active tab animations */
+.nav-item.active {
+    animation: tabActivate 0.4s ease;
+}
+
+@keyframes tabActivate {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Touch feedback */
+.nav-item:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+.nav-create:active {
+    transform: scale(0.95);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .nav-icon {
+        font-size: 18px;
+    }
+    
+    .nav-label {
+        font-size: 9px;
+    }
+    
+    .nav-create {
+        padding: 6px 10px;
+        margin: 0 2px;
+    }
+    
+    .nav-create .nav-icon {
+        font-size: 20px;
+    }
+    
+    .nav-create .nav-label {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .nav-label {
+        display: none;
+    }
+    
+    .nav-item {
+        min-width: 40px;
+        padding: 8px 4px;
+    }
+    
+    .nav-icon {
+        font-size: 20px;
+        margin-bottom: 0;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .modern-bottom-nav {
+        background: rgba(28, 28, 30, 0.95);
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-item {
+        color: #989b9e;
+    }
+    
+    .nav-item:hover {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+    }
+    
+    .nav-item.active {
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.25);
+    }
+}
+
+/* Haptic feedback simulation */
+.nav-item {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth transitions for better UX */
+.nav-item {
+    will-change: transform, background, color;
+}
+
+/* Loading state for nav items */
+.nav-item.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.nav-item.loading .nav-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<!-- ═══ NOTIFICATION SYSTEM ═══ -->
+<script>
+// Update cart count
+function updateCartCount() {
+    fetch('/api/cart/count')
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('cartBadge');
+            if (badge && data.count > 0) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.style.display = 'block';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(() => {});
+}
+
+// Update cart count on load and when items are added
+document.addEventListener('DOMContentLoaded', () => {
+    updateCartCount();
+});
+
+// Listen for cart updates
+window.addEventListener('cartUpdated', () => {
+    updateCartCount();
+});
+
+// Add haptic feedback for mobile
+if ('vibrate' in navigator) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            navigator.vibrate(10);
+        });
+    });
+}
+
+// Smooth scroll behavior for navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        const href = item.getAttribute('href');
+        if (href.includes('#')) {
+            e.preventDefault();
+            const targetId = href.split('#')[1];
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Update active state
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+            }
+        }
+    });
+});
+
+// Hide/show bottom nav on scroll (like TikTok)
+let lastScrollNav = 0;
+const bottomNav = document.getElementById('bottomNav');
+
+window.addEventListener('scroll', () => {
+    const currentScroll = window.scrollY;
+    
+    if (currentScroll > lastScrollNav && currentScroll > 100) {
+        // Scrolling down
+        bottomNav.style.transform = 'translateY(100%)';
+    } else {
+        // Scrolling up
+        bottomNav.style.transform = 'translateY(0)';
+    }
+    
+    lastScrollNav = currentScroll;
+}, { passive: true });
+
+// Add smooth transition for bottom nav
+bottomNav.style.transition = 'transform 0.3s ease';
+
+// Toggle services menu
+function toggleServicesMenu() {
+    const popup = document.getElementById('servicesPopup');
+    if (popup.style.display === 'none' || !popup.style.display) {
+        popup.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+            navigator.vibrate(10);
+        }
+    } else {
+        popup.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Close services menu on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const popup = document.getElementById('servicesPopup');
+        if (popup && popup.style.display !== 'none') {
+            toggleServicesMenu();
+        }
+    }
+});
+</script>
+
+</body>
+</html>

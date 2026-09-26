@@ -1,0 +1,1395 @@
+[2026-09-16 13:06:55,293] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-09-16 13:06:55,443] WARNING in __init__: SocketIO running without Redis message queue
+[2026-09-16 13:06:56,340] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-09-16 13:06:56,352] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-09-16 13:06:56,425] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-09-16 13:06:56,444] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-09-16 13:06:56,472] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-09-16 13:06:56,499] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-09-16 13:06:56,512] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-09-16 13:06:56,522] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-09-16 13:06:56,552] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-09-16 13:06:56,562] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-09-16 13:06:56,845] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=5 | APPROVED=4 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=4 | PUBLISH=1
+[2026-09-16 13:06:56,877] INFO in __init__: SOFT DELETE MIGRATION: checked 36 tables, altered 0
+[2026-09-16 13:06:56,890] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-09-16 13:06:56,903] INFO in __init__: 
+[2026-09-16 13:06:56,904] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╔══════════════════════════════════════════════════════════════════════════════╗'
+Arguments: ()
+[2026-09-16 13:06:56,913] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║'
+Arguments: ()
+[2026-09-16 13:06:56,920] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╠══════════════════════════════════════════════════════════════════════════════╣'
+Arguments: ()
+[2026-09-16 13:06:56,925] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  BASE DE DONNÉES : SQLite Persistant                                             ║'
+Arguments: ()
+[2026-09-16 13:06:56,930] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║'
+Arguments: ()
+[2026-09-16 13:06:56,937] INFO in __init__: ║  Chemin UPLOAD   : static\uploads                                                ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Chemin UPLOAD   : static\\uploads                                                ║'
+Arguments: ()
+[2026-09-16 13:06:56,946] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║'
+Arguments: ()
+[2026-09-16 13:06:56,951] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Staging PRE-PG  : C:\\Users\\Ops\\OneDrive\\Desktop\\dev\\Glory2YahPub - Copy\\instance║'
+Arguments: ()
+[2026-09-16 13:06:56,956] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Backup mirror   : C:\\Users\\Ops\\OneDrive\\Desktop\\dev\\Glory2YahPub - Copy\\instance║'
+Arguments: ()
+[2026-09-16 13:06:56,960] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║'
+Arguments: ()
+[2026-09-16 13:06:56,964] INFO in __init__: ║                                                                              ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║                                                                              ║'
+Arguments: ()
+[2026-09-16 13:06:56,969] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Protection GIT (fichier .gitignore) :                                       ║'
+Arguments: ()
+[2026-09-16 13:06:56,973] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • *.db              → EXCLU de git (jamais commités)                      ║'
+Arguments: ()
+[2026-09-16 13:06:56,978] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • instance/         → EXCLU de git (disque persistent Render)             ║'
+Arguments: ()
+[2026-09-16 13:06:56,983] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║'
+Arguments: ()
+[2026-09-16 13:06:56,987] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║'
+Arguments: ()
+[2026-09-16 13:06:56,991] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║'
+Arguments: ()
+[2026-09-16 13:06:57,003] INFO in __init__: ║                                                                              ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║                                                                              ║'
+Arguments: ()
+[2026-09-16 13:06:57,012] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║'
+Arguments: ()
+[2026-09-16 13:06:57,018] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║'
+Arguments: ()
+[2026-09-16 13:06:57,023] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║'
+Arguments: ()
+[2026-09-16 13:06:57,031] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║'
+Arguments: ()
+[2026-09-16 13:06:57,036] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    static/uploads  →  instance/uploads (disque persistent)                   ║'
+Arguments: ()
+[2026-09-16 13:06:57,041] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╚══════════════════════════════════════════════════════════════════════════════╝'
+Arguments: ()
+[2026-09-16 13:06:57,045] INFO in __init__: 
+[2026-09-16 13:06:57,068] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-09-16 13:06:57,071] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-09-16 13:06:57,076] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=5 | APPROVED=4 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=4 | PUBLISH=1
+[2026-09-16 13:06:57,076] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 28: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 93, in <module>
+    from app import create_app, socketio
+  File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2086, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1615, in create_app
+    app.logger.info(
+Message: 'ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)'
+Arguments: ()
+[2026-09-16 13:06:57,081] INFO in __init__: Glory2YahPub started in development mode
+[2026-09-16 13:06:57,106] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-09-16 13:06:57,120] WARNING in __init__: SocketIO running without Redis message queue
+[2026-09-16 13:06:57,180] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-09-16 13:06:57,185] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-09-16 13:06:57,208] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-09-16 13:06:57,220] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-09-16 13:06:57,237] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-09-16 13:06:57,253] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-09-16 13:06:57,256] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-09-16 13:06:57,257] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-09-16 13:06:57,262] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-09-16 13:06:57,274] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-09-16 13:06:57,324] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=5 | APPROVED=4 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=4 | PUBLISH=1
+[2026-09-16 13:06:57,362] INFO in __init__: SOFT DELETE MIGRATION: checked 36 tables, altered 0
+[2026-09-16 13:06:57,375] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-09-16 13:06:57,390] INFO in __init__: 
+[2026-09-16 13:06:57,390] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╔══════════════════════════════════════════════════════════════════════════════╗'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╔══════════════════════════════════════════════════════════════════════════════╗'
+Arguments: ()
+[2026-09-16 13:06:57,398] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║'
+Arguments: ()
+[2026-09-16 13:06:57,405] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╠══════════════════════════════════════════════════════════════════════════════╣'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╠══════════════════════════════════════════════════════════════════════════════╣'
+Arguments: ()
+[2026-09-16 13:06:57,412] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  BASE DE DONNÉES : SQLite Persistant                                             ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  BASE DE DONNÉES : SQLite Persistant                                             ║'
+Arguments: ()
+[2026-09-16 13:06:57,421] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║'
+Arguments: ()
+[2026-09-16 13:06:57,428] INFO in __init__: ║  Chemin UPLOAD   : static\uploads                                                ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Chemin UPLOAD   : static\\uploads                                                ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Chemin UPLOAD   : static\\uploads                                                ║'
+Arguments: ()
+[2026-09-16 13:06:57,436] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║'
+Arguments: ()
+[2026-09-16 13:06:57,448] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Staging PRE-PG  : C:\\Users\\Ops\\OneDrive\\Desktop\\dev\\Glory2YahPub - Copy\\instance║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Staging PRE-PG  : C:\\Users\\Ops\\OneDrive\\Desktop\\dev\\Glory2YahPub - Copy\\instance║'
+Arguments: ()
+[2026-09-16 13:06:57,455] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Backup mirror   : C:\\Users\\Ops\\OneDrive\\Desktop\\dev\\Glory2YahPub - Copy\\instance║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Backup mirror   : C:\\Users\\Ops\\OneDrive\\Desktop\\dev\\Glory2YahPub - Copy\\instance║'
+Arguments: ()
+[2026-09-16 13:06:57,463] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║'
+Arguments: ()
+[2026-09-16 13:06:57,470] INFO in __init__: ║                                                                              ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║                                                                              ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║                                                                              ║'
+Arguments: ()
+[2026-09-16 13:06:57,477] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Protection GIT (fichier .gitignore) :                                       ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  Protection GIT (fichier .gitignore) :                                       ║'
+Arguments: ()
+[2026-09-16 13:06:57,485] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • *.db              → EXCLU de git (jamais commités)                      ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • *.db              → EXCLU de git (jamais commités)                      ║'
+Arguments: ()
+[2026-09-16 13:06:57,491] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • instance/         → EXCLU de git (disque persistent Render)             ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • instance/         → EXCLU de git (disque persistent Render)             ║'
+Arguments: ()
+[2026-09-16 13:06:57,499] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║'
+Arguments: ()
+[2026-09-16 13:06:57,507] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║'
+Arguments: ()
+[2026-09-16 13:06:57,517] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║'
+Arguments: ()
+[2026-09-16 13:06:57,525] INFO in __init__: ║                                                                              ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║                                                                              ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║                                                                              ║'
+Arguments: ()
+[2026-09-16 13:06:57,531] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║'
+Arguments: ()
+[2026-09-16 13:06:57,541] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║'
+Arguments: ()
+[2026-09-16 13:06:57,548] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║'
+Arguments: ()
+[2026-09-16 13:06:57,554] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║'
+Arguments: ()
+[2026-09-16 13:06:57,559] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    static/uploads  →  instance/uploads (disque persistent)                   ║'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2551' in position 0: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '║    static/uploads  →  instance/uploads (disque persistent)                   ║'
+Arguments: ()
+[2026-09-16 13:06:57,565] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╚══════════════════════════════════════════════════════════════════════════════╝'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-79: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1153, in create_app
+    app.logger.info(bl)
+Message: '╚══════════════════════════════════════════════════════════════════════════════╝'
+Arguments: ()
+[2026-09-16 13:06:57,571] INFO in __init__: 
+[2026-09-16 13:06:57,587] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-09-16 13:06:57,590] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-09-16 13:06:57,595] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=5 | APPROVED=4 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=4 | PUBLISH=1
+[2026-09-16 13:06:57,595] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 28: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1615, in create_app
+    app.logger.info(
+Message: 'ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\logging\__init__.py", line 1113, in emit
+    stream.write(msg + self.terminator)
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 28: character maps to <undefined>
+Call stack:
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_start_server_local.py", line 94, in <module>
+    app = create_app('development')
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 1615, in create_app
+    app.logger.info(
+Message: 'ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)'
+Arguments: ()
+[2026-09-16 13:06:57,603] INFO in __init__: Glory2YahPub started in development mode
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit

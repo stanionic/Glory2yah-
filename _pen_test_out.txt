@@ -1,0 +1,80 @@
+﻿GET /konferans/room/SMOKPEN (owner) -> 200
+  [OK]  owner room page 200
+  [OK]  owner page has id="mediaStage"
+  [OK]  owner page has id="mediaScrollUpBtn"
+  [OK]  owner page has id="mediaScrollDownBtn"
+  [OK]  owner page has id="mediaZoomInBtn"
+  [OK]  owner page has id="mediaZoomOutBtn"
+  [OK]  owner page has id="mediaZoomLabel"
+  [OK]  owner page has id="mediaViewSyncBtn"
+  [OK]  owner page has id="annEraserBtn"
+  [OK]  owner page has id="annDownloadBtn"
+  [OK]  owner page has MEDIA_ZOOM_STEPS
+  [OK]  owner page has function applyMediaZoom
+  [OK]  owner page has function setMediaZoom
+  [OK]  owner page has function zoomMedia
+  [OK]  owner page has function resetMediaZoom
+  [OK]  owner page has function scrollMediaPage
+  [OK]  owner page has function mediaScrollFraction
+  [OK]  owner page has function restoreMediaScrollFraction
+  [OK]  owner page has function attachMediaViewportEvents
+  [OK]  owner page has function toggleMediaViewSync
+  [OK]  owner page has function emitMediaView
+  [OK]  owner page has function applyRemoteMediaView
+  [OK]  owner page has function ensureAnnotationCanvas
+  [OK]  owner page has function syncMediaPenLayer
+  [OK]  owner page has function resizeAnnotationCanvas
+  [OK]  owner page has function eraseStrokeAt
+  [OK]  owner page has function strokeSegments
+  [OK]  owner page has function distToSegment
+  [OK]  owner page has function downloadAnnotatedMedia
+  [OK]  owner page has function handleMediaShortcut
+  [OK]  owner page has function normLineWidth
+  [OK]  owner page has socket.emit('media_view'
+  [OK]  owner page has socket.on('media_view'
+  [OK]  owner page has socket.emit('media_annotation_remove'
+  [OK]  owner page has socket.on('media_annotation_remove'
+GET /konferans/room/SMOKPEN (guest) -> 200
+  [OK]  guest room page 200
+  [OK]  guest page has id="mediaStage"
+  [OK]  guest page has id="mediaZoomInBtn"
+  [OK]  guest page has id="mediaZoomOutBtn"
+  [OK]  guest page has id="mediaScrollUpBtn"
+  [OK]  guest page has id="mediaScrollDownBtn"
+  [OK]  guest page has function applyMediaZoom
+  [OK]  guest page has function applyRemoteMediaView
+  [OK]  guest page hides owner tool id="mediaPenBtn"
+  [OK]  guest page hides owner tool id="mediaViewSyncBtn"
+  [OK]  CSS cache-buster bumped to v=7
+  [OK]  CSS has .konf-media-display-content::-webkit-scrollbar {
+  [OK]  CSS has .konf-media-display-content::-webkit-scrollbar-thumb {
+  [OK]  CSS has .konf-media-display-content::-webkit-scrollbar-track {
+  [OK]  CSS has scrollbar-color: rgba(232,200,116,0.6)
+  [OK]  CSS has overflow: auto;
+  [OK]  CSS has .konf-media-stage {
+  [OK]  CSS has .konf-media-zoom-label {
+  [OK]  CSS has #mediaViewSyncBtn.active {
+  [OK]  viewport is scrollable (max-height + overflow)
+  [OK]  fullscreen viewport also scrolls
+Socket.IO relays:
+  [OK]  2 sockets registered in the room
+  [OK]  exactly one socket is flagged owner
+  [OK]  participant receives media_view
+  [OK]  media_view carries zoom 150
+  [OK]  media_view carries scroll fractions
+  [OK]  owner does not receive its own media_view echo
+  [OK]  non-owner media_view is rejected
+  [OK]  participant receives the live stroke
+  [OK]  stroke keeps its sid
+  [OK]  stroke keeps normalized coords + line width
+  [OK]  participant receives the eraser removal
+  [OK]  removal carries the erased sid
+  [OK]  non-owner eraser removal is rejected
+  [OK]  main script JS balanced (tokenizer)
+  [OK]  jinja if/endif balanced
+  [OK]  normalized strokes documented in JS
+  [OK]  canvas is re-created on demand (pen survives a media switch)
+  [OK]  canvas stays visible for participants (they see the live strokes)
+  [OK]  canvas keeps pointer-events gated by the pen state
+
+PEN + SCROLL SMOKE TEST PASSED

@@ -100,21 +100,6 @@
     </div>
     {% endif %}
 
-    {% if leaders %}
-    <div class="ev-card">
-        <h3>👥 Lide yo</h3>
-        {% for l in leaders %}
-        <div class="leader">
-            <div class="ava">{{ l.full_name[0] if l.full_name else '?' }}</div>
-            <div>
-                <div class="nm">{{ l.full_name }}</div>
-                <div class="rl">{{ l.role_label }}</div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <div class="ev-card leader-profile">
         <img src="{{ url_for('static', filename='images/Pasteur Nixon.jpeg') }}"
              alt="Rev Dr Nixon Dieudonne">

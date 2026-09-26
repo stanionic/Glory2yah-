@@ -319,7 +319,7 @@
         </div>
 
         <div class="chat-input-container">
-            <input type="text" class="chat-input" id="chatInput" placeholder="Ekri mesaj ou a isit la..." maxlength="500">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ekri mesaj ou a isit la..." maxlength="5000">
             <button class="send-btn" id="sendBtn" onclick="sendMessage()">
                 <i class="fas fa-paper-plane"></i>
                 Voye
@@ -364,7 +364,7 @@
         }
     });
 
-    function sendMessage() {
+    async function sendMessage() {
         const message = chatInput.value.trim();
         if (!message) return;
 
@@ -372,17 +372,27 @@
         addMessage(message, 'user');
         chatInput.value = '';
 
-        // Show typing indicator
+        sendBtn.disabled = true;
         typingIndicator.classList.add('active');
-
-        // Simulate AI response (replace with actual API call)
-        setTimeout(() => {
+        try {
+            const response = await fetch('{{ url_for("gloryah_ia.chat") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                body: JSON.stringify({prompt: message, mode: 'chat'})
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'GlorYah IA pa disponib kounye a.');
+            }
             typingIndicator.classList.remove('active');
-            
-            // Simple response logic (replace with actual AI integration)
-            let response = generateResponse(message);
-            addMessage(response, 'ai');
-        }, 1500);
+            addMessage(data.response, 'ai');
+        } catch (error) {
+            addMessage(error.message, 'ai');
+        } finally {
+            typingIndicator.classList.remove('active');
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
     }
 
     function addMessage(text, sender) {
@@ -391,24 +401,6 @@
         messageDiv.textContent = text;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function generateResponse(message) {
-        const lowerMessage = message.toLowerCase();
-        
-        if (lowerMessage.includes('bonjou') || lowerMessage.includes('salut')) {
-            return 'Bonjou! Kijan mwen ka ede w jodi a?';
-        } else if (lowerMessage.includes('kijan') || lowerMessage.includes('koman')) {
-            return 'Mwen byen, mèsi! E ou menm? Kisa ou vle konnen sou Glory2YahPub?';
-        } else if (lowerMessage.includes('gkach') || lowerMessage.includes('lajan')) {
-            return 'Gkach se monnen virtuel nou an. Ou ka achte Gkach pou fè piblisite oubyen achte pwodwi sou platfòm nan. Ou vle konnen kijan pou achte Gkach?';
-        } else if (lowerMessage.includes('piblisite') || lowerMessage.includes('ad')) {
-            return 'Ou ka soumèt piblisite ou sou platfòm nan. Sèlman 3 imaj ak yon deskripsyon, epi administratè a pral revize l. Ou vle konnen plis?';
-        } else if (lowerMessage.includes('mèsi') || lowerMessage.includes('mesi')) {
-            return 'Pa gen pwoblèm! Mwen la pou ede w. Gen lòt kesyon?';
-        } else {
-            return 'Mwen konprann. Pou plis enfòmasyon sou sèvis nou yo, ou ka kontakte administratè a nan +50942882076 oubyen vizite paj Admin la.';
-        }
     }
 
     // Focus input on page load

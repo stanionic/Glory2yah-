@@ -40,6 +40,13 @@ class Ad(BaseModel):
     
     # Batch
     batch_id = db.Column(db.String(36), index=True)
+
+    # Certification and compliance
+    is_certified = db.Column(db.Boolean, default=False, nullable=False, index=True)
+    certification_status = db.Column(db.String(30), default='NONE', nullable=False, index=True)
+    certified_at = db.Column(db.DateTime, nullable=True)
+    certified_by = db.Column(db.String(50), nullable=True)
+    certification_notes = db.Column(db.Text, nullable=True)
     
     # Engagement
     like_count = db.Column(db.Integer, default=0)

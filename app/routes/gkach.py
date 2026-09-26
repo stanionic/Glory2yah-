@@ -189,6 +189,57 @@ def transfer():
     return render_template('gkach/transfer.html', balance=balance, transactions=transactions)
 
 
+@gkach_bp.route('/withdraw', methods=['GET', 'POST'])
+@login_required
+def withdraw():
+    """Request cash withdrawal (Gkach -> fiat). Min = GKACH_WITHDRAW_MIN (500 Gk default)."""
+    from app.utils.validators import validate_amount, sanitize_text, ValidationError
+    from flask import current_app as _ca
+
+    whatsapp = current_user.whatsapp
+    balance = GkachService.get_balance(whatsapp)
+    min_withdraw = int(_ca.config.get('GKACH_WITHDRAW_MIN', 500) or 500)
+    rate = float(_ca.config.get('GKACH_TO_HTG_RATE', 1.2) or 1.2)
+
+    pending = GkachService.get_transactions(whatsapp, limit=20)
+    pending_withdrawals = [
+        t for t in pending
+        if t.get('transaction_type') == 'withdrawal' and t.get('status') == 'pending'
+    ]
+
+    if request.method == 'POST':
+        try:
+            amount = validate_amount(request.form.get('amount'), min_amount=min_withdraw)
+            payment_method = sanitize_text(request.form.get('payment_method', 'moncash')) or 'moncash'
+            payout_details = sanitize_text(request.form.get('payout_details', ''))
+            note = sanitize_text(request.form.get('note', ''))
+
+            GkachService.request_withdrawal(
+                whatsapp, amount,
+                payment_method=payment_method,
+                payout_details=payout_details,
+                note=note,
+            )
+            flash(
+                f'Demann retriz {amount} Gkach voye! Admin ap revize l byento.'
+                f' (≈ {round(amount * rate, 2):.2f} HTG)',
+                'success'
+            )
+            return redirect(url_for('gkach.wallet'))
+        except ValidationError as e:
+            flash(str(e), 'error')
+        except Exception as e:
+            flash(f'Erè nan demann retriz: {str(e)}', 'error')
+
+    return render_template(
+        'gkach/withdraw.html',
+        balance=balance,
+        min_withdraw=min_withdraw,
+        rate=rate,
+        pending_withdrawals=pending_withdrawals,
+    )
+
+
 @gkach_bp.route('/api/summary')
 @login_required
 def api_summary():
@@ -223,6 +274,7 @@ def api_summary():
             'total_clicks': int(tc or 0),
             'reward_earnings': summary.get('reward', {}).get('total', 0),
             'sales_earnings': summary.get('sale', {}).get('total', 0),
+            'cashback_earnings': summary.get('cashback', {}).get('total', 0),
             'referral_earnings': summary.get('transfer_in', {}).get('total', 0)
         })
     except Exception as e:

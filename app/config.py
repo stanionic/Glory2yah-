@@ -185,6 +185,8 @@ class Config:
     GKACH_MAX_CLICKS_PER_DEVICE = 1
     AUTO_SLIDE_INTERVAL = 2000
     GKACH_TO_HTG_RATE = 1.2
+    GKACH_CASHBACK_PCT = 2
+    GKACH_WITHDRAW_MIN = 500
 
     ITEMS_PER_PAGE = 20
     MAX_ITEMS_PER_PAGE = 100
@@ -268,7 +270,11 @@ class Config:
         except Exception:
             pass
         # Rate limiting
-        self.RATELIMIT_STORAGE_URL = redis_url or 'redis://localhost:6379/2'
+        # NOTE: flask-limiter >=3.5 reads RATELIMIT_STORAGE_URI (not the legacy
+        # RATELIMIT_STORAGE_URL key). Using the correct key so the configured
+        # backend (Redis or memory://) is actually applied and no spurious
+        # "Using the in-memory storage" warning is emitted on every boot.
+        self.RATELIMIT_STORAGE_URI = redis_url or 'redis://localhost:6379/2'
         # Celery
         self.CELERY_BROKER_URL = redis_url or 'redis://localhost:6379/3'
         self.CELERY_RESULT_BACKEND = redis_url or 'redis://localhost:6379/4'
@@ -306,7 +312,7 @@ class DevelopmentConfig(Config):
         # Local dev: no real Redis available -> simple cache + memory rate-limit
         if not os.environ.get('REDIS_URL'):
             self.CACHE_TYPE = 'simple'
-            self.RATELIMIT_STORAGE_URL = 'memory://'
+            self.RATELIMIT_STORAGE_URI = 'memory://'
         # Optional env override to disable rate-limits (useful for local load tests)
         self.RATELIMIT_ENABLED = (
             os.environ.get('RATELIMIT_ENABLED', '1')
@@ -452,7 +458,7 @@ class ProductionConfig(Config):
                 os.makedirs(self.SESSION_FILE_DIR, exist_ok=True)
             except Exception:
                 pass
-            self.RATELIMIT_STORAGE_URL = 'memory://'
+            self.RATELIMIT_STORAGE_URI = 'memory://'
 
 
 # Configuration dictionary — values are CLASSES; get_config() instantiates them.

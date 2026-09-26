@@ -189,22 +189,42 @@
     <!-- Action Buttons -->
     <div class="action-section">
         {% if current_user and current_user.is_authenticated %}
-            {% if balance >= subtotal %}
-            <button class="confirm-btn" onclick="confirmOrder()">
-                <span>✓</span>
-                <span>Konfime Kòmand</span>
+            <div class="balance-card" style="background: white; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 4px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 28px;">🪙</div>
+                    <div>
+                        <div style="font-size: 12px; color: #65676b;">Balans Gkach ou</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #1a1a1a;">{{ balance }} Gkach</div>
+                    </div>
+                </div>
+                {% set needed = subtotal - balance %}
+                {% if needed > 0 %}
+                <div style="text-align: right;">
+                    <div style="font-size: 12px; color: #f57c00; font-weight: 600;">Manke +{{ needed }} Gkach</div>
+                    <div style="font-size: 11px; color: #65676b;">Ou peye aprè diskisyon</div>
+                </div>
+                {% else %}
+                <div style="text-align: right;">
+                    <div style="font-size: 12px; color: #27ae60; font-weight: 600;">Balans OK</div>
+                    <div style="font-size: 11px; color: #65676b;">Sèlman lè ou konfime livrezon</div>
+                </div>
+                {% endif %}
+            </div>
+            <button class="confirm-btn" onclick="confirmOrder(this)">
+                <span>📨</span>
+                <span>Voye Kòmand pou Diskisyon</span>
             </button>
-            {% else %}
-            <div class="insufficient-balance">
-                <div class="warning-icon">⚠️</div>
-                <div class="warning-text">
-                    <p><strong>Balans ensifisan</strong></p>
-                    <p>Ou bezwen {{ subtotal - balance }} Gkach plis</p>
+            {% if needed > 0 %}
+            <div class="balance-hint" style="background: #fff8e1; border-radius: 10px; padding: 12px; display: flex; gap: 10px; align-items: flex-start;">
+                <div style="font-size: 20px; flex-shrink: 0;">💡</div>
+                <div style="flex: 1;">
+                    <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: #1a1a1a;">Ou pa gen ase Gkach kounye a?</p>
+                    <p style="margin: 0; font-size: 12px; color: #65676b;">Pa gen pwoblèm! Vandè a ap diskite livrezoun avèk ou. Ou ka recharger balans ou avan ou konfime peman final la.</p>
                 </div>
             </div>
             <a href="/gkach/request" class="recharge-btn">
                 <span>💰</span>
-                <span>Achte Gkach</span>
+                <span>Recharger Balans Gkach</span>
             </a>
             {% endif %}
         {% else %}
@@ -212,7 +232,7 @@
             <div class="warning-icon">🔒</div>
             <div class="warning-text">
                 <p><strong>Koneksyon obligatwa</strong></p>
-                <p>Ou dwe konekte pou konfime kòmand ou</p>
+                <p>Ou dwe konekte pou anvoyé kòmand ou nan diskisyon</p>
             </div>
         </div>
         <a href="/auth/login?next=/cart/checkout" class="login-btn">
@@ -231,15 +251,15 @@
 <div class="modal" id="confirmModal" style="display: none;">
     <div class="modal-overlay" onclick="closeModal()"></div>
     <div class="modal-content">
-        <div class="modal-icon">✅</div>
-        <h3 class="modal-title">Kòmand Konfime!</h3>
-        <p class="modal-text">Vandè a ap kontakte ou byento pou diskite livrezon.</p>
+        <div class="modal-icon">📨</div>
+        <h3 class="modal-title">Kòmand Voye!</h3>
+        <p class="modal-text">Kòmand ou an voye bay vandè yo. Yo ap kontakte ou byento nan seksyon <strong>Diskisyon</strong> pou diskite pri livrezon.</p>
         <div class="donation-thanks" id="donationThanks" style="display: none;">
             <p>❤️ <strong>Mèsi pou don ou!</strong> Ou ap ede kominote a.</p>
         </div>
         <div class="modal-actions">
-            <a href="/" class="modal-btn modal-btn-primary">Retounen Akèy</a>
-            <a href="/delivery/my-deliveries" class="modal-btn modal-btn-secondary">Wè Kòmand</a>
+            <a href="/delivery/my-deliveries" class="modal-btn modal-btn-primary">Wè Diskisyon yo</a>
+            <a href="/" class="modal-btn modal-btn-secondary">Retounen Akèy</a>
         </div>
     </div>
 </div>
@@ -414,8 +434,8 @@ function updateGrandTotal() {
     var total = checkoutSubtotal + donationAmount;
     document.getElementById('grandTotal').textContent = '🪙 ' + total;
 }
-function confirmOrder() {
-    var btn = event.target.closest('.confirm-btn');
+function confirmOrder(btn) {
+    if (!btn) return;
     var originalContent = btn.innerHTML;
     btn.innerHTML = '<span>⏳</span><span>Chaje...</span>';
     btn.disabled = true;
@@ -424,10 +444,26 @@ function confirmOrder() {
     formData.append('donation_cause', selectedCause);
     fetch('/cart/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
         body: formData.toString()
     })
-    .then(function(r) { return r.json(); })
+    .then(function(response) {
+        return response.text().then(function(text) {
+            var data;
+            try { data = JSON.parse(text); } catch (_) { data = {}; }
+            if (response.redirected || !response.headers.get('content-type')?.includes('application/json')) {
+                throw new Error('Sesyon ou a ekspire oswa paj checkout la pa disponib. Tanpri rekonekte epi eseye ankò.');
+            }
+            if (!response.ok) {
+                throw new Error(data.error || data.message || 'Kòmand lan pa t kapab konfime.');
+            }
+            return data;
+        });
+    })
     .then(function(data) {
         if (data.success) {
             showModal();
@@ -437,8 +473,8 @@ function confirmOrder() {
             btn.disabled = false;
         }
     })
-    .catch(function() {
-        alert('Erè nan konfime kòmand');
+    .catch(function(error) {
+        alert(error.message || 'Erè nan konfime kòmand');
         btn.innerHTML = originalContent;
         btn.disabled = false;
     });

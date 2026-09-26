@@ -1,0 +1,57 @@
+=== IMPORT CREATE_APP
+OK - create_app imported
+OK - app created
+
+=== CHECKING EVENTS BLUEPRINT
+
+EVENTS routes: ['/events', '/events/<slug>', '/events/<slug>/nearby-locations', '/events/<slug>/shares', '/admin/events', '/admin/events/<slug>/participants', '/admin/events/<slug>/organizations', '/admin/events/<slug>/organizations/<oid>/status', '/pwa/api/events']
+events.* endpoints: ['events.index', 'events.landing', 'events.nearby_locations', 'events.share']
+
+ERROR url_for('events.index'): RuntimeError: Unable to build URLs outside an active request without 'SERVER_NAME' configured. Also configure 'APPLICATION_ROOT' and 'PREFERRED_URL_SCHEME' as needed.
+Traceback (most recent call last):
+  File "c:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_debug_events_file.py", line 27, in <module>
+    url = url_for('events.index')
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\AppData\Roaming\Python\Python311\site-packages\flask\helpers.py", line 225, in url_for
+    return current_app.url_for(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 1666, in url_for
+    raise RuntimeError(
+RuntimeError: Unable to build URLs outside an active request without 'SERVER_NAME' configured. Also configure 'APPLICATION_ROOT' and 'PREFERRED_URL_SCHEME' as needed.
+
+=== ALL REGISTERED BLUEPRINTS
+  - main
+  - auth
+  - marketplace
+  - cart
+  - delivery
+  - gkach
+  - admin
+  - share
+  - events
+  - admin_events
+  - pwa
+  - konferans
+  - ecole_biblique
+  - party
+  - mennem
+  - dok
+  - gforms
+  - bank
+  - elearning
+
+=== TRYING DIRECT EVENTS IMPORT
+OK - direct import of events_bp and admin_events_bp
+  events_bp name: events
+  admin_events_bp name: admin_events
+
+=== RENDERING SERVICE ITEM TEMPLATE
+Template rendered OK!
+ERROR rendering template: UnicodeEncodeError: 'charmap' codec can't encode characters in position 92-93: character maps to <undefined>
+Traceback (most recent call last):
+  File "c:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_debug_events_file.py", line 59, in <module>
+    f.write(result + "\n")
+  File "C:\Program Files\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 92-93: character maps to <undefined>

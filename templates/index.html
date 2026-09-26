@@ -32,6 +32,10 @@ window.CSRF_TOKEN = {{ csrf_token()|tojson }};
                     <span class="type-icon">🔗</span>
                     <span>Liyen</span>
                 </button>
+                <button class="type-btn" data-type="image" onclick="selectPostType('image')">
+                    <span class="type-icon">🖼️</span>
+                    <span>Imaj</span>
+                </button>
             </div>
         </div>
         
@@ -75,6 +79,37 @@ window.CSRF_TOKEN = {{ csrf_token()|tojson }};
                     <span class="url-status" id="urlStatus">Mete yon URL valab</span>
                     <button class="post-btn" onclick="submitURLPost()" id="urlPostBtn" disabled>
                         <span>🔗</span>
+                        <span>Poste</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Image Post Form -->
+            <div class="post-form-content hidden" id="imagePostForm">
+                <label for="imageInput" class="image-upload-label">
+                    📷 Chwazi yon imaj (PNG, JPG, GIF, WEBP — maks. 10MB)
+                </label>
+                <input
+                    type="file"
+                    id="imageInput"
+                    name="image"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    onchange="previewPostImage(this)"
+                    class="image-file-input"
+                />
+                <div class="image-preview" id="imagePreview" style="display: none;">
+                    <img src="" alt="Preview" id="imagePreviewImg" />
+                    <button type="button" class="image-remove" onclick="removePostImage()" aria-label="Retire imaj">✖</button>
+                </div>
+                <textarea
+                    id="imageContent"
+                    placeholder="Ekri yon legann (si w vle)..."
+                    maxlength="1000"
+                ></textarea>
+                <div class="form-footer">
+                    <span class="url-status" id="imageStatus">Chwazi yon imaj pou poste</span>
+                    <button class="post-btn" onclick="submitImagePost()" id="imagePostBtn" disabled>
+                        <span>📤</span>
                         <span>Poste</span>
                     </button>
                 </div>
@@ -1159,6 +1194,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .post-form-content.hidden {
     display: none;
+}
+
+.image-upload-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.image-file-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px dashed #e4e6eb;
+    border-radius: 10px;
+    background: white;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.image-preview {
+    position: relative;
+    margin-top: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e4e6eb;
+}
+
+.image-preview img {
+    width: 100%;
+    display: block;
+    max-height: 260px;
+    object-fit: contain;
+    background: #f0f2f5;
+}
+
+.image-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 5;
+}
+
+#imageContent {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px;
+    border: 1px solid #e4e6eb;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    background: white;
+    margin-top: 8px;
+}
+
+#imageContent:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 #textContent {
@@ -2302,6 +2406,7 @@ function selectPostType(type) {
     // Show/hide forms
     document.getElementById('textPostForm').classList.toggle('hidden', type !== 'text');
     document.getElementById('urlPostForm').classList.toggle('hidden', type !== 'url');
+    document.getElementById('imagePostForm').classList.toggle('hidden', type !== 'image');
     
     // Clear URL preview when switching
     if (type !== 'url') {
@@ -2660,6 +2765,160 @@ async function submitURLPost() {
         urlPostBtn.style.opacity = '1';
         urlPostBtn.style.cursor = 'pointer';
         urlPostBtn.innerHTML = '<span>🔗</span><span>Poste</span>';
+    }
+}
+
+let _selectedPostImageFile = null;
+let _postImagePreviewUrl = null;
+
+function previewPostImage(input) {
+    const file = input.files && input.files[0];
+    const status = document.getElementById('imageStatus');
+    const btn = document.getElementById('imagePostBtn');
+
+    if (!file) {
+        _selectedPostImageFile = null;
+        if (_postImagePreviewUrl) { URL.revokeObjectURL(_postImagePreviewUrl); _postImagePreviewUrl = null; }
+        document.getElementById('imagePreview').style.display = 'none';
+        status.textContent = 'Chwazi yon imaj pou poste';
+        btn.disabled = true;
+        return;
+    }
+
+    // Client-side checks before enabling upload
+    const allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+        showToast('❌ Tip dosye pa aksepte. Sèlman: PNG, JPG, GIF, WEBP.');
+        input.value = '';
+        _selectedPostImageFile = null;
+        return;
+    }
+    const maxBytes = 10 * 1024 * 1024; // 10 MB
+    if (file.size > maxBytes) {
+        showToast('❌ Imaj twò gwo. Maksimòm: 10MB.');
+        input.value = '';
+        _selectedPostImageFile = null;
+        return;
+    }
+    if (file.size === 0) {
+        showToast('❌ Imaj vid.');
+        input.value = '';
+        _selectedPostImageFile = null;
+        return;
+    }
+
+    // Show preview
+    if (_postImagePreviewUrl) { URL.revokeObjectURL(_postImagePreviewUrl); }
+    _postImagePreviewUrl = URL.createObjectURL(file);
+    const previewImg = document.getElementById('imagePreviewImg');
+    const previewBox = document.getElementById('imagePreview');
+    previewImg.src = _postImagePreviewUrl;
+    previewBox.style.display = 'block';
+
+    _selectedPostImageFile = file;
+    status.textContent = 'Imaj pare pou poste';
+    status.style.color = '#28a745';
+    btn.disabled = false;
+}
+
+function removePostImage() {
+    const input = document.getElementById('imageInput');
+    input.value = '';
+    _selectedPostImageFile = null;
+    if (_postImagePreviewUrl) { URL.revokeObjectURL(_postImagePreviewUrl); _postImagePreviewUrl = null; }
+    document.getElementById('imagePreview').style.display = 'none';
+    const status = document.getElementById('imageStatus');
+    status.textContent = 'Chwazi yon imaj pou poste';
+    status.style.color = '#65676b';
+    document.getElementById('imagePostBtn').disabled = true;
+}
+
+async function submitImagePost() {
+    const file = _selectedPostImageFile;
+    const imagePostBtn = document.getElementById('imagePostBtn');
+    const status = document.getElementById('imageStatus');
+
+    if (!file) {
+        showToast('Chwazi yon imaj avan poste');
+        return;
+    }
+
+    imagePostBtn.disabled = true;
+    imagePostBtn.style.opacity = '0.7';
+    imagePostBtn.style.cursor = 'progress';
+    imagePostBtn.innerHTML = '<span>⏳</span><span>Ap voye...</span>';
+
+    try {
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+            showToast('🔒 Sesyon ou ekspire. Tanpri re-chaje paj la.');
+            setTimeout(() => location.reload(), 1500);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('type', 'image');
+        formData.append('image', file);
+        const caption = (document.getElementById('imageContent').value || '').trim();
+        if (caption) {
+            formData.append('content', caption);
+        }
+
+        const response = await fetch('/api/posts/create', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            let errorData = null;
+            try { errorData = await response.json(); } catch (_) {}
+            if (response.status === 401) {
+                showToast('🔒 Ou dwe konekte pou poste. Redireksyon...');
+                setTimeout(() => { window.location.href = '/auth/login'; }, 2000);
+                return;
+            } else if (response.status === 400) {
+                showToast((errorData && errorData.message) || '❌ Envalid data. Verifye imaj la.');
+                return;
+            } else if (response.status === 429) {
+                showToast('⏱️ Trop de requests. Reesaye plita.');
+                return;
+            } else if (response.status >= 500) {
+                showToast('🔥 Erè serveur. Reesaye plita.');
+                return;
+            } else {
+                showToast(`❌ Erè ${response.status}. Reesaye.`);
+                return;
+            }
+        }
+
+        let data = null;
+        try { data = await response.json(); } catch (_) { data = { success: true }; }
+
+        if (!data || data.success) {
+            showToast('✅ Post imaj kreye ak siksè!');
+            removePostImage();
+            document.getElementById('imageContent').value = '';
+            setTimeout(() => { location.reload(); }, 1000);
+        } else {
+            showToast((data && data.message) || 'Erè pandan kreyasyon post imaj');
+        }
+    } catch (error) {
+        console.error('Error creating image post:', error);
+        if (error && (error.name === 'TypeError' || (error.message && error.message.includes('fetch')))) {
+            showToast('🌐 Erè rezo: Pa ka konekte ak serveur a. Verifye koneksyon ou.');
+        } else if (error && error.name === 'AbortError') {
+            showToast('⏱️ Request anile. Reesaye.');
+        } else {
+            showToast('💥 Erè inaten. Reesaye ou kontakte admin.');
+        }
+    } finally {
+        imagePostBtn.disabled = false;
+        imagePostBtn.style.opacity = '1';
+        imagePostBtn.style.cursor = 'pointer';
+        imagePostBtn.innerHTML = '<span>📤</span><span>Poste</span>';
     }
 }
 

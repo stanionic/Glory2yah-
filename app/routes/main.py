@@ -488,51 +488,106 @@ def api_gkach_balance():
 
 @main_bp.route('/api/posts/create', methods=['POST'])
 def create_post():
-    """Create a text-only or URL post - 10MB max for text posts"""
+    """Create a text, URL, or image post.
+
+    - text/url : JSON body   -> {content: str, type: 'text'|'url'}
+    - image    : multipart   -> form {content: caption (optional), type: 'image'}
+                               + file field `image` (max 10 MB)
+    Social posts are auto-approved (no Gkach payment required).
+    """
     from app.models.ad import Ad
     from app import db
     import uuid
-    from app.utils.validators import sanitize_text, validate_url, ValidationError
+    import os
+    from app.utils.validators import sanitize_text, validate_url, validate_file_upload, ValidationError
     
     if not current_user.is_authenticated:
         return jsonify({'success': False, 'message': 'Login required'}), 401
     
-    # Ensure CSRF protection for this POST request
-    # csrf.protect() # Assuming csrf is imported and initialized in app/__init__.py
-    
     try:
-        data = request.get_json()
-        content = data.get('content', '').strip()
-        post_type = data.get('type', 'text')  # 'text' or 'url'
-        
-        if not content:
-            return jsonify({'success': False, 'message': 'Kontni obligatwa'}), 400
-        content = sanitize_text(content)
-        
-        # Validate content size (10MB max for text)
-        if post_type == 'text':
-            content_size = len(content.encode('utf-8'))
-            max_size = 10 * 1024 * 1024  # 10MB
-            if content_size > max_size:
-                raise ValidationError('Teks twò long (10MB max)')
-        
-        # Validate URL format for URL posts
+        # ── Payload detection: multipart (image upload) vs JSON (text/url) ──
+        is_multipart = (request.mimetype == 'multipart/form-data') or bool(request.files)
+
+        if is_multipart:
+            post_type = (request.form.get('type') or 'image').lower()
+            content = sanitize_text((request.form.get('content') or '').strip())
+
+            if post_type != 'image':
+                raise ValidationError('Tip post pa rekonèt')
+
+            # Validate + persist the uploaded image
+            image_file = request.files.get('image')
+            if not image_file or not image_file.filename:
+                raise ValidationError('Tanpri chwazi yon imaj')
+
+            allowed = current_app.config.get(
+                'ALLOWED_IMAGE_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+            )
+            # Extension + size + magic-number (content) validation, and block
+            # dangerous / double-extension filenames.
+            validate_file_upload(image_file, allowed, max_size_mb=10)
+
+            ext = image_file.filename.rsplit('.', 1)[1].lower()
+            filename = f'{uuid.uuid4().hex}.{ext}'
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', os.path.join('static', 'uploads'))
+            try:
+                os.makedirs(upload_folder, exist_ok=True)
+            except Exception:
+                pass
+            try:
+                image_file.seek(0)
+            except Exception:
+                pass
+            image_file.save(os.path.join(upload_folder, filename))
+        else:
+            data = request.get_json(silent=True) or {}
+            content = sanitize_text((data.get('content') or '').strip())
+            post_type = (data.get('type') or 'text').lower()
+
+            if post_type not in ('text', 'url'):
+                raise ValidationError('Tip post pa rekonèt')
+            if not content:
+                return jsonify({'success': False, 'message': 'Kontni obligatwa'}), 400
+
+            # Validate content size (10MB max) for text
+            if post_type == 'text':
+                content_size = len(content.encode('utf-8'))
+                max_size = 10 * 1024 * 1024
+                if content_size > max_size:
+                    raise ValidationError('Teks twò long (10MB max)')
+
+            # Validate URL format for URL posts
+            if post_type == 'url':
+                content = validate_url(content)
+
+        # ── Build post media fields ──
         if post_type == 'url':
-            content = validate_url(content) # Will raise ValidationError if invalid
-            
-        
+            media_type = 'url'
+            title = 'Post Lyen'
+        elif post_type == 'image':
+            media_type = 'images'
+            title = 'Post Foto'
+        else:
+            media_type = 'text'
+            title = 'Post Teks'
+
+        # description is NOT NULL on the model, so default image captions
+        # and require text/url to have content (already enforced above).
+        description = content or ('Foto' if post_type == 'image' else '')
+
         # Create new post
         post_id = str(uuid.uuid4())
         
         new_post = Ad(
             ad_id=post_id,
             user_whatsapp=current_user.whatsapp,
-            title=f"Post {'Teks' if post_type == 'text' else 'Liyen'}",
-            description=content,
-            media_type='text' if post_type == 'text' else 'url',
+            title=title,
+            description=description,
+            media_type=media_type,
+            images=filename if post_type == 'image' else None,
             ad_type='publish',  # Social post, not for sale
             price_gkach=0,
-            admin_status='approved',  # Auto-approve text/URL posts
+            admin_status='approved',  # Auto-approve text/URL/image posts
             payment_status='completed'
         )
         
@@ -703,18 +758,149 @@ def upload_payment(ad_id):
                 file.filename.rsplit('.', 1)[-1].lower()
                 if '.' in file.filename else 'jpg'
             )
-            if ext not in {'jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'}:
+            allowed_proof_exts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'}
+            if ext not in allowed_proof_exts:
                 raise ValueError('Fòma fichye pa aksepte. Itilize JPG, PNG, GIF, PDF oswa WEBP.')
 
-            upload_folder = os.path.join(
-                current_app.root_path, '..', current_app.config['UPLOAD_FOLDER']
-            )
-            upload_folder = os.path.abspath(upload_folder)
-            os.makedirs(upload_folder, exist_ok=True)
+            # ============ ROBUST 3-LAYER PERSISTENCE ============
+            # Belt + suspenders + harness: identical staging/fallback pattern
+            # used by submit_ad so Render disk I/O failures, permission errors,
+            # and cross-filesystem move exceptions never crash a payment-proof
+            # upload (missing payment proof = admin can't verify = ad stuck in
+            # pending forever — the #1 "my ad never posted" cause on live).
+            def _res_up_dir(key_env, fallback_rel):
+                raw_dir = current_app.config.get(key_env)
+                if raw_dir and os.path.isabs(raw_dir):
+                    return os.path.abspath(raw_dir)
+                cand = raw_dir or fallback_rel
+                if os.path.isabs(cand):
+                    return os.path.abspath(cand)
+                return os.path.abspath(os.path.join(current_app.root_path, '..', cand))
 
-            filename = f'pay_proof_{uuid.uuid4().hex}.{ext}'
-            dest = os.path.join(upload_folder, filename)
-            file.save(dest)
+            up_final = _res_up_dir('UPLOAD_FOLDER', os.path.join('static', 'uploads'))
+            up_stage = _res_up_dir('STAGING_UPLOAD_FOLDER', os.path.join('instance', 'uploads_staging'))
+            up_backup = _res_up_dir('BACKUP_UPLOAD_FOLDER', os.path.join('instance', 'uploads_backup'))
+            try: os.makedirs(up_final, exist_ok=True)
+            except Exception: pass
+            try: os.makedirs(up_stage, exist_ok=True)
+            except Exception: up_stage = up_final
+            try: os.makedirs(up_backup, exist_ok=True)
+            except Exception: up_backup = None
+
+            import threading as _thr
+            import shutil as _shutil_proof
+            import hashlib as _hashlib_proof
+            from app.utils.validators import validate_file_upload as _vfu_proof
+            from app.utils.validators import ValidationError as _VE
+
+            def _bg_backup_proof(src_p, dst_p):
+                try: _shutil_proof.copy2(src_p, dst_p)
+                except Exception: pass
+
+            proof_final_name = f'pay_proof_{uuid.uuid4().hex}.{ext}'
+            proof_final_path = os.path.join(up_final, proof_final_name)
+
+            try:
+                # ===== 0) Pre-flight: validate extension / size / MAGIC BYTES =====
+                # (Prevents a screenshot called "screenshot.jpg.exe" being
+                # accepted by extension-only check, and also rejects truncated
+                # or corrupt images that fail to render in the admin review grid).
+                try:
+                    _vfu_proof(file, allowed_extensions=allowed_proof_exts, max_size_mb=10)
+                except _VE as _ve_proof:
+                    raise ValueError(str(_ve_proof))
+                try:
+                    file.seek(0)
+                except Exception:
+                    pass
+
+                # ===== 1) STAGE — stream + inline MD5 (single pass) =====
+                proof_stage_path = os.path.join(up_stage, proof_final_name)
+                _h_md5 = _hashlib_proof.md5()
+                _proof_wrote = 0
+                try: file.seek(0)
+                except Exception: pass
+                with open(proof_stage_path, 'wb') as _pfh:
+                    while True:
+                        _pchunk = file.read(1024 * 1024)
+                        if not _pchunk:
+                            break
+                        _pfh.write(_pchunk)
+                        _h_md5.update(_pchunk)
+                        _proof_wrote += len(_pchunk)
+                _proof_md5 = _h_md5.hexdigest()
+
+                if _proof_wrote <= 0:
+                    try: os.unlink(proof_stage_path)
+                    except Exception: pass
+                    raise ValueError('Fichye prèv la vid. Tanpri chwazi yon lòt.')
+                if not _proof_md5:
+                    try: os.unlink(proof_stage_path)
+                    except Exception: pass
+                    raise ValueError('Pa ka kalkile MD5 prèv la — done yo kòronp.')
+
+                # ===== 2) MOVE staging → final (atomic same-FS; fallback copy+delete) =====
+                try:
+                    _shutil_proof.move(proof_stage_path, proof_final_path)
+                except Exception as _move_err:
+                    try:
+                        if (os.path.exists(proof_stage_path)
+                                and os.path.abspath(proof_stage_path) != os.path.abspath(proof_final_path)):
+                            try:
+                                _shutil_proof.copy2(proof_stage_path, proof_final_path)
+                                try: os.unlink(proof_stage_path)
+                                except Exception: pass
+                            except Exception: pass
+                    except Exception: pass
+                    if not os.path.exists(proof_final_path):
+                        raise ValueError(
+                            f'Pa ka deplase prèv la nan dozye final. Eseye ankò. ({_move_err!r})'
+                        )
+
+                # ===== 3) BACKUP — daemon thread for large files, inline for small =====
+                if up_backup and os.path.exists(proof_final_path):
+                    try:
+                        bk_proof_path = os.path.join(up_backup, proof_final_name)
+                        if _proof_wrote > 5 * 1024 * 1024:
+                            try:
+                                _tbk = _thr.Thread(
+                                    target=_bg_backup_proof,
+                                    args=(proof_final_path, bk_proof_path),
+                                    daemon=True,
+                                )
+                                _tbk.start()
+                            except Exception:
+                                try: _shutil_proof.copy2(proof_final_path, bk_proof_path)
+                                except Exception: pass
+                        else:
+                            try: _shutil_proof.copy2(proof_final_path, bk_proof_path)
+                            except Exception: pass
+                    except Exception:
+                        pass  # backup is best-effort
+
+            except ValueError:
+                raise
+            except Exception as _fb_proof:
+                # ============ FALLBACK CHAIN — direct file.save() ============
+                # Anything goes wrong with staging/move (Render disk permissions,
+                # cross-device move, thread spawn error, etc.): silently fall
+                # back to a direct save into the final upload folder.
+                try:
+                    try: file.seek(0)
+                    except Exception: pass
+                    file.save(proof_final_path)
+                    if os.path.exists(proof_final_path) and os.path.getsize(proof_final_path) > 0:
+                        pass  # success via fallback
+                    else:
+                        raise ValueError(
+                            'Pa ka sovegade prèv pèman an. Eseye ankò oswa eseye yon fichye ki pi piti.'
+                        )
+                except Exception as _last_proof_err:
+                    raise ValueError(
+                        f'Pa ka sovegade prèv la. Eseye ankò. ({_fb_proof!r})'
+                    )
+
+            filename = proof_final_name
 
             ad.payment_proof = filename
             # Keep 'pending': admin must flip to 'verified' manually.
@@ -934,6 +1120,15 @@ def submit_ad():
             if not title or not title.strip():
                 raise ValidationError('Tanpri ekri yon tit pou piblisite w la.')
 
+            # Guard: only media types the template + route actually handle.
+            # AdService also allows 'text' but no UI supports it; block early
+            # so someone bypassing client-side JS can't silently create a
+            # media-less ad that looks broken.
+            if media_type not in ('images', 'video', 'url'):
+                raise ValidationError(
+                    'Tip medya envalid. Chwazi nan 3 Imaj, 1 Videyo, oswa Lien Videyo.'
+                )
+
             # Description guard: for media_type='url', description TEXT is optional
             # because the external_url itself is always stored inside description
             # (combined: URL + "\n\n" + text). So the guard only fires if:
@@ -1011,16 +1206,52 @@ def submit_ad():
                 except Exception:
                     pass  # backup is best-effort
 
-            def _stage_and_persist_upload(file_storage, ext_expected, label='file'):
+            def _stage_and_persist_upload(file_storage, ext_expected, label='file', allowed_exts=None):
                 """Stage file, inline MD5 while saving, move → final, backup in bg if large.
 
                 **Guaranteed to never raise a non-ValidationError that would crash the upload**.
                 On ANY I/O / disk failure → falls back to the classic direct save into
-                upload_folder (the pre-persistence behaviour)."""
+                upload_folder (the pre-persistence behaviour).
+
+                NEW (security + data integrity): runs validate_file_upload() BEFORE
+                writing any bytes so extension, file size AND magic number bytes are
+                all validated (blocks .php.jpg rename attacks, truncated/corrupt files,
+                and double-extension executables)."""
                 import shutil as _shutil
                 import hashlib as _hashlib
+                from app.utils.validators import validate_file_upload as _vfu
                 if not file_storage or not file_storage.filename:
                     raise ValidationError(f'Fichye {label} a manke.')
+
+                # ===== SECURITY: validate extension, size, AND magic number bytes =====
+                # (Prevents .php renamed to .jpg, truncated videos, corrupt images,
+                # double-extension executable uploads like invoice.pdf.exe).
+                if allowed_exts is None:
+                    # Union of all globally-allowed upload types; magic-number check
+                    # catches mismatches.  Payment proof also allows PDF.
+                    _cfg_img = set(current_app.config.get('ALLOWED_IMAGE_EXTENSIONS', set())) or {'png','jpg','jpeg','gif','webp'}
+                    _cfg_vid = set(current_app.config.get('ALLOWED_VIDEO_EXTENSIONS', set())) or {'mp4','avi','mov','mkv','webm'}
+                    _cfg_doc = set(current_app.config.get('ALLOWED_DOCUMENT_EXTENSIONS', set())) or {'pdf'}
+                    allowed_exts = _cfg_img | _cfg_vid | _cfg_doc
+                try:
+                    # Returns a secure filename (we ignore it — we use uuid names).
+                    # The important part: it raises ValidationError for any bad file.
+                    # (Werkzeug's MAX_CONTENT_LENGTH already catches 100MB+ request
+                    # bodies at the HTTP layer and triggers the 413 redirect handler;
+                    # this 200MB ceiling is a belt-and-suspenders second guard).
+                    _ = _vfu(file_storage, allowed_extensions=allowed_exts, max_size_mb=200)
+                except ValidationError:
+                    raise
+                except Exception as _ve:
+                    # Wrap non-ValidationError exceptions so the outer try/except
+                    # fallback chain doesn't silently swallow a real attack signal.
+                    raise ValidationError(
+                        f'Fichye {label} a pa valab (envalid oswa korompì): {_ve!r}'
+                    )
+                try:
+                    file_storage.seek(0)
+                except Exception:
+                    pass
 
                 final_name = f'{uuid.uuid4().hex}.{ext_expected.lower()}'
                 final_path = os.path.join(upload_folder, final_name)
@@ -1229,6 +1460,14 @@ def submit_ad():
                           ]},
                          location='main.py:submit_ad:url-media-ok')
 
+            # Final server-side length guards — matches AdService thresholds so
+            # we surface friendly Creole errors instead of the generic French/raw
+            # ValidationError text from the service layer.
+            if len(title) < 3:
+                raise ValidationError('Tit piblisite a dwe gen omwen 3 karaktè.')
+            if len(description) < 10:
+                raise ValidationError('Deskripsyon piblisite a dwe gen omwen 10 karaktè.')
+
             ad = AdService.create_ad(
                 user_whatsapp=whatsapp,
                 title=title,
@@ -1409,3 +1648,343 @@ def demo():
     app_url = f"{scheme}://{host}"
     video_url = url_for('static', filename='glory2yahpub_demo.mp4')
     return render_template('demo.html', app_url=app_url, video_url=video_url)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# NOTIFICATIONS REST API
+# Central endpoints used by the in-app notification centre + Web Push UI.
+# ═══════════════════════════════════════════════════════════════════════
+
+@main_bp.route('/api/notifications/unread-count')
+@login_required
+def api_notifications_unread_count():
+    """Return the current unread badge number (fast, lightweight)."""
+    try:
+        from app.services.notification_hub import NotificationHub
+        count = NotificationHub.get_unread_count(current_user.id)
+        return jsonify({'success': True, 'unread_count': int(count)})
+    except Exception as e:
+        current_app.logger.error(f"unread_count failed: {e}")
+        return jsonify({'success': False, 'unread_count': 0}), 500
+
+
+@main_bp.route('/api/notifications')
+@login_required
+def api_notifications_list():
+    """Paginated list of the authenticated user's notifications.
+
+    Query params:
+        page (int)       — default 1
+        per_page (int)   — default 20 (max 50)
+        unread_only (bool) — only return unread rows when truthy
+        category (str)   — filter by category slug
+    """
+    try:
+        from app.services.notification_hub import NotificationHub
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        unread_only = request.args.get('unread_only', '').lower() in ('1', 'true', 'yes')
+        category = (request.args.get('category') or '').strip() or None
+
+        result = NotificationHub.get_notifications(
+            user_id=current_user.id,
+            page=page,
+            per_page=per_page,
+            unread_only=unread_only,
+            category=category,
+        )
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        current_app.logger.error(f"notifications list failed: {e}")
+        return jsonify({'success': False, 'items': [], 'unread_count': 0}), 500
+
+
+@main_bp.route('/api/notifications/<int:notif_id>/read', methods=['POST'])
+@login_required
+def api_notification_mark_read(notif_id):
+    """Mark a single notification as read (ownership-checked)."""
+    try:
+        from app.services.notification_hub import NotificationHub
+        ok = NotificationHub.mark_as_read(notif_id, current_user.id)
+        return jsonify({
+            'success': bool(ok),
+            'unread_count': NotificationHub.get_unread_count(current_user.id),
+        })
+    except Exception as e:
+        current_app.logger.error(f"mark_read failed notif={notif_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erè pandan aktyalizasyon lekti.'}), 500
+
+
+@main_bp.route('/api/notifications/read-all', methods=['POST'])
+@login_required
+def api_notifications_read_all():
+    """Bulk mark-everything-as-read; returns rows updated."""
+    try:
+        from app.services.notification_hub import NotificationHub
+        category = (request.args.get('category') or '').strip() or None
+        data = request.get_json(silent=True) or {}
+        category = category or (data.get('category') if isinstance(data, dict) else None)
+
+        updated = NotificationHub.mark_all_as_read(current_user.id, category=category)
+        return jsonify({
+            'success': True,
+            'updated': int(updated or 0),
+            'unread_count': NotificationHub.get_unread_count(current_user.id),
+        })
+    except Exception as e:
+        current_app.logger.error(f"read_all failed: {e}")
+        return jsonify({'success': False, 'updated': 0}), 500
+
+
+@main_bp.route('/api/notifications/<int:notif_id>', methods=['DELETE'])
+@login_required
+def api_notification_delete(notif_id):
+    """Delete a single owned notification."""
+    try:
+        from app.services.notification_hub import NotificationHub
+        ok = NotificationHub.delete_notification(notif_id, current_user.id)
+        return jsonify({
+            'success': bool(ok),
+            'unread_count': NotificationHub.get_unread_count(current_user.id),
+        })
+    except Exception as e:
+        current_app.logger.error(f"delete_notification failed notif={notif_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erè pandan sipresyon notifikasyon an.'}), 500
+
+
+@main_bp.route('/api/notifications/preferences', methods=['GET'])
+@login_required
+def api_notifications_preferences_get():
+    """Fetch the current user's notification preferences."""
+    try:
+        from app.services.notification_hub import NotificationHub
+        from app.services.notification_templates import default_categories, CATEGORY_LABELS
+        pref = NotificationHub.get_or_create_preferences(current_user.id)
+        data = pref.to_dict()
+        data['categories'] = dict(default_categories(), **(data.get('categories') or {}))
+        lang = data.get('language') or 'ht'
+        data['category_labels'] = {
+            k: (labels.get(lang) or labels.get('ht') or k)
+            for k, labels in CATEGORY_LABELS.items()
+        }
+        return jsonify({'success': True, 'preferences': data})
+    except Exception as e:
+        current_app.logger.error(f"get preferences failed: {e}")
+        return jsonify({'success': False, 'message': 'Erè pandan chaj paramèt yo.'}), 500
+
+
+@main_bp.route('/api/notifications/preferences', methods=['PUT', 'POST'])
+@login_required
+def api_notifications_preferences_update():
+    """Update the user's notification preferences (partial update)."""
+    try:
+        from app import db
+        from app.services.notification_hub import NotificationHub
+        from app.services.notification_templates import SUPPORTED_LANGS
+
+        data = request.get_json(silent=True) or request.form.to_dict()
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Fòma done envalid.'}), 400
+
+        pref = NotificationHub.get_or_create_preferences(current_user.id)
+        changed = False
+
+        for bool_key in ('push_enabled', 'realtime_enabled', 'sound_enabled'):
+            if bool_key in data:
+                v = data[bool_key]
+                new_val = (v is True) or (str(v).lower() in ('1', 'true', 'yes', 'on'))
+                if getattr(pref, bool_key) != new_val:
+                    setattr(pref, bool_key, new_val)
+                    changed = True
+
+        if 'language' in data:
+            new_lang = str(data['language']).lower()[:2]
+            if new_lang in SUPPORTED_LANGS and pref.language != new_lang:
+                pref.language = new_lang
+                changed = True
+
+        if 'categories' in data and isinstance(data['categories'], dict):
+            existing = pref.get_categories() or {}
+            existing.update({k: bool(v) for k, v in data['categories'].items()})
+            pref.set_categories(existing)
+            changed = True
+
+        if changed:
+            db.session.add(pref)
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'preferences': pref.to_dict(),
+        })
+    except Exception as e:
+        try:
+            from app import db as _db
+            _db.session.rollback()
+        except Exception:
+            pass
+        current_app.logger.error(f"update preferences failed: {e}")
+        return jsonify({'success': False, 'message': 'Erè pandan mete ajou paramèt yo.'}), 500
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# WEB PUSH SUBSCRIPTION ENDPOINTS (PWA / browser install flow)
+# ═══════════════════════════════════════════════════════════════════════
+
+@main_bp.route('/api/push/public-key')
+def api_push_public_key():
+    """Expose the VAPID applicationServerKey for the service worker.
+
+    Returns base64 (URL-safe, unpadded) so the browser can call
+    `registration.pushManager.subscribe({ applicationServerKey })`.
+    """
+    try:
+        from app.services.push_service import PushService
+        import base64
+        raw = PushService.public_key() or ''
+        if raw and not raw.startswith('-----'):
+            try:
+                decoded = base64.b64decode(raw + '=' * (-len(raw) % 4), validate=False)
+                encoded = base64.urlsafe_b64encode(decoded).decode().rstrip('=')
+                return jsonify({'success': True, 'public_key': encoded})
+            except Exception:
+                pass
+        return jsonify({
+            'success': bool(raw),
+            'public_key': raw,
+            'configured': PushService.is_configured(),
+        })
+    except Exception as e:
+        current_app.logger.error(f"push public_key failed: {e}")
+        return jsonify({'success': False, 'public_key': '', 'configured': False}), 500
+
+
+@main_bp.route('/api/push/subscribe', methods=['POST'])
+@login_required
+def api_push_subscribe():
+    """Store a new PushSubscription (or reactivate an existing endpoint).
+
+    Body (JSON):
+        endpoint   — push service endpoint
+        keys       — { p256dh, auth }
+        device_type, browser, os — optional metadata
+    """
+    try:
+        from app import db
+        from app.models.notification import PushSubscription
+
+        data = request.get_json(silent=True) or {}
+        endpoint = (data.get('endpoint') or '').strip()
+        keys = data.get('keys') or {}
+        if not endpoint or not keys.get('p256dh') or not keys.get('auth'):
+            return jsonify({
+                'success': False,
+                'message': 'Paramèt abònman Web Push ki manke.',
+            }), 400
+
+        existing = PushSubscription.query.filter_by(endpoint=endpoint).first()
+        if existing:
+            existing.user_id = current_user.id
+            existing.p256dh = str(keys['p256dh'])
+            existing.auth = str(keys['auth'])
+            existing.is_active = True
+            existing.fail_count = 0
+            for field in ('device_type', 'browser', 'os'):
+                if data.get(field):
+                    setattr(existing, field, str(data[field])[:40])
+            db.session.add(existing)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'subscription_id': existing.id,
+                'reactivated': True,
+            })
+
+        ua = (request.headers.get('User-Agent') or '')[:400] or None
+        sub = PushSubscription(
+            user_id=current_user.id,
+            endpoint=endpoint,
+            p256dh=str(keys['p256dh']),
+            auth=str(keys['auth']),
+            device_type=(str(data.get('device_type'))[:30] if data.get('device_type') else None),
+            browser=(str(data.get('browser'))[:40] if data.get('browser') else None),
+            os=(str(data.get('os'))[:40] if data.get('os') else None),
+            user_agent=ua,
+            is_active=True,
+            fail_count=0,
+        )
+        db.session.add(sub)
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'subscription_id': sub.id,
+            'reactivated': False,
+        })
+    except Exception as e:
+        try:
+            from app import db as _db
+            _db.session.rollback()
+        except Exception:
+            pass
+        current_app.logger.error(f"push subscribe failed: {e}")
+        return jsonify({'success': False, 'message': 'Erè pandan abònman Web Push la.'}), 500
+
+
+@main_bp.route('/api/push/unsubscribe', methods=['POST'])
+@login_required
+def api_push_unsubscribe():
+    """Deactivate a push subscription (called by the service worker on user opt-out)."""
+    try:
+        from app import db
+        from app.models.notification import PushSubscription
+
+        data = request.get_json(silent=True) or {}
+        endpoint = (data.get('endpoint') or '').strip()
+        sub_id = data.get('subscription_id')
+
+        sub = None
+        if sub_id:
+            try:
+                sub = PushSubscription.query.filter_by(
+                    id=int(sub_id), user_id=current_user.id
+                ).first()
+            except (ValueError, TypeError):
+                sub = None
+        if not sub and endpoint:
+            sub = PushSubscription.query.filter_by(
+                endpoint=endpoint, user_id=current_user.id
+            ).first()
+
+        if not sub:
+            return jsonify({'success': True, 'removed': False})
+
+        sub.deactivate('user opt-out')
+        db.session.add(sub)
+        db.session.commit()
+        return jsonify({'success': True, 'removed': True})
+    except Exception as e:
+        try:
+            from app import db as _db
+            _db.session.rollback()
+        except Exception:
+            pass
+        current_app.logger.error(f"push unsubscribe failed: {e}")
+        return jsonify({'success': False, 'message': 'Erè pandan dezabònman Web Push la.'}), 500
+
+
+@main_bp.route('/api/push/devices')
+@login_required
+def api_push_devices():
+    """List the user's active push devices (for the preferences UI)."""
+    try:
+        from app.models.notification import PushSubscription
+        subs = PushSubscription.query.filter_by(
+            user_id=current_user.id
+        ).order_by(PushSubscription.created_at.desc()).all()
+        return jsonify({
+            'success': True,
+            'devices': [s.to_dict() for s in subs],
+        })
+    except Exception as e:
+        current_app.logger.error(f"push devices failed: {e}")
+        return jsonify({'success': False, 'devices': []}), 500

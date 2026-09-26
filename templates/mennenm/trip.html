@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Negosyasyon Vwayaj - Mennen M{% endblock %}
+
+{% block content %}
+<style>
+.mn-wrap { min-height:100vh; padding:22px; background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 40%,#ffedd5 100%); }
+.mn-card { background:#fff; border-radius:26px; padding:26px 30px; box-shadow:0 16px 48px rgba(180,83,9,.12); max-width:860px; margin:0 auto }
+.mn-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; align-items:center; margin-bottom:20px }
+.mn-ttl { margin:0; font-size:23px; font-weight:900; color:#78350f }
+.mn-route { color:#b45309; font-size:13.5px; margin-top:5px; font-weight:700; display:flex; align-items:center; gap:8px }
+.mn-route i { color:#d97706 }
+.mn-btn { padding:12px 18px; border-radius:16px; text-decoration:none; font-weight:800; font-size:14px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .18s ease,box-shadow .18s ease,background .18s; justify-content:center }
+.mn-btn-primary { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; box-shadow:0 10px 26px rgba(217,119,6,.32) }
+.mn-btn-primary:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(217,119,6,.42) }
+.mn-btn-success { background:linear-gradient(135deg,#10b981,#059669); color:#fff; box-shadow:0 10px 26px rgba(16,185,129,.3) }
+.mn-btn-success:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(16,185,129,.4) }
+.mn-btn-danger { background:#fee2e2; color:#b91c1c }
+.mn-btn-danger:hover { background:#fecaca; transform:translateY(-2px) }
+.mn-btn-ghost { background:#fef3c7; color:#92400e }
+.mn-btn-ghost:hover { background:#fde68a; transform:translateY(-2px) }
+.mn-chip { display:inline-flex; align-items:center; gap:7px; font-weight:800; font-size:12.5px; padding:6px 13px; border-radius:999px }
+.mn-chip.negotiating { background:#fef3c7; color:#92400e; border:1.5px solid #fcd34d }
+.mn-chip.accepted { background:#dbeafe; color:#1e40af; border:1.5px solid #93c5fd }
+.mn-chip.paid, .mn-chip.demo { background:#d1fae5; color:#065f46; border:1.5px solid #6ee7b7 }
+.mn-chip.completed { background:#d1fae5; color:#047857; border:1.5px solid #6ee7b7 }
+.mn-chip.cancelled { background:#fee2e2; color:#b91c1c; border:1.5px solid #fca5a5 }
+.mn-row { display:flex; gap:14px; align-items:center; flex-wrap:wrap }
+.mn-avatar { flex-shrink:0; width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#d97706,#f59e0b); border:3px solid #fff; box-shadow:0 8px 20px rgba(217,119,6,.26); display:flex; align-items:center; justify-content:center; font-size:30px; overflow:hidden }
+.mn-avatar-img { width:100%; height:100%; object-fit:cover }
+.mn-info { flex:1 1 260px; min-width:210px }
+.mn-name { margin:0 0 4px; font-size:18px; font-weight:900; color:#78350f }
+.mn-sub { color:#b45309; font-size:12.5px; font-weight:700 }
+.mn-sum { background:linear-gradient(135deg,#fff,#fffbeb); border:1.5px solid #fed7aa; border-radius:20px; padding:18px; margin-bottom:16px }
+.mn-kv { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border-radius:12px; margin-bottom:8px; gap:12px; border:1.5px solid #fef3c7 }
+.mn-kv span { color:#92400e; font-weight:700; font-size:13px }
+.mn-kv b { color:#78350f; font-weight:900; text-align:right }
+.mn-pricebox { background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1.5px solid #93c5fd; border-radius:20px; padding:18px; margin-bottom:16px }
+.mn-price-tag { font-size:34px; font-weight:900; color:#1e40af; font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+.mn-price-tag small { font-size:14px; font-weight:800; opacity:.8 }
+.mn-hist { background:linear-gradient(135deg,#fff,#fffbeb); border:1.5px solid #fed7aa; border-radius:20px; padding:18px; margin-bottom:16px }
+.mn-hist-item { display:flex; gap:12px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:#fffbeb; margin-bottom:10px; border:1.5px solid #fef3c7 }
+.mn-hist-dot { flex-shrink:0; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px }
+.mn-hist-dot.client { background:linear-gradient(135deg,#6366f1,#4338ca); color:#fff }
+.mn-hist-dot.driver { background:linear-gradient(135deg,#10b981,#059669); color:#fff }
+.mn-hist-dot.system { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff }
+.mn-hist-body p { margin:0 0 3px; font-size:13.5px; font-weight:700; color:#78350f }
+.mn-hist-body small { color:#b45309; font-size:11.5px }
+.mn-input { width:100%; padding:13px 15px; border-radius:16px; border:2px solid #fed7aa; background:#fffbeb; color:#78350f; font-size:15px; font-weight:700; box-sizing:border-box }
+.mn-input:focus { outline:none; border-color:#d97706; background:#fff; box-shadow:0 0 0 5px rgba(217,119,6,.14) }
+.mn-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px }
+.mn-note { font-size:12.5px; font-weight:700; color:#92400e; background:#fef3c7; border:1.5px solid #fde68a; border-radius:14px; padding:12px; margin-bottom:14px }
+@media(max-width:640px){
+  .mn-card { padding:20px 16px }
+  .mn-ttl { font-size:20px }
+  .mn-avatar { width:54px; height:54px; font-size:26px }
+}
+</style>
+
+<div class="mn-wrap">
+<div class="mn-card">
+    <div class="mn-head">
+        <div>
+            <h1 class="mn-ttl">🚕 Negosyasyon Vwayaj</h1>
+            <div class="mn-route">
+                <i class="fas fa-route"></i>
+                <span><strong>{{ trip.from_location }}</strong> &nbsp;→&nbsp; <strong>{{ trip.to_location }}</strong></span>
+            </div>
+        </div>
+        <a href="{{ url_for('mennem.my_trips') }}" class="mn-btn mn-btn-ghost">
+            <i class="fas fa-arrow-left"></i> Mes Vwayaj
+        </a>
+    </div>
+
+    <div style="text-align:center; margin-bottom:16px">
+        {% set st = trip.status|lower %}
+        {% if st == 'negotiating' %}<span class="mn-chip negotiating"><i class="fas fa-handshake"></i> Negosyasyon an kou</span>
+        {% elif st == 'accepted' %}<span class="mn-chip accepted"><i class="fas fa-check-double"></i> Pri Aksepte — Atann Peman</span>
+        {% elif st == 'paid' %}<span class="mn-chip paid"><i class="fas fa-check-circle"></i> Peye</span>
+        {% elif st == 'demo' %}<span class="mn-chip demo"><i class="fas fa-flask"></i> Demo — Konfime</span>
+        {% elif st == 'completed' %}<span class="mn-chip completed"><i class="fas fa-flag-checkered"></i> Konplete</span>
+        {% elif st == 'cancelled' %}<span class="mn-chip cancelled"><i class="fas fa-ban"></i> Anile</span>
+        {% endif %}
+    </div>
+
+    {% if demo_mode and st in ('negotiating','accepted') %}
+    <div class="mn-note"><i class="fas fa-flask"></i> MODE DEMO — pa gen Gkach yo debite. Tout vwayaj yo se pou tès.</div>
+    {% endif %}
+
+    <div class="mn-row">
+        <div class="mn-avatar">
+            {% if trip.driver and trip.driver.photo %}
+            <img src="{{ url_for('static', filename='uploads/' + trip.driver.photo) }}" alt="{{ trip.driver_name }}" class="mn-avatar-img">
+            {% else %}
+            <span>🚗</span>
+            {% endif %}
+        </div>
+        <div class="mn-info">
+            <h3 class="mn-name">{{ trip.driver_name }}</h3>
+            <div class="mn-sub">
+                <i class="fab fa-whatsapp"></i> {{ trip.driver_phone }} &nbsp;
+                <i class="fas fa-star" style="color:#f59e0b"></i> {{ '%.1f'|format(trip.driver_rating) }}
+            </div>
+        </div>
+        <div class="mn-info" style="text-align:right">
+            <h3 class="mn-name">👤 {{ trip.passenger.name if trip.passenger else trip.passenger_whatsapp }}</h3>
+            <div class="mn-sub"><i class="fab fa-whatsapp"></i> {{ trip.passenger_whatsapp }}</div>
+        </div>
+    </div>
+
+    <div class="mn-sum">
+        <div class="mn-kv"><span>📏 Pri de baz chofè</span><b>{{ trip.driver.base_fare if trip.driver else '-' }} Gk</b></div>
+        <div class="mn-kv"><span>📊 Pri pwopoze (kliyan)</span><b>{{ trip.proposed_price if trip.proposed_price else '—' }} Gk</b></div>
+        <div class="mn-kv"><span>🔁 Kontre-pwopozisyon (chofè)</span><b>{{ trip.counter_price if trip.counter_price else '—' }} Gk</b></div>
+        {% if suggested %}<div class="mn-kv"><span>&#127991; Pri mache sijere pou wout sa a</span><b>~{{ suggested }} Gk</b></div>{% endif %}
+    </div>
+
+    {% if trip.accepted_price %}
+    <div class="mn-pricebox" style="text-align:center">
+        <span class="mn-price-tag">{{ trip.accepted_price }} <small>Gk</small></span>
+        <div style="font-size:13px; font-weight:800; color:#1e3a8a; margin-top:6px"><i class="fas fa-handshake"></i> Pri final aksepte pa tou de pati</div>
+    </div>
+    {% endif %}
+
+    <div class="mn-actions">
+        {% set st = trip.status|lower %}
+
+        {# --- WhatsApp notification to the other party --- #}
+        {% if notify_link and st not in ('completed', 'cancelled') %}
+        <a href="{{ notify_link }}" target="_blank" rel="noopener" class="mn-btn mn-btn-primary" style="width:100%; margin-bottom:10px">
+            <i class="fab fa-whatsapp"></i> {{ notify_label }}
+        </a>
+        {% endif %}
+
+        {# --- CLIENT actions --- #}
+        {% if is_client and st == 'negotiating' %}
+        <form method="POST" action="{{ url_for('mennem.trip_propose', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="number" name="price" min="10" step="10" class="mn-input" value="{{ trip.counter_price if trip.counter_price else trip.proposed_price or 150 }}" placeholder="Pri ou (Gk)">
+            <button type="submit" class="mn-btn mn-btn-primary" style="width:100%; margin-top:8px"><i class="fas fa-paper-plane"></i> Pwopoze Pri Sa</button>
+        </form>
+        {% if trip.counter_price %}<form method="POST" action="{{ url_for('mennem.trip_accept', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mn-btn mn-btn-success" style="width:100%"><i class="fas fa-check-double"></i> Aksepte {{ trip.counter_price }} Gk (pri chofè)</button>
+        </form>{% endif %}
+        {% endif %}
+
+        {% if is_client and st == 'accepted' %}
+        <form method="POST" action="{{ url_for('mennem.trip_pay', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mn-btn mn-btn-success" style="width:100%"><i class="fas fa-credit-card"></i> Konfime Peman — {{ trip.accepted_price }} Gk</button>
+        </form>
+        {% endif %}
+
+        {% if is_client and st in ('paid','demo') %}
+        <form method="POST" action="{{ url_for('mennem.trip_complete', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mn-btn mn-btn-success" style="width:100%"><i class="fas fa-flag-checkered"></i> Vwayaj Konplete — Mwen Rive</button>
+        </form>
+        {% endif %}
+
+        {# --- DRIVER actions --- #}
+        {% if is_driver and st == 'negotiating' %}
+        <form method="POST" action="{{ url_for('mennem.trip_counter', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="number" name="price" min="10" step="10" class="mn-input" value="{{ trip.proposed_price if trip.proposed_price else trip.counter_price or 150 }}" placeholder="Kontre-pri ou (Gk)">
+            <button type="submit" class="mn-btn mn-btn-primary" style="width:100%; margin-top:8px"><i class="fas fa-handshake"></i> Fè Kontre-Popozisyon</button>
+        </form>
+        {% if trip.proposed_price %}<form method="POST" action="{{ url_for('mennem.trip_accept', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mn-btn mn-btn-success" style="width:100%"><i class="fas fa-check-double"></i> Aksepte {{ trip.proposed_price }} Gk (pri kliyan)</button>
+        </form>{% endif %}
+        {% endif %}
+
+        {% if is_driver and st == 'accepted' %}
+        <div class="mn-note" style="width:100%"><i class="fas fa-hourglass-half"></i> Kliyan an ap konfime peman an pou {{ trip.accepted_price }} Gk. Ret tann.</div>
+        {% endif %}
+
+        {# --- Cancel (both) --- #}
+        {% if (is_client or is_driver) and st in ('negotiating','accepted') %}
+        <form method="POST" action="{{ url_for('mennem.trip_cancel', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mn-btn mn-btn-danger" style="width:100%"><i class="fas fa-ban"></i> Anile Vwayaj</button>
+        </form>
+        {% endif %}
+
+        {# --- WhatsApp contact (after pay/demo/completed) --- #}
+        {% if (is_client or is_driver) and st in ('paid','demo','completed') %}
+        {% set other_wa = trip.driver_phone if is_client else trip.passenger_whatsapp %}
+        <a href="https://wa.me/{{ other_wa|replace('+', '') }}" target="_blank" rel="noopener" class="mn-btn mn-btn-success" style="width:100%">
+            <i class="fab fa-whatsapp"></i> Kontakte sou WhatsApp
+        </a>
+        {% endif %}
+
+        {# --- CLIENT rates the driver after completion --- #}
+        {% if is_client and st == 'completed' %}
+            {% set my_rating = trip.client_rating() %}
+            {% if my_rating %}
+            <div style="flex:1 1 100%; text-align:center; font-weight:800; color:#78350f; padding:10px; background:#fef3c7; border-radius:14px">
+                <i class="fas fa-star" style="color:#f59e0b"></i> Nòt ou: {{ my_rating }}/5 — Mèsi!
+            </div>
+            {% else %}
+            <form method="POST" action="{{ url_for('mennem.trip_rate', trip_id=trip.id) }}" style="flex:1 1 100%; margin-bottom:10px; text-align:center">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label style="font-weight:800; color:#78350f; display:block; margin-bottom:8px"><i class="fas fa-star" style="color:#f59e0b"></i> Nòte chofè a:</label>
+                <select name="rating" class="mn-input" style="max-width:200px; display:inline-block">
+                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                    <option value="4">⭐⭐⭐⭐ (4)</option>
+                    <option value="3">⭐⭐⭐ (3)</option>
+                    <option value="2">⭐⭐ (2)</option>
+                    <option value="1">⭐ (1)</option>
+                </select>
+                <button type="submit" class="mn-btn mn-btn-primary" style="width:100%; margin-top:8px"><i class="fas fa-star"></i> Voye Nòt la</button>
+            </form>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="mn-hist">
+        <h3 style="margin:0 0 14px; font-size:16px; font-weight:900; color:#78350f"><i class="fas fa-comments"></i> Istwa Negosyasyon</h3>
+        {% for ev in trip.history() %}
+        <div class="mn-hist-item">
+            <div class="mn-hist-dot {{ ev.role }}">
+                {% if ev.role == 'client' %}<i class="fas fa-user"></i>
+                {% elif ev.role == 'driver' %}<i class="fas fa-car"></i>
+                {% else %}<i class="fas fa-cog"></i>{% endif %}
+            </div>
+            <div class="mn-hist-body">
+                <p>{{ ev.message }}
+                    {% if ev.price %}<b style="color:#1e40af">({{ ev.price }} Gk)</b>{% endif %}
+                </p>
+                <small>{{ ev.at }}</small>
+            </div>
+        </div>
+        {% else %}
+        <div class="mn-hist-body"><p>Pa gen evènman ankò.</p></div>
+        {% endfor %}
+    </div>
+</div>
+</div>
+{% endblock %}

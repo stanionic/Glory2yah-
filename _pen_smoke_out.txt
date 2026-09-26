@@ -1,0 +1,33 @@
+﻿GET /konferans/room/SMOKRND -> 200
+  [OK]  owner page has id="streamMenuBtn"
+  [OK]  owner page has openStreamSetup('facebook')
+  [OK]  owner page has openStreamSetup('youtube')
+  [OK]  owner page has openStreamSetup('tiktok')
+  [OK]  owner page has openStreamSetup('custom')
+  [OK]  owner page has openStreamSetup('whatsapp')
+  [OK]  owner page has openStreamSetup('titleframe')
+  [OK]  owner page has id="stopStreamItem"
+  [OK]  owner page has id="streamModal"
+  [OK]  owner page has id="streamIngestUrl"
+  [OK]  owner page has id="streamKey"
+  [OK]  owner page has id="streamBurnFrame"
+  [OK]  owner page has function startWhatsAppSave
+  [OK]  owner page has function finishWhatsAppSave
+  [OK]  owner page has function collectRoomAudioStream
+  [OK]  owner page has function buildTitleFrameCanvas
+  [OK]  owner page has function downloadTitleFramePNG
+  [OK]  owner page has function enableTitleFrameOverlay
+  [OK]  owner page has function disableTitleFrameOverlay
+  [OK]  owner page has function goLiveFromModal
+  [OK]  owner page has function stopStreaming
+  [OK]  owner page has socket.on('streaming_started'
+  [OK]  owner page has socket.on('streaming_stopped'
+  [OK]  owner page has function refreshStreamStatus
+  [OK]  owner page has konf-live-banner
+  [OK]  liveStatus banner present
+  [OK]  roomNameJinja injected
+  [OK]  CSS loaded (konferans.css)
+  [OK]  main script JS balanced (tokenizer)
+  [OK]  jinja endif count balanced
+
+RENDER TEST PASSED

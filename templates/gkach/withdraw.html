@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Retire Lajan - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="gkach-wallet-container">
+    <div class="wallet-header">
+        <button class="back-btn" onclick="window.location.href='{{ url_for('gkach.wallet') }}'">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Retounen
+        </button>
+        <h1 class="wallet-title">Retire Lajan (Gkach → Cash)</h1>
+    </div>
+
+    <div class="wallet-content">
+        <div class="gkach-card balance-summary-card">
+            <div class="balance-row">
+                <div>
+                    <div class="mini-label">Balans Disponib</div>
+                    <div class="big-amount">{{ balance }} <span class="gk">Gkach</span></div>
+                    <div class="mini-htg">≈ {{ (balance * rate) | round(2) }} HTG</div>
+                </div>
+                <div class="balance-icon-lg">💸</div>
+            </div>
+            <div class="balance-rules">
+                <span class="rule-badge">⚠️ Minimòm: {{ min_withdraw }} Gkach</span>
+                <span class="rule-badge">⚡ Rate: 1 Gk ≈ {{ rate }} HTG</span>
+            </div>
+            {% if balance < min_withdraw %}
+                <div class="warn-box">
+                    ⚠️ Ou gen <b>{{ balance }} Gkach</b>. Ou bezwen omwen <b>{{ min_withdraw }} Gkach</b> pou retire lajan.
+                    Especes <b>{{ min_withdraw - balance }} Gkach</b> ankò pou ka rive.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="gkach-card">
+            <h3 class="card-title">Fòmilè Retriz</h3>
+            <p class="card-subtitle">Ranpli fòmilè sa a, Admin ap revize ak trete demann ou nan lespas 24h-72h.</p>
+
+            <form method="POST" action="{{ url_for('gkach.withdraw') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label for="amount">Kantite Gkach Pou Retire</label>
+                    <input
+                        type="number"
+                        id="amount"
+                        name="amount"
+                        min="{{ min_withdraw }}"
+                        max="{{ balance if balance > 0 else 0 }}"
+                        step="1"
+                        required
+                        placeholder="Minimòm {{ min_withdraw }} Gkach"
+                        oninput="updateHtgPreview()"
+                        {% if balance < min_withdraw %}disabled{% endif %}
+                    >
+                    <div class="quick-amounts">
+                        <button type="button" class="chip" onclick="setAmount(500)" {% if balance < 500 %}disabled{% endif %}>500</button>
+                        <button type="button" class="chip" onclick="setAmount(1000)" {% if balance < 1000 %}disabled{% endif %}>1000</button>
+                        <button type="button" class="chip" onclick="setAmount(2500)" {% if balance < 2500 %}disabled{% endif %}>2500</button>
+                        <button type="button" class="chip" onclick="setAmount({{ balance if balance >= min_withdraw else 0 }})" {% if balance < min_withdraw %}disabled{% endif %}>TOUT</button>
+                    </div>
+                    <div class="htg-preview" id="htgPreview">
+                        <strong>Ou pral resevwa (≈):</strong> <span id="htgAmount" class="htg-big">0.00 HTG</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_method">Kote ou vle resevwa lajan an?</label>
+                    <select id="payment_method" name="payment_method" required {% if balance < min_withdraw %}disabled{% endif %}>
+                        <option value="moncash">💰 MonCash (Digicel)</option>
+                        <option value="natcash">💵 NatCash (Natcom)</option>
+                        <option value="wap">📱 Wap / Lajan Cash</option>
+                        <option value="transfer">🏦 Transfè Labank / Western Union</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="payout_details">Nimewo / Detay Peman</label>
+                    <input
+                        type="text"
+                        id="payout_details"
+                        name="payout_details"
+                        maxlength="200"
+                        required
+                        placeholder="Nimewo telefòn kont MonCash/Wap ou, oubyen nimewo labank ou"
+                        {% if balance < min_withdraw %}disabled{% endif %}
+                    >
+                    <small class="form-hint">Egzanp: +509 34 56 7890 (MonCash)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="note">Remak Pou Admin (Obligatwa)</label>
+                    <textarea
+                        id="note"
+                        name="note"
+                        rows="3"
+                        maxlength="300"
+                        placeholder="Non konplo, adrès ou, nenpòt enfòmasyon ki ede Admin jwenn ou..."
+                        {% if balance < min_withdraw %}disabled{% endif %}
+                    ></textarea>
+                </div>
+
+                <button
+                    type="submit"
+                    class="gkach-action-btn withdraw-btn"
+                    {% if balance < min_withdraw %}disabled{% endif %}
+                >
+                    🔒 Voye Demann Retriz
+                </button>
+                {% if balance < min_withdraw %}
+                <p class="disabled-hint">Demann ou vle pa aktivé jouk ou gen {{ min_withdraw }} Gkach oubyen plis.</p>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="gkach-card">
+            <h3 class="card-title">Demann Retriz Ou Yo</h3>
+            {% if pending_withdrawals %}
+                {% for w in pending_withdrawals %}
+                    <div class="activity-item">
+                        <div class="activity-icon pending">⏳</div>
+                        <div class="activity-content">
+                            <div class="activity-title">-{{ w.amount }} Gkach (≈ {{ (w.amount * rate) | round(2) }} HTG)</div>
+                            <div class="activity-date">
+                                {{ w.created_at[:10] if w.created_at is string else w.created_at.strftime('%d %b %Y %H:%M') }}
+                                · <span class="status status-pending">{{ w.status | upper }}</span>
+                            </div>
+                            <div class="activity-sub">{{ w.description[:70] }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-state">✅ Ou pa gen okenn demann retriz ki ap tann kounye a.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.gkach-wallet-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 100px 16px;
+}
+
+.wallet-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #1e3a8a;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+.back-btn:hover { background: #eff6ff; }
+
+.wallet-title {
+    font-size: 22px;
+    color: #1e3a8a;
+    margin: 0;
+    font-weight: 700;
+}
+
+.wallet-content { display: grid; gap: 20px; }
+
+.gkach-card {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.07);
+}
+
+.card-title { font-size: 18px; color: #1e3a8a; margin-bottom: 8px; font-weight: 700; }
+.card-subtitle { color: #64748b; margin-bottom: 20px; font-size: 14px; }
+
+.balance-summary-card {
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    color: white;
+}
+.balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+.mini-label { opacity: 0.85; font-size: 13px; margin-bottom: 4px; }
+.big-amount { font-size: 40px; font-weight: 800; line-height: 1; }
+.gk { font-size: 18px; opacity: 0.8; font-weight: 600; }
+.mini-htg { opacity: 0.92; margin-top: 6px; font-weight: 600; }
+.balance-icon-lg {
+    font-size: 52px;
+    background: rgba(255,255,255,0.18);
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+}
+.balance-rules {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.rule-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.warn-box {
+    margin-top: 16px;
+    background: #fff7ed;
+    color: #9a3412;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    border: 1px solid #fed7aa;
+}
+
+.form-group { margin-bottom: 20px; }
+.form-group label {
+    display: block; margin-bottom: 8px;
+    color: #0f172a; font-weight: 600; font-size: 14px;
+}
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    color: #0f172a;
+    background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    box-sizing: border-box;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: #ef4444;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+.form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+.form-hint { display: block; color: #64748b; font-size: 12px; margin-top: 6px; }
+
+.quick-amounts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip {
+    padding: 6px 14px;
+    border: 1.5px solid #cbd5e1;
+    background: white;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.chip:hover:not(:disabled) { border-color: #ef4444; color: #ef4444; background: #fff1f2; }
+.chip:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.htg-preview {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: linear-gradient(90deg, #ecfdf5, #dcfce7);
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    color: #166534;
+    font-size: 14px;
+    font-weight: 500;
+}
+.htg-big { font-size: 20px; font-weight: 800; margin-left: 6px; color: #15803d; }
+
+.gkach-action-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+}
+.withdraw-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    color: white;
+    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+}
+.withdraw-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(239, 68, 68, 0.4);
+}
+.withdraw-btn:disabled {
+    background: #cbd5e1;
+    box-shadow: none;
+    cursor: not-allowed;
+    color: #f8fafc;
+}
+.disabled-hint {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.activity-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+}
+.activity-icon.pending { background: #fef3c7; }
+.activity-content { flex: 1; }
+.activity-title { font-size: 15px; color: #0f172a; font-weight: 700; }
+.activity-date { color: #64748b; font-size: 13px; margin-top: 4px; }
+.activity-sub { color: #475569; font-size: 12px; margin-top: 4px; }
+.status {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+}
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-completed { background: #dcfce7; color: #166534; }
+.status-rejected { background: #fee2e2; color: #991b1b; }
+.empty-state { color: #94a3b8; text-align: center; padding: 24px; }
+
+@media (max-width: 520px) {
+    .wallet-title { font-size: 18px; }
+    .big-amount { font-size: 30px; }
+    .balance-icon-lg { width: 64px; height: 64px; font-size: 40px; border-radius: 16px; }
+    .gkach-card { padding: 18px; border-radius: 16px; }
+}
+</style>
+
+<script>
+const RATE = {{ rate }};
+const MIN = {{ min_withdraw }};
+const MAX = {{ balance }};
+
+function setAmount(n) {
+    const el = document.getElementById('amount');
+    if (!el || el.disabled) return;
+    const v = Math.max(MIN, Math.min(MAX, Math.round(n)));
+    el.value = v;
+    updateHtgPreview();
+}
+
+function updateHtgPreview() {
+    const raw = parseFloat(document.getElementById('amount').value) || 0;
+    const amt = Math.max(0, Math.min(MAX, raw));
+    const htg = (amt * RATE);
+    document.getElementById('htgAmount').textContent = htg.toLocaleString(undefined, {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+    }) + ' HTG';
+}
+</script>
+{% endblock %}

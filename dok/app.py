@@ -17,6 +17,7 @@ dok_bp = Blueprint('dok', __name__, template_folder='templates', static_folder='
 
 # Enstansye modèl IA
 ai_model = DokGlorYahAI()
+MAX_SYMPTOMS_LENGTH = 1000
 
 @dok_bp.route('/')
 def index():
@@ -31,13 +32,31 @@ def analyze():
     Retounen: {"response": "repons IA a"}
     """
     try:
-        data = request.get_json()
-        symptoms = data.get('symptoms', '').strip()
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({
+                'error': True,
+                'message': 'Fòma demann lan pa valid.'
+            }), 400
+
+        raw_symptoms = data.get('symptoms', '')
+        if not isinstance(raw_symptoms, str):
+            return jsonify({
+                'error': True,
+                'message': 'Sentòm yo dwe yon tèks.'
+            }), 400
+        symptoms = raw_symptoms.strip()
         
         if not symptoms:
             return jsonify({
                 'error': True,
                 'message': 'Tanpri ekri sentòm ou yo'
+            }), 400
+
+        if len(symptoms) > MAX_SYMPTOMS_LENGTH:
+            return jsonify({
+                'error': True,
+                'message': f'Tèks la pa ka depase {MAX_SYMPTOMS_LENGTH} karaktè.'
             }), 400
         
         # Analize sentòm yo ak IA

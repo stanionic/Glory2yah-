@@ -199,8 +199,15 @@
 
         // Fonction pour formater le texte (simple markdown)
         function formatResponse(text) {
+            // Escape generated text before applying the small markdown subset.
+            let formatted = String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
             // Remplacer les retours à la ligne par des <br>
-            let formatted = text.replace(/\n/g, '<br>');
+            formatted = formatted.replace(/\n/g, '<br>');
             
             // Remplacer **texte** par <strong>texte</strong>
             formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');

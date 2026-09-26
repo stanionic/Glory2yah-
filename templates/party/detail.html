@@ -82,7 +82,7 @@
                 <p>Èske ou certain ke ou vle efase fè "<span id="deletePartyName"></span>"?</p>
                 <p class="warning">Atansyon: Tout patisipan yo pral efase tou!</p>
                 <form id="deleteForm" method="POST" action="{{ url_for('party.delete_party', party_id=party.party_id) }}">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger">Wi, Efase</button>
                     <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Non, Anile</button>
                 </form>
@@ -101,7 +101,7 @@
             {% endwith %}
             
             <form method="POST" action="{{ url_for('party.register', party_id=party.party_id) }}" autocomplete="off">
-                {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label for="name">Non ou *</label>
                     <input type="text" id="name" name="name" required class="form-control" autocomplete="off">
@@ -145,9 +145,9 @@
         </div>
         
         <div class="party-participants">
-            <h3><i class="fas fa-users"></i> Moun ki Enskri ({{ participants|length }})</h3>
+            <h3><i class="fas fa-users"></i> Moun ki Enskri ({{ participant_count|default(participants|length) }})</h3>
             
-            {% if participants %}
+            {% if is_owner|default(false) and participants %}
                 <ul class="participants-list">
                     {% for participant in participants %}
                     <li>
@@ -158,6 +158,8 @@
                     </li>
                     {% endfor %}
                 </ul>
+            {% elif not is_owner|default(false) %}
+                <p class="no-participants">Lis patisipan yo disponib sèlman pou pwopriyetè fèt la.</p>
             {% else %}
                 <p class="no-participants">Pa gen moun ki enskri ankò.</p>
             {% endif %}

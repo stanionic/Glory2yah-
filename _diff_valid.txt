@@ -1,0 +1,64 @@
+﻿diff --git a/app/utils/validators.py b/app/utils/validators.py
+index 945ce30..717634d 100644
+--- a/app/utils/validators.py
++++ b/app/utils/validators.py
+@@ -125,7 +125,8 @@ def validate_amount(amount, min_amount=1, max_amount=None):
+ 
+ def validate_file_upload(file, allowed_extensions, max_size_mb=50):
+     """
+-    Validate uploaded file
++    Validate uploaded file with MIME type and magic number checks
++    SECURITY: Protects against malicious file uploads
+     Returns: secure filename or raises ValidationError
+     """
+     if not file or not file.filename:
+@@ -152,8 +153,48 @@ def validate_file_upload(file, allowed_extensions, max_size_mb=50):
+     if size == 0:
+         raise ValidationError("Dosye vid")
+     
++    # SECURITY FIX: Validate MIME type from file content (magic numbers)
++    # Read first 512 bytes to detect file type
++    file.seek(0)
++    header = file.read(512)
++    file.seek(0)
++    
++    # Magic number validation based on extension
++    magic_checks = {
++        'jpg': [b'\xff\xd8\xff'],
++        'jpeg': [b'\xff\xd8\xff'],
++        'png': [b'\x89PNG\r\n\x1a\n'],
++        'gif': [b'GIF87a', b'GIF89a'],
++        'webp': [b'RIFF', b'WEBP'],  # RIFF....WEBP
++        'pdf': [b'%PDF'],
++        'mp4': [b'ftyp', b'mdat'],  # MP4 atoms
++        'webm': [b'\x1aE\xdf\xa3'],  # WebM signature
++    }
++    
++    if ext in magic_checks:
++        if not any(header.startswith(magic) for magic in magic_checks[ext]):
++            raise ValidationError(f"Dosye yo pa valide oswa koromp├¼ (magic number mismatch)")
++    
++    # Prevent dangerous file extensions that might be executable
++    dangerous = {'.exe', '.sh', '.bat', '.cmd', '.scr', '.vbs', '.js', '.jar', '.py', '.php', '.asp', '.aspx'}
++    if '.' + ext in dangerous:
++        raise ValidationError("Tip dosye dangere pa aksepte")
++    
++    # Prevent double extensions (e.g., .jpg.php)
++    if len(filename.split('.')) > 2:
++        raise ValidationError("Dosye av├¿k ekstansyon doub pa aksepte")
++    
+     # Generate secure filename
+-    return secure_filename(file.filename)
++    secure_name = secure_filename(file.filename)
++    # Add timestamp to prevent collisions and make filenames unpredictable
++    import time
++    import secrets
++    name_parts = secure_name.rsplit('.', 1)
++    if len(name_parts) == 2:
++        random_suffix = secrets.token_hex(8)
++        secure_name = f"{name_parts[0]}_{random_suffix}.{name_parts[1]}"
++    
++    return secure_name
+ 
+ 
+ def sanitize_text(text, max_length=None):

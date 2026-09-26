@@ -84,9 +84,16 @@
             </span>
         </div>
         <div class="mn-total">
-            <span>💰 Pri Total</span>
-            <b>{{ driver.price_gkach }} Gk</b>
+            <span>💰 Pri de baz Chofè</span>
+            <b>{{ driver.base_fare }} Gk</b>
         </div>
+        {% if suggested %}
+        <div style="margin-top:8px; font-size:12.5px; font-weight:800; color:#1e40af; text-align:center"><i class="fas fa-tags"></i> Pri mache sijere pou wout sa a: ~{{ suggested }} Gk</div>
+        {% endif %}
+        <div style="margin-top:6px; font-size:12px; font-weight:700; color:#92400e; text-align:center"><i class="fas fa-handshake"></i> Ou ka negosye pri a — peman an fèt sèlman apre akò.</div>
+        {% if demo_mode %}
+        <div style="margin-top:8px; font-size:12px; font-weight:800; color:#b45309; text-align:center"><i class="fas fa-flask"></i> Mode Demo — pa gen debi Gkach</div>
+        {% endif %}
     </div>
 
     {% if not current_user.is_authenticated %}
@@ -104,7 +111,7 @@
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="mn-btn mn-btn-primary">
-            <i class="fas fa-credit-card"></i> Peye {{ driver.price_gkach }} Gkach Kounye a
+            <i class="fas fa-paper-plane"></i> Voye Demann &amp; Negosye Pri a
         </button>
     </form>
     {% endif %}

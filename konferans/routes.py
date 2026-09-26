@@ -692,6 +692,46 @@ def register_socketio_handlers(socketio):
             return
         emit('media_annotation_clear', room=room_id)
 
+    @socketio.on('media_annotation_remove')
+    def handle_media_annotation_remove(data):
+        """Owner erased one stroke with the eraser tool — drop it everywhere."""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        sid = data.get('sid')
+        if not room_id or not sid or not _socket_owner(room_id, request.sid):
+            return
+        emit('media_annotation_remove', {
+            'sid': sid,
+            'user_name': data.get('user_name') or room_participants.get(room_id, {}).get(request.sid, 'Unknown'),
+        }, room=room_id)
+
+    @socketio.on('media_view')
+    def handle_media_view(data):
+        """Owner zoomed / scrolled the shared media — relay the viewport (zoom +
+        scroll fraction) so participants follow the live edition."""
+        from flask_socketio import emit
+        room_id = data.get('room_id')
+        if not room_id or not _socket_owner(room_id, request.sid):
+            return
+        try:
+            zoom = int(data.get('zoom') or 0)
+        except (TypeError, ValueError):
+            zoom = 0
+
+        def _frac(key):
+            try:
+                val = float(data.get(key) or 0)
+            except (TypeError, ValueError):
+                val = 0.0
+            return round(min(1.0, max(0.0, val)), 4)
+
+        emit('media_view', {
+            'zoom': max(0, min(400, zoom)),
+            'fx': _frac('fx'),
+            'fy': _frac('fy'),
+            'user_name': data.get('user_name') or room_participants.get(room_id, {}).get(request.sid, 'Unknown'),
+        }, room=room_id, skip_sid=request.sid)
+
     # ===== POLL EVENTS =====
     @socketio.on('poll_create')
     def handle_poll_create(data):

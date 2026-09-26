@@ -1,0 +1,28 @@
+fix(persistence): 4-layer uploads fallback + startup banner (no more 404 images; DB survives commits)
+
+Problem:
+ - Users reported ALL uploaded images returned 404 on Render (mobile:
+   Imaj 1/2/3 previews were grey landscape placeholders).
+ - Root cause: templates reference /static/uploads/<file> which lives on the
+   EPHEMERAL build container (wiped on every git push/deploy). Real files are
+   on the Render persistent disk mountPath /opt/render/project/src/instance/uploads.
+ - Users feared DB/images were erased by commits - they never were (gitignore
+   correctly excludes instance/, *.db, static/uploads/), but the 404s gave
+   that false impression.
+
+Fix (4 layers belt-and-braces, backward compatible - ZERO template changes):
+ 1. [render.yaml buildCommand] SYMLINK static/uploads -> /opt/render/project/src/instance/uploads
+    - Flask built-in static handler serves persistent disk natively.
+ 2. [before_request /static/uploads/<path>] Intercepts legacy template URLs
+    - 4-candidate multi-fallback if the symlink is missing or broken.
+ 3. [GET /uploads/<filename>] Canonical endpoint with the same 4-candidate
+    fallback: UPLOAD_FOLDER -> legacy static -> instance_path -> ../instance/uploads.
+ 4. [STARTUP PERSISTENCE BANNER] ASCII banner on every boot explicitly
+    telling the operator: DB scheme + path, UPLOAD_FOLDER path, Render disk
+    flag, and .gitignore protections list. Clear message that user data
+    (DB + images) will NEVER be erased by a GitHub commit.
+
+Tests:
+ - app/__init__.py syntax OK
+ - test_render_prod_db_guard.py exit=0 (6/6 DB guard tests)
+ - GetDiagnostics = [] (0 lint/type errors)

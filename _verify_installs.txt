@@ -1,0 +1,7 @@
+playwright: OK
+bs4: OK
+segno: OK
+imageio_ffmpeg: OK
+flask: OK
+PIL: OK
+imageio: OK

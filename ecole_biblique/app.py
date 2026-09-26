@@ -1765,7 +1765,7 @@ def serve_course_file(filename):
         1) exact match (OS sensitive)
         2) case-insensitive + accents/whitespace folded match sur COURS/*
         3) par numéro de module: extrait N depuis "Module N(...)" ou "MODULE N(...)"
-           → premier fichier PDF COURS dont nom match "^(MODULE|Module)\s*N"
+           → premier fichier PDF COURS dont nom match "^(MODULE|Module)\\s*N"
     """
     import os
     import re
