@@ -6,15 +6,18 @@
 
 /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â REACT-STYLE DESIGN TOKENS (module-scoped) Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 :root {
-    --konf-accent: #2A3F8F;        /* royal blue   (G-Forms ACCENT)      */
-    --konf-accent-deep: #182A66;   /* deep blue    (G-Forms ACCENT_DEEP) */
-    --konf-accent-light: #5B74C4;  /* focus / icons                       */
-    --konf-gold: #C9A24B;          /* gold         (G-Forms GOLD)        */
-    --konf-gold-light: #E8C874;    /* light gold   (G-Forms GOLD_LIGHT)  */
-    --konf-gradient-accent: linear-gradient(135deg, #2A3F8F 0%, #182A66 100%);
-    --konf-gradient-gold: linear-gradient(135deg, #E8C874 0%, #C9A24B 100%);
-    --konf-radius: 16px;           /* rounded-2xl                         */
-    --konf-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.08);
+    --konf-accent: #3B82F6;
+    --konf-accent-deep: #111827;
+    --konf-accent-light: #93C5FD;
+    --konf-gold: #F4C95D;
+    --konf-gold-light: #FAD96B;
+    --konf-gradient-accent: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 45%, #0F172A 100%);
+    --konf-gradient-gold: linear-gradient(135deg, #FAD96B 0%, #F4C95D 100%);
+    --konf-radius: 18px;
+    --konf-shadow: 0 12px 32px rgba(15, 23, 42, 0.28), 0 2px 8px rgba(15, 23, 42, 0.12);
+    --konf-panel: rgba(15, 23, 42, 0.82);
+    --konf-panel-soft: rgba(30, 41, 59, 0.88);
+    --konf-border: rgba(148, 163, 184, 0.18);
 }
 
 /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â WHITE TEXT OVERRIDE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
@@ -239,9 +242,12 @@
 
 /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â ROOM PAGE (Conference Room) Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 .konf-room-body {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.24), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(244,201,93,0.18), transparent 24%),
+        linear-gradient(135deg, #0b1020 0%, #111827 34%, #0f172a 100%);
     min-height: 100vh;
-    color: white;
+    color: #f8fafc;
     font-family: var(--g2y-font);
 }
 
@@ -249,7 +255,7 @@
 .konf-room-body .konf-room-container *,
 .konf-room-body .konf-media-display *,
 .konf-room-body .konf-chat-messages * {
-    color: white;
+    color: #f8fafc;
 }
 
 /* Preserve accent colors for icons */
@@ -261,10 +267,10 @@
 
 /* Links remain visible */
 .konf-room-body a {
-    color: #60A5FA;
+    color: #7dd3fc;
 }
 .konf-room-body a:hover {
-    color: #93C5FD;
+    color: #bae6fd;
 }
 
 /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â MEDIA DISPLAY (shared images/videos/documents) Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
@@ -482,7 +488,7 @@
 .konf-room-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 16px;
+    padding: 18px;
 }
 
 /* Room Header */
@@ -491,12 +497,13 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 18px 22px;
+    background: linear-gradient(180deg, rgba(15,23,42,0.92), rgba(17,24,39,0.78));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 18px;
+    border: 1px solid var(--konf-border);
+    box-shadow: var(--konf-shadow);
 }
 
 .konf-room-name {
@@ -589,11 +596,12 @@
     flex-wrap: wrap;
     justify-content: center;
     padding: 16px;
-    background: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15,23,42,0.94), rgba(17,24,39,0.8));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    border: 1px solid var(--konf-border);
+    box-shadow: var(--konf-shadow);
     margin-bottom: 20px;
 }
 
@@ -601,11 +609,11 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 18px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(15, 23, 42, 0.72);
+    color: #f8fafc;
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
@@ -694,25 +702,27 @@
 
 /* Chat Panel */
 .konf-chat-panel {
-    background: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(17,24,39,0.8));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    border: 1px solid var(--konf-border);
     overflow: hidden;
     height: 100%;
     display: flex;
     flex-direction: column;
+    box-shadow: var(--konf-shadow);
 }
 
 .konf-chat-header {
     padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(148,163,184,0.18);
     display: flex;
     align-items: center;
     gap: 8px;
     font-weight: 700;
     font-size: 1rem;
+    background: rgba(30,41,59,0.92);
 }
 
 .konf-chat-messages {
@@ -822,22 +832,24 @@
 
 /* Participants List */
 .konf-participants {
-    background: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(17,24,39,0.8));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    border: 1px solid var(--konf-border);
     overflow: hidden;
+    box-shadow: var(--konf-shadow);
 }
 
 .konf-participants-header {
     padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(148,163,184,0.18);
     display: flex;
     align-items: center;
     gap: 8px;
     font-weight: 700;
     font-size: 1rem;
+    background: rgba(30,41,59,0.92);
 }
 
 .konf-participants-list {

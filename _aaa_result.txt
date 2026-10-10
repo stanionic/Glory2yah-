@@ -1,0 +1,93 @@
+==========================================================================
+1) ADMIN NUMBER + PROVIDER CHAIN
+==========================================================================
+PASS - admin number resolved to digits | 50942882076
+PASS - admin number resolved to E.164 | +50942882076
+PASS - DEFAULT_ADMIN_WHATSAPP is +50942882076 | +50942882076
+PASS - provider chain returns the provider name
+PASS - provider receives the admin digits-only number | 50942882076
+PASS - provider receives the message body
+PASS - unconfigured providers are skipped, next one wins
+PASS - all-failing chain returns None
+PASS - raising provider never propagates
+PASS - whatsapp_alert_status exposes the admin number | +50942882076
+PASS - whatsapp_alert_status is enabled by default
+
+==========================================================================
+2) TEST FIXTURES (admin + seller accounts)
+==========================================================================
+PASS - admin + seller created
+
+==========================================================================
+3) NEW AD SUBMITTED  ->  admin approval alert
+==========================================================================
+PASS - create_ad raised a WhatsApp approval alert | 1
+PASS - message tagged [APWOBASYON] + PIBLISITE | [APWOBASYON] ? NOUVO PIBLISITE / ? Test Al?t Admin ? ? publish / Pa: +50955551111 / ID 1017164a-9354-4ba6-89c6
+PASS - message names the submitter
+PASS - message names the ad title
+PASS - message links to the admin ads panel
+PASS - in-app admin notification (admin_new_ad) created | 1
+
+==========================================================================
+4) AD EDITED  ->  re-approval alert
+==========================================================================
+PASS - update_ad raised a re-approval alert | 1
+PASS - message says PIBLISITE MODIFYE | [APWOBASYON] ?? PIBLISITE MODIFYE / ? Test Al?t Admin v2 ? / Pa: +50955551
+PASS - in-app admin notification (admin_ad_edited) created | 1
+
+==========================================================================
+5) WRAPPERS: payment proof / recharge / withdrawal / driver / org / loan
+==========================================================================
+PASS - payment-proof alert | [APWOBASYON] ? PREV PEMAN RESEVWA / ? Test Al?t Admin v2 ? / Pa: +50955551111 / Montan: 1000 GK / ID 1017164a-
+PASS - recharge alert carries amount + method | [APWOBASYON] ? DEMANN RECHAJ GKACH / 1000 GK (HTG ? moncash) / Pa: +50955551111 / Montan: 1000 GK / Demann rec
+PASS - withdrawal alert is marked URGENT | [APWOBASYON] ? DEMANN RETRIZ / Retriz 1200 GK via moncash / Pa: +50955551111 / Montan: 1200 GK / +50912345678 
+PASS - driver registration alert | [APWOBASYON] ? NOUVO CHOFE MENNEN / Jean Test (Delmas) / Pa: +50955552222 / Adr?s: Delmas 33 ? Tarif baz: 150 
+PASS - organization registration alert | [APWOBASYON] ? NOUVO ORGANIZASYON / Eglise Test (eglise) / Pa: +50911111111 / Kontak: +50911111111 ? Vil: Port
+PASS - loan application alert contains the amount | [APWOBASYON] ? DEMANN PRE / Pr? 3000 GK ? Pr? P?son?l / Pa: SellerAlert / Montan: 3000 GK / Total pou peye: 31
+PASS - seller certification alert | [APWOBASYON] ? DEMANN SETIFIKASYON VANDE / Seller Alert / Pa: SellerAlert / WhatsApp: +50955551111 / Aksyon: /
+PASS - unknown kind falls back to the generic alert | [APWOBASYON] ?? APWOBASYON NESESE / Fallback test / Pa: X / Aksyon: /admin / (ouvri panno admin pou apwouve os
+PASS - admin who is the submitter is not self-alerted | 7 -> 7
+
+==========================================================================
+6) LIVE HTTP FLOWS (test_client) — real routes, real wiring
+==========================================================================
+PASS - POST /mennenm/register_driver created the driver | status=302
+PASS - driver registration alerted the admin via WhatsApp | [APWOBASYON] ? NOUVO CHOFE MENNEN / Chofe HTTP Test (Delmas) / Pa: +50955552222 / Adr?s: Delmas 33 ? Tarif baz
+PASS - driver registration created an in-app admin notification | 2
+PASS - seller is logged in (withdraw page reachable) | status=200
+PASS - POST /gkach/withdraw accepted | status=302
+PASS - withdrawal alerted the admin via WhatsApp | [APWOBASYON] ? DEMANN RETRIZ / Retriz 600 GK via moncash / Pa: +50955551111 / Montan: 600 GK / +50912345678 / 
+PASS - withdrawal created an in-app admin notification | 1
+PASS - POST /gkach/request accepted | status=302
+PASS - recharge request alerted the admin via WhatsApp | [APWOBASYON] ? DEMANN RECHAJ GKACH / 1500 GK (HTG ? moncash) / Pa: +50955551111 / Montan: 1500 GK / Demann rec
+PASS - POST /bank/loans/apply accepted | status=302
+PASS - loan application alerted the admin via WhatsApp | [APWOBASYON] ? DEMANN PRE / Pr? 5000 GK ? Pr? P?son?l / Pa: SellerAlert / Montan: 5000 GK / Total pou peye: 50
+PASS - POST /events/sos-alo-legliz (organization) accepted | status=302
+PASS - organization signup alerted the admin via WhatsApp | [APWOBASYON] ? NOUVO ORGANIZASYON / Eglise HTTP Test (eglise) / Pa: Past? Test / Kontak: +50922223333 ? Vil: D
+PASS - POST /auth/ads/<id>/edit accepted | status=302
+PASS - ad edit via HTTP alerted the admin | [APWOBASYON] ?? PIBLISITE MODIFYE / ? Test Al?t Admin v3 ? / Pa: +50955551111 / ID 1017164a-9354-4ba6-89c6-ff6
+PASS - POST /upload_payment/<id> accepted | status=302
+PASS - payment-proof upload alerted the admin via WhatsApp | [APWOBASYON] ? PREV PEMAN RESEVWA / ? Test Al?t Admin v3 ? / Pa: +50955551111 / Montan: 1000 GK / ID 1017164a-
+
+==========================================================================
+7) ADMIN PANEL — /admin/alerts (queues + WhatsApp status + test)
+==========================================================================
+PASS - anonymous GET /admin/alerts is blocked | status=302
+PASS - pending_approvals_summary has all queue keys | ['ads_payment_pending', 'ads_rejected', 'ads_under_review', 'donations_pending', 'drivers_pending', 'loans_pending', 'organizations_pending', 'recharges_pending', 'total', 'withdrawals_pending']
+PASS - summary sees the pending ad + withdrawal + driver + org + loan | {'ads_under_review': 1, 'ads_payment_pending': 1, 'ads_rejected': 0, 'withdrawals_pending': 1, 'recharges_pending': 1, 'drivers_pending': 1, 'organizations_pending': 1, 'loans_pending': 1, 'donations_pending': 0, 'total': 7}
+PASS - GET /admin/alerts ? 200 for admin | status=200
+PASS - page shows the admin WhatsApp number
+PASS - page shows the approval-alert heading
+PASS - page shows the queue cards (piblisite an revizyon)
+PASS - page shows the test-alert button
+PASS - GET /admin/ dashboard ? 200 | status=200
+PASS - dashboard exposes the alerts quick link
+PASS - POST /admin/alerts/test redirects | status=302
+PASS - test alert reached the WhatsApp channel | [APWOBASYON] ?? APWOBASYON NESESE / T?s al?t WhatsApp administrat? / Pa: AdminAlert / Si ou resevwa mesaj sa a
+PASS - test alert also created an in-app admin notification | 1
+PASS - every approval kind maps to an existing i18n template
+PASS - i18n template renders the withdrawal message | Demann retriz
+
+==========================================================================
+RESULT: 62/62 checks passed
+==========================================================================

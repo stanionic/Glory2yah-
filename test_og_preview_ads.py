@@ -20,7 +20,7 @@ os.environ['WTF_CSRF_ENABLED'] = 'False'
 os.environ['SESSION_FILE_DIR'] = tmpdir
 os.environ['UPLOAD_FOLDER'] = tmpdir
 os.environ['LOG_DIR'] = tmpdir
-os.environ['SITE_URL'] = 'https://glory2yah.onrender.com'  # SITE_URL pour URLs absolues sans request context besoin
+os.environ['SITE_URL'] = 'https://glory2yah.net'  # SITE_URL pour URLs absolues sans request context besoin
 
 from app import create_app, db
 app = create_app()
@@ -113,7 +113,7 @@ def test_shortlink_crawler_ua_sell():
 
     assert _meta('og:type') == 'product'
     img = _meta('og:image')
-    assert img and img.startswith('https://glory2yah.onrender.com'), f"shortlink og:image invalide: {img!r}"
+    assert img and img.startswith('https://glory2yah.net'), f"shortlink og:image invalide: {img!r}"
     assert 'photo_villa1.jpg' in img
     assert _meta('product:price:currency') == 'HTG'
     assert float(_meta('product:price:amount')) > 100

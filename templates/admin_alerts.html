@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Alèt Apwobasyon - Admin{% endblock %}
+{% block content %}
+<style>
+  .aa-wrap{max-width:960px;margin:0 auto;padding:22px 14px 60px}
+  .aa-title{font-size:1.5rem;font-weight:800;color:#1e3a8a;margin:0 0 4px}
+  .aa-sub{color:#6b7280;font-size:.9rem;margin:0 0 18px}
+  .aa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px}
+  .aa-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;
+           box-shadow:0 1px 3px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:6px}
+  .aa-card.aa-hot{border-color:#f59e0b;background:linear-gradient(180deg,#fffbeb,#fff)}
+  .aa-card .aa-lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;font-weight:700}
+  .aa-card .aa-num{font-size:1.9rem;font-weight:800;color:#1e3a8a;line-height:1.1}
+  .aa-card .aa-num.zero{color:#9ca3af}
+  .aa-card .aa-link{font-size:.82rem;font-weight:700;color:#f59e0b;text-decoration:none}
+  .aa-card .aa-link:hover{text-decoration:underline}
+  .aa-panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-top:20px}
+  .aa-panel h3{margin:0 0 10px;color:#1e3a8a;font-size:1.05rem}
+  .aa-status{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:.9rem}
+  .aa-pill{display:inline-block;padding:4px 11px;border-radius:999px;font-weight:800;font-size:.78rem}
+  .aa-pill.ok{background:#dcfce7;color:#15803d}
+  .aa-pill.off{background:#fee2e2;color:#b91c1c}
+  .aa-pill.gold{background:#fef3c7;color:#92400e}
+  .aa-mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:#111827}
+  .aa-btn{display:inline-block;background:#1e3a8a;color:#fff;border:0;border-radius:10px;
+          padding:11px 18px;font-weight:800;cursor:pointer;font-size:.92rem}
+  .aa-btn:hover{background:#172554}
+  .aa-table{width:100%;border-collapse:collapse;font-size:.88rem}
+  .aa-table th,.aa-table td{padding:9px 8px;border-bottom:1px solid #f1f5f9;text-align:left}
+  .aa-table th{color:#6b7280;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+  .aa-note{background:#eff6ff;border-left:4px solid #1e3a8a;border-radius:8px;padding:10px 14px;
+           font-size:.85rem;color:#1e3a8a;margin-top:14px}
+</style>
+
+<div class="aa-wrap">
+  <h1 class="aa-title">🛎️ Alèt Apwobasyon Administratè</h1>
+  <p class="aa-sub">
+    Tout trafik ki mande apwobasyon admin lan voye yon alèt sou WhatsApp
+    <span class="aa-mono">{{ whatsapp.phone }}</span> epi anrejistre nan sant
+    notifikasyon admin lan.
+  </p>
+
+  <div class="aa-grid">
+    <div class="aa-card {% if summary.ads_under_review %}aa-hot{% endif %}">
+      <span class="aa-lbl">📢 Piblisite an revizyon</span>
+      <span class="aa-num {% if not summary.ads_under_review %}zero{% endif %}">{{ summary.ads_under_review }}</span>
+      <a class="aa-link" href="{{ url_for('admin.manage_ads') }}">Jere piblisite →</a>
+    </div>
+    <div class="aa-card {% if summary.ads_payment_pending %}aa-hot{% endif %}">
+      <span class="aa-lbl">💰 Prèv peman pou verifye</span>
+      <span class="aa-num {% if not summary.ads_payment_pending %}zero{% endif %}">{{ summary.ads_payment_pending }}</span>
+      <a class="aa-link" href="{{ url_for('admin.manage_ads') }}">Verifye peman →</a>
+    </div>
+    <div class="aa-card {% if summary.recharges_pending %}aa-hot{% endif %}">
+      <span class="aa-lbl">🔋 Demann rechaj GKACH</span>
+      <span class="aa-num {% if not summary.recharges_pending %}zero{% endif %}">{{ summary.recharges_pending }}</span>
+      <a class="aa-link" href="{{ url_for('admin.manage_gkach') }}">Jere GKACH →</a>
+    </div>
+    <div class="aa-card {% if summary.withdrawals_pending %}aa-hot{% endif %}">
+      <span class="aa-lbl">💸 Demann retriz GKACH</span>
+      <span class="aa-num {% if not summary.withdrawals_pending %}zero{% endif %}">{{ summary.withdrawals_pending }}</span>
+      <a class="aa-link" href="{{ url_for('admin.manage_gkach') }}">Trete retriz →</a>
+    </div>
+    <div class="aa-card {% if summary.drivers_pending %}aa-hot{% endif %}">
+      <span class="aa-lbl">🚕 Chofè MENNEN</span>
+      <span class="aa-num {% if not summary.drivers_pending %}zero{% endif %}">{{ summary.drivers_pending }}</span>
+      <a class="aa-link" href="{{ url_for('mennem.admin') }}">Apwouve chofè →</a>
+    </div>
+    <div class="aa-card {% if summary.organizations_pending %}aa-hot{% endif %}">
+      <span class="aa-lbl">⛪ Òganizasyon evènman</span>
+      <span class="aa-num {% if not summary.organizations_pending %}zero{% endif %}">{{ summary.organizations_pending }}</span>
+      <a class="aa-link" href="{{ url_for('admin_events.admin_events') }}">Konfime →</a>
+    </div>
+    <div class="aa-card {% if summary.loans_pending %}aa-hot{% endif %}">
+      <span class="aa-lbl">🏦 Demann prè labank</span>
+      <span class="aa-num {% if not summary.loans_pending %}zero{% endif %}">{{ summary.loans_pending }}</span>
+      <a class="aa-link" href="{{ url_for('bank.admin_bank') }}">Revize prè →</a>
+    </div>
+    <div class="aa-card {% if summary.total %}aa-hot{% endif %}">
+      <span class="aa-lbl">Σ Total an atant</span>
+      <span class="aa-num {% if not summary.total %}zero{% endif %}">{{ summary.total }}</span>
+      <span class="aa-link">Tout kè ap tann ou</span>
+    </div>
+  </div>
+
+  <div class="aa-panel">
+    <h3>📲 Estati alèt WhatsApp</h3>
+    <div class="aa-status">
+      {% if not whatsapp.enabled %}
+        <span class="aa-pill off">DEZAKTIVE</span>
+        <span>ADMIN_WHATSAPP_ALERTS=0 nan .env</span>
+      {% elif whatsapp.provider %}
+        <span class="aa-pill ok">AKTIF</span>
+        <span>Founisè: <b>{{ whatsapp.provider }}</b></span>
+      {% else %}
+        <span class="aa-pill off">PA KONFIGIRE</span>
+        <span>Pa gen okenn founisè WhatsApp ki mete nan <span class="aa-mono">.env</span></span>
+      {% endif %}
+      <span class="aa-pill gold">Nimewo: <span class="aa-mono">{{ whatsapp.phone }}</span></span>
+      {% if whatsapp.last_provider %}
+        <span class="aa-pill ok">Dènye voye: {{ whatsapp.last_provider }}</span>
+      {% endif %}
+    </div>
+
+    {% if not whatsapp.providers %}
+    <div class="aa-note">
+      <b>Pou aktive voye WhatsApp otomatik:</b> mete <span class="aa-mono">CALLMEBOT_APIKEY</span>
+      nan <span class="aa-mono">.env</span> (enskri nimewo a yon fwa sou
+      <span class="aa-mono">callmebot.com</span>), oswa
+      <span class="aa-mono">ULTRAMSG_INSTANCE_ID</span> +
+      <span class="aa-mono">ULTRAMSG_TOKEN</span>, oswa
+      <span class="aa-mono">WHATSAPP_CLOUD_TOKEN</span> +
+      <span class="aa-mono">WHATSAPP_CLOUD_PHONE_ID</span>, oswa
+      <span class="aa-mono">WHATSAPP_ALERT_WEBHOOK_URL</span>.
+      San sa, alèt yo toujou parèt nan sant notifikasyon admin lan.
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('admin.send_test_alert') }}" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="aa-btn">📤 Voye yon alèt tès kounye a</button>
+    </form>
+  </div>
+
+  <div class="aa-panel">
+    <h3>📋 Tip trafik ki deklanche yon alèt</h3>
+    <table class="aa-table">
+      <thead>
+        <tr><th>Tip</th><th>Alèt WhatsApp</th><th>Priyorite</th><th>Kote pou apwouve</th></tr>
+      </thead>
+      <tbody>
+        {% for key, meta in kinds.items() %}
+        <tr>
+          <td><span class="aa-mono">{{ key }}</span></td>
+          <td>{{ meta.icon }} {{ meta.label }}</td>
+          <td><span class="aa-pill {{ 'off' if meta.priority == 'urgent' else 'gold' }}">{{ meta.priority }}</span></td>
+          <td><a class="aa-link" href="{{ meta.url }}">{{ meta.url }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

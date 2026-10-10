@@ -1,0 +1,11 @@
+﻿KONFERANS_MEDIA_PEN_SCROLL.md — validation run
+Date: 2026-09-26 13:37:14
+Interpreter: Python 3.11.0
+
+_smoke_konferans_pen.py              checks=75  failures=0  PASSED
+_smoke_konferans_render.py           checks=30  failures=0  PASSED
+_smoke_konferans_fixes.py            checks=32  failures=0  PASSED
+_smoke_konferans_stream.py           checks=20  failures=0  PASSED
+_smoke_konferans_password_gate.py    checks=15  failures=0  PASSED
+
+Target files (all patched): templates/konferans/room.html, static/css/konferans.css (?v=7), konferans/routes.py

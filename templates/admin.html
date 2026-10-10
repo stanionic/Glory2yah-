@@ -11,6 +11,16 @@
         </div>
 
         <div class="admin-quick-links">
+            <a href="{{ url_for('admin.approval_alerts') }}" class="admin-quick-link"
+               style="border:2px solid #f59e0b">
+                <i class="fas fa-bell"></i> 🔔 Alèt Apwobasyon
+                {% if pending_approvals and pending_approvals.total %}
+                <span style="background:#dc2626;color:#fff;border-radius:999px;
+                             padding:1px 8px;font-size:.75rem;font-weight:800;margin-left:6px">
+                    {{ pending_approvals.total }}
+                </span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('admin.manage_users') }}" class="admin-quick-link">
                 <i class="fas fa-users"></i> Jere Itilizatè yo
             </a>
@@ -392,7 +402,7 @@
                                         {% if req.document %}
                                         <p class="mb-2">
                                             <strong>Dokiman:</strong>
-                                            <a href="{{ url_for('static', filename='uploads/' + req.document) }}" target="_blank" style="color: #b45309; font-weight: 700;">Wè Dokiman</a>
+                                            <a href="{{ url_for('admin.gkach_proof', filename=req.document) }}" target="_blank" rel="noopener" style="color: #b45309; font-weight: 700;">Wè Dokiman</a>
                                         </p>
                                         <div class="d-flex gap-2">
                                             <form method="POST" action="{{ url_for('admin.manage_gkach') }}" class="flex-grow-1">

@@ -43,7 +43,7 @@
                         <p><strong>Dat:</strong> {{ req.requested_at }}</p>
                         {% if req.document %}
                         <p><strong>Dokiman:</strong></p>
-                        {% set document_path = url_for('static', filename='uploads/' + req.document) %}
+                        {% set document_path = url_for('admin.gkach_proof', filename=req.document) %}
                         {% set file_extension = req.document.split('.')[-1] %}
                         {% if file_extension in ['jpg', 'jpeg', 'png', 'gif'] %}
                             <img src="{{ document_path }}" alt="Dokiman Apwobasyon" style="max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px;">

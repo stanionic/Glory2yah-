@@ -14,7 +14,7 @@ from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
 from app.models.admin_settings import AdminSettings # Import AdminSettings
 from app.utils.security import admin_required
-from app.services.notification_service import alert_admin
+from app.services.notification_service import alert_admin, admin_event
 import io as _io
 
 
@@ -31,44 +31,44 @@ admin_bp = Blueprint('admin', __name__)
 _QRA_VALID_SECONDS = 7 * 24 * 3600  # 7 days (re-print each week for PROD)
 
 def _qra_get_creds_from_config():
-    """Return (identifier, password) tuple for admin. Never None (fallbacks)."""
+    """Return the configured admin identifier; QR links never carry passwords."""
     cfg = current_app.config
     _id = (cfg.get('ADMIN_PSEUDO')
            or cfg.get('ADMIN_WHATSAPP')
-           or '+50942882076')
-    _pw = (cfg.get('ADMIN_PASSWORD')
-           or 'StanGlory2YahPub1986')
-    return str(_id), str(_pw)
+        or '')
+    return str(_id), ''
 
 
 def _qra_get_admin_creds_full():
-    """Return dict with all admin credentials for display. Never None (fallbacks)."""
+    """Return non-secret admin identity fields for the QR page."""
     cfg = current_app.config
     _id, _pw = _qra_get_creds_from_config()
     return {
         'name': str(cfg.get('ADMIN_NAME') or 'Glory2YahPub'),
-        'whatsapp': str(cfg.get('ADMIN_WHATSAPP') or '+50942882076'),
+        'whatsapp': str(cfg.get('ADMIN_WHATSAPP') or ''),
         'pseudo': _id,
-        'password': _pw,
     }
 
 
 def _qra_signing_key():
     """Derive a stable signing key from SECRET_KEY (salted)."""
-    sk = current_app.config.get('SECRET_KEY') or 'glory2yah-dev-fallback-secret-key-change-in-prod'
+    sk = current_app.config.get('SECRET_KEY')
+    if not sk:
+        raise RuntimeError('SECRET_KEY is required for admin QR signing')
     salt = 'g2yah-qrauth-v1|'
     return (salt + str(sk)).encode('utf-8')
 
 
 def _qra_make_signed_url(_external=True):
-    """Build `/admin/login?qra=<signed>` URL. HMAC of (id, pw, exp_utc)."""
+    """Build a QR URL that signs only the admin identifier and expiry."""
     import hmac as _hm, hashlib as _hl, base64 as _b64, json as _js, time as _tm
-    admin_id, admin_pw = _qra_get_creds_from_config()
+    admin_id, _ = _qra_get_creds_from_config()
+    if not admin_id:
+        raise RuntimeError('Configure ADMIN_PSEUDO or ADMIN_WHATSAPP before generating an admin QR')
     exp = int(_tm.time()) + _QRA_VALID_SECONDS
     payload = {
-        'v': 1,
+        'v': 2,
         'id': admin_id,
-        'pw': admin_pw,
         'e': exp,
     }
     msg_b = _js.dumps(payload, separators=(',', ':')).encode('utf-8')
@@ -81,7 +81,7 @@ def _qra_make_signed_url(_external=True):
 
 
 def _qra_verify_signed(token):
-    """Verify ?qra= token. Returns dict {id, pw, exp} on success, else None."""
+    """Verify ?qra= token. Returns {id, exp}; passwords are never embedded."""
     import hmac as _hm, hashlib as _hl, base64 as _b64, json as _js, time as _tm
     if not token or '.' not in token:
         return None
@@ -97,20 +97,19 @@ def _qra_verify_signed(token):
         if not _hm.compare_digest(expected, sig):
             return None
         data = _js.loads(msg_b.decode('utf-8'))
-        if int(data.get('v', 0)) != 1:
+        if int(data.get('v', 0)) != 2:
             return None
         if int(data.get('e', 0)) < int(_tm.time()):
             return None
-        if not data.get('id') or not data.get('pw'):
+        if not data.get('id'):
             return None
-        return {'id': str(data['id']), 'pw': str(data['pw']), 'exp': int(data['e'])}
+        return {'id': str(data['id']), 'exp': int(data['e'])}
     except Exception:
         return None
 
 
 def _make_admin_qr_png_bytes(scale=6, dark=(58, 38, 128)):
-    """Return PNG bytes for a QR code linking to the SIGNED /admin/login?qra=
-    URL (credentials embedded + HMAC-signed, 7-day expiry)."""
+    """Return PNG bytes for a QR link that only pre-fills the admin identifier."""
     admin_signed_url = _qra_make_signed_url(_external=True)
     try:
         import segno  # type: ignore
@@ -207,11 +206,14 @@ def admin_login():
             ).first()
 
         if not user:
+            admin_event('LOGIN ECHE', f'idantifyan="{ident}" pa jwenn | IP={request.remote_addr}')
             flash('Pseudo oswa modpas envalid.', 'error')
         elif not getattr(user, 'is_active', True):
             # Mirror /auth/login guard: blocked (is_active=False) users CANNOT login even via admin portal
+            admin_event('LOGIN ECHE', f'kont bloke "{user.pseudo or ident}" te eseye konekte | IP={request.remote_addr}')
             flash('Kont itilizatè sa a dezaktive / bloke. Kontakte admin yo.', 'error')
         elif not user.is_admin:
+            admin_event('LOGIN ECHE', f'kont ki pa admin "{user.pseudo or ident}" te eseye antre | IP={request.remote_addr}')
             flash('Kont sa a pa yon kont administrateur.', 'error')
         elif user.check_password(password):
             login_user(user)
@@ -219,9 +221,10 @@ def admin_login():
             flash('Byenveni Administratè!', 'success')
             return redirect(url_for('admin.dashboard'))
         else:
+            admin_event('LOGIN ECHE', f'modpas envalid pou "{user.pseudo or ident}" | IP={request.remote_addr}')
             flash('Pseudo oswa modpas envalid.', 'error')
 
-    # GET: handle ?qra= signed token → auto-fill (silent on invalid)
+    # GET: handle ?qra= signed identifier token → prefill ID only (silent on invalid)
     auto_id = ''
     auto_pw = ''
     qr_valid = False
@@ -231,7 +234,6 @@ def admin_login():
         v = _qra_verify_signed(qra_token)
         if v:
             auto_id = v['id']
-            auto_pw = v['pw']
             qr_valid = True
             qr_exp = v['exp']
 
@@ -261,6 +263,15 @@ def dashboard():
     
     # Fetch all admin settings
     admin_settings = AdminSettings.get_all_settings()
+
+    # Pending-approval queues (ads, payment proofs, GKACH, drivers, orgs, loans)
+    # shown in the "🔔 Alèt Apwobasyon" quick link badge + banner.
+    try:
+        from app.services.admin_approval_alerts import pending_approvals_summary
+        pending_approvals = pending_approvals_summary()
+    except Exception as _pa_err:
+        current_app.logger.warning(f'pending_approvals_summary failed: {_pa_err}')
+        pending_approvals = {'total': 0}
     
     # Resolve the promotional (demo) video URL.
     # If an admin has uploaded a custom promo video it lives in static/uploads/
@@ -281,6 +292,7 @@ def dashboard():
         admin_settings=admin_settings,
         demo_video_url=demo_video_url,
         demo_video_name=demo_video_name,
+        pending_approvals=pending_approvals,
         current_user=current_user
     )
 
@@ -340,6 +352,7 @@ def update_demo_video():
 
         # Store reference in AdminSettings
         AdminSettings.set_setting('demo_video', filename)
+        admin_event('VIDEO PROMO AJOU', f'nofisyèl: {filename}', actor=current_user.pseudo)
 
         flash(
             '✅ Videyo Pwomosyonèl mete ajou avèk siksè! '
@@ -443,6 +456,7 @@ def admin_edit_user(user_id):
         user.is_admin = request.form.get('is_admin') == 'on'
         
         db.session.commit()
+        admin_event('ITILIZATE MODIFYE', f'kont "{user.pseudo or user.whatsapp}" (ID {user.id})', actor=current_user.pseudo)
         flash('Itilizatè modifye avèk siksè!', 'success')
         return redirect(url_for('admin.admin_view_user', user_id=user.id))
     
@@ -652,6 +666,7 @@ def block_ip():
     if raw_ip not in blocked_ips:
         blocked_ips.append(raw_ip)
         GkachService.set_blocked_ips(blocked_ips)
+        admin_event('BLOKE IP', raw_ip, actor=current_user.pseudo, send_whatsapp=False)
         flash(f'Adrès IP {raw_ip} bloke avèk siksè!', 'success')
     else:
         flash(f'Adrès IP {raw_ip} te deja bloke.', 'info')
@@ -673,6 +688,7 @@ def unblock_ip():
     if raw_ip in blocked_ips:
         blocked_ips = [ip for ip in blocked_ips if ip != raw_ip]
         GkachService.set_blocked_ips(blocked_ips)
+        admin_event('DEBLOKE IP', raw_ip, actor=current_user.pseudo, send_whatsapp=False)
         flash(f'Adrès IP {raw_ip} debloke avèk siksè!', 'success')
     else:
         flash(f'Adrès IP {raw_ip} pa nan lis bloke yo.', 'info')
@@ -762,6 +778,42 @@ def reject_ad(ad_id):
 @login_required
 @admin_required
 def manage_gkach():
+
+
+    @admin_bp.route('/gkach/proof/<filename>')
+    @login_required
+    @admin_required
+    def gkach_proof(filename):
+        """Serve a private GKach proof only to authenticated administrators."""
+        import os
+        from flask import abort, send_from_directory
+        from werkzeug.utils import secure_filename
+
+        safe_name = secure_filename(filename or '')
+        if not safe_name or safe_name != filename:
+            abort(404)
+        allowed = (
+            set(current_app.config.get('ALLOWED_IMAGE_EXTENSIONS', set()))
+            | set(current_app.config.get('ALLOWED_DOCUMENT_EXTENSIONS', set()))
+        )
+        if safe_name.rsplit('.', 1)[-1].lower() not in allowed:
+            abort(404)
+
+        private_dir = os.path.join(current_app.config['INSTANCE_DIR'], 'gkach_proofs')
+        private_path = os.path.join(private_dir, safe_name)
+        if not os.path.isfile(private_path):
+            # Move legacy proof files out of public static storage when first viewed.
+            legacy_path = os.path.join(current_app.config['UPLOAD_FOLDER'], safe_name)
+            if os.path.isfile(legacy_path):
+                os.makedirs(private_dir, exist_ok=True)
+                os.replace(legacy_path, private_path)
+        if not os.path.isfile(private_path):
+            abort(404)
+
+        response = send_from_directory(private_dir, safe_name, conditional=True, max_age=0)
+        response.headers['Cache-Control'] = 'private, no-store'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
     """Manage user Gkach balances and requests"""
     if request.method == 'POST':
         action = request.form.get('action')
@@ -920,6 +972,7 @@ def popup_settings():
         AdminSettings.set_setting('popup_interval_minutes', request.form.get('popup_interval_minutes', type=int))
         AdminSettings.set_setting('gkach_target_date', request.form.get('gkach_target_date'))
         AdminSettings.set_setting('gkach_required_amount', request.form.get('gkach_required_amount', type=int))
+    admin_event('PARAMET POPUP AJOU', '', actor=current_user.pseudo)
     flash('Paramèt popup yo mete ajou avèk siksè!', 'success')
     return redirect(url_for('admin.dashboard'))
 
@@ -1143,6 +1196,7 @@ def add_ad_to_batch(batch_id, ad_id):
     ad.batch_id = batch_id
     db.session.commit()
 
+    admin_event('AD NAN GWOU', f'{ad_id} -> {batch_id}', actor=current_user.pseudo)
     flash('Piblisite ajoute nan gwoup avèk siksè!', 'success')
     return redirect(url_for('admin.edit_batch', batch_id=batch_id))
 
@@ -1169,6 +1223,7 @@ def remove_ad_from_batch(batch_id, ad_id):
         ba.position = i
     db.session.commit()
 
+    admin_event('AD RETIRE GWOU', f'{ad_id} <- {batch_id}', actor=current_user.pseudo)
     flash('Piblisite retire nan gwoup avèk siksè!', 'success')
     return redirect(url_for('admin.edit_batch', batch_id=batch_id))
 
@@ -1223,7 +1278,8 @@ def mobile_config_update():
             AdminSettings.set_setting('pwa_popup_description', request.form.get('pwa_popup_description'))
         if request.form.get('pwa_popup_button_text'):
             AdminSettings.set_setting('pwa_popup_button_text', request.form.get('pwa_popup_button_text'))
-        
+
+
         # Popup delay
         delay = request.form.get('pwa_popup_delay_seconds', type=int)
         if delay and delay > 0:
@@ -1233,6 +1289,7 @@ def mobile_config_update():
         AdminSettings.set_setting('pwa_ios_guide_enabled',
             'True' if request.form.get('pwa_ios_guide_enabled') == 'on' else 'False')
         
+        admin_event('CONFIG APP MOBILE AJOU', '', actor=current_user.pseudo)
         flash('Configuration aplikasyon mobil mete ajou avèk siksè!', 'success')
     except Exception as e:
         current_app.logger.error(f"Admin mobile_config_update failed: {e}")
@@ -1326,6 +1383,7 @@ def add_charity_cause():
         )
         db.session.add(cause)
         db.session.commit()
+        admin_event('KOZ CHARITE KREYE', name, actor=current_user.pseudo)
         flash(f'Kòz "{name}" kreye avèk siksè!', 'success')
     except Exception as e:
         db.session.rollback()
@@ -1351,6 +1409,7 @@ def toggle_charity_cause():
         
         cause.is_active = not cause.is_active
         db.session.commit()
+        admin_event('KOZ CHARITE TOGGLE', f'"{cause.name}" -> {"aktive" if cause.is_active else "deaktive"}', actor=current_user.pseudo)
         flash(f'Kòz "{cause.name}" {"aktive" if cause.is_active else "deaktive"} avèk siksè!', 'success')
     except Exception as e:
         db.session.rollback()
@@ -1376,6 +1435,7 @@ def delete_charity_cause():
         
         db.session.delete(cause)
         db.session.commit()
+        admin_event('KOZ CHARITE EFASE', cause.name, actor=current_user.pseudo)
         flash(f'Kòz "{cause.name}" efase avèk siksè!', 'success')
     except Exception as e:
         db.session.rollback()
@@ -1385,3 +1445,63 @@ def delete_charity_cause():
     return redirect(url_for('admin.charity_donations'))
 
 
+# ============================================================================
+# ADMIN APPROVAL ALERTS (WhatsApp + in-app)
+# ----------------------------------------------------------------------------
+# One page that lists EVERY queue awaiting an admin decision (ads, payment
+# proofs, GKACH recharges/withdrawals, MENNEM drivers, event organizations,
+# bank loans, seller certifications), shows the WhatsApp delivery status of the
+# admin number (+50942882076 by default) and offers a one-click test alert.
+#
+# The alerts themselves are emitted at each submission point by
+# app/services/admin_approval_alerts.py — this page only visualises them.
+# ============================================================================
+
+@admin_bp.route('/alerts')
+@login_required
+@admin_required
+def approval_alerts():
+    """Pending-approval queues + WhatsApp admin-alert delivery status."""
+    from app.services.admin_approval_alerts import (
+        pending_approvals_summary,
+        whatsapp_alert_status,
+        APPROVAL_KINDS,
+    )
+    return render_template(
+        'admin_alerts.html',
+        summary=pending_approvals_summary(),
+        whatsapp=whatsapp_alert_status(),
+        kinds=APPROVAL_KINDS,
+        current_user=current_user,
+    )
+
+
+@admin_bp.route('/alerts/test', methods=['POST'])
+@login_required
+@admin_required
+def send_test_alert():
+    """Fire a REAL test alert through both channels (WhatsApp + in-app)."""
+    from app.services.admin_approval_alerts import send_test_alert as _send
+    try:
+        result = _send(actor=current_user.pseudo or current_user.whatsapp or 'Admin')
+        wa = result.get('whatsapp') or {}
+        admin_event('TES ALET WHATSAPP',
+                    f"provider={wa.get('provider')} dest={wa.get('phone')}",
+                    actor=current_user.pseudo)
+        if result.get('delivered'):
+            flash(
+                f"Alèt tès voye sou WhatsApp {wa.get('phone')} "
+                f"(founisè: {wa.get('provider')}). Verifye telefòn administratè a.",
+                'success',
+            )
+        else:
+            flash(
+                'Alèt tès la anrejistre nan sant notifikasyon admin, MEN pa gen '
+                'okenn founisè WhatsApp ki konfigire. Mete CALLMEBOT_APIKEY (oswa '
+                'ULTRAMSG_*, WHATSAPP_CLOUD_*, WHATSAPP_ALERT_WEBHOOK_URL) nan .env.',
+                'warning',
+            )
+    except Exception as e:
+        current_app.logger.error(f"Admin send_test_alert failed: {e}")
+        flash('Erè pandan voye alèt tès la.', 'error')
+    return redirect(url_for('admin.approval_alerts'))

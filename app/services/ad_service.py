@@ -2,12 +2,16 @@
 Ad Service Layer
 Business logic for classified ads
 """
+import logging
+
 from app import db
 from app.models.ad import Ad
 from app.utils.validators import validate_whatsapp, validate_amount, ValidationError
 from app.services.redis_service import RedisService
 from app import redis_client
 import uuid
+
+logger = logging.getLogger(__name__)
 
 
 class AdService:
@@ -164,7 +168,18 @@ class AdService:
         
         db.session.add(ad)
         db.session.commit()
-        
+
+        # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────────
+        # A brand-new ad lands in the admin approval queue (admin_status=
+        # 'under_review' + payment_status='pending'). Alert the administrator on
+        # WhatsApp (+50942882076) and in the notification centre. Never raise.
+        try:
+            from app.services.admin_approval_alerts import alert_ad_awaiting_review
+            alert_ad_awaiting_review(ad)
+        except Exception as _alert_err:
+            logger.warning('admin approval alert failed for ad %s: %s',
+                           getattr(ad, 'ad_id', '?'), _alert_err)
+
         return ad
     
     @staticmethod
@@ -290,6 +305,16 @@ class AdService:
             ad.video = video
         
         db.session.commit()
+
+        # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────────
+        # An edited ad keeps its previous admin_status, so re-approval is needed
+        # whenever the reviewer hasn't seen the new content yet. Alert the admin.
+        try:
+            from app.services.admin_approval_alerts import alert_ad_edited
+            alert_ad_edited(ad)
+        except Exception as _alert_err:
+            logger.warning('admin approval alert failed for edited ad %s: %s',
+                           getattr(ad, 'ad_id', '?'), _alert_err)
         
         # Invalidate cache
         redis_service = RedisService(redis_client)

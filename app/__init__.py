@@ -4,6 +4,10 @@ Modern Flask application with Redis caching and modular architecture
 """
 import os
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -1978,7 +1982,7 @@ def register_template_filters(app):
         """Inject absolute URL helpers so templates can emit crawler-friendly OG tags.
 
         Exposed names (all templates):
-          * absolute_base_url() -> str "https://glory2yah.onrender.com"
+          * absolute_base_url() -> str "https://glory2yah.net"
           * absolute_upload_url('image.png') -> full URL for /uploads/image.png
           * absolute_ad_url(ad_id)       -> full canonical URL to /ad/<ad_id>
           * absolute_share_url(ad_id)    -> full short share URL /s/<ad_id>

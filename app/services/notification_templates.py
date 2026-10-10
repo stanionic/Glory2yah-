@@ -309,9 +309,42 @@ TEMPLATES = {
         ('Événement bientôt', '{title} commence dans {when}.'),
         ('Event soon', '{title} starts in {when}.')),
 
-
-
-
+    # ──────────────── ADMIN APPROVAL QUEUE (traffic awaiting admin) ────────────────
+    # Every kind below is raised by `app/services/admin_approval_alerts.py` when
+    # a user submits something an administrator must approve before it becomes
+    # visible / effective. Same `admin` category → admin bell + WhatsApp push.
+    'admin_withdrawal_request': _T('💸', 'admin', 'urgent', '/admin/gkach/manage',
+        ('Demann retriz', '{actor} mande retriz {amount} GK ({description}).'),
+        ('Demande de retrait', '{actor} demande un retrait de {amount} GK ({description}).'),
+        ('Withdrawal request', '{actor} requested a {amount} GK withdrawal ({description}).')),
+    'admin_recharge_request': _T('🔋', 'admin', 'high', '/admin/gkach/manage',
+        ('Demann rechaj GKACH', '{actor} mande rechaj {amount} GK ({description}).'),
+        ('Demande de recharge GKACH', '{actor} demande une recharge de {amount} GK ({description}).'),
+        ('GKACH recharge request', '{actor} requested a {amount} GK top-up ({description}).')),
+    'admin_ad_edited': _T('✏️', 'admin', 'high', '/admin/ads',
+        ('Piblisite modifye', '{actor} modifye piblisite « {title} » — re-apwobasyon nesesè.'),
+        ('Publicité modifiée', '{actor} a modifié la publicité « {title} » — ré-approbation requise.'),
+        ('Ad edited', '{actor} edited the ad "{title}" — re-approval required.')),
+    'admin_driver_registration': _T('🚕', 'admin', 'high', '/mennenm/admin',
+        ('Nouvo chofè MENNEN', '{actor} enskri kòm chofè ({description}) — apwobasyon nesesè.'),
+        ('Nouveau chauffeur MENNEN', '{actor} s\'est inscrit comme chauffeur ({description}) — approbation requise.'),
+        ('New MENNEN driver', '{actor} registered as a driver ({description}) — approval required.')),
+    'admin_org_registration': _T('⛪', 'admin', 'normal', '/admin/events',
+        ('Nouvo òganizasyon enskri', '{actor} enskri yon òganizasyon ({description}).'),
+        ('Nouvelle organisation inscrite', '{actor} a inscrit une organisation ({description}).'),
+        ('New organization registration', '{actor} registered an organization ({description}).')),
+    'admin_loan_request': _T('🏦', 'admin', 'high', '/admin/bank',
+        ('Demann prè', '{actor} mande yon prè {amount} GK ({description}).'),
+        ('Demande de prêt', '{actor} demande un prêt de {amount} GK ({description}).'),
+        ('Loan application', '{actor} applied for a {amount} GK loan ({description}).')),
+    'admin_seller_certification': _T('🏪', 'admin', 'normal', '/admin/users',
+        ('Demann sètifikasyon vandè', '{actor} mande sètifikasyon vandè ({description}).'),
+        ('Demande de certification vendeur', '{actor} demande la certification vendeur ({description}).'),
+        ('Seller certification request', '{actor} requested seller certification ({description}).')),
+    'admin_approval_generic': _T('🛎️', 'admin', 'high', '/admin',
+        ('Apwobasyon nesesè', '{actor} : {description}'),
+        ('Approbation requise', '{actor} : {description}'),
+        ('Approval required', '{actor}: {description}')),
 }
 
 

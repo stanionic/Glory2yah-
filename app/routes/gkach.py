@@ -4,6 +4,7 @@ Virtual currency management and requests
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
+from app import limiter
 from app.services.gkach_service import GkachService, UserGkach
 from app.utils.validators import ValidationError
 
@@ -100,6 +101,7 @@ def rewards_dashboard():
 
 @gkach_bp.route('/request', methods=['GET', 'POST'])
 @login_required
+@limiter.limit('5 per hour', methods=['POST'])
 def request_gkach():
     """Request Gkach (recharge)"""    
     from app.utils.validators import validate_amount, ValidationError
@@ -121,9 +123,8 @@ def request_gkach():
                 file = request.files['document']
                 if file and file.filename:
                     # Save file
-                    ext = file.filename.rsplit('.', 1)[1].lower()
-                    document_filename = f"gkach_req_{uuid.uuid4().hex}.{ext}"
-                    file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], document_filename))
+                    from app.services.gkach_proof_service import save_gkach_proof
+                    document_filename = save_gkach_proof(file, max_size_mb=10)
             
             # Save request
             if not account.gkach_requests or account.gkach_requests == '[]':
@@ -146,7 +147,19 @@ def request_gkach():
             import json
             account.gkach_requests = json.dumps(requests_list)
             db.session.commit()
-            
+
+            # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────
+            # Recharge requests stay 'pending' until an admin credits the wallet.
+            try:
+                from app.services.admin_approval_alerts import alert_recharge_request
+                alert_recharge_request(
+                    current_user.whatsapp, amount,
+                    request_id=new_request.get('request_id'),
+                    currency=currency, payment_method=payment_method,
+                )
+            except Exception as _alert_err:
+                current_app.logger.warning('recharge approval alert failed: %s', _alert_err)
+
             flash('Demann ou an voye bay administratè a!', 'success')
             return redirect(url_for('gkach.wallet'))
         except ValidationError as e:
@@ -214,12 +227,22 @@ def withdraw():
             payout_details = sanitize_text(request.form.get('payout_details', ''))
             note = sanitize_text(request.form.get('note', ''))
 
-            GkachService.request_withdrawal(
+            tx_id = GkachService.request_withdrawal(
                 whatsapp, amount,
                 payment_method=payment_method,
                 payout_details=payout_details,
                 note=note,
             )
+            # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────
+            # The balance is only debited when an admin approves the request.
+            try:
+                from app.services.admin_approval_alerts import alert_withdrawal_request
+                alert_withdrawal_request(
+                    whatsapp, amount, transaction_id=tx_id,
+                    payment_method=payment_method, payout_details=payout_details,
+                )
+            except Exception as _alert_err:
+                current_app.logger.warning('withdrawal approval alert failed: %s', _alert_err)
             flash(
                 f'Demann retriz {amount} Gkach voye! Admin ap revize l byento.'
                 f' (≈ {round(amount * rate, 2):.2f} HTG)',

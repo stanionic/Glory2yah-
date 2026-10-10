@@ -354,6 +354,15 @@ def register_driver():
             f'MENNEM: new driver registered id={driver.id} whatsapp={whatsapp_clean}'
         )
 
+        # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────────
+        # A driver starts is_verified=False / is_active=False → the admin must
+        # approve the file before the driver becomes visible in searches.
+        try:
+            from app.services.admin_approval_alerts import alert_driver_registration
+            alert_driver_registration(driver)
+        except Exception as _alert_err:
+            current_app.logger.warning('driver approval alert failed: %s', _alert_err)
+
         flash(
             '✅ Enskripsyon resevwa! Administratè a ap revize dosye w—'
             'lè li apwouve, w ap parèt nan rechèch la.',

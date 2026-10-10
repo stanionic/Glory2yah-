@@ -1,0 +1,21 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+__________ test_admin_credentials_are_not_hardcoded_public_defaults ___________
+tests\test_admin_security.py:14: in test_admin_credentials_are_not_hardcoded_public_defaults
+    assert cfg.ADMIN_PASSWORD in (None, '') is False
+E   AssertionError: assert 'StanGlory2YahPub1986' in (None, '')
+E    +  where 'StanGlory2YahPub1986' = <app.config.Config object at 0x00000119D1CD9710>.ADMIN_PASSWORD
+============================== warnings summary ===============================
+.venv\Lib\site-packages\flask_wtf\recaptcha\widgets.py:2
+.venv\Lib\site-packages\flask_wtf\recaptcha\widgets.py:2
+  C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_wtf\recaptcha\widgets.py:2: DeprecationWarning: 'flask.Markup' is deprecated and will be removed in Flask 2.4. Import 'markupsafe.Markup' instead.
+    from flask import Markup
+
+.venv\Lib\site-packages\flask_caching\__init__.py:153
+  C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_caching\__init__.py:153: DeprecationWarning: Using the initialization functions in flask_caching.backend is deprecated.  Use the a full path to backend classes directly.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_admin_security.py::test_admin_credentials_are_not_hardcoded_public_defaults
+1 failed, 3 warnings in 6.18s

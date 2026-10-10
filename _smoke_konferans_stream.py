@@ -76,7 +76,7 @@ j = r.get_json()
 check('status shows streaming', j.get('streaming') is True and j.get('session', {}).get('platform') == 'youtube')
 
 # 4. Duplicate start rejected
-r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'facebook', 'ingest_url': 'rtmps://live-api-s.facebook.com:443/rtmp/', 'stream_key': 'wxyz-9999'})
+r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'youtube', 'ingest_url': 'rtmp://a.rtmp.youtube.com/live2', 'stream_key': 'wxyz-9999'})
 check('duplicate start -> 409', r.status_code == 409)
 
 # 5. Validation: bad platform / bad ingest / short key
@@ -88,6 +88,10 @@ r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'you
 check('non-rtmp ingest -> 400', r.status_code == 400)
 r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'youtube', 'ingest_url': 'rtmp://a.rtmp.youtube.com/live2', 'stream_key': 'abc'})
 check('short stream key -> 400', r.status_code == 400)
+r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'facebook', 'ingest_url': 'rtmps://live-api-s.facebook.com:443/rtmp/', 'stream_key': 'fb-private-test-key'})
+check('facebook direct stream rejected -> 501', r.status_code == 501 and r.get_json().get('code') == 'external_encoder_required')
+with app.app_context():
+    check('facebook rejection does not persist a session', KonferansStreamSession.query.filter_by(room_id=ROOM_ID, platform='facebook').count() == 0)
 
 # 6. WhatsApp platform requires no ingest/key
 r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'whatsapp', 'title': 'Odio Save'})

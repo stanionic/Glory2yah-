@@ -177,7 +177,7 @@
 
         {% if qr_valid %}
         <div class="al-badge-qr">
-            🛡️ QR Credentials chargés avec succès
+            🛡️ Identifiant chargé — saisissez votre mot de passe
             {% if qr_exp %}
             <span class="al-badge-qr-exp">· valide jusqu'au {{ qr_exp|string if qr_exp is string else (qr_exp | int) }}</span>
             {% endif %}
@@ -198,7 +198,6 @@
 
         <form class="al-form" action="" method="POST" autocomplete="on">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            {% if qra_token %}<input type="hidden" name="qra" value="{{ qra_token }}">{% endif %}
 
             <div class="al-field">
                 <label class="al-label" for="pseudo">👤 Pseudo ou WhatsApp (identifiant)</label>

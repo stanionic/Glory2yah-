@@ -7,6 +7,7 @@ import os
 import tempfile
 import unittest
 import uuid
+from unittest.mock import patch
 from urllib.parse import quote
 
 os.environ['FLASK_ENV'] = 'testing'
@@ -101,6 +102,17 @@ class RewardE2ETest(unittest.TestCase):
         self.assertEqual(b.share_count, 100)
 
     # ---------------- ROUTE LEVEL (device cookie) ----------------
+    def test_route_ignores_client_supplied_referrer(self):
+        c = app.test_client()
+        with c:
+            c.post('/auth/login', data={'identifier': 'U0', 'password': 'p'})
+            malicious_url = '/s/b/B1?r=' + quote(REFERRER, safe='')
+            r = c.get(malicious_url, headers={'X-Forwarded-For': '9.9.9.9'})
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(BatchClick.query.filter_by(referrer_whatsapp=REFERRER).count(), 0)
+            self.assertEqual(BatchClick.query.filter_by(referrer_whatsapp='+50950000000').count(), 1)
+            self.assertEqual(UserGkach.query.filter_by(user_whatsapp='+50950000000').first().gkach_balance, 0)
+
     def test_route_device_cookie_and_limit(self):
         c = app.test_client()
         with c:
@@ -125,7 +137,9 @@ class RewardE2ETest(unittest.TestCase):
             ca.post('/auth/login', data={'identifier': 'Admin509',
                                          'password': 'ap'})
             self.assertEqual(ca.get('/admin/rewards').status_code, 200)
-            ca.post('/admin/rewards/block-ip', data={'ip': '5.5.5.5'})
+            with patch('app.services.notification_service.alert_admin') as mock_alert:
+                ca.post('/admin/rewards/block-ip', data={'ip': '5.5.5.5'})
+                mock_alert.assert_not_called()
             self.assertIn('5.5.5.5', GkachService.get_blocked_ips())
 
             # cliqueur depuis cette IP (device neuf) = ignoré
@@ -136,7 +150,9 @@ class RewardE2ETest(unittest.TestCase):
             self.assertEqual(BatchClick.query.count(), 0)
 
             # unblock
-            ca.post('/admin/rewards/unblock-ip', data={'ip': '5.5.5.5'})
+            with patch('app.services.notification_service.alert_admin') as mock_alert:
+                ca.post('/admin/rewards/unblock-ip', data={'ip': '5.5.5.5'})
+                mock_alert.assert_not_called()
             self.assertNotIn('5.5.5.5', GkachService.get_blocked_ips())
 
     def test_admin_rewards_page_renders(self):

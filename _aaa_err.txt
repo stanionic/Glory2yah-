@@ -1,0 +1,157 @@
+[2026-10-02 17:10:35,149] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-02 17:10:35,287] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-02 17:10:35,922] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-02 17:10:35,937] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-02 17:10:36,017] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-02 17:10:36,037] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-02 17:10:36,077] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-02 17:10:36,117] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-02 17:10:36,131] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-02 17:10:36,137] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-02 17:10:36,178] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-02 17:10:36,193] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-10-02 17:10:36,696] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-02 17:10:36,717] INFO in __init__: SOFT DELETE MIGRATION: checked 37 tables, altered 0
+[2026-10-02 17:10:36,748] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-10-02 17:10:36,748] INFO in __init__: 
+[2026-10-02 17:10:36,748] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+[2026-10-02 17:10:36,748] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+[2026-10-02 17:10:36,748] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+[2026-10-02 17:10:36,748] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+[2026-10-02 17:10:36,748] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+[2026-10-02 17:10:36,748] INFO in __init__: ║  Chemin UPLOAD   : static\uploads                                                ║
+[2026-10-02 17:10:36,748] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║                                                                              ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║                                                                              ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+[2026-10-02 17:10:36,757] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+[2026-10-02 17:10:36,763] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+[2026-10-02 17:10:36,765] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+[2026-10-02 17:10:36,765] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+[2026-10-02 17:10:36,765] INFO in __init__: 
+[2026-10-02 17:10:36,787] WARNING in __init__: Development mode: using default admin password. Set ADMIN_PASSWORD environment variable to override.
+[2026-10-02 17:10:37,442] INFO in __init__: Admin user CREATED: pseudo='Admin509' whatsapp='+50942882076' (password set from development default)
+[2026-10-02 17:10:38,198] INFO in __init__: Created demo login account pseudo=StanD (password="pass123") to match UI hint.
+[2026-10-02 17:10:38,202] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-10-02 17:10:38,207] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-10-02 17:10:38,217] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-02 17:10:38,217] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+[2026-10-02 17:10:38,217] INFO in __init__: Glory2YahPub started in testing mode
+[2026-10-02 17:10:38,237] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-02 17:10:38,252] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-02 17:10:38,337] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-02 17:10:38,337] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-02 17:10:38,367] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-02 17:10:38,387] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-02 17:10:38,399] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-02 17:10:38,412] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-02 17:10:38,417] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-02 17:10:38,417] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-02 17:10:38,417] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-02 17:10:38,429] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-10-02 17:10:38,977] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-02 17:10:39,024] INFO in __init__: SOFT DELETE MIGRATION: checked 40 tables, altered 0
+[2026-10-02 17:10:39,054] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-10-02 17:10:39,056] INFO in __init__: 
+[2026-10-02 17:10:39,057] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+[2026-10-02 17:10:39,057] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+[2026-10-02 17:10:39,057] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+[2026-10-02 17:10:39,057] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Chemin UPLOAD   : static\uploads                                                ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║                                                                              ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+[2026-10-02 17:10:39,057] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+[2026-10-02 17:10:39,062] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+[2026-10-02 17:10:39,065] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+[2026-10-02 17:10:39,065] INFO in __init__: ║                                                                              ║
+[2026-10-02 17:10:39,065] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+[2026-10-02 17:10:39,067] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+[2026-10-02 17:10:39,067] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+[2026-10-02 17:10:39,067] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+[2026-10-02 17:10:39,067] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+[2026-10-02 17:10:39,067] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+[2026-10-02 17:10:39,067] INFO in __init__: 
+[2026-10-02 17:10:39,087] WARNING in __init__: Development mode: using default admin password. Set ADMIN_PASSWORD environment variable to override.
+[2026-10-02 17:10:39,717] INFO in __init__: Admin user CREATED: pseudo='Admin509' whatsapp='+50942882076' (password set from development default)
+[2026-10-02 17:10:40,524] INFO in __init__: Created demo login account pseudo=StanD (password="pass123") to match UI hint.
+[2026-10-02 17:10:40,533] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-10-02 17:10:40,538] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-10-02 17:10:40,538] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-02 17:10:40,538] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+[2026-10-02 17:10:40,538] INFO in __init__: Glory2YahPub started in testing mode
+[2026-10-02 17:10:40,538] INFO in notification_service: WhatsApp admin alert sent via rec to +50942882076
+[2026-10-02 17:10:40,548] WARNING in notification_service: WhatsApp alert via down rejected (HTTP 500)
+[2026-10-02 17:10:40,548] INFO in notification_service: WhatsApp admin alert sent via up to +50942882076
+[2026-10-02 17:10:40,548] WARNING in notification_service: WhatsApp alert via down rejected (HTTP 500)
+[2026-10-02 17:10:40,548] WARNING in notification_service: WhatsApp admin alert NOT delivered to +50942882076 — no provider configured or all failed. Set CALLMEBOT_APIKEY (or ULTRAMSG_*, WHATSAPP_CLOUD_*, WHATSAPP_ALERT_WEBHOOK_URL) in .env. The alert is still stored in the admin notification centre.
+[2026-10-02 17:10:40,548] WARNING in notification_service: WhatsApp alert via boom raised: x
+[2026-10-02 17:10:40,548] WARNING in notification_service: WhatsApp admin alert NOT delivered to +50942882076 — no provider configured or all failed. Set CALLMEBOT_APIKEY (or ULTRAMSG_*, WHATSAPP_CLOUD_*, WHATSAPP_ALERT_WEBHOOK_URL) in .env. The alert is still stored in the admin notification centre.
+[2026-10-02 17:10:41,717] INFO in notification_hub: Notification created id=1 type=admin_new_ad user=1
+[2026-10-02 17:10:41,731] INFO in notification_hub: Notification created id=2 type=admin_new_ad user=3
+[2026-10-02 17:10:41,737] INFO in admin_approval_alerts: Approval alert kind=ad_new → 2 admin notification(s).
+[2026-10-02 17:10:41,747] INFO in notification_hub: Notification created id=3 type=admin_ad_edited user=1
+[2026-10-02 17:10:41,747] INFO in notification_hub: Notification created id=4 type=admin_ad_edited user=3
+[2026-10-02 17:10:41,757] INFO in admin_approval_alerts: Approval alert kind=ad_edited → 2 admin notification(s).
+[2026-10-02 17:10:41,767] INFO in notification_hub: Notification created id=5 type=admin_payment user=1
+[2026-10-02 17:10:41,767] INFO in notification_hub: Notification created id=6 type=admin_payment user=3
+[2026-10-02 17:10:41,767] INFO in admin_approval_alerts: Approval alert kind=ad_payment → 2 admin notification(s).
+[2026-10-02 17:10:41,767] INFO in admin_approval_alerts: No admin user row found — approval alert sent via WhatsApp only (kind=gkach_recharge).
+[2026-10-02 17:10:41,777] INFO in admin_approval_alerts: No admin user row found — approval alert sent via WhatsApp only (kind=gkach_withdrawal).
+[2026-10-02 17:10:41,781] INFO in notification_hub: Notification created id=7 type=admin_driver_registration user=1
+[2026-10-02 17:10:41,787] INFO in notification_hub: Notification created id=8 type=admin_driver_registration user=3
+[2026-10-02 17:10:41,787] INFO in admin_approval_alerts: Approval alert kind=driver_registration → 2 admin notification(s).
+[2026-10-02 17:10:41,797] INFO in notification_hub: Notification created id=9 type=admin_org_registration user=1
+[2026-10-02 17:10:41,797] INFO in notification_hub: Notification created id=10 type=admin_org_registration user=3
+[2026-10-02 17:10:41,797] INFO in admin_approval_alerts: Approval alert kind=org_registration → 2 admin notification(s).
+[2026-10-02 17:10:41,807] INFO in notification_hub: Notification created id=11 type=admin_loan_request user=1
+[2026-10-02 17:10:41,817] INFO in notification_hub: Notification created id=12 type=admin_loan_request user=3
+[2026-10-02 17:10:41,817] INFO in admin_approval_alerts: Approval alert kind=loan_application → 2 admin notification(s).
+[2026-10-02 17:10:41,817] INFO in notification_hub: Notification created id=13 type=admin_seller_certification user=1
+[2026-10-02 17:10:41,831] INFO in notification_hub: Notification created id=14 type=admin_seller_certification user=3
+[2026-10-02 17:10:41,831] INFO in admin_approval_alerts: Approval alert kind=seller_certification → 2 admin notification(s).
+[2026-10-02 17:10:41,837] INFO in admin_approval_alerts: No admin user row found — approval alert sent via WhatsApp only (kind=does-not-exist).
+[2026-10-02 17:10:41,837] INFO in admin_approval_alerts: No admin user row found — approval alert sent via WhatsApp only (kind=ad_new).
+[2026-10-02 17:10:41,857] INFO in app: MENNEM: new driver registered id=1 whatsapp=+50955552222
+[2026-10-02 17:10:41,857] INFO in notification_hub: Notification created id=15 type=admin_driver_registration user=1
+[2026-10-02 17:10:41,867] INFO in notification_hub: Notification created id=16 type=admin_driver_registration user=3
+[2026-10-02 17:10:41,867] INFO in admin_approval_alerts: Approval alert kind=driver_registration → 2 admin notification(s).
+[2026-10-02 17:10:45,847] INFO in notification_hub: Notification created id=17 type=admin_withdrawal_request user=1
+[2026-10-02 17:10:45,857] INFO in notification_hub: Notification created id=18 type=admin_withdrawal_request user=3
+[2026-10-02 17:10:45,857] INFO in admin_approval_alerts: Approval alert kind=gkach_withdrawal → 2 admin notification(s).
+[2026-10-02 17:10:45,867] INFO in notification_hub: Notification created id=19 type=admin_recharge_request user=1
+[2026-10-02 17:10:45,881] INFO in notification_hub: Notification created id=20 type=admin_recharge_request user=3
+[2026-10-02 17:10:45,887] INFO in admin_approval_alerts: Approval alert kind=gkach_recharge → 2 admin notification(s).
+[2026-10-02 17:10:45,902] INFO in notification_hub: Notification created id=21 type=admin_loan_request user=1
+[2026-10-02 17:10:45,907] INFO in notification_hub: Notification created id=22 type=admin_loan_request user=3
+[2026-10-02 17:10:45,913] INFO in admin_approval_alerts: Approval alert kind=loan_application → 2 admin notification(s).
+[2026-10-02 17:10:45,930] INFO in notification_hub: Notification created id=23 type=admin_org_registration user=1
+[2026-10-02 17:10:45,937] INFO in notification_hub: Notification created id=24 type=admin_org_registration user=3
+[2026-10-02 17:10:45,937] INFO in admin_approval_alerts: Approval alert kind=org_registration → 2 admin notification(s).
+[2026-10-02 17:10:45,949] INFO in notification_hub: Notification created id=25 type=admin_ad_edited user=1
+[2026-10-02 17:10:45,949] INFO in notification_hub: Notification created id=26 type=admin_ad_edited user=3
+[2026-10-02 17:10:45,957] INFO in admin_approval_alerts: Approval alert kind=ad_edited → 2 admin notification(s).
+[2026-10-02 17:10:46,052] INFO in notification_hub: Notification created id=27 type=admin_payment user=1
+[2026-10-02 17:10:46,064] INFO in notification_hub: Notification created id=28 type=admin_payment user=3
+[2026-10-02 17:10:46,067] INFO in admin_approval_alerts: Approval alert kind=ad_payment → 2 admin notification(s).
+[2026-10-02 17:10:47,249] WARNING in notification_service: WhatsApp admin alert NOT delivered to +50942882076 — no provider configured or all failed. Set CALLMEBOT_APIKEY (or ULTRAMSG_*, WHATSAPP_CLOUD_*, WHATSAPP_ALERT_WEBHOOK_URL) in .env. The alert is still stored in the admin notification centre.
+[2026-10-02 17:10:47,557] INFO in notification_hub: Notification created id=29 type=admin_approval_generic user=1
+[2026-10-02 17:10:47,572] INFO in notification_hub: Notification created id=30 type=admin_approval_generic user=3
+[2026-10-02 17:10:47,572] INFO in admin_approval_alerts: Approval alert kind=generic → 2 admin notification(s).
+[2026-10-02 17:10:47,584] WARNING in notification_service: WhatsApp admin alert NOT delivered to +50942882076 — no provider configured or all failed. Set CALLMEBOT_APIKEY (or ULTRAMSG_*, WHATSAPP_CLOUD_*, WHATSAPP_ALERT_WEBHOOK_URL) in .env. The alert is still stored in the admin notification centre.

@@ -11,7 +11,9 @@ def test_admin_credentials_are_not_hardcoded_public_defaults(monkeypatch):
 
     cfg = Config()
 
-    assert cfg.ADMIN_PASSWORD in (None, '') is False
+    assert cfg.ADMIN_PASSWORD in (None, '')
     assert cfg.ADMIN_PASSWORD != 'StanGlory2YahPub1986'
     assert cfg.ADMIN_PASSWORD != 'Admin509'
-    assert cfg.ADMIN_WHATSAPP not in (None, '', '+50942882076')
+    assert cfg.ADMIN_WHATSAPP in (None, '')
+    assert cfg.ADMIN_PSEUDO in (None, '')
+    assert cfg.ADMIN_NAME in (None, '')

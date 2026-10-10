@@ -228,7 +228,7 @@ def _register_organization(event):
         approx = int(approx) if approx else None
     except (TypeError, ValueError):
         approx = None
-    db.session.add(EventOrganization(
+    organization = EventOrganization(
         event_id=event.id,
         region_id=region.id if region else None,
         org_name=_clean(body.get('org_name'), 255),
@@ -243,8 +243,21 @@ def _register_organization(event):
         message=_clean(body.get('message'), 2000),
         consent_public_stats=bool(body.get('consent_public_stats')),
         ip_hash=_hash_ip(request.remote_addr),
-    ))
+    )
+    db.session.add(organization)
     db.session.commit()
+
+    # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────────────
+    # The organization is stored with status='pending' until an admin confirms
+    # (or rejects) it → WhatsApp + in-app alert to the administrator.
+    try:
+        from app.services.admin_approval_alerts import (
+            alert_organization_registration,
+        )
+        alert_organization_registration(organization, event)
+    except Exception as _alert_err:
+        from flask import current_app
+        current_app.logger.warning('org approval alert failed: %s', _alert_err)
 
 
 @events_bp.route('/events/<slug>/nearby-locations')

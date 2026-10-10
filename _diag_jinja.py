@@ -8,7 +8,7 @@ os.environ.setdefault('UPLOAD_FOLDER',tmpdir)
 os.environ.setdefault('LOG_DIR',tmpdir)
 os.environ.setdefault('SECRET_KEY','diag')
 os.environ.setdefault('FLASK_ENV','testing')
-os.environ.setdefault('SITE_URL','https://glory2yah.onrender.com')
+os.environ.setdefault('SITE_URL','https://glory2yah.net')
 
 from app import create_app
 app = create_app()

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/konferans.css?v=7">
+<link rel="stylesheet" href="/static/css/konferans.css?v=8">
 <style>
     main {
         padding: 0 !important;
@@ -22,6 +22,7 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
+        min-width: 0;
     }
 
     .konf-sidebar {
@@ -1561,8 +1562,10 @@
             </div>
         </div>
 
-        <label class="konf-stream-label" for="streamTitle">Tite difizyon an</label>
-        <input type="text" id="streamTitle" class="konf-stream-input" placeholder="Tite Live (pa egzanp: Kouch Legliz Dimanch)">
+        <div id="streamTitleFields">
+            <label class="konf-stream-label" for="streamTitle">Tite difizyon an</label>
+            <input type="text" id="streamTitle" class="konf-stream-input" placeholder="Tite Live (pa egzanp: Kouch Legliz Dimanch)">
+        </div>
 
         <div id="streamTitleFrameOptions" style="display:none">
             <div class="konf-stream-check-row">
@@ -2421,6 +2424,14 @@
         updateLiveBanner(false);
         addChatMessage('System', 'Difizyon Live sispann.', false, true);
     });
+    socket.on('stream_relay_error', (data) => {
+        // The ffmpeg publisher died (bad key / network / platform rejected).
+        if (isOwner) stopLiveRelay();
+        updateLiveBanner(false);
+        const msg = (data && data.error) || 'Difizyon reyèl la kanpe.';
+        addChatMessage('System', '⚠️ ' + msg, false, true);
+        showToast('<i class="fas fa-exclamation-triangle"></i> ' + msg, 'error', 8000);
+    });
 
     function updateLiveBanner(on, platformLabel) {
         const banner = document.getElementById('liveStatus');
@@ -3025,8 +3036,7 @@
         const vp = getMediaViewport();
         if (!vp) return;
         const delta = Math.max(80, Math.round(vp.clientHeight * 0.85)) * (direction > 0 ? 1 : -1);
-        if (typeof vp.scrollBy === 'function') vp.scrollBy({ top: delta, left: 0, behavior: 'smooth' });
-        else vp.scrollTop += delta;
+        vp.scrollTop += delta;
     }
 
     function toggleMediaViewSync() {
@@ -4121,6 +4131,7 @@
     let streamModalPlatform = null;   // platform currently open in the modal
     let liveStreamActive = false;     // RTMP live session running
     let waSave = null;                // active WhatsApp audio-save: {recorder, chunks}
+    let liveRelay = null;             // active browser->ffmpeg relay: {recorder, raf, audioCtx, stream, canvas}
 
     function setStreamMenuLiveState(on, platformLabel) {
         liveStreamActive = !!on;
@@ -4141,17 +4152,24 @@
         const modal = document.getElementById('streamModal');
         const rtmpFields = document.getElementById('streamRtmpFields');
         const frameOpts = document.getElementById('streamTitleFrameOptions');
+        const titleFields = document.getElementById('streamTitleFields');
         const goBtnText = document.getElementById('streamGoLiveText');
+        const goBtn = document.getElementById('streamGoLiveBtn');
         const dashBtn = document.getElementById('streamOpenDashboard');
         const help = document.getElementById('streamModalHelp');
+        const isFacebook = platform === 'facebook';
         document.getElementById('streamModalTitleText').textContent = plat.label;
         if (help) {
-            help.textContent = platform === 'whatsapp'
+            help.textContent = isFacebook
+                ? 'KONFERANS pa voye videyo/odyo bay Facebook. Louvri Facebook Live Producer, sèvi ak OBS Studio (oswa yon lòt encoder RTMP), pataje fenèt KONFERANS lan, mete Server URL ak Stream Key Facebook nan OBS, epi kòmanse difizyon an nan OBS. Pa antre kle a nan KONFERANS.'
+                : platform === 'whatsapp'
                 ? 'Anrejistre odio tout konferans lan (ou + patisipan yo), apre sa ou ka pataje dosye a / lyen an nan WhatsApp.'
                 : 'Kopye Server URL + Stream Key soti nan tablo Live platfòm nan, pemi klike "Kòmanse Live". Kle a pa jam estoke sou sèvè a (sèlman vèsyon kache).';
         }
-        rtmpFields.style.display = platform === 'whatsapp' ? 'none' : '';
-        frameOpts.style.display = platform === 'whatsapp' ? 'none' : '';
+        rtmpFields.style.display = platform === 'whatsapp' || isFacebook ? 'none' : '';
+        frameOpts.style.display = platform === 'whatsapp' || isFacebook ? 'none' : '';
+        if (titleFields) titleFields.style.display = isFacebook ? 'none' : '';
+        if (goBtn) goBtn.style.display = isFacebook ? 'none' : '';
         goBtnText.textContent = platform === 'whatsapp' ? 'Kòmanse Anrejistre Odio' : 'Kòmanse Live';
         const ingest = document.getElementById('streamIngestUrl');
         if (ingest && platform !== 'whatsapp') { ingest.value = plat.hint; }
@@ -4162,6 +4180,9 @@
         const statusBox = document.getElementById('streamStatusBox');
         if (statusBox) statusBox.style.display = 'none';
         modal.style.display = 'flex';
+        if (isFacebook) {
+            showStreamStatus('<strong>Facebook Live atravè OBS</strong><ol><li>Ouvri Facebook Live Producer epi kreye yon Live.</li><li>Nan OBS, ajoute kaptire fenèt KONFERANS lan ak odyo a.</li><li>Kole Server URL ak Stream Key Facebook yo nan OBS sèlman.</li><li>Kòmanse difizyon an nan OBS epi verifye aperçu Facebook la.</li></ol>KONFERANS pa ka kòmanse oswa verifye transmisyon Facebook la dirèkteman.');
+        }
     }
 
     function closeStreamSetup() {
@@ -4187,6 +4208,10 @@
     async function goLiveFromModal() {
         const platform = streamModalPlatform;
         if (!platform) return;
+        if (platform === 'facebook') {
+            showStreamStatus('KONFERANS pa voye odyo/videyo bay Facebook. Sèvi ak OBS Studio oswa yon lòt encoder RTMP.', true);
+            return;
+        }
         const title = (document.getElementById('streamTitle') || {}).value || '';
         if (platform === 'whatsapp') { startWhatsAppSave(title); return; }
         const ingest = (document.getElementById('streamIngestUrl') || {}).value || '';
@@ -4208,14 +4233,114 @@
                 enableTitleFrameOverlay();
             }
             setStreamMenuLiveState(true, STREAM_PLATFORMS[platform].label);
-            showStreamStatus(`<i class="fas fa-check-circle"></i> ${j.message || 'Live kòmanse!'} <br><small>${j.help || ''}</small>`);
+            // Real relay: only possible when the server located ffmpeg.
+            if (j.relay) {
+                startLiveRelay();
+                showStreamStatus(`<i class="fas fa-check-circle"></i> ${j.message || 'Live kòmanse!'} <br><small>Difizyon reyèl an kous — tout patisipan ak kamera/mikwo ap ale sou ${STREAM_PLATFORMS[platform].label}.</small>`);
+            } else {
+                showStreamStatus(`<i class="fas fa-exclamation-triangle"></i> ${j.warning || 'Difizyon reyèl pa disponib nan sèvè a (ffmpeg manke). Sèvi ak OBS Studio pou difize.'}`, true);
+                showToast('<i class="fas fa-exclamation-triangle"></i> Live make kòm LIVE, men difizyon reyèl la pa demare (ffmpeg manke).', 'error', 7000);
+            }
             showToast(`<i class="fas fa-broadcast-tower"></i> 🔴 Live sou ${STREAM_PLATFORMS[platform].label} kòmanse!`, 'success', 5000);
         } catch (e) {
             showStreamStatus('<i class="fas fa-exclamation-circle"></i> Erè rezo. Eseye ankò.', true);
         }
     }
 
+    // ===== Browser -> server -> RTMP relay (owner is the media source) =====
+    // Composite every visible video tile onto a canvas and mix all audio, then
+    // stream it as WebM chunks to the ffmpeg publisher (server) via Socket.IO.
+    function startLiveRelay() {
+        if (liveRelay) return;                 // already running
+        if (!isOwner) return;                  // only the owner pushes media
+        const W = 1280, H = 720, FPS = 30;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const cctx = canvas.getContext('2d');
+
+        // --- mix all audio (local + every remote) ---
+        const AC = window.AudioContext || window.webkitAudioContext;
+        let audioStream = null, audioCtx = null;
+        if (AC) {
+            try {
+                audioCtx = new AC();
+                const dest = audioCtx.createMediaStreamDestination();
+                const seen = new Set();
+                const addAudio = (ms) => {
+                    try { ms && ms.getAudioTracks().forEach(t => { if (!seen.has(t)) { seen.add(t); audioCtx.createMediaStreamSource(new MediaStream([t])).connect(dest); } }); } catch (_) {}
+                };
+                addAudio(localStream);
+                document.querySelectorAll('#videoContainer video').forEach(v => { if (v.srcObject) addAudio(v.srcObject); });
+                audioStream = dest.stream;
+            } catch (_) { audioCtx = null; }
+        }
+
+        // --- combined output: canvas video + mixed audio ---
+        const out = canvas.captureStream(FPS);
+        if (audioStream) audioStream.getAudioTracks().forEach(t => out.addTrack(t));
+
+        // --- draw loop: cover-fit each video tile into a grid ---
+        const drawVideo = (v, x, y, w, h) => {
+            try {
+                if (!v.videoWidth || !v.videoHeight) return;
+                const vr = v.videoWidth / v.videoHeight, cr = w / h;
+                let dw = w, dh = h, dx = x, dy = y;
+                if (vr > cr) { dh = h; dw = h * vr; dx = x - (dw - w) / 2; }
+                else { dw = w; dh = w / vr; dy = y - (dh - h) / 2; }
+                cctx.drawImage(v, dx, dy, dw, dh);
+            } catch (_) {}
+        };
+        const renderFrame = () => {
+            cctx.fillStyle = '#0b1220';
+            cctx.fillRect(0, 0, W, H);
+            const vids = Array.prototype.filter.call(
+                document.querySelectorAll('#videoContainer video'),
+                v => v && v.srcObject && v.videoWidth > 0
+            );
+            if (!vids.length) return;
+            const n = vids.length;
+            const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
+            const cw = W / cols, ch = H / rows;
+            vids.forEach((v, i) => {
+                const col = i % cols, row = Math.floor(i / cols);
+                drawVideo(v, col * cw, row * ch, cw, ch);
+            });
+        };
+        let rafId = 0;
+        const loop = () => { renderFrame(); rafId = requestAnimationFrame(loop); };
+        loop();
+
+        // --- encode + push chunks ---
+        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+            ? 'video/webm;codecs=vp8,opus'
+            : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '');
+        let recorder;
+        try { recorder = new MediaRecorder(out, mime ? { mimeType: mime, videoBitsPerSecond: 1500000 } : undefined); }
+        catch (_) { cancelAnimationFrame(rafId); if (audioCtx) { try { audioCtx.close(); } catch (__) {} } return; }
+
+        recorder.ondataavailable = async (e) => {
+            if (!e.data || !e.data.size) return;
+            try {
+                const buf = await e.data.arrayBuffer();
+                socket.emit('stream_chunk', buf, { room_id: roomId });
+            } catch (_) {}
+        };
+        recorder.start(1000);
+
+        liveRelay = { recorder, rafId, audioCtx, stream: out, canvas };
+    }
+
+    function stopLiveRelay() {
+        if (!liveRelay) return;
+        const r = liveRelay; liveRelay = null;
+        try { if (r.recorder && r.recorder.state !== 'inactive') r.recorder.stop(); } catch (_) {}
+        try { cancelAnimationFrame(r.rafId); } catch (_) {}
+        try { r.stream && r.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+        try { r.audioCtx && r.audioCtx.close(); } catch (_) {}
+    }
+
     async function stopStreaming() {
+        stopLiveRelay();
         if (!confirm('Èske ou vle sispann difizyon Live an?')) return;
         try {
             const r = await fetch(`/konferans/api/stream/stop/${encodeURIComponent(roomId)}`, {

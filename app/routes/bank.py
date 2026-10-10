@@ -91,6 +91,14 @@ def loan_apply(product_id):
         db.session.add(loan)
         db.session.commit()
 
+        # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────────
+        # A loan stays 'pending' until an admin approves (and credits) it.
+        try:
+            from app.services.admin_approval_alerts import alert_loan_request
+            alert_loan_request(loan, product, current_user)
+        except Exception as _alert_err:
+            current_app.logger.warning('loan approval alert failed: %s', _alert_err)
+
         flash('Demann prè ou anrejistre! Admin ap revize li.', 'success')
         return redirect(url_for('bank.loan_list'))
 

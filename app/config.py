@@ -279,10 +279,10 @@ class Config:
         self.CELERY_BROKER_URL = redis_url or 'redis://localhost:6379/3'
         self.CELERY_RESULT_BACKEND = redis_url or 'redis://localhost:6379/4'
         # Admin credentials
-        self.ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'StanGlory2YahPub1986')
-        self.ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', '+50942882076')
-        self.ADMIN_PSEUDO = os.environ.get('ADMIN_PSEUDO', 'Admin509')
-        self.ADMIN_NAME = os.environ.get('ADMIN_NAME', 'Glory2YahPub')
+        self.ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
+        self.ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP')
+        self.ADMIN_PSEUDO = os.environ.get('ADMIN_PSEUDO')
+        self.ADMIN_NAME = os.environ.get('ADMIN_NAME')
         # OAuth
         self.GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
         self.GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')

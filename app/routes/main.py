@@ -8,7 +8,7 @@ import re
 from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
 from app.services.ad_service import AdService
 from app.services.redis_service import RedisService
-from app import redis_client
+from app import redis_client, limiter
 from flask_login import current_user, login_required
 from app.models.admin_settings import AdminSettings
 from app.services.gkach_service import GkachService
@@ -609,6 +609,7 @@ def create_post():
 
 
 @main_bp.route('/achte_gkach', methods=['GET', 'POST'])
+@limiter.limit('5 per hour', methods=['POST'])
 def achte_gkach():
     """Page to request Gkach purchase"""
     if request.method == 'POST':
@@ -618,6 +619,8 @@ def achte_gkach():
         import uuid
         from datetime import datetime
         import os
+        from app.utils.validators import ValidationError
+        from app.services.gkach_proof_service import save_gkach_proof
         
         try:
             whatsapp = request.form.get('whatsapp', current_user.whatsapp if current_user.is_authenticated else '')
@@ -637,6 +640,12 @@ def achte_gkach():
             if file.filename == '':
                 flash('Veuillez télécharger un document de preuve de paiement.', 'danger')
                 return redirect(url_for('main.achte_gkach'))
+
+            try:
+                filename = save_gkach_proof(file, max_size_mb=10)
+            except ValidationError as validation_error:
+                flash(str(validation_error), 'danger')
+                return redirect(url_for('main.achte_gkach'))
             
             # Get or create user gkach account
             account = UserGkach.query.filter_by(user_whatsapp=whatsapp).first()
@@ -649,12 +658,6 @@ def achte_gkach():
                 )
                 db.session.add(account)
                 db.session.commit()
-            
-            # Save uploaded file
-            ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-            filename = f'gkach_req_{uuid.uuid4().hex}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            file.save(upload_path)
             
             # Save request
             import json
@@ -674,6 +677,18 @@ def achte_gkach():
             
             account.gkach_requests = json.dumps(requests_list)
             db.session.commit()
+
+            # This legacy form also creates a pending recharge approval.
+            try:
+                from app.services.admin_approval_alerts import alert_recharge_request
+                alert_recharge_request(
+                    whatsapp, amount,
+                    request_id=new_request['request_id'],
+                    currency='HTG', payment_method='payment proof',
+                )
+            except Exception as _alert_err:
+                current_app.logger.warning('legacy GKach approval alert failed: %s',
+                                           _alert_err)
             
             flash('Demann ou a voye avèk siksè ak dokiman prèv! Administratè a pral kontakte w sou WhatsApp.', 'success')
             
@@ -907,12 +922,15 @@ def upload_payment(ad_id):
             ad.payment_status = 'pending'
             db.session.commit()
 
-            # Notify admin via notification helper if available.
+            # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────
+            # The proof is on the server but `payment_status` stays 'pending' until
+            # the administrator verifies it → WhatsApp + in-app alert to admin.
             try:
-                from src.notifications import notify_admin_payment_proof_uploaded
-                notify_admin_payment_proof_uploaded(ad.user_whatsapp, ad.ad_id)
-            except Exception:
-                pass
+                from app.services.admin_approval_alerts import alert_ad_payment_proof
+                alert_ad_payment_proof(ad, filename=filename)
+            except Exception as _alert_err:
+                current_app.logger.warning(
+                    'admin payment-proof alert failed for ad %s: %s', ad.ad_id, _alert_err)
 
             flash(
                 f'Prèv pèman an resevwa! (FRAI: {fee} Gkach = {fee_htg:.2f} HTG). '
@@ -937,12 +955,13 @@ def upload_payment(ad_id):
 
 
 @main_bp.route('/upload_gkach_approval/<request_id>', methods=['GET', 'POST'])
+@limiter.limit('5 per hour', methods=['POST'])
 def upload_gkach_approval(request_id):
     """Upload payment proof for Gkach request"""
     from app.models.user_gkach import UserGkach
     from app import db
+    from app.services.gkach_proof_service import save_gkach_proof
     import os
-    import uuid
     
     if request.method == 'POST':
         try:
@@ -979,10 +998,11 @@ def upload_gkach_approval(request_id):
                 return redirect(request.url)
             
             if file:
-                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
-                filename = f'gkach_req_{uuid.uuid4().hex}.{ext}'
-                upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                file.save(upload_path)
+                try:
+                    filename = save_gkach_proof(file, max_size_mb=10)
+                except ValidationError as upload_error:
+                    flash(str(upload_error), 'danger')
+                    return redirect(request.url)
                 
                 # Update request with document
                 requests_list = json.loads(found_account.gkach_requests)
@@ -993,7 +1013,23 @@ def upload_gkach_approval(request_id):
                 
                 found_account.gkach_requests = json.dumps(requests_list)
                 db.session.commit()
-                
+
+                # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────
+                # The recharge stays 'pending' until the admin verifies this
+                # proof and credits the wallet → WhatsApp + in-app admin alert.
+                try:
+                    from app.services.admin_approval_alerts import alert_recharge_request
+                    alert_recharge_request(
+                        found_account.user_whatsapp,
+                        target_request.get('amount'),
+                        request_id=request_id,
+                        currency=target_request.get('currency', 'HTG'),
+                        payment_method=target_request.get('payment_method', 'moncash'),
+                    )
+                except Exception as _alert_err:
+                    current_app.logger.warning('gkach proof approval alert failed: %s',
+                                               _alert_err)
+
                 flash('Prèv pèman an telechaje avèk siksè!', 'success')
                 return redirect(url_for('main.index'))
         

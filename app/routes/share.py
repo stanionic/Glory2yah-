@@ -186,10 +186,14 @@ def batch_click(batch_id):
     from app import db
     import uuid as _uuid
 
-    referrer_whatsapp = request.args.get('r')
-
+    # Business rule: any logged-in user may share an approved batch, but the
+    # reward must always be credited to the authenticated sharer, never to a
+    # client-controlled referrer value. The `r` query parameter is informational
+    # only for legacy links and must be ignored because it can be forged.
+    referrer_whatsapp = current_user.whatsapp
     if not referrer_whatsapp:
-        referrer_whatsapp = current_user.whatsapp
+        flash('Ou dwe konekte pou partage batch sa a.', 'error')
+        return redirect(url_for('auth.login'))
 
     referrer_whatsapp = referrer_whatsapp.strip()
 

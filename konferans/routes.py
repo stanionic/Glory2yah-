@@ -17,6 +17,9 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import secrets
 
+# Server-side RTMP live-relay gateway (owner browser -> ffmpeg -> platform ingest)
+from konferans import stream_relay
+
 _ALLOWED_RECORDING_EXTS = {'.webm', '.mp4', '.mkv', '.mov', '.ogg', '.m4v'}
 _MAX_RECORDING_MB = 512
 
@@ -119,6 +122,13 @@ def _stop_stream_session(room_id, reason='manual'):
     active = room_stream_sessions.pop(room_id, None)
     if not active:
         return None
+
+    # Always tear down the ffmpeg publisher (if any) so the RTMP ingest
+    # connection is closed the instant the session stops for any reason.
+    try:
+        stream_relay.stop_broadcaster(room_id)
+    except Exception as e:
+        print(f"Error stopping broadcaster for {room_id}: {e}")
 
     now = datetime.utcnow()
     try:
@@ -472,6 +482,31 @@ def register_socketio_handlers(socketio):
         active_rooms[room_id]['recording_started_by'] = None
 
         emit('recording_stopped', room=room_id)
+
+    @socketio.on('stream_chunk')
+    def handle_stream_chunk(chunk, meta=None):
+        """Receive a WebM chunk from the owner's browser and feed the ffmpeg publisher.
+
+        Emitted as socket.emit('stream_chunk', arrayBuffer, {room_id}). Only the
+        room owner may push media, and only while a real relay is active.
+        """
+        meta = meta or {}
+        room_id = meta.get('room_id') if isinstance(meta, dict) else None
+        if not room_id or room_id not in room_stream_sessions:
+            return
+        if not room_stream_sessions[room_id].get('relay'):
+            return
+        if not _socket_owner(room_id, request.sid):
+            return
+        ok = stream_relay.feed_chunk(room_id, chunk)
+        if not ok:
+            # Publisher died (bad key / network / platform rejected) — tell the room.
+            room_stream_sessions[room_id]['relay'] = False
+            room_stream_sessions[room_id]['relay_error'] = 'Relay entèwonp — difizyon reyèl la kanpe.'
+            emit('stream_relay_error', {
+                'room_id': room_id,
+                'error': 'Relay entèwonp — videyo a pa rive sou platfòm nan.',
+            }, room=room_id)
 
     @socketio.on('start_screen_share')
     def handle_start_screen_share(data):
@@ -1833,12 +1868,20 @@ def start_stream_session(room_id):
 
         data = request.get_json(silent=True) or {}
         platform = (data.get('platform') or '').strip().lower()
-        ingest_url = (data.get('ingest_url') or '').strip()
-        stream_key = (data.get('stream_key') or '').strip()
-        title = (data.get('title') or '').strip()[:255]
 
         if platform not in _STREAM_PLATFORMS:
             return jsonify({'success': False, 'error': 'Platfòm pa valid.'}), 400
+
+        if platform == 'facebook':
+            return jsonify({
+                'success': False,
+                'code': 'external_encoder_required',
+                'error': 'KONFERANS pa voye odyo/videyo bay Facebook. Sèvi ak OBS Studio oswa yon lòt encoder RTMP pou difize sal la sou Facebook Live.',
+            }), 501
+
+        ingest_url = (data.get('ingest_url') or '').strip()
+        stream_key = (data.get('stream_key') or '').strip()
+        title = (data.get('title') or '').strip()[:255]
 
         # WhatsApp target = local conference save (no RTMP ingest needed here)
         if platform != 'whatsapp':
@@ -1881,20 +1924,46 @@ def start_stream_session(room_id):
             'stream_key_masked': masked,
             'started_at': now,
             'session_db_id': session_row.id,
+            'relay': False,
+            'relay_error': None,
         }
+
+        # Attempt a REAL live relay (owner browser -> ffmpeg -> RTMP ingest).
+        # WhatsApp is a local audio save and Facebook is OBS-only, so those
+        # skip the gateway. On any failure we keep the banner-only session and
+        # surface why, so the feature degrades gracefully instead of hanging.
+        if platform not in ('whatsapp', 'facebook'):
+            try:
+                ok, err, info = stream_relay.start_broadcaster(room_id, ingest_url, stream_key)
+                if ok:
+                    room_stream_sessions[room_id]['relay'] = True
+                else:
+                    room_stream_sessions[room_id]['relay_error'] = err
+            except Exception as e:
+                room_stream_sessions[room_id]['relay_error'] = f"Relay error: {e}"
 
         payload = _stream_session_payload(room_id) or {}
         _so_emit_stream('streaming_started', payload, room_id)
 
         plat = _STREAM_PLATFORMS[platform]
-        return jsonify({
+        relay_ok = bool(room_stream_sessions[room_id].get('relay'))
+        relay_warn = room_stream_sessions[room_id].get('relay_error')
+        response = {
             'success': True,
-            'message': f"Difizyon Live '{plat['label']}' kòmanse!",
+            'message': (
+                f"Difizyon Live '{plat['label']}' kòmanse!" if relay_ok
+                else f"Live '{plat['label']}' make kòm LIVE, men difizyon reyèl la pa demare."
+            ),
             'session': payload,
             'dashboard': plat.get('dashboard'),
             'help': plat.get('help'),
             'ingest_hint': plat.get('ingest_hint'),
-        })
+            'relay': relay_ok,
+            'relay_error': relay_warn,
+        }
+        if relay_warn and platform not in ('whatsapp', 'facebook'):
+            response['warning'] = relay_warn
+        return jsonify(response)
 
     except Exception as e:
         db.session.rollback()

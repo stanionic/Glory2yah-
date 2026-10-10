@@ -3,6 +3,15 @@
 
 {% block content %}
 <div class="gkach-wallet-page">
+    <header class="wallet-heading">
+        <div>
+            <p class="wallet-eyebrow">GKACH / FINANS</p>
+            <h1>Bous ou an</h1>
+            <p class="wallet-heading-note">Gade balans ou, aktivite ak rekonpans ou yo.</p>
+        </div>
+        <a class="wallet-history-link" href="#transactions">Istwa tranzaksyon <span aria-hidden="true">↓</span></a>
+    </header>
+
     <!-- Balance Card -->
     <div class="balance-card">
         <div class="balance-header">
@@ -30,8 +39,8 @@
     </div>
 
     <!-- Earnings Dashboard -->
-    <div class="earnings-dashboard">
-        <h3 class="section-title">📊 Rezime Revni</h3>
+    <div class="earnings-dashboard" aria-labelledby="earningsTitle">
+        <h2 class="section-title" id="earningsTitle">Rezime aktivite</h2>
         
         <div class="earnings-grid">
             <div class="earning-card">
@@ -78,18 +87,18 @@
 
     <!-- Referral Link -->
     <div class="referral-section">
-        <h3 class="section-title">🔗 Lyen Referans Ou</h3>
+        <h2 class="section-title">Lyen referans ou</h2>
         <div class="referral-card">
             <div class="referral-info">
                 <p class="referral-desc">Pataje lyen sa a pou jwenn 10 Gkach chak 100 klik!</p>
                 <div class="referral-link-box">
                     <input type="text" readonly value="{{ request.url_root }}s/{{ current_user.whatsapp }}" id="referralLink" class="referral-input">
-                    <button onclick="copyReferralLink()" class="copy-btn">
-                        <span id="copyIcon">📋</span>
+                    <button type="button" onclick="copyReferralLink()" class="copy-btn" id="copyReferralBtn" title="Kopye lyen referans la" aria-label="Kopye lyen referans la">
+                        <span id="copyBtnLabel">Kopye</span>
                     </button>
                 </div>
             </div>
-            <button onclick="shareReferralLink()" class="share-btn">
+            <button type="button" onclick="shareReferralLink()" class="share-btn">
                 <span>↗</span>
                 <span>Pataje</span>
             </button>
@@ -97,8 +106,8 @@
     </div>
 
     <!-- Transaction History -->
-    <div class="transactions-section">
-        <h3 class="section-title">📜 Istwa Tranzaksyon</h3>
+    <div class="transactions-section" id="transactions">
+        <h2 class="section-title">Istwa tranzaksyon</h2>
         
         {% if transactions %}
         <div class="transactions-list">
@@ -536,20 +545,241 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* GloryYah wallet dashboard refresh */
+.gkach-wallet-page {
+    --wallet-blue: #002366;
+    --wallet-blue-deep: #001a4d;
+    --wallet-blue-light: #4a6fc7;
+    --wallet-gold: #FFD700;
+    --wallet-ink: #15243b;
+    --wallet-muted: #68758b;
+    --wallet-border: #dce3ed;
+    max-width: 1120px;
+    padding: 28px 22px 110px;
+    color: var(--wallet-ink);
+}
+
+.wallet-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 20px;
+    margin: 4px 0 22px;
+    animation: walletEnter 360ms ease both;
+}
+
+.wallet-eyebrow {
+    margin: 0 0 7px;
+    color: var(--wallet-blue-light);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.wallet-heading h1 {
+    margin: 0;
+    color: var(--wallet-blue);
+    font-size: 28px;
+    line-height: 1.15;
+}
+
+.wallet-heading-note {
+    margin: 8px 0 0;
+    color: var(--wallet-muted);
+    font-size: 14px;
+}
+
+.wallet-history-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid var(--wallet-border);
+    border-radius: 6px;
+    color: var(--wallet-blue);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.wallet-history-link:hover { background: #edf2fa; }
+
+.balance-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 24px;
+    margin-bottom: 30px;
+    padding: 30px 32px;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-top: 4px solid var(--wallet-gold);
+    border-radius: 8px;
+    background: var(--wallet-blue);
+    box-shadow: 0 12px 28px rgba(0,35,102,0.16);
+    text-align: left;
+    animation: walletEnter 420ms 40ms ease both;
+}
+
+.balance-header { justify-content: flex-start; margin-bottom: 10px; }
+.balance-icon { font-size: 20px; }
+.balance-label { color: rgba(255,255,255,0.76); font-size: 12px; letter-spacing: 0.1em; }
+.balance-amount { margin: 0; color: #fff; font-size: 46px; font-variant-numeric: tabular-nums; }
+.balance-subtitle { margin: 4px 0 0; color: rgba(255,255,255,0.78); font-size: 14px; }
+.balance-htg { align-self: end; margin: 0 0 5px; color: var(--wallet-gold); font-size: 17px; font-weight: 700; }
+
+.balance-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.balance-btn {
+    max-width: none;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    font-size: 13px;
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.balance-btn:hover { transform: translateY(-1px); }
+.balance-btn-primary { background: var(--wallet-gold); color: #302800; }
+.balance-btn-primary:hover { background: #ffe75d; }
+.balance-btn-secondary { border-color: rgba(255,255,255,0.62); background: transparent; color: #fff; }
+.balance-btn-secondary:hover { background: rgba(255,255,255,0.1); }
+.balance-btn-danger { border-color: rgba(255,255,255,0.25); background: #fff; color: #8b2635; box-shadow: none; }
+.balance-btn-danger:hover { background: #fff1f2; box-shadow: none; }
+
+.section-title {
+    margin-bottom: 14px;
+    color: var(--wallet-blue);
+    font-size: 17px;
+    font-weight: 750;
+}
+
+.earnings-dashboard,
+.referral-section,
+.transactions-section { margin-bottom: 30px; }
+
+.earnings-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.earning-card {
+    min-width: 0;
+    padding: 15px 13px;
+    border: 1px solid var(--wallet-border);
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: none;
+    animation: walletEnter 420ms ease both;
+}
+
+.earning-card:nth-child(2) { animation-delay: 35ms; }
+.earning-card:nth-child(3) { animation-delay: 70ms; }
+.earning-card:nth-child(4) { animation-delay: 105ms; }
+.earning-card:nth-child(5) { animation-delay: 140ms; }
+.earning-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 5px; background: #eef2fa; font-size: 19px; }
+.earning-card:nth-child(even) .earning-icon { background: #fff8d8; }
+.earning-label { color: var(--wallet-muted); font-size: 11px; line-height: 1.3; }
+.earning-value { color: var(--wallet-blue); font-size: 19px; font-variant-numeric: tabular-nums; }
+
+.referral-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--wallet-border);
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.referral-info { min-width: 0; }
+.referral-desc { margin-bottom: 10px; color: var(--wallet-muted); font-size: 13px; }
+.referral-link-box { margin: 0; }
+.referral-input { min-width: 0; padding: 11px; border: 1px solid var(--wallet-border); border-radius: 4px; color: #30425f; font-size: 12px; }
+.copy-btn { min-height: 40px; padding: 9px 12px; border: 0; border-radius: 4px; background: var(--wallet-blue); color: #fff; font-size: 12px; font-weight: 700; }
+.copy-btn:hover { background: var(--wallet-blue-deep); transform: none; }
+.share-btn { width: auto; min-height: 40px; padding: 10px 16px; border: 1px solid var(--wallet-blue); border-radius: 4px; background: #fff; color: var(--wallet-blue); font-size: 13px; }
+.share-btn:hover { background: #eef2fa; box-shadow: none; transform: none; }
+
+.transactions-list,
+.empty-state {
+    border: 1px solid var(--wallet-border);
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.transaction-item { gap: 14px; padding: 14px 16px; border-bottom-color: #e9edf3; }
+.tx-icon { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 5px; }
+.tx-type { color: var(--wallet-ink); font-size: 13px; }
+.tx-desc { color: #59677c; font-size: 12px; }
+.tx-date { color: #7d899c; }
+.tx-amount { font-size: 14px; font-variant-numeric: tabular-nums; }
+.tx-amount-in { color: #176743; }
+.tx-amount-out { color: #a22d3c; }
+.empty-state { padding: 30px 18px; }
+.empty-icon { font-size: 34px; }
+
+@keyframes walletEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+    .earnings-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+    .gkach-wallet-page { padding: 20px 14px 100px; }
+    .wallet-heading { align-items: flex-start; }
+    .wallet-history-link { padding: 8px 9px; font-size: 12px; }
+    .wallet-heading h1 { font-size: 24px; }
+    .balance-card { grid-template-columns: minmax(0, 1fr); gap: 7px; padding: 23px 20px; }
+    .balance-htg { margin: 2px 0 0; }
+    .balance-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .balance-btn { width: auto; max-width: none; padding: 10px 8px; }
+    .balance-btn-danger { grid-column: 1 / -1; }
+    .earnings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .earning-card { gap: 9px; padding: 12px 10px; }
+    .earning-icon { width: 32px; height: 32px; flex-basis: 32px; font-size: 16px; }
+    .earning-value { font-size: 17px; }
+    .referral-card { grid-template-columns: minmax(0, 1fr); align-items: stretch; padding: 14px; }
+    .share-btn { width: 100%; }
+    .transaction-item { gap: 10px; padding: 12px 10px; }
+    .tx-amount { white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wallet-heading, .balance-card, .earning-card { animation: none; }
+}
 </style>
 
 <script>
 // Copy referral link
-function copyReferralLink() {
+async function copyReferralLink() {
     const input = document.getElementById('referralLink');
-    input.select();
-    document.execCommand('copy');
-    
-    const icon = document.getElementById('copyIcon');
-    icon.textContent = '✅';
-    
+    const buttonLabel = document.getElementById('copyBtnLabel');
+    try {
+        await navigator.clipboard.writeText(input.value);
+    } catch (_) {
+        input.select();
+        document.execCommand('copy');
+    }
+    buttonLabel.textContent = 'Kopye!';
+    document.getElementById('copyReferralBtn').setAttribute('aria-label', 'Lyen an kopye');
     setTimeout(() => {
-        icon.textContent = '📋';
+        buttonLabel.textContent = 'Kopye';
+        document.getElementById('copyReferralBtn').setAttribute('aria-label', 'Kopye lyen referans la');
     }, 2000);
 }
 

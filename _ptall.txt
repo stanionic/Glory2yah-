@@ -1,0 +1,71 @@
+F.............                                                           [100%]
+================================== FAILURES ===================================
+E   AttributeError: 'int' object has no attribute 'id'
+----------------------------- Captured log setup ------------------------------
+ERROR    app:__init__.py:65 Redis unavailable: No external Redis URL provided. Running in database-only mode.
+WARNING  app:__init__.py:280 SocketIO running without Redis message queue
+INFO     app:__init__.py:1655 Registered EVENTS blueprint at /events (+ /admin/events)
+INFO     app:__init__.py:1663 Registered PWA blueprint at /pwa
+INFO     app:__init__.py:1685 Registered ecole_biblique blueprint at /ecole_biblique
+INFO     app:__init__.py:1693 Registered party_bp (Party/Fèt module) at /fet
+INFO     app:__init__.py:1701 Successfully registered mennem_bp at /mennenm
+INFO     app:__init__.py:1713 Registered Jere Biznis blueprint at /jere-biznis
+INFO     app:__init__.py:1728 Registered GlorYah IA blueprint at /gloryah-ia
+INFO     app:__init__.py:1746 Registered G-Forms blueprint at /forms (from package gforms/)
+INFO     app:__init__.py:1766 Registered Bank blueprint at /bank (from package bank/)
+INFO     app:__init__.py:1784 Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+INFO     app:__init__.py:588 ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+INFO     app:__init__.py:812 SOFT DELETE MIGRATION: checked 37 tables, altered 0
+INFO     app:__init__.py:1020 ADS CACHE: invalidated approved-ads + ad:* caches at startup
+INFO     app:__init__.py:1153 
+INFO     app:__init__.py:1153 ╔══════════════════════════════════════════════════════════════════════════════╗
+INFO     app:__init__.py:1153 ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+INFO     app:__init__.py:1153 ╠══════════════════════════════════════════════════════════════════════════════╣
+INFO     app:__init__.py:1153 ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+INFO     app:__init__.py:1153 ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+INFO     app:__init__.py:1153 ║  Chemin UPLOAD   : static\uploads                                                ║
+INFO     app:__init__.py:1153 ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+INFO     app:__init__.py:1153 ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+INFO     app:__init__.py:1153 ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+INFO     app:__init__.py:1153 ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+INFO     app:__init__.py:1153 ║                                                                              ║
+INFO     app:__init__.py:1153 ║  Protection GIT (fichier .gitignore) :                                       ║
+INFO     app:__init__.py:1153 ║    • *.db              → EXCLU de git (jamais commités)                      ║
+INFO     app:__init__.py:1153 ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+INFO     app:__init__.py:1153 ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+INFO     app:__init__.py:1153 ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+INFO     app:__init__.py:1153 ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+INFO     app:__init__.py:1153 ║                                                                              ║
+INFO     app:__init__.py:1153 ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+INFO     app:__init__.py:1153 ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+INFO     app:__init__.py:1153 ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+INFO     app:__init__.py:1153 ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+INFO     app:__init__.py:1153 ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+INFO     app:__init__.py:1153 ╚══════════════════════════════════════════════════════════════════════════════╝
+INFO     app:__init__.py:1153 
+WARNING  app:__init__.py:1229 Development mode: using default admin password. Set ADMIN_PASSWORD environment variable to override.
+INFO     app:__init__.py:1250 Admin user CREATED: pseudo='Admin509' whatsapp='+50942882076' (password set from development default)
+INFO     app:__init__.py:1378 Created demo login account pseudo=StanD (password="pass123") to match UI hint.
+INFO     app:__init__.py:1548 Bank: skipped LoanProduct seed (3 existing rows)
+INFO     app:__init__.py:1572 Bank: skipped InvestmentProduct seed (3 existing rows)
+INFO     app:__init__.py:1597 ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+INFO     app:__init__.py:1615 ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+INFO     app:__init__.py:1625 Glory2YahPub started in testing mode
+C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\tests\test_jere_biznis.py:73: AttributeError: 'int' object has no attribute 'id'
+============================== warnings summary ===============================
+.venv\Lib\site-packages\flask_wtf\recaptcha\widgets.py:2
+.venv\Lib\site-packages\flask_wtf\recaptcha\widgets.py:2
+  C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_wtf\recaptcha\widgets.py:2: DeprecationWarning: 'flask.Markup' is deprecated and will be removed in Flask 2.4. Import 'markupsafe.Markup' instead.
+    from flask import Markup
+
+.venv\Lib\site-packages\flask_caching\__init__.py:153: 1 warning
+tests/test_jere_biznis.py: 9 warnings
+tests/test_party_module.py: 3 warnings
+tests/test_welcome_bonus_certification.py: 2 warnings
+  C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\.venv\Lib\site-packages\flask_caching\__init__.py:153: DeprecationWarning: Using the initialization functions in flask_caching.backend is deprecated.  Use the a full path to backend classes directly.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_jere_biznis.py::test_creator_is_auto_owner - AttributeError...
+1 failed, 13 passed, 17 warnings in 75.09s (0:01:15)
