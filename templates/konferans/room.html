@@ -207,37 +207,44 @@
     .konf-mini-btn {
         padding: 10px 14px;
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.15);
-        background: linear-gradient(135deg, rgba(42,63,143,0.2), rgba(42,63,143,0.1));
+        border: 1px solid #60a5fa;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
         color: #fff;
         cursor: pointer;
         font-size: 0.8rem;
         font-weight: 700;
         transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
         white-space: nowrap;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(37,99,235,0.3);
     }
     .konf-mini-btn:hover {
-        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.2));
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(42,63,143,0.2);
-        border-color: rgba(42,63,143,0.5);
+        box-shadow: 0 6px 16px rgba(37,99,235,0.4);
+        border-color: #93c5fd;
     }
     .konf-mini-btn.success { 
-        background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.1));
-        border-color: rgba(16,185,129,0.3);
+        background: linear-gradient(135deg, #059669, #047857);
+        border-color: #34d399;
     }
     .konf-mini-btn.success:hover { 
-        background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(16,185,129,0.2));
-        box-shadow: 0 6px 16px rgba(16,185,129,0.2);
+        background: linear-gradient(135deg, #10b981, #059669);
+        box-shadow: 0 6px 16px rgba(16,185,129,0.35);
     }
     .konf-mini-btn.danger { 
-        background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.1));
-        border-color: rgba(239,68,68,0.3);
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        border-color: #f87171;
     }
     .konf-mini-btn.danger:hover { 
-        background: linear-gradient(135deg, rgba(239,68,68,0.3), rgba(239,68,68,0.2));
-        box-shadow: 0 6px 16px rgba(239,68,68,0.2);
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 6px 16px rgba(239,68,68,0.35);
+    }
+    .konf-mini-btn.green {
+        background: linear-gradient(135deg, #15803d, #166534);
+        border-color: #4ade80;
+    }
+    .konf-mini-btn.green:hover {
+        background: linear-gradient(135deg, #16a34a, #15803d);
     }
 
     .konf-avmode-group {
@@ -253,23 +260,23 @@
     .konf-avmode-btn {
         padding: 8px 14px;
         border-radius: 10px;
-        border: none;
-        background: transparent;
-        color: rgba(255,255,255,0.6);
+        border: 1px solid #64748b;
+        background: #334155;
+        color: #f8fafc;
         cursor: pointer;
         font-size: 0.8rem;
         font-weight: 700;
         transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
     }
     .konf-avmode-btn:hover { 
-        color: rgba(255,255,255,0.9);
+        background: #475569;
         transform: translateY(-1px);
     }
     .konf-avmode-btn.active {
-        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.15));
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
         color: #fff;
-        box-shadow: 0 4px 12px rgba(42,63,143,0.2);
-        border: 1px solid rgba(42,63,143,0.3);
+        box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+        border-color: #60a5fa;
     }
 
     .konf-chat-panel {
@@ -674,49 +681,49 @@
     .konf-ctrl-btn .konf-ctrl-icon { font-size: 1.1rem; }
     
     .konf-ctrl-primary { 
-        background: linear-gradient(135deg, rgba(42,63,143,0.3), rgba(42,63,143,0.2));
-        border: 1px solid rgba(42,63,143,0.4);
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border: 1px solid #60a5fa;
     }
     .konf-ctrl-primary:hover { 
-        background: linear-gradient(135deg, rgba(42,63,143,0.4), rgba(42,63,143,0.3));
-        box-shadow: 0 8px 20px rgba(42,63,143,0.2);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        box-shadow: 0 8px 20px rgba(37,99,235,0.4);
     }
     
     .konf-ctrl-secondary { 
-        background: #273449;
-        border: 1px solid #374151;
-        color: rgba(255,255,255,0.9);
+        background: #334155;
+        border: 1px solid #64748b;
+        color: #fff;
     }
     .konf-ctrl-secondary:hover { 
-        background: rgba(255,255,255,0.14);
-        box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+        background: #475569;
+        box-shadow: 0 8px 20px rgba(15,23,42,0.4);
     }
     
     .konf-ctrl-danger { 
-        background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(239,68,68,0.15));
-        border: 1px solid rgba(239,68,68,0.4);
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        border: 1px solid #f87171;
     }
     .konf-ctrl-danger:hover { 
-        background: linear-gradient(135deg, rgba(239,68,68,0.35), rgba(239,68,68,0.25));
-        box-shadow: 0 8px 20px rgba(239,68,68,0.2);
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 8px 20px rgba(239,68,68,0.4);
     }
     
     .konf-ctrl-info { 
-        background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(6,182,212,0.15));
-        border: 1px solid rgba(6,182,212,0.4);
+        background: linear-gradient(135deg, #0891b2, #0e7490);
+        border: 1px solid #22d3ee;
     }
     .konf-ctrl-info:hover { 
-        background: linear-gradient(135deg, rgba(6,182,212,0.35), rgba(6,182,212,0.25));
-        box-shadow: 0 8px 20px rgba(6,182,212,0.2);
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        box-shadow: 0 8px 20px rgba(6,182,212,0.4);
     }
     
     .konf-ctrl-success { 
-        background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.15));
-        border: 1px solid rgba(16,185,129,0.4);
+        background: linear-gradient(135deg, #059669, #047857);
+        border: 1px solid #34d399;
     }
     .konf-ctrl-success:hover { 
-        background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(16,185,129,0.25));
-        box-shadow: 0 8px 20px rgba(16,185,129,0.2);
+        background: linear-gradient(135deg, #10b981, #059669);
+        box-shadow: 0 8px 20px rgba(16,185,129,0.4);
     }
 
     .konf-quality-dropdown {

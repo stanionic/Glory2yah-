@@ -384,28 +384,20 @@ class EventShare(db.Model):
         return f'<EventShare {self.channel}>'
 
 
-def seed_events():
-    """Idempotent bootstrap seed for the SOS ALO LEGLIZ event (published).
-
-    Called from ``create_app()`` after ``db.create_all()``. Safe to re-run.
-    """
+def _seed_sos_event(slug, title, start_at, end_at, summary):
+    """Create one published SOS event and its shared registration details."""
     from app import db
 
-    event = Event.query.filter_by(slug='sos-alo-legliz').first()
-    if event is not None:
-        return  # already seeded
+    if Event.query.filter_by(slug=slug).first() is not None:
+        return
 
     event = Event(
-        slug='sos-alo-legliz',
-        title='SOS ALO LEGLIZ',
+        slug=slug,
+        title=title,
         subtitle='Demi Jounen Jèn Pou Peyi a',
-        summary=('SOS ALO LEGLIZ \u2014 Demi Jounen Jèn Pou Peyi a est une mobilisation '
-                 'chrétienne consacrée au jeûne, à la prière et à l\u2019intercession en '
-                 'faveur d\u2019Haïti. Lancée par l\u2019Apôtre Stanley Désinat et le '
-                 'Pasteur Nixon Dieudonnée, l\u2019initiative est coordonnée par ALO '
-                 'LEGLIZ, "Yon Mouvman Inite & Sali pou Ayiti".'),
-        start_at=datetime(2026, 8, 30, 6, 0),
-        end_at=datetime(2026, 8, 30, 12, 0),
+        summary=summary,
+        start_at=start_at,
+        end_at=end_at,
         timezone='America/Port-au-Prince',
         location_label='Haïti + Diaspora (en ligne et en Église)',
         status='published',
@@ -413,7 +405,6 @@ def seed_events():
     db.session.add(event)
     db.session.flush()
 
-    # Leaders
     db.session.add_all([
         EventLeader(event_id=event.id, full_name='Apôtre Stanley Désinat',
                     role_label='Initiateur', display_order=1),
@@ -423,21 +414,48 @@ def seed_events():
                     role_label='Coordination générale', display_order=3),
     ])
 
-    # Programme
-    _program = [
+    program = [
         ('06:00', 'Ouverture', 1), ('06:15', 'Louange / Adoration', 2),
-        ('06:45', 'Priere de consecration personnelle', 3), ('07:30', 'Temps de jeûne et méditation', 4),
-        ('08:30', 'Prière pour les familles', 5), ('09:30', "Prière pour l'Église", 6),
-        ('10:30', 'Intercession nationale', 7), ('11:30', 'Action de grâce', 8),
-        ('12:00', 'Clôture', 9),
+        ('06:45', 'Priere de consecration personnelle', 3),
+        ('07:30', 'Temps de jeûne et méditation', 4),
+        ('08:30', 'Prière pour les familles', 5),
+        ('09:30', "Prière pour l'Église", 6),
+        ('10:30', 'Intercession nationale', 7),
+        ('11:30', 'Action de grâce', 8), ('12:00', 'Clôture', 9),
     ]
-    for time_label, title, order in _program:
-        db.session.add(EventProgramItem(event_id=event.id, time_label=time_label,
-                                        title=title, display_order=order))
+    for time_label, item_title, order in program:
+        db.session.add(EventProgramItem(
+            event_id=event.id, time_label=time_label,
+            title=item_title, display_order=order,
+        ))
 
-    # Régions / départements d'Haïti + Diaspora
     for name in ['Ouest', 'Artibonite', 'Nord', 'Nord-Est', 'Nord-Ouest', 'Centre',
                  'Sud', 'Sud-Est', "Grand'Anse", 'Nippes', 'Diaspora']:
         db.session.add(EventRegion(event_id=event.id, name=name))
 
     db.session.commit()
+
+
+def seed_events():
+    """Idempotently seed the SOS ALO LEGLIZ events after ``db.create_all()``."""
+    summary = (
+        'SOS ALO LEGLIZ — Demi Jounen Jèn Pou Peyi a est une mobilisation '
+        'chrétienne consacrée au jeûne, à la prière et à l’intercession en '
+        'faveur d’Haïti. Lancée par l’Apôtre Stanley Désinat et le '
+        'Pasteur Nixon Dieudonnée, l’initiative est coordonnée par ALO '
+        'LEGLIZ, "Yon Mouvman Inite & Sali pou Ayiti".'
+    )
+    _seed_sos_event(
+        slug='sos-alo-legliz',
+        title='SOS ALO LEGLIZ',
+        start_at=datetime(2026, 8, 30, 6, 0),
+        end_at=datetime(2026, 8, 30, 12, 0),
+        summary=summary,
+    )
+    _seed_sos_event(
+        slug='sos-legliz-demi-jounen-jen-2026-10-17',
+        title='SOS LEGLIZ - Demi Jounen Jen pou Peyi a 17 Oktobre 2026',
+        start_at=datetime(2026, 10, 17, 6, 0),
+        end_at=datetime(2026, 10, 17, 12, 0),
+        summary=summary,
+    )

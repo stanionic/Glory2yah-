@@ -53,6 +53,8 @@ EXPECTED_TABLES = [
 ]
 
 SEED_SLUG = "sos-alo-legliz"
+SECOND_EVENT_SLUG = "sos-legliz-demi-jounen-jen-2026-10-17"
+SECOND_EVENT_TITLE = "SOS LEGLIZ - Demi Jounen Jen pou Peyi a 17 Oktobre 2026"
 
 
 class Check:
@@ -260,6 +262,71 @@ def run_db_checks(app, checks):
         f"SOS ALO LEGLIZ ({SEED_SLUG}) present after bootstrap",
         seeded,
         "" if seeded else "no seeded event row -> seed_events() never ran",
+    ))
+
+    second_event_ok = False
+    idempotent = False
+    second_event_error = ""
+    try:
+        from app import db
+        from app.models.events import Event, seed_events
+        with app.app_context():
+            event = Event.query.filter_by(slug=SECOND_EVENT_SLUG).first()
+            second_event_ok = bool(
+                event
+                and event.title == SECOND_EVENT_TITLE
+                and event.start_at.isoformat() == "2026-10-17T06:00:00"
+                and event.end_at.isoformat() == "2026-10-17T12:00:00"
+                and event.status == "published"
+                and len(event.leaders) == 3
+                and len(event.program) == 9
+                and len(event.regions) == 11
+            )
+            seed_events()
+            db.session.expire_all()
+            idempotent = Event.query.filter_by(slug=SECOND_EVENT_SLUG).count() == 1
+    except Exception as exc:
+        second_event_error = f"{type(exc).__name__}: {exc}"
+    checks.append(Check(
+        "database",
+        f"Second SOS event ({SECOND_EVENT_SLUG}) has the requested date and shared event details",
+        second_event_ok,
+        "" if second_event_ok else second_event_error or "event missing or title, schedule, publication status, or related details differ",
+    ))
+    checks.append(Check(
+        "database",
+        "seed_events() remains idempotent with both SOS events",
+        idempotent,
+        "" if idempotent else "re-running seed_events() did not preserve one copy of the second event",
+    ))
+
+    landing_error = ""
+    client = app.test_client()
+    try:
+        response = client.get(f"/events/{SECOND_EVENT_SLUG}")
+        landing_ok = response.status_code == 200 and SECOND_EVENT_TITLE.encode() in response.data
+    except Exception as exc:
+        landing_ok = False
+        landing_error = f"{type(exc).__name__}: {exc}"
+    checks.append(Check(
+        "frontend",
+        "second SOS event uses the existing public event landing form",
+        landing_ok,
+        "" if landing_ok else landing_error or "the published event landing page did not render",
+    ))
+    try:
+        listing = client.get("/events")
+        listing_ok = listing.status_code == 200 and SECOND_EVENT_TITLE.encode() in listing.data
+    except Exception as exc:
+        listing_ok = False
+        listing_error = f"{type(exc).__name__}: {exc}"
+    else:
+        listing_error = ""
+    checks.append(Check(
+        "frontend",
+        "second SOS event appears in the published events list",
+        listing_ok,
+        "" if listing_ok else listing_error or "the published events list did not render the event",
     ))
 
 
