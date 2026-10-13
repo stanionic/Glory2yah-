@@ -493,7 +493,8 @@ def create_post():
     - text/url : JSON body   -> {content: str, type: 'text'|'url'}
     - image    : multipart   -> form {content: caption (optional), type: 'image'}
                                + file field `image` (max 10 MB)
-    Social posts are auto-approved (no Gkach payment required).
+    ALL ads (sell OR publish) must be approved by an ADMIN before going online,
+    so a new social post starts as 'under_review' (no Gkach payment required).
     """
     from app.models.ad import Ad
     from app import db
@@ -587,16 +588,31 @@ def create_post():
             images=filename if post_type == 'image' else None,
             ad_type='publish',  # Social post, not for sale
             price_gkach=0,
-            admin_status='approved',  # Auto-approve text/URL/image posts
-            payment_status='completed'
+            # ALL ads (sell OR publish) must be approved by an ADMIN before they
+            # go online. A new social post therefore starts as 'under_review'
+            # (NOT auto-approved) and only appears in the feed / carousel once an
+            # admin approves it (admin_status -> 'approved').
+            admin_status='under_review',
+            payment_status='pending'
         )
         
         db.session.add(new_post)
         db.session.commit()
+
+        # ── ADMIN APPROVAL TRAFFIC ───────────────────────────────────────────
+        # A brand-new post lands in the admin approval queue. Alert the admin
+        # (WhatsApp +50942882076 + in-app notification centre). Never raises.
+        try:
+            from app.services.admin_approval_alerts import alert_ad_awaiting_review
+            alert_ad_awaiting_review(new_post)
+        except Exception as _alert_err:
+            current_app.logger.warning('admin approval alert failed for post %s: %s',
+                                       post_id, _alert_err)
         
         return jsonify({
             'success': True,
-            'message': 'Post kreye ak siksè!',
+            'message': 'Post ou an soumèt! L ap tann apwobasyon administratè anvan li parèt an liy.',
+            'status': 'under_review',
             'post': new_post.to_dict()
         })
         

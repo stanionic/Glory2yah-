@@ -2643,7 +2643,7 @@ async function submitTextPost() {
         try { data = await response.json(); } catch (_) { data = { success: true }; }
         
         if (!data || data.success) {
-            showToast('✅ Post teks kreye ak siksè!');
+            showToast('🕒 ' + ((data && data.message) || 'Post soumèt! L ap tann apwobasyon administratè anvan li parèt an liy.'));
             document.getElementById('textContent').value = '';
             updateCharCount(document.getElementById('textContent'));
             
@@ -2740,7 +2740,7 @@ async function submitURLPost() {
         try { data = await response.json(); } catch (_) { data = { success: true }; }
         
         if (!data || data.success) {
-            showToast('✅ Post lyen kreye ak siksè!');
+            showToast('🕒 ' + ((data && data.message) || 'Post soumèt! L ap tann apwobasyon administratè anvan li parèt an liy.'));
             document.getElementById('urlContent').value = '';
             if (urlPreview) urlPreview.style.display = 'none';
             if (urlStatus) {
@@ -2898,7 +2898,7 @@ async function submitImagePost() {
         try { data = await response.json(); } catch (_) { data = { success: true }; }
 
         if (!data || data.success) {
-            showToast('✅ Post imaj kreye ak siksè!');
+            showToast('🕒 ' + ((data && data.message) || 'Post soumèt! L ap tann apwobasyon administratè anvan li parèt an liy.'));
             removePostImage();
             document.getElementById('imageContent').value = '';
             setTimeout(() => { location.reload(); }, 1000);
