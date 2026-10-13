@@ -169,12 +169,11 @@ def index():
         if sort_by not in allowed_sorts:
             sort_by = 'recent'
 
-        # ONLY ADS WITH ad_type='sell' (VANN) and admin_status='approved' are displayed
-        # in MACHE. Annonces 'publish' (PIBLIYE SELMAN) stay in the social feed only.
-        # (Fix 2026-08-07: previously ALL approved ads (sell+publish+services) polluted Mache
-        #  and real sell products got pushed off-screen / hidden.)
+        # ALL admin-approved ads (sell AND publish) are displayed online in MACHE.
+        # An ad becomes visible only once an ADMIN approves it
+        # (admin_status='approved'); anything still under_review / rejected stays offline.
         from app.models.ad import Ad
-        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
+        query = Ad.query.filter_by(admin_status='approved')
         # #region debug-point B:check-filter-chain (H2 H5)
         from sqlalchemy import func as _sa_func
         try:
@@ -268,9 +267,9 @@ def api_products():
         category_raw = request.args.get('category', 'all') or 'all'
         category = category_raw.strip().lower()
 
-        # ONLY ADS SELL+APPROVED go in Mache (publish stays in feed). Same filter as index().
+        # ALL admin-approved ads (sell AND publish) go in Mache. Same filter as index().
         from app.models.ad import Ad
-        query = Ad.query.filter_by(admin_status='approved', ad_type='sell')
+        query = Ad.query.filter_by(admin_status='approved')
         if category != 'all':
             query = query.filter_by(category=category)
         query = query.order_by(Ad.created_at.desc())
