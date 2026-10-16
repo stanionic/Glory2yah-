@@ -68,6 +68,23 @@ services:
         value: "0"
       - key: ADMIN_WHATSAPP
         value: +50942882076
+      # ================================================================
+      # WHATSAPP ADMIN NOTIFICATIONS via CallMeBot (ENABLED).
+      #   notification_service.py reads these directly from os.environ:
+      #   - ADMIN_WHATSAPP_ALERTS = master switch (default 1). "0" silences
+      #     outbound WhatsApp; alerts still land in the admin notification centre.
+      #   - CALLMEBOT_APIKEY is the FIRST provider tried in the chain
+      #     (callmebot -> ultramsg -> whatsapp_cloud -> webhook). It is a SECRET,
+      #     so it is NOT hard-coded here (that would leak it into Git history).
+      #     `sync: false` makes Render prompt for the value in the Dashboard:
+      #     paste your real CallMeBot key there ONCE. Without a value, the
+      #     provider returns None and WhatsApp sending is silently skipped.
+      #   Register/obtain the key (one time) at callmebot.com free WhatsApp API.
+      # ================================================================
+      - key: ADMIN_WHATSAPP_ALERTS
+        value: "1"
+      - key: CALLMEBOT_APIKEY
+        sync: false
       # DATABASE_URL is injected automatically by Render from the managed
       # PostgreSQL instance. The app normalizes the legacy `postgres://` scheme
       # to `postgresql://` at startup, so no edit is required here.
