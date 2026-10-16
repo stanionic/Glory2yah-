@@ -1,0 +1,56 @@
+users columns: ['name', 'pseudo', 'email', 'whatsapp', 'password_hash', 'auth_provider', 'gmail_id', 'wallet_balance', 'profile_photo', 'bio', 'is_active', 'is_admin', 'email_verified', 'phone_verified', 'last_login', 'id', 'created_at', 'updated_at', 'deleted_at', 'seller_certification_status', 'seller_certified_at', 'seller_certified_by', 'seller_certification_notes', 'seller_certification_suspended_at', 'seller_certification_revoked_at']
+
+TOTAL users: 15
+  id pseudo             whatsapp         adm act has_pw
+   1 Admin509           +50942882076     1   1   1
+   2 testuser           +50912345678     0   1   1
+   3 testeur_blueprint  +50999998877     0   1   1
+   4 TestSeller         +50999999999     0   1   1
+   5 CharityFund        +50910000005     0   1   1
+   6 StanD              +50948592888     1   1   1
+   7 smkb01             +50944410101     0   1   1
+   8 admin              +50942882076     1   1   1
+   9 janpi              +50911111111     0   1   1
+  10 mariya             +50922222222     0   1   1
+  11 DemoShop           +50937000001     0   1   1
+  12 TestBuyer          +50988880001     0   1   1
+  13 TestSeller2        +50988880002     0   1   1
+  14 DebugAdsUser       +50998765432     0   1   1
+  15 diaguser           50900000001      0   1   1
+
+--- row counts per table ---
+  admin_settings                   5
+  ads                              6
+  batch_ads                        5
+  batches                          1
+  cart_items                       3
+  charity_causes                   5
+  charity_donations                11
+  deliveries                       23
+  delivery_items                   5
+  ecole_admission_answers          20
+  ecole_admission_tests            3
+  ecole_audit_logs                 14
+  ecole_courses                    1
+  ecole_modules                    21
+  ecole_student_modules            42
+  ecole_students                   4
+  ecole_terms_acceptance           5
+  ecole_users                      5
+  event_leaders                    6
+  event_organizations              3
+  event_program_items              18
+  event_regions                    22
+  events                           2
+  gkach_transactions               47
+  investment_products              3
+  jb_admins                        1
+  jb_landing_pages                 1
+  jb_subscriptions                 1
+  konferans_recordings             1
+  konferans_rooms                  40
+  konferans_stream_sessions        1
+  loan_products                    3
+  mennem_drivers                   2
+  user_gkach                       10
+  users                            15

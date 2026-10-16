@@ -1,0 +1,14 @@
+
+SETUP_OK
+Traceback (most recent call last):
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_verify_admin_recovery2.py", line 18, in <module>
+    DBDIR = os.environ["_ADMTEST_DBDIR"]
+            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "<frozen os>", line 678, in __getitem__
+KeyError: '_ADMTEST_DBDIR'
+Traceback (most recent call last):
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_verify_admin_recovery2.py", line 18, in <module>
+    DBDIR = os.environ["_ADMTEST_DBDIR"]
+            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "<frozen os>", line 678, in __getitem__
+KeyError: '_ADMTEST_DBDIR'

@@ -1,0 +1,6 @@
+[PASS] admin created on first boot
+[PASS] admin password == ADMIN_PASSWORD
+[FAIL] password NOT reset on normal boot (security preserved)
+[PASS] break-glass ADMIN_PASSWORD_RESET=1 force-resets password
+------------------------------------------------------------
+RESULT: FAILED: ['password NOT reset on normal boot (security preserved)']

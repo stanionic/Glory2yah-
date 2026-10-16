@@ -1,0 +1,200 @@
+DBDIR=C:\Users\Ops\AppData\Local\Temp\admtest3_7a08666d9e264ef394d733c520be4cae
+[2026-10-13 14:21:17,310] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-13 14:21:17,490] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-13 14:21:18,649] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-13 14:21:18,666] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-13 14:21:18,779] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-13 14:21:18,806] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-13 14:21:18,839] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-13 14:21:18,885] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-13 14:21:18,897] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-13 14:21:18,904] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-13 14:21:18,950] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-13 14:21:18,975] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-10-13 14:21:24,113] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:24,205] INFO in __init__: SOFT DELETE MIGRATION: checked 37 tables, altered 0
+[2026-10-13 14:21:24,298] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-10-13 14:21:24,303] INFO in __init__: 
+[2026-10-13 14:21:24,304] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+[2026-10-13 14:21:24,305] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+[2026-10-13 14:21:24,306] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+[2026-10-13 14:21:24,306] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+[2026-10-13 14:21:24,306] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+[2026-10-13 14:21:24,307] INFO in __init__: ║  Chemin UPLOAD   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:24,307] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+[2026-10-13 14:21:24,308] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:24,308] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:24,308] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+[2026-10-13 14:21:24,308] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:24,313] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+[2026-10-13 14:21:24,314] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+[2026-10-13 14:21:24,315] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+[2026-10-13 14:21:24,315] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+[2026-10-13 14:21:24,316] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+[2026-10-13 14:21:24,316] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+[2026-10-13 14:21:24,317] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:24,317] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+[2026-10-13 14:21:24,317] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+[2026-10-13 14:21:24,318] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+[2026-10-13 14:21:24,318] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+[2026-10-13 14:21:24,319] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+[2026-10-13 14:21:24,319] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+[2026-10-13 14:21:24,319] INFO in __init__: 
+[2026-10-13 14:21:26,002] INFO in __init__: Admin user CREATED: pseudo='Admin509' whatsapp='+50942882076' (password set from ADMIN_PASSWORD env var)
+[2026-10-13 14:21:27,842] INFO in __init__: Created demo login account pseudo=StanD (password="pass123") to match UI hint.
+[2026-10-13 14:21:27,856] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-10-13 14:21:27,863] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-10-13 14:21:27,920] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:27,920] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+[2026-10-13 14:21:27,921] INFO in __init__: Glory2YahPub started in development mode
+[2026-10-13 14:21:27,936] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-13 14:21:27,993] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-13 14:21:28,294] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-13 14:21:28,336] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-13 14:21:28,406] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-13 14:21:28,462] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-13 14:21:28,496] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-13 14:21:28,518] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-13 14:21:28,526] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-13 14:21:28,526] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-13 14:21:28,546] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-13 14:21:28,568] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-10-13 14:21:28,749] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:28,853] INFO in __init__: SOFT DELETE MIGRATION: checked 37 tables, altered 0
+[2026-10-13 14:21:28,897] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-10-13 14:21:28,901] INFO in __init__: 
+[2026-10-13 14:21:28,901] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+[2026-10-13 14:21:28,902] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+[2026-10-13 14:21:28,902] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+[2026-10-13 14:21:28,903] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+[2026-10-13 14:21:28,903] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+[2026-10-13 14:21:28,903] INFO in __init__: ║  Chemin UPLOAD   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:28,904] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+[2026-10-13 14:21:28,904] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:28,904] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:28,905] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+[2026-10-13 14:21:28,905] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:28,906] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+[2026-10-13 14:21:28,906] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+[2026-10-13 14:21:28,906] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+[2026-10-13 14:21:28,907] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+[2026-10-13 14:21:28,907] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+[2026-10-13 14:21:28,907] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+[2026-10-13 14:21:28,908] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:28,908] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+[2026-10-13 14:21:28,910] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+[2026-10-13 14:21:28,910] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+[2026-10-13 14:21:28,910] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+[2026-10-13 14:21:28,911] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+[2026-10-13 14:21:28,911] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+[2026-10-13 14:21:28,911] INFO in __init__: 
+[2026-10-13 14:21:28,964] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-10-13 14:21:28,975] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-10-13 14:21:29,000] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:29,000] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+[2026-10-13 14:21:29,001] INFO in __init__: Glory2YahPub started in development mode
+[2026-10-13 14:21:29,016] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-13 14:21:29,061] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-13 14:21:29,346] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-13 14:21:29,360] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-13 14:21:29,521] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-13 14:21:29,610] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-13 14:21:29,688] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-13 14:21:29,760] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-13 14:21:29,796] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-13 14:21:29,799] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-13 14:21:29,815] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-13 14:21:29,902] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-10-13 14:21:30,077] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:30,226] INFO in __init__: SOFT DELETE MIGRATION: checked 37 tables, altered 0
+[2026-10-13 14:21:30,260] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-10-13 14:21:30,265] INFO in __init__: 
+[2026-10-13 14:21:30,266] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+[2026-10-13 14:21:30,268] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+[2026-10-13 14:21:30,269] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+[2026-10-13 14:21:30,269] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+[2026-10-13 14:21:30,269] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+[2026-10-13 14:21:30,270] INFO in __init__: ║  Chemin UPLOAD   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:30,270] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+[2026-10-13 14:21:30,271] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:30,271] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:30,272] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+[2026-10-13 14:21:30,272] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:30,273] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+[2026-10-13 14:21:30,273] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+[2026-10-13 14:21:30,273] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+[2026-10-13 14:21:30,278] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+[2026-10-13 14:21:30,279] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+[2026-10-13 14:21:30,279] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+[2026-10-13 14:21:30,280] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:30,280] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+[2026-10-13 14:21:30,281] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+[2026-10-13 14:21:30,281] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+[2026-10-13 14:21:30,282] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+[2026-10-13 14:21:30,282] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+[2026-10-13 14:21:30,282] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+[2026-10-13 14:21:30,283] INFO in __init__: 
+[2026-10-13 14:21:30,316] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-10-13 14:21:30,323] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-10-13 14:21:30,382] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:30,383] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+[2026-10-13 14:21:30,383] INFO in __init__: Glory2YahPub started in development mode
+[2026-10-13 14:21:31,972] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-13 14:21:32,050] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-13 14:21:32,345] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-13 14:21:32,387] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-13 14:21:32,483] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-13 14:21:32,526] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-13 14:21:32,553] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-13 14:21:32,577] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-13 14:21:32,600] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-13 14:21:32,603] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-13 14:21:32,617] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-13 14:21:32,638] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)
+[2026-10-13 14:21:32,727] INFO in __init__: ADS PERSISTENCE [BEFORE-migrations] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:32,824] INFO in __init__: SOFT DELETE MIGRATION: checked 37 tables, altered 0
+[2026-10-13 14:21:32,853] INFO in __init__: ADS CACHE: invalidated approved-ads + ad:* caches at startup
+[2026-10-13 14:21:32,864] INFO in __init__: 
+[2026-10-13 14:21:32,864] INFO in __init__: ╔══════════════════════════════════════════════════════════════════════════════╗
+[2026-10-13 14:21:32,865] INFO in __init__: ║  CONFORT UTILISATEUR — PERSISTANCE DES DONNÉES                               ║
+[2026-10-13 14:21:32,865] INFO in __init__: ╠══════════════════════════════════════════════════════════════════════════════╣
+[2026-10-13 14:21:32,865] INFO in __init__: ║  BASE DE DONNÉES : SQLite Persistant                                             ║
+[2026-10-13 14:21:32,866] INFO in __init__: ║  Statut BD       : Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS  ║
+[2026-10-13 14:21:32,866] INFO in __init__: ║  Chemin UPLOAD   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:32,867] INFO in __init__: ║  Statut Images   : ⚠️ Local dev — vérifier .gitignore exclut ce dossier          ║
+[2026-10-13 14:21:32,867] INFO in __init__: ║  Staging PRE-PG  : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:32,868] INFO in __init__: ║  Backup mirror   : C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\instance║
+[2026-10-13 14:21:32,868] INFO in __init__: ║  Guard disk      : ✅ Marker guard OK — persistent disk is mounted                ║
+[2026-10-13 14:21:32,869] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:32,869] INFO in __init__: ║  Protection GIT (fichier .gitignore) :                                       ║
+[2026-10-13 14:21:32,869] INFO in __init__: ║    • *.db              → EXCLU de git (jamais commités)                      ║
+[2026-10-13 14:21:32,870] INFO in __init__: ║    • instance/         → EXCLU de git (disque persistent Render)             ║
+[2026-10-13 14:21:32,870] INFO in __init__: ║    • static/uploads/   → EXCLU de git (dossier uploads legacy)               ║
+[2026-10-13 14:21:32,871] INFO in __init__: ║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║
+[2026-10-13 14:21:32,871] INFO in __init__: ║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║
+[2026-10-13 14:21:32,872] INFO in __init__: ║                                                                              ║
+[2026-10-13 14:21:32,872] INFO in __init__: ║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║
+[2026-10-13 14:21:32,872] INFO in __init__: ║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║
+[2026-10-13 14:21:32,873] INFO in __init__: ║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║
+[2026-10-13 14:21:32,873] INFO in __init__: ║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║
+[2026-10-13 14:21:32,879] INFO in __init__: ║    static/uploads  →  instance/uploads (disque persistent)                   ║
+[2026-10-13 14:21:32,880] INFO in __init__: ╚══════════════════════════════════════════════════════════════════════════════╝
+[2026-10-13 14:21:32,880] INFO in __init__: 
+[2026-10-13 14:21:32,913] INFO in __init__: Bank: skipped LoanProduct seed (3 existing rows)
+[2026-10-13 14:21:32,922] INFO in __init__: Bank: skipped InvestmentProduct seed (3 existing rows)
+[2026-10-13 14:21:32,926] INFO in __init__: ADS PERSISTENCE [AFTER-migrations+seeds] TOTAL=0 | APPROVED=0 | PENDING=0 | REJECTED=0 | PAID=0 | SELL=0 | PUBLISH=0
+[2026-10-13 14:21:32,926] INFO in __init__: ADS PERSISTENCE [DIFF BEFORE→AFTER] Δ total=+0, Δ approved=+0, Δ pending=+0 — (no ads lost)
+[2026-10-13 14:21:32,926] INFO in __init__: Glory2YahPub started in development mode
+SETUP_OK
+[2026-10-13 14:21:40,722] ERROR in __init__: Redis unavailable: No external Redis URL provided. Running in database-only mode.
+[2026-10-13 14:21:41,558] WARNING in __init__: SocketIO running without Redis message queue
+[2026-10-13 14:21:43,292] INFO in __init__: Registered EVENTS blueprint at /events (+ /admin/events)
+[2026-10-13 14:21:43,325] INFO in __init__: Registered PWA blueprint at /pwa
+[2026-10-13 14:21:43,625] INFO in __init__: Registered ecole_biblique blueprint at /ecole_biblique
+[2026-10-13 14:21:43,675] INFO in __init__: Registered party_bp (Party/Fèt module) at /fet
+[2026-10-13 14:21:43,790] INFO in __init__: Successfully registered mennem_bp at /mennenm
+[2026-10-13 14:21:43,875] INFO in __init__: Registered Jere Biznis blueprint at /jere-biznis
+[2026-10-13 14:21:43,959] INFO in __init__: Registered GlorYah IA blueprint at /gloryah-ia
+[2026-10-13 14:21:44,008] INFO in __init__: Registered G-Forms blueprint at /forms (from package gforms/)
+[2026-10-13 14:21:44,191] INFO in __init__: Registered Bank blueprint at /bank (from package bank/)
+[2026-10-13 14:21:44,261] INFO in __init__: Registered E-LEARNING blueprint at /e-learning (from package app/routes/elearning/)

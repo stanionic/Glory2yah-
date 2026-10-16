@@ -1,0 +1,15 @@
+======================================================================
+SECURITY TEST: Admin Password
+======================================================================
+
+✓ Admin user created: Admin509
+✓ Admin password changed manually
+❌ FAIL: Admin password was RESET on boot!
+   Initial hash:    pbkdf2:sha256:600000...
+   Changed hash:    pbkdf2:sha256:600000...
+   After boot hash: pbkdf2:sha256:600000...
+
+❌ FAIL: Admin password is not the one from ADMIN_PASSWORD env var
+
+======================================================================
+❌ SECURITY TESTS FAILED

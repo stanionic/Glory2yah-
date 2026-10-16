@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\_verify_admin_recovery2.py", line 26, in <module>
+    from app import create_app, db  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 2110, in <module>
+    app = create_app(os.environ.get('FLASK_ENV', _gunicorn_default_env))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\__init__.py", line 45, in create_app
+    app.config.from_object(get_config(config_name))
+                           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\config.py", line 489, in get_config
+    return cls()
+           ^^^^^
+  File "C:\Users\Ops\OneDrive\Desktop\dev\Glory2YahPub - Copy\app\config.py", line 429, in __init__
+    raise ValueError(
+ValueError: CRITICAL: DATABASE_URL was provided but is NOT a PostgreSQL connection string in production. Use a PostgreSQL DSN (postgresql://...). SQLite fallback is ONLY allowed when DATABASE_URL is completely unset (Render PG warm-up race).
