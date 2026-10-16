@@ -1278,6 +1278,26 @@ def create_app(config_name=None):
                 if admin_user.auth_provider != 'whatsapp':
                     admin_user.auth_provider = 'whatsapp'
                     changed = True
+                # BREAK-GLASS admin password recovery (opt-in, DEFAULT OFF):
+                #   The normal policy above NEVER overwrites an existing admin's
+                #   password — which is secure, but means that if the password is
+                #   ever lost (e.g. Render generated a random ADMIN_PASSWORD via
+                #   `generateValue: true` that nobody recorded) the admin is locked
+                #   out with no in-app way back in.
+                #   Set ADMIN_PASSWORD_RESET=1 together with a known ADMIN_PASSWORD
+                #   to force the admin password to that value on THIS boot. Use it
+                #   once to regain access, change the password in-app, then set
+                #   ADMIN_PASSWORD_RESET=0 (or remove it) and redeploy — the
+                #   password then persists again and is never auto-reset.
+                _pw_reset = str(_os.environ.get('ADMIN_PASSWORD_RESET', '')).strip().lower()
+                if _pw_reset in ('1', 'true', 'yes', 'on') and admin_password:
+                    admin_user.set_password(admin_password)
+                    changed = True
+                    app.logger.warning(
+                        "Admin password FORCE-RESET from ADMIN_PASSWORD because "
+                        "ADMIN_PASSWORD_RESET is enabled. Set ADMIN_PASSWORD_RESET=0 "
+                        "after regaining access so the password is not reset again."
+                    )
                 if changed:
                     # Ensure UserGkach row exists (for old migrations)
                     g = UserGkach.query.filter(

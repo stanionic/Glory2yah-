@@ -47,10 +47,25 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+      # SECRET_KEY signs sessions + CSRF tokens. `generateValue: true` only
+      # generates a value ONCE (at first sync) and then keeps it stable across
+      # redeploys — it does NOT change on every deploy. Keeping generateValue
+      # here is safe: sessions and CSRF tokens survive redeploys. If you ever
+      # recreate the service, the key changes once and all sessions/CSRF tokens
+      # invalidate a single time (users just reload and log in again).
       - key: SECRET_KEY
         generateValue: true
+      # ADMIN_PASSWORD: a KNOWN, stable value (do NOT use generateValue here —
+      # that produced a random password nobody could log in with). Change this
+      # to your own strong password. On first boot the admin is created with it.
       - key: ADMIN_PASSWORD
-        generateValue: true
+        value: StanGlory2YahPub1986
+      # BREAK-GLASS admin recovery: when set to 1, the app force-resets the
+      # admin password to ADMIN_PASSWORD on that boot (use once to regain access
+      # if the password was ever lost), then persists normally. Leave at 0 for
+      # everyday operation so the admin password is never auto-reset.
+      - key: ADMIN_PASSWORD_RESET
+        value: "0"
       - key: ADMIN_WHATSAPP
         value: +50942882076
       # DATABASE_URL is injected automatically by Render from the managed
@@ -61,6 +76,16 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: glory2yahpub-db
+          property: connectionString
+      # REDIS (production cache + rate-limit backend). Injected from the managed
+      # Key Value instance below via Render's private network. The app pings it on
+      # boot; with a real URL present it enables Redis caching + flask-limiter
+      # storage instead of the localhost/DB-only fallback. Format injected:
+      #   redis://red-xxxxxxxx:6379  (auth user:pass included if internal auth is on)
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: glory2yahpub-redis
           property: connectionString
       # RENDER PERSISTENCE FIX: explicit path so uploads hit the 1GB persistent disk.
       # Previously uploads went to static/uploads/ inside the ephemeral build container → wiped on every commit/deploy.
@@ -83,6 +108,19 @@ services:
       name: glory2yahpub-disk
       mountPath: /opt/render/project/src/instance
       sizeGB: 1
+
+  # ================================================================
+  # REDIS / Key Value instance (cache + rate-limit backend for the web
+  # service). ipAllowList: [] => reachable ONLY over Render's internal
+  # private network (the web service connects via the REDIS_URL injected
+  # above). Free plan = up to 25MB RAM, no persistence (fine for cache +
+  # limiter; sessions stay on the persistent filesystem disk).
+  # ================================================================
+  - type: keyvalue
+    name: glory2yahpub-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
 
 databases:
   - name: glory2yahpub-db
