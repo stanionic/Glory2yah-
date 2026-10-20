@@ -1,0 +1,4 @@
+pseudo='+50942882076': POST /admin/login -> 303 Location='/'
+    follow -> 200 Location=''
+    has_admin_alerts_heading: False
+    GET /admin/alerts -> 302 Location='/auth/login?next=/admin/alerts'

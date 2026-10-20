@@ -1,0 +1,7 @@
+GET /admin/login -> 200
+  Set-Cookie header: glory2yah_session=eyJjc3JmX3Rva2VuIjoiMzAwMGQxMDg1MjljY2ExNjM0NTVkYjIwZmJiMjg1ZjlmYWNiODA0ZiJ9.atd9LA.DKDHNz4vO6frchAY81KtCQfwyZI; Secure; HttpOnly; Path=/; SameSite=Lax
+  session cookies  : {'glory2yah_session': 'eyJjc3JmX3Rva2VuIjoiMzAwMGQxMDg1MjljY2ExNjM0NTVkYjIwZmJiMjg1ZjlmYWNiODA0ZiJ9.atd9LA.DKDHNz4vO6frchAY81KtCQfwyZI'}
+  token preview    : IjMwMDBkMTA4NTI5... (len=91)
+POST /admin/login -> 200 Location=None
+  cookies after    : {'glory2yah_session': 'eyJfZnJlc2giOmZhbHNlLCJjc3JmX3Rva2VuIjoiMzAwMGQxMDg1MjljY2ExNjM0NTVkYjIwZmJiMjg1ZjlmYWNiODA0ZiJ9.atd9LQ.kd9Lss56CPTV6rF-bRYYmplLG5A'}
+  body snippet     : ' \n \n \n     \n     \n     \n     \n    \n     Connexion Admin - Glory2YahPub \n     \n     \n     \n     \n     \n     \n     \n     \n     \n     \n     \n     \n    \n \n \n\n     \n     \n         \n             \n                 \n                 G2Y \n             \n\n             \n             \n                 \n         '

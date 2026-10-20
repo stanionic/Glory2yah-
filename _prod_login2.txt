@@ -1,0 +1,5 @@
+pseudo='Admin509': 200 Location='' invalid
+pseudo='admin509': 200 Location='' invalid
+pseudo='+50942882076': 200 Location='' invalid
+pseudo='50942882076': 200 Location='' invalid
+No pseudo worked with that password.
