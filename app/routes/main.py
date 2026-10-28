@@ -344,13 +344,30 @@ def gadematch():
 def health_check():
     """Health check endpoint"""
     redis_service = RedisService(redis_client)
-    
+
     health = {
         'status': 'healthy',
         'redis': redis_service.ping(),
         'database': True  # Will check DB connection
     }
-    
+
+    # DIAGNOSTIC: tell apart "REDIS_URL not injected" from "Redis unreachable".
+    # Only the host is reported, and credentials are always stripped.
+    try:
+        from flask import current_app
+        raw_url = current_app.config.get('REDIS_URL') or ''
+        safe_url = raw_url
+        if '@' in safe_url:
+            scheme, rest = safe_url.split('://', 1) if '://' in safe_url else ('', safe_url)
+            safe_url = f'{scheme}://***@{rest.split("@", 1)[1]}' if scheme else '***@' + rest.split('@', 1)[1]
+        health['redis_detail'] = {
+            'url_configured': bool(current_app.config.get('REDIS_URL_CONFIGURED')),
+            'host': safe_url,
+            'init_error': current_app.config.get('REDIS_INIT_ERROR'),
+        }
+    except Exception:
+        pass
+
     try:
         # FIX: SQLAlchemy 2.x rejects raw string SQL — must wrap in text().
         # Before, db.session.execute('SELECT 1') ALWAYS raised ArgumentError, so

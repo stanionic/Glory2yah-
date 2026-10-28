@@ -1,8 +1,11 @@
-from flask import Blueprint, render_template, request, jsonify, session, send_from_directory, current_app, url_for
+from flask import Blueprint, render_template, request, jsonify, session, send_from_directory, current_app, url_for, redirect
 from flask_socketio import emit, join_room, leave_room
 from flask_login import login_required, current_user
 from app import db
-from app.models import KonferansRoom, KonferansRecording, KonferansStreamSession, User
+from app.models import (
+    KonferansRoom, KonferansRecording, KonferansStreamSession,
+    KonferansPlatformConnection, User,
+)
 from app.utils.security import admin_required
 from app.services.gkach_service import GkachService
 from app.utils.validators import ValidationError
@@ -19,6 +22,8 @@ import secrets
 
 # Server-side RTMP live-relay gateway (owner browser -> ffmpeg -> platform ingest)
 from konferans import stream_relay
+# Optional Facebook auto-Live (Graph API): creates the broadcast + reads the key.
+from konferans import facebook_live
 
 _ALLOWED_RECORDING_EXTS = {'.webm', '.mp4', '.mkv', '.mov', '.ogg', '.m4v'}
 _MAX_RECORDING_MB = 512
@@ -29,7 +34,7 @@ _STREAM_PLATFORMS = {
         'label': 'Facebook Live',
         'ingest_hint': 'rtmps://live-api-s.facebook.com:443/rtmp/',
         'dashboard': 'https://www.facebook.com/live/producer',
-        'help': 'Al sou Facebook Live Producer, kreye yon "Live video" ak "Streaming software", kopye Server URL la + Stream Key la.',
+        'help': 'Konekte paj ou a yon sèl fwa epi KONFERANS ap kreye Live la pou ou. Oubyen, al sou Facebook Live Producer, kreye yon "Live video" ak "Streaming software", epi kopye Server URL la + Stream Key la.',
     },
     'youtube': {
         'label': 'YouTube Live',
@@ -60,7 +65,79 @@ _STREAM_PLATFORMS = {
 # Runtime state of the active live session per room (survives reconnects of
 # other participants; owner re-join reads status via /api/stream/status).
 # room_id: {platform, title, ingest_url, stream_key_masked, started_at: datetime, session_db_id}
+#
+# MULTI-WORKER: production runs gunicorn with 4 workers, so a plain dict would
+# give each worker its own view of who is live (a participant polling
+# /api/stream/status could hit a worker that says "not live"). Redis is the
+# shared source of truth; the dict stays as a local fallback when Redis is down.
 room_stream_sessions = {}
+
+_STREAM_SESSION_TTL = 12 * 3600  # > Facebook's 8h broadcast ceiling
+
+
+def _redis_client():
+    """The app-wide Redis client, or None when Redis is unavailable."""
+    try:
+        from app import redis_client
+        return redis_client
+    except Exception:
+        return None
+
+
+def _stream_session_key(room_id):
+    return f'konferans:stream_session:{room_id}'
+
+
+def _decode_session(raw):
+    """Parse a session payload coming back from Redis (started_at -> datetime)."""
+    if not raw:
+        return None
+    data = json.loads(raw)
+    started = data.get('started_at')
+    data['started_at'] = datetime.fromisoformat(started) if started else None
+    return data
+
+
+def _session_get(room_id):
+    """Shared live-session state for a room, or None when nothing is live."""
+    if not room_id:
+        return None
+    r = _redis_client()
+    if r is not None:
+        try:
+            return _decode_session(r.get(_stream_session_key(room_id)))
+        except Exception as e:
+            print(f"Redis session read failed for {room_id}: {e}")
+    return room_stream_sessions.get(room_id)
+
+
+def _session_set(room_id, data):
+    """Publish the live-session state so every worker sees the same thing."""
+    room_stream_sessions[room_id] = data
+    r = _redis_client()
+    if r is not None:
+        try:
+            payload = dict(data)
+            started = payload.get('started_at')
+            payload['started_at'] = started.isoformat() if started else None
+            r.setex(_stream_session_key(room_id), _STREAM_SESSION_TTL, json.dumps(payload))
+        except Exception as e:
+            print(f"Redis session write failed for {room_id}: {e}")
+
+
+def _session_pop(room_id):
+    """Read-and-clear the session state (used when a live stops)."""
+    local = room_stream_sessions.pop(room_id, None)
+    r = _redis_client()
+    if r is not None:
+        try:
+            raw = r.get(_stream_session_key(room_id))
+            r.delete(_stream_session_key(room_id))
+            shared = _decode_session(raw)
+            return local or shared
+        except Exception as e:
+            print(f"Redis session pop failed for {room_id}: {e}")
+    return local
 
 
 def _mask_stream_key(key):
@@ -75,7 +152,7 @@ def _mask_stream_key(key):
 
 def _stream_session_payload(room_id):
     """Snapshot of the current live-stream state for a room (or None)."""
-    s = room_stream_sessions.get(room_id)
+    s = _session_get(room_id)
     if not s:
         return None
     started_at = s.get('started_at')
@@ -94,6 +171,9 @@ def _stream_session_payload(room_id):
         'started_at': started_at.isoformat() if started_at else None,
         'elapsed_seconds': elapsed,
         'session_id': s.get('session_db_id'),
+        'relay': bool(s.get('relay')),
+        'relay_pending': bool(s.get('relay_pending')),
+        'relay_error': s.get('relay_error'),
     }
 
 
@@ -110,6 +190,71 @@ def _so_emit_stream(event, payload, room_id):
         print(f"Error broadcasting stream event '{event}': {e}")
 
 
+# --------------------------------------------------------------------------- #
+# Facebook auto-Live (optional) — OAuth state + stored Page connection
+# --------------------------------------------------------------------------- #
+_FB_STATE_SALT = 'konferans-facebook-oauth'
+_FB_STATE_MAX_AGE = 15 * 60  # seconds
+
+
+def _fb_serializer():
+    """Signed-state serializer (itsdangerous ships with Flask)."""
+    from itsdangerous import URLSafeTimedSerializer
+    secret = current_app.config.get('SECRET_KEY') or 'konferans-fb-oauth'
+    return URLSafeTimedSerializer(secret, salt=_FB_STATE_SALT)
+
+
+def _fb_make_state(room_id):
+    return _fb_serializer().dumps({'room_id': room_id})
+
+
+def _fb_read_state(state):
+    """Return the room_id carried by a valid, non-expired state, else None."""
+    from itsdangerous import BadSignature, SignatureExpired
+    try:
+        data = _fb_serializer().loads(state, max_age=_FB_STATE_MAX_AGE)
+        return data.get('room_id')
+    except (SignatureExpired, BadSignature):
+        return None
+    except Exception:
+        return None
+
+
+def _fb_redirect_uri():
+    """The OAuth callback URL registered in the Meta App dashboard."""
+    return url_for('konferans.facebook_callback', _external=True)
+
+
+def _fb_get_connection(user_id, platform='facebook'):
+    """Newest active platform connection of a user (or None)."""
+    if not user_id:
+        return None
+    try:
+        return KonferansPlatformConnection.query.filter_by(
+            user_id=user_id, platform=platform, is_active=True
+        ).order_by(KonferansPlatformConnection.id.desc()).first()
+    except Exception:
+        return None
+
+
+def _fb_save_connection(user_id, page):
+    """Store/refresh the encrypted Page access token. Returns the row or None."""
+    token_enc = facebook_live.encrypt_token(page.get('access_token'))
+    if not token_enc:
+        return None
+    conn = _fb_get_connection(user_id)
+    if not conn:
+        conn = KonferansPlatformConnection(user_id=user_id, platform='facebook')
+        db.session.add(conn)
+    conn.account_id = str(page.get('id') or '')
+    conn.account_name = (page.get('name') or '')[:255]
+    conn.token_enc = token_enc
+    conn.scopes = facebook_live.FACEBOOK_SCOPES
+    conn.is_active = True
+    db.session.commit()
+    return conn
+
+
 def _stop_stream_session(room_id, reason='manual'):
     """Stop the active live session of a room (shared by HTTP stop + disconnect).
 
@@ -119,7 +264,7 @@ def _stop_stream_session(room_id, reason='manual'):
 
     Returns the 'streaming_stopped' payload, or None when nothing was live.
     """
-    active = room_stream_sessions.pop(room_id, None)
+    active = _session_pop(room_id)
     if not active:
         return None
 
@@ -129,6 +274,18 @@ def _stop_stream_session(room_id, reason='manual'):
         stream_relay.stop_broadcaster(room_id)
     except Exception as e:
         print(f"Error stopping broadcaster for {room_id}: {e}")
+
+    # Close a broadcast that was created through the Facebook Graph API, so the
+    # Facebook side does not stay "live" on a dead feed. Best-effort only.
+    fb_live_id = active.get('facebook_live_id')
+    if fb_live_id:
+        try:
+            conn = _fb_get_connection(active.get('facebook_user_id'))
+            token = facebook_live.decrypt_token(conn.token_enc) if conn else None
+            if token:
+                facebook_live.end_live_video(fb_live_id, token)
+        except Exception as e:
+            print(f"Error ending Facebook live {fb_live_id}: {e}")
 
     now = datetime.utcnow()
     try:
@@ -483,6 +640,70 @@ def register_socketio_handlers(socketio):
 
         emit('recording_stopped', room=room_id)
 
+    @socketio.on('stream_start')
+    def handle_stream_start(data):
+        """Owner starts the REAL RTMP relay from the socket that will carry the media.
+
+        /api/stream/start only records the session; ffmpeg has to be spawned by
+        the worker owning THIS socket connection, because the MediaRecorder
+        chunks that feed it arrive on this same connection. With gunicorn
+        running several workers, spawning it from the HTTP request would create
+        the process in a worker that never receives a single chunk.
+        """
+        data = data or {}
+        room_id = data.get('room_id')
+        ingest_url = (data.get('ingest_url') or '').strip()
+        stream_key = (data.get('stream_key') or '').strip()
+        if not room_id or not _socket_owner(room_id, request.sid):
+            return
+        session = _session_get(room_id)
+        if not session:
+            return
+        if not ingest_url or not stream_key:
+            emit('stream_relay_error', {
+                'room_id': room_id,
+                'error': 'Server URL ak Stream Key obligatwa pou difizyon reyèl la.',
+            }, room=room_id)
+            return
+        try:
+            ok, err, info = stream_relay.start_broadcaster(room_id, ingest_url, stream_key)
+        except Exception as e:
+            ok, err, info = False, f'Relay error: {e}', None
+        session['relay'] = bool(ok)
+        session['relay_pending'] = not ok
+        session['relay_error'] = None if ok else err
+        _session_set(room_id, session)
+        if ok:
+            emit('stream_relay_started', {
+                'room_id': room_id,
+                'relay': True,
+                'ffmpeg': (info or {}).get('ffmpeg'),
+            }, room=room_id)
+        else:
+            emit('stream_relay_error', {
+                'room_id': room_id,
+                'error': err or 'Difizyon reyèl la pa demare.',
+            }, room=room_id)
+
+    @socketio.on('stream_stop')
+    def handle_stream_stop(data):
+        """Owner stops the live: tear down the ffmpeg publisher in THIS worker.
+
+        The session state and the room broadcast are handled by
+        /api/stream/stop, which may land on a DIFFERENT gunicorn worker. So we
+        only kill the local ffmpeg process here (idempotent) and never touch the
+        shared session store — otherwise the HTTP stop would find nothing and
+        wrongly answer 404.
+        """
+        data = data or {}
+        room_id = data.get('room_id')
+        if not room_id or not _socket_owner(room_id, request.sid):
+            return
+        try:
+            stream_relay.stop_broadcaster(room_id)
+        except Exception as e:
+            print(f"Error stopping broadcaster via socket for {room_id}: {e}")
+
     @socketio.on('stream_chunk')
     def handle_stream_chunk(chunk, meta=None):
         """Receive a WebM chunk from the owner's browser and feed the ffmpeg publisher.
@@ -492,17 +713,24 @@ def register_socketio_handlers(socketio):
         """
         meta = meta or {}
         room_id = meta.get('room_id') if isinstance(meta, dict) else None
-        if not room_id or room_id not in room_stream_sessions:
+        if not room_id:
             return
-        if not room_stream_sessions[room_id].get('relay'):
+        session = _session_get(room_id)
+        if not session:
+            # The session was stopped from another worker (or never started) —
+            # drop any ffmpeg process this worker may still be holding.
+            stream_relay.stop_broadcaster(room_id)
+            return
+        if not session.get('relay'):
             return
         if not _socket_owner(room_id, request.sid):
             return
         ok = stream_relay.feed_chunk(room_id, chunk)
         if not ok:
             # Publisher died (bad key / network / platform rejected) — tell the room.
-            room_stream_sessions[room_id]['relay'] = False
-            room_stream_sessions[room_id]['relay_error'] = 'Relay entèwonp — difizyon reyèl la kanpe.'
+            session['relay'] = False
+            session['relay_error'] = 'Relay entèwonp — difizyon reyèl la kanpe.'
+            _session_set(room_id, session)
             emit('stream_relay_error', {
                 'room_id': room_id,
                 'error': 'Relay entèwonp — videyo a pa rive sou platfòm nan.',
@@ -1339,7 +1567,7 @@ def register_socketio_handlers(socketio):
                 # source of the broadcast, and an empty room has nobody left to
                 # watch it. Without this the RAM state + DB row stay 'live'
                 # forever and every participant keeps a ghost LIVE banner.
-                if room_id in room_stream_sessions and (was_owner or not participants):
+                if _session_get(room_id) and (was_owner or not participants):
                     _stop_stream_session(
                         room_id,
                         'owner_disconnect' if was_owner else 'room_empty'
@@ -1848,6 +2076,92 @@ def get_invite(room_id):
         print(f"Error fetching invite: {e}")
         return jsonify({'success': False, 'error': 'Erè nan jenere lyen envitasyon an.'}), 500
 
+# --------------------------------------------------------------------------- #
+# Facebook auto-Live: OAuth connect + connection status
+# --------------------------------------------------------------------------- #
+@konferans_bp.route('/facebook/connect/<room_id>')
+@login_required
+def facebook_connect(room_id):
+    """Send the owner to Facebook to authorise a Page, then come back here."""
+    room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+    if not room:
+        return "Sal sa pa egziste.", 404
+
+    is_admin = bool(getattr(current_user, 'is_admin', False))
+    if not _room_owner(room) and not is_admin:
+        return "Se sèl pwopriyetè sal la ki ka konekte Facebook.", 403
+
+    if not facebook_live.is_configured():
+        return redirect(url_for('konferans.room', room_code=room.room_code, fb='not_configured'))
+    if not facebook_live.encryption_available():
+        return redirect(url_for('konferans.room', room_code=room.room_code, fb='no_crypto'))
+
+    return redirect(facebook_live.oauth_dialog_url(
+        _fb_redirect_uri(), _fb_make_state(room_id)
+    ))
+
+
+@konferans_bp.route('/facebook/callback')
+@login_required
+def facebook_callback():
+    """OAuth redirect target: exchange the code, store the Page token encrypted."""
+    state = request.args.get('state') or ''
+    room_id = _fb_read_state(state)
+    room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first() if room_id else None
+    if not room:
+        return "Lyen OAuth la ekspire oswa sal la pa jwenn. Reprann operasyon an.", 400
+
+    back = lambda status: redirect(url_for('konferans.room', room_code=room.room_code, fb=status))
+
+    if request.args.get('error'):
+        return back('denied')
+
+    code = request.args.get('code')
+    if not code:
+        return back('error')
+
+    try:
+        short_token = facebook_live.exchange_code(code, _fb_redirect_uri())
+        long_token = facebook_live.extend_user_token(short_token)
+        pages = facebook_live.list_pages(long_token)
+        if not pages:
+            return back('no_pages')
+        conn = _fb_save_connection(current_user.id, pages[0])
+        if not conn:
+            return back('store_failed')
+        return back('connected')
+    except facebook_live.FacebookError as e:
+        print(f"Facebook OAuth Graph error: {e.message}")
+        return back('graph_error')
+    except Exception as e:
+        print(f"Facebook OAuth unexpected error: {e}")
+        return back('error')
+
+
+@konferans_bp.route('/api/facebook/status/<room_id>')
+@login_required
+def facebook_status(room_id):
+    """Whether auto-Live is configured and whether THIS user linked a Page."""
+    room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+    if not room:
+        return jsonify({'success': False, 'error': 'Sal sa pa egziste.'}), 404
+
+    is_admin = bool(getattr(current_user, 'is_admin', False))
+    if not _room_owner(room) and not is_admin:
+        return jsonify({'success': False, 'error': 'Pa otorize.'}), 403
+
+    conn = _fb_get_connection(current_user.id)
+    return jsonify({
+        'success': True,
+        'configured': facebook_live.is_configured(),
+        'encryption': facebook_live.encryption_available(),
+        'connected': bool(conn and conn.token_enc),
+        'page_name': conn.account_name if conn else None,
+        'page_id': conn.account_id if conn else None,
+        'connect_url': url_for('konferans.facebook_connect', room_id=room_id),
+    })
+
+
 @konferans_bp.route('/api/stream/start/<room_id>', methods=['POST'])
 @login_required
 def start_stream_session(room_id):
@@ -1872,16 +2186,44 @@ def start_stream_session(room_id):
         if platform not in _STREAM_PLATFORMS:
             return jsonify({'success': False, 'error': 'Platfòm pa valid.'}), 400
 
-        if platform == 'facebook':
-            return jsonify({
-                'success': False,
-                'code': 'external_encoder_required',
-                'error': 'KONFERANS pa voye odyo/videyo bay Facebook. Sèvi ak OBS Studio oswa yon lòt encoder RTMP pou difize sal la sou Facebook Live.',
-            }), 501
-
         ingest_url = (data.get('ingest_url') or '').strip()
         stream_key = (data.get('stream_key') or '').strip()
         title = (data.get('title') or '').strip()[:255]
+
+        # --- Facebook auto-Live: KONFERANS creates the broadcast and reads the
+        # ingest URL + stream key itself, so the owner only clicks "Kòmanse Live".
+        fb_live_id = None
+        if platform == 'facebook' and data.get('use_facebook_api'):
+            if _session_get(room_id):
+                return jsonify({
+                    'success': False,
+                    'error': 'Yon difizyon Live deja an kous pou sal sa a.',
+                    'session': _stream_session_payload(room_id),
+                }), 409
+            if not facebook_live.is_configured():
+                return jsonify({
+                    'success': False,
+                    'error': 'Facebook otomatik pa konfigire sou sèvè a (FACEBOOK_APP_ID/Meta App manke).',
+                }), 400
+            conn = _fb_get_connection(current_user.id)
+            page_token = facebook_live.decrypt_token(conn.token_enc) if conn else None
+            if not page_token:
+                return jsonify({
+                    'success': False,
+                    'error': 'Konekte kont Facebook ou anvan ou kòmanse Live otomatik la.',
+                    'needs_connect': True,
+                }), 400
+            try:
+                fb_live = facebook_live.create_live_video(
+                    conn.account_id, page_token, title=title, description=title
+                )
+            except facebook_live.FacebookError as e:
+                # Never leave a half-created session behind.
+                db.session.rollback()
+                return jsonify({'success': False, 'error': e.message, 'facebook_error': True}), 400
+            ingest_url = fb_live['ingest_url']
+            stream_key = fb_live['stream_key']
+            fb_live_id = fb_live['live_id']
 
         # WhatsApp target = local conference save (no RTMP ingest needed here)
         if platform != 'whatsapp':
@@ -1892,7 +2234,7 @@ def start_stream_session(room_id):
             if len(stream_key) < 4:
                 return jsonify({'success': False, 'error': 'Stream Key a obligatwa (minimum 4 karaktè).'}), 400
 
-        if room_stream_sessions.get(room_id):
+        if _session_get(room_id):
             return jsonify({
                 'success': False,
                 'error': 'Yon difizyon Live deja an kous pou sal sa a.',
@@ -1913,11 +2255,14 @@ def start_stream_session(room_id):
             status='live',
             started_at=now,
             started_by=started_by,
+            platform_live_id=fb_live_id,
         )
         db.session.add(session_row)
         db.session.commit()
 
-        room_stream_sessions[room_id] = {
+        needs_relay = platform != 'whatsapp'
+
+        _session_set(room_id, {
             'platform': platform,
             'title': title or None,
             'ingest_url': ingest_url or None,
@@ -1925,45 +2270,43 @@ def start_stream_session(room_id):
             'started_at': now,
             'session_db_id': session_row.id,
             'relay': False,
+            # The ffmpeg publisher is spawned by the socket handler 'stream_start'
+            # (handle_stream_start): it must live in the worker that receives the
+            # MediaRecorder chunks, which a plain HTTP request cannot guarantee
+            # once gunicorn runs more than one worker.
+            'relay_pending': needs_relay,
             'relay_error': None,
-        }
-
-        # Attempt a REAL live relay (owner browser -> ffmpeg -> RTMP ingest).
-        # WhatsApp is a local audio save and Facebook is OBS-only, so those
-        # skip the gateway. On any failure we keep the banner-only session and
-        # surface why, so the feature degrades gracefully instead of hanging.
-        if platform not in ('whatsapp', 'facebook'):
-            try:
-                ok, err, info = stream_relay.start_broadcaster(room_id, ingest_url, stream_key)
-                if ok:
-                    room_stream_sessions[room_id]['relay'] = True
-                else:
-                    room_stream_sessions[room_id]['relay_error'] = err
-            except Exception as e:
-                room_stream_sessions[room_id]['relay_error'] = f"Relay error: {e}"
+            # Only ids, never the token: used to end the broadcast on stop.
+            'facebook_live_id': fb_live_id,
+            'facebook_user_id': int(current_user.id) if fb_live_id else None,
+        })
 
         payload = _stream_session_payload(room_id) or {}
         _so_emit_stream('streaming_started', payload, room_id)
 
         plat = _STREAM_PLATFORMS[platform]
-        relay_ok = bool(room_stream_sessions[room_id].get('relay'))
-        relay_warn = room_stream_sessions[room_id].get('relay_error')
-        response = {
+        return jsonify({
             'success': True,
             'message': (
-                f"Difizyon Live '{plat['label']}' kòmanse!" if relay_ok
-                else f"Live '{plat['label']}' make kòm LIVE, men difizyon reyèl la pa demare."
+                f"Live '{plat['label']}' kreye — difizyon an ap demare."
+                if fb_live_id else
+                (f"Live '{plat['label']}' anrejistre — difizyon reyèl la ap demare ak medya a."
+                 if needs_relay else f"Difizyon Live '{plat['label']}' kòmanse!")
             ),
             'session': payload,
             'dashboard': plat.get('dashboard'),
             'help': plat.get('help'),
             'ingest_hint': plat.get('ingest_hint'),
-            'relay': relay_ok,
-            'relay_error': relay_warn,
-        }
-        if relay_warn and platform not in ('whatsapp', 'facebook'):
-            response['warning'] = relay_warn
-        return jsonify(response)
+            'relay': False,
+            'relay_pending': needs_relay,
+            'relay_error': None,
+            # When KONFERANS created the broadcast itself, hand the ingest details
+            # back to the OWNER's browser only (never persisted) so it can start
+            # the relay, exactly like the manual path.
+            'auto': bool(fb_live_id),
+            'ingest_url': ingest_url if fb_live_id else None,
+            'stream_key': stream_key if fb_live_id else None,
+        })
 
     except Exception as e:
         db.session.rollback()
@@ -2010,7 +2353,7 @@ def stream_status(room_id):
 
         return jsonify({
             'success': True,
-            'streaming': bool(room_stream_sessions.get(room_id)),
+            'streaming': bool(_session_get(room_id)),
             'session': _stream_session_payload(room_id),
         })
 

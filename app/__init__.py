@@ -57,17 +57,20 @@ def create_app(config_name=None):
     
     # Initialize Redis with fallback mechanism
     global redis_client
+    redis_url = app.config.get('REDIS_URL')
+    app.config['REDIS_URL_CONFIGURED'] = bool(redis_url and 'localhost' not in redis_url)
+    app.config['REDIS_INIT_ERROR'] = None
     try:
-        redis_url = app.config.get('REDIS_URL')
         if not redis_url or 'localhost' in redis_url:
             raise ConnectionError("No external Redis URL provided")
-            
+
         redis_client = Redis.from_url(redis_url, decode_responses=True)
         redis_client.ping()
         app.logger.info('Redis connected successfully')
     except Exception as e:
         app.logger.error(f'Redis unavailable: {e}. Running in database-only mode.')
         redis_client = None
+        app.config['REDIS_INIT_ERROR'] = str(e)
         # Fallback cache and limiter configs if Redis is down
         app.config['CACHE_TYPE'] = 'simple'
         # Correct key for flask-limiter >=3.5 (RATELIMIT_STORAGE_URL is legacy/ignored)
@@ -936,6 +939,35 @@ def create_app(config_name=None):
         except Exception as _elkr_e:
             db.session.rollback()
             app.logger.warning(f'KONFERANS E-LEARNING MIGRATION: skipped: {_elkr_e}')
+
+        # =====================================================================
+        # KONFERANS AUTO-LIVE MIGRATION (idempotent): the live-stream session
+        # keeps the Facebook live id so the broadcast can be ended server-side.
+        # The konferans_platform_connections table itself is created by
+        # db.create_all(); db.create_all() does NOT alter existing tables.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect_fb
+            from sqlalchemy import text as _sa_text_fb
+            _insp_fb = _sa_inspect_fb(db.engine)
+            if _insp_fb.has_table('konferans_stream_sessions'):
+                _ss_cols = {c['name'] for c in _insp_fb.get_columns('konferans_stream_sessions')}
+                if 'platform_live_id' not in _ss_cols:
+                    try:
+                        db.session.execute(_sa_text_fb(
+                            'ALTER TABLE konferans_stream_sessions '
+                            'ADD COLUMN platform_live_id VARCHAR(64) DEFAULT NULL'
+                        ))
+                        db.session.commit()
+                        app.logger.info(
+                            'KONFERANS AUTO-LIVE MIGRATION: added '
+                            'konferans_stream_sessions.platform_live_id'
+                        )
+                    except Exception:
+                        db.session.rollback()
+        except Exception as _fb_e:
+            db.session.rollback()
+            app.logger.warning(f'KONFERANS AUTO-LIVE MIGRATION: skipped: {_fb_e}')
 
         # =====================================================================
         # MENNEM MIGRATION (idempotent): extend mennem_trips with the price

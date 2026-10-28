@@ -24,17 +24,47 @@ from datetime import datetime
 # Max accepted size of a single binary chunk (10 MB) — guards against abuse.
 MAX_CHUNK_BYTES = 10 * 1024 * 1024
 
+# Encoding is CPU-bound, so we allow ONE live broadcast at a time on the box.
+MAX_CONCURRENT_BROADCASTS = 1
+
 # room_id -> _StreamBroadcaster
 _broadcasters = {}
 _registry_lock = threading.Lock()
 
+_ffmpeg_cache = None
+
 
 def _ffmpeg_binary():
-    """Resolve the ffmpeg executable: explicit FFMPEG_PATH first, then PATH."""
+    """Resolve the ffmpeg executable.
+
+    Order: explicit FFMPEG_PATH, then PATH, then the static binary shipped by
+    the `imageio-ffmpeg` wheel. Render's Python runtime has no system ffmpeg,
+    so the bundled binary is what makes a real RTMP broadcast possible there.
+    """
+    global _ffmpeg_cache
+    if _ffmpeg_cache:
+        return _ffmpeg_cache
+
     explicit = (os.environ.get('FFMPEG_PATH') or '').strip().strip('"')
     if explicit and os.path.isfile(explicit):
-        return explicit
-    return shutil.which('ffmpeg')
+        _ffmpeg_cache = explicit
+        return _ffmpeg_cache
+
+    found = shutil.which('ffmpeg')
+    if found:
+        _ffmpeg_cache = found
+        return _ffmpeg_cache
+
+    try:
+        import imageio_ffmpeg
+        bundled = imageio_ffmpeg.get_ffmpeg_exe()
+        if bundled and os.path.isfile(bundled):
+            _ffmpeg_cache = bundled
+            return _ffmpeg_cache
+    except Exception:
+        pass
+
+    return None
 
 
 def build_rtmp_url(ingest_url, stream_key):
@@ -75,12 +105,16 @@ class _StreamBroadcaster:
             return False, self.last_error
 
         # Read a continuous (fragmented) WebM stream from stdin, publish FLV to RTMP.
+        # Tuned for a LOW-CPU box: 720p30, ultrafast x264, 2s keyframe interval
+        # (what Facebook asks for). Only one broadcast runs at a time.
         cmd = [
             ffmpeg, '-hide_banner', '-loglevel', 'error',
             '-f', 'webm', '-i', 'pipe:0',
-            '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',
+            '-vf', 'scale=-2:720',
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
             '-pix_fmt', 'yuv420p', '-r', '30',
-            '-b:v', '1500k', '-maxrate', '1500k', '-bufsize', '3000k',
+            '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
+            '-b:v', '1200k', '-maxrate', '1500k', '-bufsize', '3000k',
             '-c:a', 'aac', '-ar', '44100', '-ac', '2', '-b:a', '128k',
             '-f', 'flv', self.url,
         ]
@@ -157,6 +191,15 @@ class _StreamBroadcaster:
 def start_broadcaster(room_id, ingest_url, stream_key):
     """Spawn the ffmpeg publisher for a room. Returns (ok, error, info)."""
     stop_broadcaster(room_id)  # never leak a previous process for the same room
+
+    # CPU guard: encoding is the expensive part, so only one live at a time.
+    with _registry_lock:
+        running = [r for r, b in _broadcasters.items() if b.alive]
+    if len(running) >= MAX_CONCURRENT_BROADCASTS:
+        return False, (
+            "Yon lòt difizyon Live deja ap kouri — sèvè a pa gen ase CPU pou de (2) an menm tan."
+        ), None
+
     url = build_rtmp_url(ingest_url, stream_key)
     if not url:
         return False, 'Pa gen URL ingest/Stream Key valid.', None

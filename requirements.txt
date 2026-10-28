@@ -21,4 +21,8 @@ phonenumbers==8.13.44
 bleach==6.0.0
 Pillow==10.4.0
 imageio==2.35.0
+# Static ffmpeg binary for the KONFERANS live-relay (Render has no system ffmpeg).
+imageio-ffmpeg>=0.4.9,<0.7
+# Reversible encryption for the stored Facebook Page access token (KONFERANS auto-Live).
+cryptography>=42,<47
 segno==1.6.1

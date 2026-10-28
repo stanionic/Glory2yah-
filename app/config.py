@@ -286,6 +286,13 @@ class Config:
         # OAuth
         self.GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
         self.GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+        # Facebook / Meta — KONFERANS auto-Live (Graph API, optional).
+        # When both are set the owner can connect a Page and KONFERANS creates
+        # the broadcast itself; otherwise the manual RTMP path is used unchanged.
+        self.FACEBOOK_APP_ID = os.environ.get('FACEBOOK_APP_ID', '').strip()
+        self.FACEBOOK_APP_SECRET = os.environ.get('FACEBOOK_APP_SECRET', '').strip()
+        self.FACEBOOK_GRAPH_VERSION = os.environ.get('FACEBOOK_GRAPH_VERSION', 'v26.0').strip()
+        self.FACEBOOK_ENABLED = bool(self.FACEBOOK_APP_ID and self.FACEBOOK_APP_SECRET)
         # Sentry
         self.SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
 

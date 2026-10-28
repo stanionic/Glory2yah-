@@ -1,7 +1,8 @@
 """
 Smoke test: Konferans live-streaming features.
 Covers: /api/stream/start, /api/stream/status, /api/stream/stop,
-permissions (owner vs guest), duplicate start, recording title column.
+permissions (owner vs guest), duplicate start, recording title column,
+and the Facebook auto-Live endpoints (status + graceful refusal).
 """
 import io
 import os
@@ -89,9 +90,26 @@ check('non-rtmp ingest -> 400', r.status_code == 400)
 r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'youtube', 'ingest_url': 'rtmp://a.rtmp.youtube.com/live2', 'stream_key': 'abc'})
 check('short stream key -> 400', r.status_code == 400)
 r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'facebook', 'ingest_url': 'rtmps://live-api-s.facebook.com:443/rtmp/', 'stream_key': 'fb-private-test-key'})
-check('facebook direct stream rejected -> 501', r.status_code == 501 and r.get_json().get('code') == 'external_encoder_required')
+check('facebook direct stream accepted -> 200', r.status_code == 200)
+j = r.get_json()
+check('facebook start success', j.get('success') is True)
+check('facebook key masked', (j.get('session', {}) or {}).get('stream_key_masked', '').endswith('key'))
+check('facebook relay pending (server pushes the media)', j.get('relay_pending') is True)
 with app.app_context():
-    check('facebook rejection does not persist a session', KonferansStreamSession.query.filter_by(room_id=ROOM_ID, platform='facebook').count() == 0)
+    check('facebook session persisted', KonferansStreamSession.query.filter_by(room_id=ROOM_ID, platform='facebook').count() == 1)
+client.post(f'/konferans/api/stream/stop/{ROOM_ID}')
+
+# 5b. Facebook auto-Live: status endpoint + graceful refusal when not usable
+r = client.get(f'/konferans/api/facebook/status/{ROOM_ID}')
+check('facebook status -> 200', r.status_code == 200)
+j = r.get_json()
+check('facebook status shape', j.get('success') is True and 'configured' in j and 'connect_url' in j)
+check('facebook connect_url points to the OAuth route', '/konferans/facebook/connect/' in (j.get('connect_url') or ''))
+r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'facebook', 'use_facebook_api': True, 'title': 'Auto'})
+check('facebook auto without Page/creds -> 400', r.status_code == 400)
+check('facebook auto error is explanatory', bool((r.get_json() or {}).get('error')))
+check('no session persisted on facebook auto failure',
+      client.get(f'/konferans/api/stream/status/{ROOM_ID}').get_json().get('streaming') is False)
 
 # 6. WhatsApp platform requires no ingest/key
 r = client.post(f'/konferans/api/stream/start/{ROOM_ID}', json={'platform': 'whatsapp', 'title': 'Odio Save'})
@@ -107,7 +125,7 @@ r = client.post(f'/konferans/api/stream/stop/{ROOM_ID}')
 check('second stop -> 404 (nothing live)', r.status_code == 404)
 with app.app_context():
     rows = KonferansStreamSession.query.filter_by(room_id=ROOM_ID).all()
-    check('2 stream sessions persisted', len(rows) == 2)
+    check('3 stream sessions persisted', len(rows) == 3)
     stopped = rows[-1]
     check('last session stopped with duration', stopped.status == 'stopped' and stopped.duration_seconds is not None)
     check('keys always masked', all((s.stream_key_masked or '').startswith('*') for s in rows if s.stream_key_masked))

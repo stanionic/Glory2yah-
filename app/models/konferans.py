@@ -81,6 +81,11 @@ class KonferansStreamSession(BaseModel):
     stopped_at = db.Column(db.DateTime, nullable=True)
     duration_seconds = db.Column(db.Integer, nullable=True)
     started_by = db.Column(db.String(255), nullable=True)
+    # Set when the broadcast was created through the Facebook Graph API, so the
+    # live can be ended server-side. New column: created for fresh DBs by
+    # db.create_all(); existing DBs get it from the idempotent bootstrap
+    # migration in app/__init__.py (code always guards with getattr).
+    platform_live_id = db.Column(db.String(64), nullable=True)
 
     def to_dict(self):
         data = super().to_dict()
@@ -90,3 +95,27 @@ class KonferansStreamSession(BaseModel):
         except Exception:
             pass
         return data
+
+
+class KonferansPlatformConnection(BaseModel):
+    """A connected external platform account for KONFERANS auto-Live.
+
+    Currently used for Facebook: the owner links a Page once (OAuth) and we keep
+    the long-lived Page access token so KONFERANS can create the broadcast and
+    read back the ingest URL + stream key on each start.
+
+    The token is stored ENCRYPTED (see konferans/facebook_live.py); the raw
+    stream key is never stored at all.
+    """
+    __tablename__ = 'konferans_platform_connections'
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    platform = db.Column(db.String(32), nullable=False, default='facebook', index=True)
+    account_id = db.Column(db.String(64), nullable=True)      # e.g. Facebook Page ID
+    account_name = db.Column(db.String(255), nullable=True)   # e.g. Page name
+    token_enc = db.Column(db.Text, nullable=True)             # encrypted access token
+    scopes = db.Column(db.String(512), nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f'<KonferansPlatformConnection {self.platform}:{self.account_name}>'

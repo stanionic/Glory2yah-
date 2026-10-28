@@ -85,6 +85,20 @@ services:
         value: "1"
       - key: CALLMEBOT_APIKEY
         sync: false
+      # ================================================================
+      # KONFERANS FACEBOOK AUTO-LIVE (optional, Graph API).
+      #   When BOTH vars are set, the room owner can link a Facebook Page and
+      #   KONFERANS creates the Live broadcast itself (reads ingest URL + key),
+      #   so no OBS and no manual key copying is needed. Both are SECRETS, so
+      #   `sync: false` makes Render prompt for them in the Dashboard.
+      #   NOTE: Meta requires an App Review for `pages_manage_posts` plus
+      #   eligibility (account >= 60 days, Page >= 100 followers) before this
+      #   can publish. Without them, the manual RTMP path keeps working.
+      # ================================================================
+      - key: FACEBOOK_APP_ID
+        sync: false
+      - key: FACEBOOK_APP_SECRET
+        sync: false
       # DATABASE_URL is injected automatically by Render from the managed
       # PostgreSQL instance. The app normalizes the legacy `postgres://` scheme
       # to `postgresql://` at startup, so no edit is required here.

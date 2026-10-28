@@ -16,7 +16,12 @@ from app.models.message import Message
 from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
 from app.models.story import Story
 from app.models.party import Party, PartyParticipant
-from app.models.konferans import KonferansRoom, KonferansRecording, KonferansStreamSession
+from app.models.konferans import (
+    KonferansRoom,
+    KonferansRecording,
+    KonferansStreamSession,
+    KonferansPlatformConnection,
+)
 from app.models.charity import CharityDonation, CharityCause
 
 try:
@@ -75,6 +80,7 @@ __all__ = [
     'KonferansRoom',
     'KonferansRecording',
     'KonferansStreamSession',
+    'KonferansPlatformConnection',
 ]
 
 if _ELEARNING_OK:
