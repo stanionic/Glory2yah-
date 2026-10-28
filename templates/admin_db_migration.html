@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Migrasyon Baz Done - Admin{% endblock %}
+{% block content %}
+<style>
+  .dm-wrap{max-width:900px;margin:0 auto;padding:22px 14px 60px}
+  .dm-title{font-size:1.5rem;font-weight:800;color:#1e3a8a;margin:0 0 4px}
+  .dm-sub{color:#6b7280;font-size:.9rem;margin:0 0 18px}
+  .dm-panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-top:18px;
+            box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .dm-panel h3{margin:0 0 10px;color:#1e3a8a;font-size:1.05rem}
+  .dm-kv{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.88rem;margin:4px 0}
+  .dm-kv b{color:#374151}
+  .dm-mono{font-family:ui-monospace,Menlo,Consolas,monospace;color:#111827;word-break:break-all}
+  .dm-pill{display:inline-block;padding:4px 11px;border-radius:999px;font-weight:800;font-size:.76rem}
+  .dm-pill.ok{background:#dcfce7;color:#15803d}
+  .dm-pill.off{background:#fee2e2;color:#b91c1c}
+  .dm-btn{display:inline-block;background:#1e3a8a;color:#fff;border:0;border-radius:10px;
+          padding:11px 18px;font-weight:800;cursor:pointer;font-size:.92rem}
+  .dm-btn:hover{background:#172554}
+  .dm-btn.gray{background:#6b7280}
+  .dm-btn.gray:hover{background:#4b5563}
+  .dm-input,.dm-select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;
+                       font-size:.9rem;margin:6px 0 10px}
+  .dm-check{display:flex;gap:9px;align-items:center;font-size:.88rem;margin:8px 0}
+  .dm-note{background:#eff6ff;border-left:4px solid #1e3a8a;border-radius:8px;padding:10px 14px;
+           font-size:.85rem;color:#1e3a8a;margin-top:14px}
+  .dm-warn{background:#fef3c7;border-left:4px solid #d97706;border-radius:8px;padding:10px 14px;
+           font-size:.85rem;color:#92400e;margin-top:14px}
+  .dm-log{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:14px;font-size:.78rem;
+          font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;max-height:520px;
+          overflow:auto}
+  .dm-table{width:100%;border-collapse:collapse;font-size:.86rem}
+  .dm-table th,.dm-table td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left}
+  .dm-table th{color:#6b7280;font-size:.74rem;text-transform:uppercase;letter-spacing:.03em}
+</style>
+
+<div class="dm-wrap">
+  <h1 class="dm-title">🗄️ Migrasyon Baz Done (SQLite → PostgreSQL)</h1>
+  <p class="dm-sub">
+    Zouti yon sèl fwa pou pote kontni baz lokal la sou baz anliy lan. Li kouri
+    <b>andann sèvè a</b>, kidonk li wè DATABASE_URL prive a dirèkteman — ou pa
+    bezwen URL ekstèn lan.
+  </p>
+
+  <div class="dm-panel">
+    <h3>1. Sib migrasyon an</h3>
+    <div class="dm-kv">
+      <b>Baz sib:</b>
+      <span class="dm-mono">{{ target.uri_masked }}</span>
+      {% if target.is_postgres %}
+        <span class="dm-pill ok">PostgreSQL ✓</span>
+      {% else %}
+        <span class="dm-pill off">PA PostgreSQL</span>
+      {% endif %}
+    </div>
+    <div class="dm-note">
+      Kopi a se yon <b>fusion san danje</b> (INSERT … ON CONFLICT DO NOTHING) :
+      li pa janm efase ni doubli liy ki deja sou entènèt. Anyen pa tronke.
+    </div>
+    {% if not target.is_postgres %}
+    <div class="dm-warn">
+      DATABASE_URL pa parèt kòm yon baz PostgreSQL. Ou ka toujou fè yon
+      <b>dry-run</b>, men ekriti a ap bloke.
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="dm-panel">
+    <h3>2. Voye yon snapshot SQLite</h3>
+    <form method="post" action="{{ url_for('admin_db.upload') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="dm-input" type="file" name="snapshot" accept=".db,.sqlite,.sqlite3" required>
+      <button class="dm-btn" type="submit">Telechaje snapshot lan</button>
+    </form>
+    <div class="dm-note">
+      Fichye a sot sovgade sou disk pèsistan sèvè a (li pa janm antre nan git).
+    </div>
+  </div>
+
+  {% if snapshots %}
+  <div class="dm-panel">
+    <h3>3. Lanse migrasyon an</h3>
+    <table class="dm-table">
+      <tr><th>Snapshot</th><th>Gwosè</th><th>Dat</th></tr>
+      {% for s in snapshots %}
+      <tr>
+        <td class="dm-mono">{{ s.name }}</td>
+        <td>{{ '{:,}'.format(s.size) }} B</td>
+        <td>{{ s.mtime | int }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <form method="post" action="{{ url_for('admin_db.run') }}" style="margin-top:16px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="dm-kv"><b>Snapshot</b></label>
+      <select class="dm-select" name="snapshot" required>
+        {% for s in snapshots %}
+        <option value="{{ s.name }}" {% if ran_snapshot == s.name %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="dm-check">
+        <input type="checkbox" id="dry_run" name="dry_run" value="1"
+               {% if result is none or ran_dry_run %}checked{% endif %}>
+        <label for="dry_run">Dry-run (envantè sèlman — anyen pa ekri)</label>
+      </div>
+      <div class="dm-check">
+        <input type="checkbox" id="auto_create" name="auto_create_tables" value="1">
+        <label for="auto_create">Kreye tab ki manke sou sib la (DDL)</label>
+      </div>
+
+      <label class="dm-kv"><b>Konfimasyon</b> — pou ekri tout bon, tape
+        <span class="dm-mono">{{ confirm_word }}</span></label>
+      <input class="dm-input" type="text" name="confirm" placeholder="{{ confirm_word }}"
+             autocomplete="off">
+
+      <button class="dm-btn" type="submit">Lanse</button>
+    </form>
+
+    <div class="dm-warn">
+      Konsèy: kouri <b>dry-run</b> an premye, verifye kantite liy yo, epi apre sa
+      dekoche dry-run epi tape {{ confirm_word }} pou fusionnen done yo.
+    </div>
+  </div>
+  {% else %}
+  <div class="dm-panel">
+    <h3>3. Lanse migrasyon an</h3>
+    <p class="dm-sub">Pa gen snapshot toujou. Telechaje youn anwo a.</p>
+  </div>
+  {% endif %}
+
+  {% if result %}
+  <div class="dm-panel">
+    <h3>Rapò egzekisyon</h3>
+    <div class="dm-kv">
+      <b>Mòd:</b>
+      {% if ran_dry_run %}
+        <span class="dm-pill ok">DRY-RUN</span>
+      {% else %}
+        <span class="dm-pill off">EKRI</span>
+      {% endif %}
+      <b>Dire:</b> <span class="dm-mono">{{ result.seconds }}s</span>
+    </div>
+    <pre class="dm-log">{{ result.log }}</pre>
+  </div>
+  {% endif %}
+
+  <div class="dm-note">
+    Lè done yo fin ateri, ou ka retire fichye <span class="dm-mono">app/routes/admin_db_migration.py</span>,
+    <span class="dm-mono">templates/admin_db_migration.html</span> ak liy
+    <span class="dm-mono">register_blueprint(admin_db_bp …)</span> nan
+    <span class="dm-mono">app/__init__.py</span>.
+  </div>
+</div>
+{% endblock %}

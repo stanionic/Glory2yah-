@@ -1701,6 +1701,17 @@ def register_blueprints(app):
     app.register_blueprint(delivery_bp, url_prefix='/delivery')
     app.register_blueprint(gkach_bp, url_prefix='/gkach')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    # ONE-SHOT DB MIGRATION (admin only): runs INSIDE the deployed service so it
+    # can reach the managed Postgres via DATABASE_URL without the External DSN.
+    # Remove this block (and the module + template) once the data has landed.
+    try:
+        from app.routes.admin_db_migration import admin_db_bp
+        app.register_blueprint(admin_db_bp, url_prefix='/admin/db-migration')
+        app.logger.info('Registered admin DB migration blueprint at /admin/db-migration')
+    except Exception as e:
+        app.logger.warning(f'Could not register admin DB migration blueprint: {e}')
+
     app.register_blueprint(share_bp, url_prefix='/s')
     
     # Register EVENTS blueprint (public) + admin events blueprint
