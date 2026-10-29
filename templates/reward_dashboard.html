@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{%- import 'components/_ui.html' as ui with context -%}
 
 {% block content %}
 <style>
@@ -199,6 +200,10 @@ th {
             </tbody>
         </table>
     </div>
+    {% else %}
+    {{ ui.empty_state(icon='📣', title='Ou poko pataje okenn piblisite',
+                      subtitle='Pataje yon piblisite epi jwenn 10 Gkach pou chak 100 klik inik.',
+                      action_label='🏪 Ale nan Marketplace', action_href=url_for('achte')) }}
     {% endif %}
 
     {% if recent_txns %}
@@ -216,9 +221,9 @@ th {
             <tbody>
                 {% for txn in recent_txns %}
                 <tr>
-                    <td>{{ txn.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ txn.created_at_str }}</td>
                     <td>
-                        {% if txn.transaction_type == 'referral_click_reward' %}
+                        {% if txn.transaction_type in ('referral_click_reward', 'reward') %}
                         <i class="fas fa-mouse-pointer"></i> Klik
                         {% else %}
                         <i class="fas fa-shopping-bag"></i> Vant
@@ -231,12 +236,13 @@ th {
             </tbody>
         </table>
     </div>
+    {% else %}
+    {{ ui.empty_state(icon='🧾', title='Pa gen tranzaksyon',
+                      subtitle='Rekonpans ou yo ap parèt isit la lè w rive 100 klik inik.') }}
     {% endif %}
 
     <div style="text-align: center; margin-top: 40px;">
-        <a href="{{ url_for('achte') }}" class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;">
-            <i class="fas fa-store"></i> Ale nan Marketplace
-        </a>
+        {{ ui.button('🏪 Ale nan Marketplace', href=url_for('achte'), variant='primary', size='lg') }}
     </div>
 </div>
 

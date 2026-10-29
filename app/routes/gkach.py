@@ -81,6 +81,28 @@ def rewards_dashboard():
 
     gkach_balance = GkachService.get_balance(whatsapp)
     recent_txns = GkachService.get_transactions(whatsapp, limit=20)
+    # get_transactions() returns dicts whose 'created_at' is an ISO *string*
+    # (see GkachTransaction.to_dict). The template used to call .strftime() on
+    # it, which raised UndefinedError ('str' has no 'strftime') and 500'd the
+    # page for ANY user with transactions. Pre-format into 'created_at_str' so
+    # the template renders a plain string regardless of the source type.
+    from datetime import datetime as _dt
+    for _t in recent_txns:
+        if not isinstance(_t, dict):
+            continue
+        _ca = _t.get('created_at')
+        _fmt = ''
+        if isinstance(_ca, str) and _ca:
+            try:
+                _fmt = _dt.fromisoformat(_ca).strftime('%d/%m/%Y %H:%M')
+            except (ValueError, TypeError):
+                _fmt = _ca
+        elif _ca is not None:
+            try:
+                _fmt = _ca.strftime('%d/%m/%Y %H:%M')
+            except (ValueError, TypeError, AttributeError):
+                _fmt = str(_ca)
+        _t['created_at_str'] = _fmt
     total_sales = 0
     try:
         s = GkachService.get_transaction_summary(whatsapp)

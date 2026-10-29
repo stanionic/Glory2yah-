@@ -50,6 +50,30 @@ def _http_ok(resp, ok_codes=(200, 201, 202)):
     except Exception:
         return False
 
+
+def _provider_success(name, resp):
+    """Provider-aware delivery check.
+
+    Some gateways — CallMeBot above all — answer HTTP 200 even when the message
+    was NOT delivered, reporting the real outcome only in the response BODY
+    (e.g. ``ERROR: Invalid apikey``, ``ERROR: ... send "/start"``, ``ERROR: too
+    many requests``, ``ERROR: Your ip ... blocked``). Treating a bare 200 as
+    success would silently mark undelivered alerts as sent. For those providers
+    we additionally require the body to be free of an ``ERROR`` marker.
+    """
+    if not _http_ok(resp):
+        return False
+    if name in ('callmebot',):
+        try:
+            body = (getattr(resp, 'text', '') or '')
+        except Exception:
+            body = ''
+        # CallMeBot success body: "Message queued to send."
+        if 'ERROR' in body.upper():
+            logger.warning('WhatsApp alert via %s body-error: %s', name, body.strip()[:180])
+            return False
+    return True
+
 # ── WhatsApp providers ────────────────────────────────────────────────────────
 # Provider chain (first CONFIGURED provider that succeeds wins). Every provider
 # is optional: when none is configured the alert is logged + skipped, while the
@@ -170,12 +194,13 @@ def _send_whatsapp_alert(message: str, phone: str = None):
             continue
         if resp is None:
             continue  # not configured — try the next provider
-        if _http_ok(resp):
+        if _provider_success(name, resp):
             logger.info('WhatsApp admin alert sent via %s to +%s', name, digits)
             _ALERT_LAST_PROVIDER['name'] = name
             return name
-        logger.warning('WhatsApp alert via %s rejected (HTTP %s)',
-                       name, getattr(resp, 'status_code', '?'))
+        logger.warning('WhatsApp alert via %s rejected (HTTP %s): %s',
+                       name, getattr(resp, 'status_code', '?'),
+                       (getattr(resp, 'text', '') or '')[:180])
 
     logger.warning(
         'WhatsApp admin alert NOT delivered to +%s — no provider configured or all '
