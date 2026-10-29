@@ -188,11 +188,13 @@
                     <span class="service-name">Mennenm</span>
                     <span class="service-desc">Jwenn chofè</span>
                 </a>
+                {% if current_user.is_authenticated and current_user.is_admin %}
                 <a href="/admin/login" class="service-item">
                     <span class="service-icon">⚙️</span>
                     <span class="service-name">Admin</span>
                     <span class="service-desc">Jesyon</span>
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
