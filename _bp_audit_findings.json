@@ -1,0 +1,926 @@
+[
+ {
+  "url": "/mache/categories",
+  "status": 200,
+  "final": "/mache/categories",
+  "http_errors": [
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 📂 Kategori Chwazi yon kategori pou wè pwodwi yo 📱 Elektwonik 👗 Mòd 🏠 Kay 💄 Bote ⚽ Espò 🍔 Manje 📚 Liv 🧸 Jwèt 🚗 Machin 📦 Lòt 🏠 Akèy 🛒 Mache 🚀 Sèvis 🛍️ P",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ad/DEMO-SELL-002",
+  "status": 200,
+  "final": "/ad/DEMO-SELL-002",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A Lamayi Modèn Fanm — Mòd 1500 Gkach 1800.00 HTG Genyen kèk (5 disponib) Bèl lamayi modèn, twal byen chwazi, plizyè koulè disponib. Fèt ak presizyon, kò",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/cart/",
+  "status": 200,
+  "final": "/cart/",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🛒 Panyen Ou 🛒 Panyen ou vid Ajoute kèk pwodui pou kòmanse! 🛍️ Ale nan Mache 🏠 Akèy 🛒 Mache 🚀 Sèvis 🛍️ Panyen 👤 Pwofil",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/cart/api/count",
+  "status": 429,
+  "final": "/cart/api/count",
+  "http_errors": [
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "Too Many Requests 50 per 1 hour",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/cart/checkout",
+  "status": 200,
+  "final": "/",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Panier ou vid. 76 📝 Teks 🔗 Liyen 🖼️ Imaj 0 / 10MB 📤 Poste 📺 GADE TV LIVE 🚀 KREYE PIBLISITE W Vann pwodwi ou, sèvis ou, oswa ankò fè reklamasyon ou ✨",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/gkach/",
+  "status": 200,
+  "final": "/gkach/wallet",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A GKACH / FINANS Bous ou an Gade balans ou, aktivite ak rekonpans ou yo. Istwa tranzaksyon ↓ 🪙 BALANS TOTAL 0 Gkach 0.00 HTG 💰 Achte Gkach ↗ Transfere 💸",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/gkach/wallet",
+  "status": 200,
+  "final": "/gkach/wallet",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A GKACH / FINANS Bous ou an Gade balans ou, aktivite ak rekonpans ou yo. Istwa tranzaksyon ↓ 🪙 BALANS TOTAL 0 Gkach 0.00 HTG 💰 Achte Gkach ↗ Transfere 💸",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/gkach/rewards/dashboard",
+  "status": 200,
+  "final": "/gkach/rewards/dashboard",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A Dashboard Rekonpans Suiv pwogre w ak jwenn rekonpans pou pataje piblisite yo 0 Total Klik 0 Total Vant 0 Balans Gkach Piblisite w Pataje Piblisite Kli",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/delivery/my-deliveries",
+  "status": 200,
+  "final": "/delivery/my-deliveries",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A Livrezon mwen yo Swiv etap tout livrezon ou yo Dakèil Pa gen livrezon Ou pa gen okenn livrezon ki ankou kounye a. 🏠 Akèy 🛒 Mache 🚀 Sèvis 🛍️ Panyen 👤 P",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/",
+  "status": 200,
+  "final": "/admin/",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 📊 Panno Administratè Glory2yahPub Byenveni nan espas administratè Glory2YahPub — jere platfòm nan rapidman. 🔔 Alèt Apwobasyon 8 Jere Itilizatè yo Jere",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/ads",
+  "status": 200,
+  "final": "/admin/",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 📊 Panno Administratè Glory2yahPub Byenveni nan espas administratè Glory2YahPub — jere platfòm nan rapidman. 🔔 Alèt Apwobasyon 8 Jere Itilizatè yo Jere",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/alerts",
+  "status": 200,
+  "final": "/admin/alerts",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🛎️ Alèt Apwobasyon Administratè Tout trafik ki mande apwobasyon admin lan voye yon alèt sou WhatsApp +50942882076 epi anrejistre nan sant notifikasyon",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/audit",
+  "status": 200,
+  "final": "/admin/audit",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🛡️ AUDIT LOGS Journal d'Audit — Glory2YahPub Dernières 64 entrées sur 14 au total (table ecole_audit_logs) TOTAL ENTRÉES 14 PAGE 1 / 1 TYPES D'ACTIONS",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/rewards",
+  "status": 200,
+  "final": "/admin/rewards",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🏆 Rekonpans Admin — Klik Inik & Pèman ← Retounen Panno Chak klik dlo se yon moun inik (pa gen doub). Lè yon moun ki pataje lyen batch la rive sou 100 ",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/users",
+  "status": 200,
+  "final": "/admin/users",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 👥 Jere Itilizatè yo Gere tout kont itilizatè sou platfòm nan 15 TOTAL ITILIZATÈ 15 AKTIF 0 DEZAKTIVE / BLOKE 3 ADMINISTRATÈ 🔒 Bloke kont pa pseudo Ant",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/users/1",
+  "status": 200,
+  "final": "/admin/users/1",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 👤 Detay Itilizatè Wè tout enfòmasyon sou itilizatè sa a Admin509 ✅ Aktif 📋 Enfòmasyon Pwofil ID: 1 Non Konplè: Glory2YahPub WhatsApp: +50942882076 Ema",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/ad/DEMO-SELL-002",
+  "status": 200,
+  "final": "/admin/ad/DEMO-SELL-002",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A Lamayi Modèn Fanm — Mòd 1500 Gkach 1800.00 HTG Genyen kèk (5 disponib) Bèl lamayi modèn, twal byen chwazi, plizyè koulè disponib. Fèt ak presizyon, kò",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/events",
+  "status": 200,
+  "final": "/admin/events",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ⚙️ Evènman (Admin) Tit Slug Statut Partisipan Egliz Rejyon SOS LEGLIZ - Demi Jounen Jen pou Peyi a 17 Oktobre 2026 sos-legliz-demi-jounen-jen-2026-10-",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/events/sos-alo-legliz/participants",
+  "status": 200,
+  "final": "/admin/events/sos-alo-legliz/participants",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ← Tout evènman 🙋 Partisipan yo - SOS ALO LEGLIZ 0 patisipan Non Telefòn Komin Rejyon Wòl Tip Dat 🏠 Akèy 🛒 Mache 🚀 Sèvis 🛍️ Panyen 👤 Pwofil",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/events/sos-alo-legliz/organizations",
+  "status": 200,
+  "final": "/admin/events/sos-alo-legliz/organizations",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ← Tout evènman 🏛️ Egliz/Òganizasyon yo - SOS ALO LEGLIZ Eglise Chretienne Paloma de Morne Rouge pending Eglise Chretienne Paloma de Morne Rouge · 4827",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/db-migration",
+  "status": 200,
+  "final": "/admin/db-migration",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🗄️ Migrasyon Baz Done (SQLite → PostgreSQL) Zouti yon sèl fwa pou pote kontni baz lokal la sou baz anliy lan. Li kouri andann sèvè a, kidonk li wè DAT",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/gkach/manage",
+  "status": 200,
+  "final": "/admin/gkach/manage",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A Jesyon Gkach - Administratè Jesyon Taux Echanj Gkach Lajan: HTG (Gourde) USD (Dollar) Taux pou 1 Gkach: Mete Ajou Taux Itilizatè ak Balans Gkach +5094",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/admin/charity/donations",
+  "status": 200,
+  "final": "/admin/charity/donations",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❤️ Dons Caritatifs Gere dons yo ak kòz charitab yo 💰 275 Total Dons (Gkach) 📊 11 Dons total 👥 1 Donatè inik 📋 Dons yo 🏷️ Kòz yo Dons resan yo DAT DONA",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/konferans/",
+  "status": 200,
+  "final": "/konferans/",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🎥 Konferans Sal Konferans Videyo Glory2Yah Kreye yon Sal Non Sal la Non w (Oto-ranpli depi kont ou) Kreye pa Glory2YahPub • WhatsApp: +50942882076 Mod",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/konferans/room/VD1R78",
+  "status": 200,
+  "final": "/konferans/room/VD1R78",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A konse VD1R78 Mode Économique (360p) – Faible débit Kalite 🎥 Videyo 🎙️+📷 🎧 Odio Videyo Kamera Odio Medya Kite Chat Bibloyotèk Medya 0 Pa gen medya pata",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/konferans/api/billing/79dd8e2f-e5b5-47b7-8bf1-774c54aa3337",
+  "status": 403,
+  "final": "/konferans/api/billing/79dd8e2f-e5b5-47b7-8bf1-774c54aa3337",
+  "http_errors": [
+   "403 /konferans/api/billing/79dd8e2f-e5b5-47b7-8bf1-774c54aa3337"
+  ],
+  "console_errors": [
+   "WebSocket connection to 'ws://127.0.0.1:5000/socket.io/?EIO=4&transport=websocket&sid=nayOGMPrzn2WCwOIAAAA' failed: Invalid frame header",
+   "Failed to load resource: the server responded with a status of 403 (FORBIDDEN)"
+  ],
+  "snippet": "{\"error\":\"Se s\\u00e8l pwopriyet\\u00e8 sal la ki ka w\\u00e8 enf\\u00f2masyon sa yo.\",\"success\":false}",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Register Pseudo WhatsApp Number Ko",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/student",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès réservé aux étudiants. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Register Pseudo WhatsApp Number Konekte avek kont Glory2Yah ou → nimewo sa a",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/teacher",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès réservé aux enseignants. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login R",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/module/1",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès non autorisé. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Register Pse",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/modules",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès réservé aux étudiants. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Reg",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/admin",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès administrateur requis. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Reg",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/admin/students",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès administrateur requis. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Reg",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/admin/payments",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès administrateur requis. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Reg",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/admin/graduation",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Accès administrateur requis. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Reg",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/admin/admission_results",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD-Haiti 🏫 Palmarès Login Register Pseudo WhatsApp Number Ko",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/ecole_biblique/admission_test",
+  "status": 200,
+  "final": "/ecole_biblique/register",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Seuls les étudiants peuvent passer le test d'admission. ℹ️ Vous n'avez pas de compte à l'École Biblique. Veuillez vous inscrire. Ecole Biblique MEGD",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/fet/",
+  "status": 200,
+  "final": "/fet/",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🎉 Fèt yo Konekte Kreye Fèt Pa gen fètnenyen pou kounye a. Tornen pita! 🏠 Akèy 🛒 Mache 🚀 Sèvis 🛍️ Panyen 👤 Pwofil",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/fet/my-parties",
+  "status": 200,
+  "final": "/fet/my-parties",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🎉 Fèt Mwen Kreye Kreye Nouvo Fèt Ou pa kreye okenn fèttan. Kreye Premye Fètt Ou Tounen nan Fèt Yo 🏠 Akèy 🛒 Mache 🚀 Sèvis 🛍️ Panyen 👤 Pwofil",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/fet/admin/parties",
+  "status": 200,
+  "final": "/",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A ❌ Ou dwe konekte kòm administratè. 76 📝 Teks 🔗 Liyen 🖼️ Imaj 0 / 10MB 📤 Poste 📺 GADE TV LIVE 🚀 KREYE PIBLISITE W Vann pwodwi ou, sèvis ou, oswa ankò f",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/mennenm/admin",
+  "status": 200,
+  "final": "/mennenm/admin",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A 🚕 Admin Mennen M Jere chofè yo — verifye, aktive, dezaktive Retounen 2 Total chofè 1 Verifye 1 Aktif 1 Nan datant Desinat Stanley +50948592888 Thomass",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/mennenm/my-trips",
+  "status": 200,
+  "final": "/mennenm/my-trips",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 0 🛒 A Mes Vwayaj Vwayaj kòm kliyan ak kòm chofè — negosyasyon, peman ak konple. Chèche yon Chofè Ou pa gen okenn vwayaj pou kounye a. Chèche yon chofè epi f",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/mennenm/book/1/Port-au-Prince/Papelete",
+  "status": 200,
+  "final": "/mennenm/book/1/Port-au-Prince/Papelete",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 🛡️ Konfimasyon Voyaj Verifye detay yo epi peye pou konfime 📍 Depa Port-au-Prince 🎯 Destinasyon Papelete 👤 Chofè 👤 Jean Pierre ⭐ Evalyasyon 4.8 💰 Pri",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/bank/",
+  "status": 200,
+  "final": "/bank/",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A Bank Dashboard Solde · Prêts actifs · Investissements actifs — Glory2Yah Pub ⚙️ Admin Bank ← Dakèil 💚 SOLDE GKACH 0 📌 MONTAN PRÊT RETE PEYE 0 💼 MONT",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/bank/loans",
+  "status": 200,
+  "final": "/bank/loans",
+  "http_errors": [
+   "429 /cart/api/count",
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A Fòm prêts Glory2Yah Bank Fòm & pwodwi prêt ki disponib kounye a · Chwazi → Fòmilè demann 🏦 Dashboard ← Dakèil 📦 Pwodwi prêt disponib Prè Pèsonèl Prè",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/bank/investments",
+  "status": 200,
+  "final": "/bank/investments",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A Pwodwi Envestisman Bank Fè lajan ou grandir ak enterè. Chwazi envestisman ou pi pito. 🧾 Mes envestisman 🏦 Dashboard ← Dakèil 💼 Pwodwi disponib kouny",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/bank/investments/my",
+  "status": 200,
+  "final": "/bank/investments/my",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A Liste envestisman ou yo Istwa, retrè matirite · retrè bonè (penalite) 📈 Nouvo envestisman 🏦 Dashboard ← Dakèil 💼 Tous envestisman 📂 Aucun envestisma",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/bank/admin",
+  "status": 200,
+  "final": "/bank/admin",
+  "http_errors": [
+   "429 /pwa/api/settings",
+   "429 /cart/api/count",
+   "429 /api/gkach/balance"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A Admin Bank Glory2Yah Apwouve prêt · rejete prêt · swiv envestisman 🏦 Bank User ← Admin Général ⏳ PRÈT ANNATANT APWOBASYON 0 💳 PRÈT AKTIFS 0 📈 ENVEST",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/e-learning/",
+  "status": 200,
+  "final": "/e-learning/teacher",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Refused to apply style from 'http://127.0.0.1:5000/static/e-learning/css/elearning.css?v=2' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 📚 E-LEARNING Konferans + Klas + Cours 👨‍🏫 Tablo Prof 🎒 Tablo Elèv ➕ Kreye yon Klas 📖 Kreye Kou 🗓️ Pwogramasyon Sesyon 🎥 Konferans Klasik Espace prof",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/e-learning/student",
+  "status": 200,
+  "final": "/e-learning/student",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Refused to apply style from 'http://127.0.0.1:5000/static/e-learning/css/elearning.css?v=2' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 📚 E-LEARNING Konferans + Klas + Cours 👨‍🏫 Tablo Prof 🎒 Tablo Elèv ➕ Kreye yon Klas 📖 Kreye Kou 🗓️ Pwogramasyon Sesyon 🎥 Konferans Klasik espace étud",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/e-learning/teacher",
+  "status": 200,
+  "final": "/e-learning/teacher",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Refused to apply style from 'http://127.0.0.1:5000/static/e-learning/css/elearning.css?v=2' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 📚 E-LEARNING Konferans + Klas + Cours 👨‍🏫 Tablo Prof 🎒 Tablo Elèv ➕ Kreye yon Klas 📖 Kreye Kou 🗓️ Pwogramasyon Sesyon 🎥 Konferans Klasik Espace prof",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/e-learning/classes/new",
+  "status": 200,
+  "final": "/e-learning/classes/new",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Refused to apply style from 'http://127.0.0.1:5000/static/e-learning/css/elearning.css?v=2' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 📚 E-LEARNING Konferans + Klas + Cours 👨‍🏫 Tablo Prof 🎒 Tablo Elèv ➕ Kreye yon Klas 📖 Kreye Kou 🗓️ Pwogramasyon Sesyon 🎥 Konferans Klasik kreye klas ",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/e-learning/courses/new",
+  "status": 200,
+  "final": "/e-learning/courses/new",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /pwa/api/settings",
+   "429 /cart/api/count"
+  ],
+  "console_errors": [
+   "Refused to apply style from 'http://127.0.0.1:5000/static/e-learning/css/elearning.css?v=2' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 📚 E-LEARNING Konferans + Klas + Cours 👨‍🏫 Tablo Prof 🎒 Tablo Elèv ➕ Kreye yon Klas 📖 Kreye Kou 🗓️ Pwogramasyon Sesyon 🎥 Konferans Klasik nouvo kou /",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/dok/",
+  "status": 200,
+  "final": "/dok/",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 76 📝 Teks 🔗 Liyen 🖼️ Imaj 0 / 10MB 📤 Poste 📺 GADE TV LIVE 🚀 KREYE PIBLISITE W Vann pwodwi ou, sèvis ou, oswa ankò fè reklamasyon ou ✨ KREYE PIBLISIT",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/forms/",
+  "status": 200,
+  "final": "/forms/",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 📋 Glory2YahPub G-Forms Kreyasyon fòmilè enskripsyon pou evènman ou yo · sondaj · enskripsyon ekolè · andedan Glory2Yah Pub. Modil G-Forms pa poko ko",
+  "severity": "HIGH",
+  "tag": "admin"
+ },
+ {
+  "url": "/search?q=ad",
+  "status": 200,
+  "final": "/mache/?q=ad&category=&location=",
+  "http_errors": [
+   "429 /api/gkach/balance",
+   "429 /cart/api/count",
+   "429 /pwa/api/settings"
+  ],
+  "console_errors": [
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)",
+   "Failed to load resource: the server responded with a status of 429 (TOO MANY REQUESTS)"
+  ],
+  "snippet": "🔍 🪙 ... 🛒 A 🛍️ Tout 📱 Elektwonik 👗 Mòd 🏠 Kay 💄 Bote 🍔 Manje ⚽ Espò 📚 Liv 🧸 Jwèt 🚗 Machin 📦 Lòt Pi Resan Pri: Ba → Wo Pri: Wo → Ba Pi Popilè 4 pwodui 📦 🤍 Test Pr",
+  "severity": "HIGH",
+  "tag": "admin"
+ }
+]
