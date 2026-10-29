@@ -1,0 +1,119 @@
+/* ═══════════════════════════════════════════════════════════
+   GLORY2YAHPUB — UI COMPONENTS  (Option B design system)
+   Styles for templates/components/_ui.html macros. Purely
+   ADDITIVE — uses new g2y-btn/badge/avatar/card/empty/alert
+   class names so it never overrides existing page styles.
+   All values reference the tokens in variables.css.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Button ─────────────────────────────────────────────── */
+.g2y-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--g2y-space-sm);
+    font-family: var(--g2y-font);
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid transparent;
+    border-radius: var(--g2y-radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--g2y-transition);
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+.g2y-btn-sm { padding: 7px 12px;  font-size: var(--g2y-text-sm); }
+.g2y-btn-md { padding: 10px 18px; font-size: var(--g2y-text-base); }
+.g2y-btn-lg { padding: 13px 24px; font-size: var(--g2y-text-lg); }
+.g2y-btn-full { display: flex; width: 100%; }
+
+.g2y-btn-primary { background: var(--g2y-gradient-primary); color: #fff; box-shadow: var(--g2y-shadow-md); }
+.g2y-btn-primary:hover { transform: translateY(-2px); box-shadow: var(--g2y-shadow-lg); }
+.g2y-btn-secondary { background: var(--g2y-primary-light); color: #fff; }
+.g2y-btn-secondary:hover { filter: brightness(1.06); }
+.g2y-btn-gold { background: var(--g2y-gradient-gold); color: #3a2e00; box-shadow: var(--g2y-shadow-gold); }
+.g2y-btn-gold:hover { transform: translateY(-2px); }
+.g2y-btn-danger { background: var(--g2y-gradient-red); color: #fff; }
+.g2y-btn-danger:hover { filter: brightness(1.06); }
+.g2y-btn-ghost { background: transparent; color: var(--g2y-text); }
+.g2y-btn-ghost:hover { background: var(--g2y-bg); }
+.g2y-btn-outline { background: transparent; color: var(--g2y-primary); border-color: var(--g2y-primary); }
+.g2y-btn-outline:hover { background: var(--g2y-primary); color: #fff; }
+.g2y-btn.is-disabled, .g2y-btn[disabled] { opacity: .5; pointer-events: none; }
+.g2y-btn:active { transform: scale(.97); }
+
+/* ── Badge / pill ───────────────────────────────────────── */
+.g2y-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: var(--g2y-radius-full);
+    font-size: var(--g2y-text-xs); font-weight: 700; line-height: 1.5;
+    background: var(--g2y-bg); color: var(--g2y-text-secondary);
+}
+.g2y-badge-primary { background: var(--g2y-primary); color: #fff; }
+.g2y-badge-gold    { background: var(--g2y-gold); color: #3a2e00; }
+.g2y-badge-success { background: var(--g2y-gradient-green); color: #fff; }
+.g2y-badge-danger  { background: var(--g2y-gradient-red); color: #fff; }
+.g2y-badge-dot::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; display: inline-block;
+}
+
+/* ── Avatar ─────────────────────────────────────────────── */
+.g2y-avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    overflow: hidden; border-radius: var(--g2y-radius-full);
+    background: var(--g2y-gradient-primary); color: #fff;
+    flex: 0 0 auto; text-decoration: none;
+}
+.g2y-avatar-sm { width: 32px; height: 32px; font-size: var(--g2y-text-sm); }
+.g2y-avatar-md { width: 44px; height: 44px; font-size: var(--g2y-text-lg); }
+.g2y-avatar-lg { width: 64px; height: 64px; font-size: var(--g2y-text-2xl); }
+.g2y-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.g2y-avatar-initials { font-weight: 700; }
+
+/* ── Card ───────────────────────────────────────────────── */
+.g2y-card {
+    background: var(--g2y-card); border: 1px solid var(--g2y-border);
+    border-radius: var(--g2y-radius-lg); box-shadow: var(--g2y-shadow-sm);
+    overflow: hidden; transition: var(--g2y-transition);
+}
+.g2y-card:hover { box-shadow: var(--g2y-shadow-md); }
+.g2y-card-head { padding: var(--g2y-space-md) var(--g2y-space-lg); border-bottom: 1px solid var(--g2y-border-light); }
+.g2y-card-title { margin: 0; font-family: var(--g2y-font-heading); font-size: var(--g2y-text-lg); color: var(--g2y-text); }
+.g2y-card-subtitle { margin: 4px 0 0; color: var(--g2y-text-secondary); font-size: var(--g2y-text-sm); }
+.g2y-card-body { padding: var(--g2y-space-lg); }
+.g2y-card-foot { padding: var(--g2y-space-md) var(--g2y-space-lg); border-top: 1px solid var(--g2y-border-light); background: var(--g2y-bg-alt); }
+
+/* ── Empty state ────────────────────────────────────────── */
+.g2y-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--g2y-space-sm); padding: var(--g2y-space-2xl) var(--g2y-space-lg);
+    text-align: center; color: var(--g2y-text-secondary);
+}
+.g2y-empty-icon { font-size: 3rem; opacity: .8; }
+.g2y-empty-title { font-size: var(--g2y-text-xl); font-weight: 700; color: var(--g2y-text); }
+.g2y-empty-sub { font-size: var(--g2y-text-sm); max-width: 40ch; }
+.g2y-empty-action { margin-top: var(--g2y-space-md); }
+
+/* ── Alert / inline banner ──────────────────────────────── */
+.g2y-alert {
+    display: flex; align-items: flex-start; gap: var(--g2y-space-sm);
+    padding: var(--g2y-space-md); border-radius: var(--g2y-radius);
+    border: 1px solid transparent; font-size: var(--g2y-text-sm);
+}
+.g2y-alert-text { flex: 1; }
+.g2y-alert-close { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: .6; color: inherit; }
+.g2y-alert-close:hover { opacity: 1; }
+.g2y-alert-info    { background: rgba(74,111,199,.10);  color: var(--g2y-primary); border-color: var(--g2y-primary-light); }
+.g2y-alert-success { background: rgba(16,185,129,.12);  color: #065f46; border-color: #10b981; }
+.g2y-alert-warning { background: rgba(255,215,0,.16);   color: #7a5b00; border-color: var(--g2y-gold-dark); }
+.g2y-alert-error,
+.g2y-alert-danger  { background: rgba(239,68,68,.12);   color: #991b1b; border-color: #ef4444; }
+
+@media (prefers-color-scheme: dark) {
+    .g2y-alert-success { color: #6ee7b7; }
+    .g2y-alert-warning { color: var(--g2y-gold-light); }
+    .g2y-alert-error, .g2y-alert-danger { color: #fca5a5; }
+    .g2y-btn-gold { color: #1a1400; }
+}

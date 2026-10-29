@@ -1,0 +1,102 @@
+{#-
+  ═══════════════════════════════════════════════════════════════════════════
+  GLORY2YAHPUB — UI COMPONENT LIBRARY  (Option B: "React style", no React runtime)
+  ═══════════════════════════════════════════════════════════════════════════
+  Reusable, server-rendered Jinja "components" that behave like React function
+  components: each takes props as macro arguments and returns markup. They build
+  on the design tokens in static/css/variables.css and the classes in
+  static/css/components.css. Import namespaced, then call like components:
+
+      {% import 'components/_ui.html' as ui with context %}
+      {{ ui.button('Konekte', href='/auth/login', variant='primary') }}
+      {{ ui.card(title='Pwofil')(caller body via {% call %}) }}
+
+  Conventions:
+    * `cls`  — extra class names merged onto the root element.
+    * `attrs`— raw extra HTML attributes (e.g. 'data-id="5" onclick="..."').
+    * Variants: primary | secondary | gold | danger | ghost | outline.
+    * Sizes:    sm | md | lg.
+  This file performs NO database / backend work — it is pure presentation.
+-#}
+
+{#- ── Button / link-as-button ────────────────────────────────────────────── -#}
+{% macro button(label, href=None, variant='primary', size='md', icon=None,
+                full=False, type='button', name=None, value=None, disabled=False,
+                cls='', attrs='') -%}
+  {%- set _cls = 'g2y-btn g2y-btn-%s g2y-btn-%s' % (variant, size) -%}
+  {%- if full %}{% set _cls = _cls ~ ' g2y-btn-full' %}{% endif -%}
+  {%- if cls %}{% set _cls = _cls ~ ' ' ~ cls %}{% endif -%}
+  {%- if href %}
+  <a href="{{ href }}" class="{{ _cls }}{% if disabled %} is-disabled{% endif %}"
+     {% if disabled %}aria-disabled="true" tabindex="-1"{% endif %} {{ attrs }}>{{ icon or '' }}{{ label }}</a>
+  {%- else %}
+  <button type="{{ type }}" class="{{ _cls }}" name="{{ name or '' }}" value="{{ value if value is not none else '' }}"
+          {% if disabled %}disabled{% endif %} {{ attrs }}>{{ icon or '' }}{{ label }}</button>
+  {%- endif %}
+{%- endmacro %}
+
+
+{#- ── Badge / pill ───────────────────────────────────────────────────────── -#}
+{% macro badge(text, variant='default', dot=False, cls='', attrs='') -%}
+  <span class="g2y-badge g2y-badge-{{ variant }}{% if dot %} g2y-badge-dot{% endif %} {{ cls }}" {{ attrs }}>{{ text }}</span>
+{%- endmacro %}
+
+
+{#- ── Avatar (photo with initials fallback) ──────────────────────────────── -#}
+{% macro avatar(photo=None, name=None, size='md', href=None, cls='') -%}
+  {%- set _initial = ((name or 'U') | trim | first | upper) if (name or 'U') | trim else 'U' -%}
+  {%- set _tag = 'a' if href else 'span' -%}
+  <{{ _tag }} class="g2y-avatar g2y-avatar-{{ size }} {{ cls }}"{% if href %} href="{{ href }}"{% endif %}>
+    {%- if photo %}<img src="{{ photo }}" alt="{{ name or '' }}" class="g2y-avatar-img">{% else -%}
+    <span class="g2y-avatar-initials">{{ _initial }}</span>{% endif -%}
+  </{{ _tag }}>
+{%- endmacro %}
+
+
+{#- ── Card (block component; wrap content with {% call ui.card(...) %}) ──── -#}
+{% macro card(title=None, subtitle=None, footer=None, variant='default', cls='', attrs='') -%}
+  <div class="g2y-card g2y-card-{{ variant }} {{ cls }}" {{ attrs }}>
+    {%- if title or subtitle %}
+    <div class="g2y-card-head">
+      {%- if title %}<h3 class="g2y-card-title">{{ title }}</h3>{% endif -%}
+      {%- if subtitle %}<p class="g2y-card-subtitle">{{ subtitle }}</p>{% endif -%}
+    </div>
+    {%- endif %}
+    <div class="g2y-card-body">{{ caller() if caller else '' }}</div>
+    {%- if footer %}<div class="g2y-card-foot">{{ footer | safe }}</div>{% endif -%}
+  </div>
+{%- endmacro %}
+
+
+{#- ── Empty state ────────────────────────────────────────────────────────── -#}
+{% macro empty_state(icon='📭', title='Anyen isit', subtitle=None,
+                     action_label=None, action_href=None, cls='') -%}
+  <div class="g2y-empty {{ cls }}">
+    <div class="g2y-empty-icon">{{ icon }}</div>
+    <div class="g2y-empty-title">{{ title }}</div>
+    {%- if subtitle %}<div class="g2y-empty-sub">{{ subtitle }}</div>{% endif -%}
+    {%- if action_label and action_href %}
+      <div class="g2y-empty-action">{{ button(action_label, href=action_href, variant='primary', size='sm') }}</div>
+    {%- endif %}
+  </div>
+{%- endmacro %}
+
+
+{#- ── Alert / inline banner ──────────────────────────────────────────────── -#}
+{% macro alert(category='info', message='', dismissible=False, cls='') -%}
+  <div class="g2y-alert g2y-alert-{{ category }} {{ cls }}" role="alert">
+    <span class="g2y-alert-icon">{% if category == 'success' %}✅{% elif category in ('error','danger') %}⚠️{% elif category == 'warning' %}❗{% else %}ℹ️{% endif %}</span>
+    <span class="g2y-alert-text">{{ message }}</span>
+    {%- if dismissible %}<button class="g2y-alert-close" onclick="this.closest('.g2y-alert').remove()">✕</button>{% endif -%}
+  </div>
+{%- endmacro %}
+
+
+{#- ── Service tile (matches existing .service-item styling in base.html) ─── -#}
+{% macro service_item(href, icon, name, desc='', cls='') -%}
+  <a href="{{ href }}" class="service-item {{ cls }}">
+    <span class="service-icon">{{ icon }}</span>
+    <span class="service-name">{{ name }}</span>
+    {%- if desc %}<span class="service-desc">{{ desc }}</span>{% endif -%}
+  </a>
+{%- endmacro %}

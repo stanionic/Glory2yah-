@@ -19,9 +19,13 @@
     <link rel="stylesheet" href="/static/css/g2y-app.css">
     <link rel="stylesheet" href="/static/css/pwa.css">
     <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/components.css">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="g2y-body">
+    {#- Option B "React-style": reusable component macros. Import once at the
+        layout root so every page (and every block below) can call `ui.*`. -#}
+    {%- import 'components/_ui.html' as ui with context -%}
 
     <!-- ═══ TOP HEADER ═══ -->
     <header class="g2y-header" id="appHeader">
@@ -127,74 +131,33 @@
                 <h3>🚀 Sèvis yo</h3>
                 <button class="services-close" onclick="toggleServicesMenu()">✕</button>
             </div>
+            {#- Services are data-driven (React .map style): a list of "props"
+                objects rendered through the service_item component. The admin
+                tile is appended only for authenticated admins. Output markup is
+                identical to the previous hard-coded tiles (same classes). -#}
+            {%- set _services = [
+                {'href': '/gadematch',     'icon': '📺', 'name': 'GADE TV',       'desc': 'TV direk'},
+                {'href': '/achte_gkach',   'icon': '🪙', 'name': 'GKach',         'desc': 'Achte Gkach'},
+                {'href': '/fet',           'icon': '🎉', 'name': 'Fèt',           'desc': 'Kreye envitasyon'},
+                {'href': '/konferans',     'icon': '📹', 'name': 'Konferans',     'desc': 'Reyinyon videyo'},
+                {'href': url_for('events.index'), 'icon': '🗓️', 'name': 'Evènman', 'desc': 'SOS ALO LEGLIZ'},
+                {'href': '/ecole_biblique','icon': '🎓', 'name': 'Lekòl Biblik',  'desc': 'Etidye Bib'},
+                {'href': '/dok',           'icon': '🏥', 'name': 'Dòk GlorYah',   'desc': 'Konsèy sante'},
+                {'href': '/GlorYah_IA',    'icon': '🤖', 'name': 'GlorYah IA',    'desc': 'Zouti AI'},
+                {'href': '/bank',          'icon': '🏦', 'name': 'Bank G2Y',      'desc': 'Prêt & Envestisman'},
+                {'href': '/forms',         'icon': '📋', 'name': 'G-Forms',       'desc': 'Fòmilè'},
+                {'href': '/jere-biznis',   'icon': '🏢', 'name': 'Jere Biznis',   'desc': 'Jesyon enstitisyon'},
+                {'href': '/mennenm',       'icon': '🚗', 'name': 'Mennenm',       'desc': 'Jwenn chofè'},
+            ] -%}
+            {%- if current_user.is_authenticated and current_user.is_admin %}
+                {%- set _services = _services + [
+                    {'href': '/admin/login', 'icon': '⚙️', 'name': 'Admin', 'desc': 'Jesyon'}
+                ] -%}
+            {%- endif -%}
             <div class="services-grid">
-                <a href="/gadematch" class="service-item">
-                    <span class="service-icon">📺</span>
-                    <span class="service-name">GADE TV</span>
-                    <span class="service-desc">TV direk</span>
-                </a>
-                <a href="/achte_gkach" class="service-item">
-                    <span class="service-icon">🪙</span>
-                    <span class="service-name">GKach</span>
-                    <span class="service-desc">Achte Gkach</span>
-                </a>
-                <a href="/fet" class="service-item">
-                    <span class="service-icon">🎉</span>
-                    <span class="service-name">Fèt</span>
-                    <span class="service-desc">Kreye envitasyon</span>
-                </a>
-                <a href="/konferans" class="service-item">
-                    <span class="service-icon">📹</span>
-                    <span class="service-name">Konferans</span>
-                    <span class="service-desc">Reyinyon videyo</span>
-                </a>
-                <a href="{{ url_for('events.index') }}" class="service-item">
-                    <span class="service-icon">🗓️</span>
-                    <span class="service-name">Evènman</span>
-                    <span class="service-desc">SOS ALO LEGLIZ</span>
-                </a>
-                <a href="/ecole_biblique" class="service-item">
-                    <span class="service-icon">🎓</span>
-                    <span class="service-name">Lekòl Biblik</span>
-                    <span class="service-desc">Etidye Bib</span>
-                </a>
-                <a href="/dok" class="service-item">
-                    <span class="service-icon">🏥</span>
-                    <span class="service-name">Dòk GlorYah</span>
-                    <span class="service-desc">Konsèy sante</span>
-                </a>
-                <a href="/GlorYah_IA" class="service-item">
-                    <span class="service-icon">🤖</span>
-                    <span class="service-name">GlorYah IA</span>
-                    <span class="service-desc">Zouti AI</span>
-                </a>
-                <a href="/bank" class="service-item">
-                    <span class="service-icon">🏦</span>
-                    <span class="service-name">Bank G2Y</span>
-                    <span class="service-desc">Prêt &amp; Envestisman</span>
-                </a>
-                <a href="/forms" class="service-item">
-                    <span class="service-icon">📋</span>
-                    <span class="service-name">G-Forms</span>
-                    <span class="service-desc">Fòmilè</span>
-                </a>
-                <a href="/jere-biznis" class="service-item">
-                    <span class="service-icon">🏢</span>
-                    <span class="service-name">Jere Biznis</span>
-                    <span class="service-desc">Jesyon enstitisyon</span>
-                </a>
-                <a href="/mennenm" class="service-item">
-                    <span class="service-icon">🚗</span>
-                    <span class="service-name">Mennenm</span>
-                    <span class="service-desc">Jwenn chofè</span>
-                </a>
-                {% if current_user.is_authenticated and current_user.is_admin %}
-                <a href="/admin/login" class="service-item">
-                    <span class="service-icon">⚙️</span>
-                    <span class="service-name">Admin</span>
-                    <span class="service-desc">Jesyon</span>
-                </a>
-                {% endif %}
+                {%- for s in _services %}
+                {{ ui.service_item(s.href, s.icon, s.name, s.desc) }}
+                {%- endfor %}
             </div>
         </div>
     </div>

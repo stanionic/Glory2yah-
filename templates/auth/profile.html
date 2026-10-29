@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{%- import 'components/_ui.html' as ui with context -%}
 
 {% block title %}Pwofil mwen - Glory2YahPub{% endblock %}
 
@@ -391,51 +392,32 @@
             {% endif %}
         </div>
 
-        <!-- Quick Actions -->
+        <!-- Quick Actions: data-driven (React .map style); output markup is
+             byte-identical to the previous 8 hard-coded action-card blocks. -->
+        {%- set _actions = [
+            (url_for('gkach.wallet'),            '💰', 'Bous',          '#fef3c7, #fcd34d'),
+            (url_for('gkach.rewards_dashboard'), '🏆', 'Rekonpans',     '#ede9fe, #8b5cf6'),
+            (url_for('delivery.my_deliveries'),  '🚚', 'Livrezon',      '#dbeafe, #60a5fa'),
+            (url_for('auth.my_ads'),             '📢', 'Piblisite',     '#d1fae5, #34d399'),
+            (url_for('ecole_biblique.index'),    '🎓', 'Lekòl Biblik',  '#e0e7ff, #818cf8'),
+            (url_for('konferans.index'),         '📹', 'Konferans',     '#fce7f3, #f472b6'),
+            (url_for('party.index'),             '🎉', 'Fèt',           '#fff7ed, #fb923c'),
+            (url_for('mennem.index'),            '🚗', 'Mennen M',      '#d1fae5, #34d399'),
+        ] -%}
         <div class="quick-actions">
-            <a href="{{ url_for('gkach.wallet') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #fef3c7, #fcd34d);">💰</div>
-                <span class="action-label">Bous</span>
+            {%- for _href, _icon, _label, _grad in _actions %}
+            <a href="{{ _href }}" class="action-card">
+                <div class="action-icon" style="background: linear-gradient(135deg, {{ _grad }});">{{ _icon }}</div>
+                <span class="action-label">{{ _label }}</span>
             </a>
-            <a href="{{ url_for('gkach.rewards_dashboard') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #ede9fe, #8b5cf6);">🏆</div>
-                <span class="action-label">Rekonpans</span>
-            </a>
-            <a href="{{ url_for('delivery.my_deliveries') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #dbeafe, #60a5fa);">🚚</div>
-                <span class="action-label">Livrezon</span>
-            </a>
-            <a href="{{ url_for('auth.my_ads') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #d1fae5, #34d399);">📢</div>
-                <span class="action-label">Piblisite</span>
-            </a>
-            <a href="{{ url_for('ecole_biblique.index') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #e0e7ff, #818cf8);">🎓</div>
-                <span class="action-label">Lekòl Biblik</span>
-            </a>
-            <a href="{{ url_for('konferans.index') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #fce7f3, #f472b6);">📹</div>
-                <span class="action-label">Konferans</span>
-            </a>
-            <a href="{{ url_for('party.index') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #fff7ed, #fb923c);">🎉</div>
-                <span class="action-label">Fèt</span>
-            </a>
-            <a href="{{ url_for('mennem.index') }}" class="action-card">
-                <div class="action-icon" style="background: linear-gradient(135deg, #d1fae5, #34d399);">🚗</div>
-                <span class="action-label">Mennen M</span>
-            </a>
+            {%- endfor %}
         </div>
 
         <!-- Empty State -->
-        <div class="empty-state">
-            <div class="empty-icon">📷</div>
-            <h3 class="empty-title">Pa gen piblisite ankò</h3>
-            <p class="empty-text">Kòmanse vann sou Glory2YahPub kounye a!</p>
-            <a href="#" class="create-ad-btn">
-                ➕ Kreye premye piblisite w
-            </a>
-        </div>
+        {{ ui.empty_state(icon='📷', title='Pa gen piblisite ankò',
+                          subtitle='Kòmanse vann sou Glory2YahPub kounye a!',
+                          action_label='➕ Kreye premye piblisite w',
+                          action_href='#') }}
 
         <!-- Delete Account -->
         <div class="delete-section">

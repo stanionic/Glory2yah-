@@ -6,50 +6,29 @@
     <!-- Filters Bar -->
     <div class="filters-bar">
         <div class="filters-scroll">
-            <button class="filter-chip {% if category == 'all' %}active{% endif %}" onclick="filterCategory('all')">
-                <span>🛍️</span>
-                <span>Tout</span>
+            {#- Data-driven category chips (React .map style): a list of
+                (key, icon, label) tuples rendered in a loop. Output markup and
+                filterCategory() behavior are identical to the previous 11
+                hard-coded buttons. -#}
+            {%- set _cats = [
+                ('all',        '🛍️', 'Tout'),
+                ('electronics','📱', 'Elektwonik'),
+                ('fashion',    '👗', 'Mòd'),
+                ('home',       '🏠', 'Kay'),
+                ('beauty',     '💄', 'Bote'),
+                ('food',       '🍔', 'Manje'),
+                ('sports',     '⚽', 'Espò'),
+                ('books',      '📚', 'Liv'),
+                ('toys',       '🧸', 'Jwèt'),
+                ('automotive', '🚗', 'Machin'),
+                ('other',      '📦', 'Lòt'),
+            ] -%}
+            {%- for _key, _icon, _label in _cats %}
+            <button class="filter-chip {% if category == _key %}active{% endif %}" onclick="filterCategory('{{ _key }}')">
+                <span>{{ _icon }}</span>
+                <span>{{ _label }}</span>
             </button>
-            <button class="filter-chip {% if category == 'electronics' %}active{% endif %}" onclick="filterCategory('electronics')">
-                <span>📱</span>
-                <span>Elektwonik</span>
-            </button>
-            <button class="filter-chip {% if category == 'fashion' %}active{% endif %}" onclick="filterCategory('fashion')">
-                <span>👗</span>
-                <span>Mòd</span>
-            </button>
-            <button class="filter-chip {% if category == 'home' %}active{% endif %}" onclick="filterCategory('home')">
-                <span>🏠</span>
-                <span>Kay</span>
-            </button>
-            <button class="filter-chip {% if category == 'beauty' %}active{% endif %}" onclick="filterCategory('beauty')">
-                <span>💄</span>
-                <span>Bote</span>
-            </button>
-            <button class="filter-chip {% if category == 'food' %}active{% endif %}" onclick="filterCategory('food')">
-                <span>🍔</span>
-                <span>Manje</span>
-            </button>
-            <button class="filter-chip {% if category == 'sports' %}active{% endif %}" onclick="filterCategory('sports')">
-                <span>⚽</span>
-                <span>Espò</span>
-            </button>
-            <button class="filter-chip {% if category == 'books' %}active{% endif %}" onclick="filterCategory('books')">
-                <span>📚</span>
-                <span>Liv</span>
-            </button>
-            <button class="filter-chip {% if category == 'toys' %}active{% endif %}" onclick="filterCategory('toys')">
-                <span>🧸</span>
-                <span>Jwèt</span>
-            </button>
-            <button class="filter-chip {% if category == 'automotive' %}active{% endif %}" onclick="filterCategory('automotive')">
-                <span>🚗</span>
-                <span>Machin</span>
-            </button>
-            <button class="filter-chip {% if category == 'other' %}active{% endif %}" onclick="filterCategory('other')">
-                <span>📦</span>
-                <span>Lòt</span>
-            </button>
+            {%- endfor %}
         </div>
     </div>
 

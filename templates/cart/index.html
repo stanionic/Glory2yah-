@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{%- import 'components/_ui.html' as ui with context -%}
 {% block title %}Panyen - Glory2YahPub{% endblock %}
 
 {% block content %}
@@ -79,15 +80,9 @@
 
     {% else %}
     <!-- Empty Cart -->
-    <div class="empty-cart">
-        <div class="empty-icon">🛒</div>
-        <h3 class="empty-title">Panyen ou vid</h3>
-        <p class="empty-text">Ajoute kèk pwodui pou kòmanse!</p>
-        <a href="/mache" class="shop-btn">
-            <span>🛍️</span>
-            <span>Ale nan Mache</span>
-        </a>
-    </div>
+    {{ ui.empty_state(icon='🛒', title='Panyen ou vid',
+                      subtitle='Ajoute kèk pwodui pou kòmanse!',
+                      action_label='🛍️ Ale nan Mache', action_href='/mache') }}
     {% endif %}
 </div>
 
