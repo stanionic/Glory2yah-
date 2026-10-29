@@ -774,46 +774,46 @@ def reject_ad(ad_id):
         return jsonify({'success': False, 'message': 'Erè nan rejete piblisite a.'}), 400
 
 
+@admin_bp.route('/gkach/proof/<filename>')
+@login_required
+@admin_required
+def gkach_proof(filename):
+    """Serve a private Gkach proof only to authenticated administrators."""
+    import os
+    from flask import abort, send_from_directory
+    from werkzeug.utils import secure_filename
+
+    safe_name = secure_filename(filename or '')
+    if not safe_name or safe_name != filename:
+        abort(404)
+    allowed = (
+        set(current_app.config.get('ALLOWED_IMAGE_EXTENSIONS', set()))
+        | set(current_app.config.get('ALLOWED_DOCUMENT_EXTENSIONS', set()))
+    )
+    if safe_name.rsplit('.', 1)[-1].lower() not in allowed:
+        abort(404)
+
+    private_dir = os.path.join(current_app.config['INSTANCE_DIR'], 'gkach_proofs')
+    private_path = os.path.join(private_dir, safe_name)
+    if not os.path.isfile(private_path):
+        # Move legacy proof files out of public static storage when first viewed.
+        legacy_path = os.path.join(current_app.config['UPLOAD_FOLDER'], safe_name)
+        if os.path.isfile(legacy_path):
+            os.makedirs(private_dir, exist_ok=True)
+            os.replace(legacy_path, private_path)
+    if not os.path.isfile(private_path):
+        abort(404)
+
+    response = send_from_directory(private_dir, safe_name, conditional=True, max_age=0)
+    response.headers['Cache-Control'] = 'private, no-store'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
 @admin_bp.route('/gkach/manage', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_gkach():
-
-
-    @admin_bp.route('/gkach/proof/<filename>')
-    @login_required
-    @admin_required
-    def gkach_proof(filename):
-        """Serve a private GKach proof only to authenticated administrators."""
-        import os
-        from flask import abort, send_from_directory
-        from werkzeug.utils import secure_filename
-
-        safe_name = secure_filename(filename or '')
-        if not safe_name or safe_name != filename:
-            abort(404)
-        allowed = (
-            set(current_app.config.get('ALLOWED_IMAGE_EXTENSIONS', set()))
-            | set(current_app.config.get('ALLOWED_DOCUMENT_EXTENSIONS', set()))
-        )
-        if safe_name.rsplit('.', 1)[-1].lower() not in allowed:
-            abort(404)
-
-        private_dir = os.path.join(current_app.config['INSTANCE_DIR'], 'gkach_proofs')
-        private_path = os.path.join(private_dir, safe_name)
-        if not os.path.isfile(private_path):
-            # Move legacy proof files out of public static storage when first viewed.
-            legacy_path = os.path.join(current_app.config['UPLOAD_FOLDER'], safe_name)
-            if os.path.isfile(legacy_path):
-                os.makedirs(private_dir, exist_ok=True)
-                os.replace(legacy_path, private_path)
-        if not os.path.isfile(private_path):
-            abort(404)
-
-        response = send_from_directory(private_dir, safe_name, conditional=True, max_age=0)
-        response.headers['Cache-Control'] = 'private, no-store'
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        return response
     """Manage user Gkach balances and requests"""
     if request.method == 'POST':
         action = request.form.get('action')

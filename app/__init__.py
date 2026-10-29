@@ -512,6 +512,14 @@ def create_app(config_name=None):
         from app.models.konferans import KonferansRoom, KonferansRecording
         from app.models.mennem_trip import MennemTrip
         from app.models.mennem_driver import MennemDriver
+        # Import notification models so notifications / push_subscriptions /
+        # notification_preferences tables are created by db.create_all() below.
+        # Without this import the tables are never built and NotificationHub
+        # writes fail ("no such table: notifications"), silently dropping
+        # alerts such as the Mennen driver-registration admin notification.
+        from app.models.notification import (
+            Notification, PushSubscription, NotificationPreference,
+        )
         try:
             from app.models.app_installation import AppInstallation  # PWA tracking model
         except ImportError:

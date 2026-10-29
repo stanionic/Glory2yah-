@@ -13,8 +13,8 @@
         POPUP_DELAY: 5000,         // 5 seconds before showing prompt
         POPUP_DELAY_INTERACTION: 3000, // 3 seconds after first interaction
         IOS_GUIDE_DELAY: 3000,     // 3 seconds before iOS guide
-        ANALYTICS_ENDPOINT: '/api/pwa/analytics',
-        SETTINGS_ENDPOINT: '/api/pwa/settings'
+        ANALYTICS_ENDPOINT: '/pwa/api/analytics',
+        SETTINGS_ENDPOINT: '/pwa/api/settings'
     };
 
     // ===== STATE =====

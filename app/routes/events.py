@@ -356,7 +356,8 @@ def admin_events():
         stats[evt.id] = {
             'participants': evt.participants.count(),
             'organizations': evt.organizations.count(),
-            'regions': evt.regions.count(),
+            # 'regions' is a plain (non-dynamic) relationship -> list, use len()
+            'regions': len(evt.regions),
         }
     return render_template('events/admin.html', events=items, stats=stats)
 

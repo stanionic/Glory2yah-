@@ -23,6 +23,9 @@ from app.models.konferans import (
     KonferansPlatformConnection,
 )
 from app.models.charity import CharityDonation, CharityCause
+from app.models.notification import (
+    Notification, PushSubscription, NotificationPreference,
+)
 
 try:
     from app.models.elearning import (
@@ -101,7 +104,8 @@ if _ELEARNING_OK:
     ])
 if _HAS_APPINSTALL:
     __all__.append('AppInstallation')
-__all__.extend(['CharityDonation', 'CharityCause'])
+__all__.extend(['CharityDonation', 'CharityCause', 'Notification',
+                'PushSubscription', 'NotificationPreference'])
 
 
 def __getattr__(name):

@@ -520,7 +520,7 @@
         
         // Update cart badge
         function updateCartBadge() {
-            fetch('/api/cart/count')
+            fetch('/cart/api/count')
                 .then(r => r.json())
                 .then(data => {
                     const badge = document.getElementById('cartBadge');
