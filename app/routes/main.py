@@ -405,6 +405,7 @@ def health_check():
             'scheme': 'postgresql' if is_pg else ('sqlite' if is_sqlite else 'other'),
             'is_postgres': is_pg,
             'sqlite_fallback_active': bool(current_app.config.get('PRODUCTION_SQLITE_FALLBACK')) or _os.environ.get('G2Y_PG_FALLBACK_ACTIVE') == '1',
+            'fallback_file': current_app.config.get('PRODUCTION_SQLITE_FALLBACK_FILE'),
             'on_render': on_render,
             'instance_on_persistent_disk': on_persist,
         }

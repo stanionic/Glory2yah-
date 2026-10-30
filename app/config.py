@@ -126,6 +126,48 @@ def _engine_options_for(url=None):
         'pool_timeout': 30,
     }
 
+
+# Ordered list of persistent-disk SQLite filenames the production fallback may
+# use. The CANONICAL name is first; legacy names are only ever *adopted* when
+# they already hold real rows (so switching between dev/production config never
+# silently orphans existing users/ads in an older file).
+_SQLITE_FALLBACK_CANONICAL = 'glory2yahpub.db'
+_SQLITE_FALLBACK_LEGACY = ('glory2yahpub_prod_fallback.db', 'glory2yahpub_dev.db')
+
+
+def _sqlite_has_rows(path):
+    """True when an EXISTING SQLite file has at least one `users` row.
+    Read-only, never creates a file, never raises (any problem => False)."""
+    try:
+        if not (path and os.path.exists(path)):
+            return False
+        import sqlite3
+        con = sqlite3.connect(path)
+        try:
+            cur = con.cursor()
+            cur.execute("SELECT 1 FROM users LIMIT 1")
+            return cur.fetchone() is not None
+        finally:
+            con.close()
+    except Exception:
+        return False
+
+
+def _select_sqlite_fallback_path(inst_dir):
+    """Resolve the durable SQLite file for the production DATABASE_URL-missing
+    fallback. Prefer the canonical name if it exists/has data; otherwise ADOPT
+    the first legacy file that already contains users; else return the canonical
+    (fresh) path. Guarantees one stable store and prevents empty-DB orphaning."""
+    canonical = os.path.join(inst_dir, _SQLITE_FALLBACK_CANONICAL)
+    if _sqlite_has_rows(canonical):
+        return canonical
+    for legacy in _SQLITE_FALLBACK_LEGACY:
+        p = os.path.join(inst_dir, legacy)
+        if _sqlite_has_rows(p):
+            return p
+    return canonical
+
+
 class Config:
     """Base configuration.
 
@@ -407,9 +449,6 @@ class ProductionConfig(Config):
             '1', 'true', 'yes', 'on', 'require', 'strict'
         )
         if missing_pg:
-            persistent_sqlite = (
-                'sqlite:///' + os.path.join(inst_dir, 'glory2yahpub_prod_fallback.db')
-            )
             if enforce_pg:
                 raise ValueError(
                     "CRITICAL: DATABASE_URL not set in production and "
@@ -417,14 +456,20 @@ class ProductionConfig(Config):
                     "Set DATABASE_URL (Render → Environment → your PostgreSQL "
                     "managed instance connectionString)."
                 )
-            db_url = persistent_sqlite
+            # Pick a SINGLE durable file on the persistent disk and ADOPT any
+            # legacy file that already holds users, so a dev→prod filename
+            # switch never silently opens an empty DB and loses accounts.
+            fallback_path = _select_sqlite_fallback_path(inst_dir)
+            db_url = 'sqlite:///' + fallback_path.replace(os.sep, '/')
             # Surface in logs AND in the app object so the bootstrap guard in
             # app/__init__.py can emit its ADS-PERSISTENCE CRITICAL warning
             # (SQLite is still OK here because the file is under /instance/).
             os.environ['G2Y_PG_FALLBACK_ACTIVE'] = '1'
             self.PRODUCTION_SQLITE_FALLBACK = True
+            self.PRODUCTION_SQLITE_FALLBACK_FILE = os.path.basename(fallback_path)
         else:
             self.PRODUCTION_SQLITE_FALLBACK = False
+            self.PRODUCTION_SQLITE_FALLBACK_FILE = None
 
         self.SQLALCHEMY_DATABASE_URI = db_url
         self.SQLALCHEMY_ENGINE_OPTIONS = _engine_options_for(db_url)
