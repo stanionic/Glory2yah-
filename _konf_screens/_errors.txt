@@ -1,0 +1,6 @@
+[http://127.0.0.1:5000/konferans/room/VD1R78?user_name=Tester] warning: ❌ Failed (video+audio (quality)): NotSupportedError Not supported
+[http://127.0.0.1:5000/konferans/room/VD1R78?user_name=Tester] warning: ❌ Failed (video+audio (basic)): NotSupportedError Not supported
+[http://127.0.0.1:5000/konferans/room/VD1R78?user_name=Tester] warning: ❌ Failed (audio (quality)): NotSupportedError Not supported
+[http://127.0.0.1:5000/konferans/room/VD1R78?user_name=Tester] warning: ❌ Failed (audio (basic)): NotSupportedError Not supported
+[http://127.0.0.1:5000/konferans/room/VD1R78?user_name=Tester] warning: ❌ Failed (video-only): NotSupportedError Not supported
+[http://127.0.0.1:5000/konferans/room/VD1R78?user_name=Tester] error: All media strategies failed NotSupportedError: Not supported
