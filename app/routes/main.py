@@ -380,6 +380,36 @@ def health_check():
     except Exception:
         health['database'] = False
         health['status'] = 'unhealthy'
+
+    # DIAGNOSTIC (additive, non-destructive): reveal the ACTUAL DB backend and
+    # whether the Render persistent disk is attached. 'database:true' above only
+    # proves SELECT 1 worked on WHICHEVER DB is connected (Postgres OR the silent
+    # SQLite fallback) — it can NOT distinguish a durable backend from an
+    # EPHEMERAL SQLite file that is wiped on every cold-start/restart. When that
+    # happens users lose their accounts and have to re-register (the reported
+    # "sessions not saved / recreate accounts" bug), so we surface the truth.
+    # Only safe, non-secret booleans/scheme are reported — never the DSN.
+    try:
+        import os as _os
+        from flask import current_app
+        dsn = str(current_app.config.get('SQLALCHEMY_DATABASE_URI') or '')
+        low = dsn.lower()
+        is_pg = low.startswith(('postgresql://', 'postgres://'))
+        is_sqlite = low.startswith('sqlite')
+        inst = str(current_app.config.get('INSTANCE_DIR') or '')
+        on_render = bool(_os.environ.get('RENDER') or current_app.config.get('ON_RENDER'))
+        _RENDER_DISK = '/opt/render/project/src/instance'
+        inst_abs = _os.path.abspath(inst) if inst else ''
+        on_persist = (_RENDER_DISK in inst_abs) if (on_render and inst_abs) else None
+        health['database_detail'] = {
+            'scheme': 'postgresql' if is_pg else ('sqlite' if is_sqlite else 'other'),
+            'is_postgres': is_pg,
+            'sqlite_fallback_active': bool(current_app.config.get('PRODUCTION_SQLITE_FALLBACK')) or _os.environ.get('G2Y_PG_FALLBACK_ACTIVE') == '1',
+            'on_render': on_render,
+            'instance_on_persistent_disk': on_persist,
+        }
+    except Exception:
+        pass
     
     status_code = 200 if health['status'] == 'healthy' else 503
     return jsonify(health), status_code
