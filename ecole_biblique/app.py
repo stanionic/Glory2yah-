@@ -1605,9 +1605,11 @@ def teacher_start_live():
         # Call the konferans create_room logic
         import requests
         import json
-        
-        # Get the base URL
-        from flask import url_for
+
+        # Get the base URL. NOTE: url_for is imported at module top; do NOT
+        # re-import it here — a local `from flask import url_for` would bind
+        # url_for as a function-local name and make the earlier url_for() call
+        # in this function raise UnboundLocalError (GET / non-teacher path).
         with current_app.test_request_context():
             create_url = url_for('konferans.create_room', _external=True)
         

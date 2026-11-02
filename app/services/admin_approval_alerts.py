@@ -113,7 +113,9 @@ APPROVAL_KINDS = {
         'icon': '🏦',
         'template': 'admin_loan_request',
         'priority': 'high',
-        'url': '/admin/bank',
+        # bank blueprint is mounted at /bank → admin view is /bank/admin
+        # (the old '/admin/bank' path 404'd).
+        'url': '/bank/admin',
         'throttle': 5,
     },
     'seller_certification': {
@@ -422,7 +424,7 @@ def alert_loan_request(loan, product=None, user=None):
                 + (f" · Objektif: {getattr(loan, 'purpose', '')}" if getattr(loan, 'purpose', '') else '')),
         amount=amount,
         entity_type='loan', entity_id=getattr(loan, 'loan_id', None),
-        url='/admin/bank',
+        url='/bank/admin',
     )
 
 

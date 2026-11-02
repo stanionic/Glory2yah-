@@ -63,15 +63,30 @@ def _provider_success(name, resp):
     """
     if not _http_ok(resp):
         return False
+    try:
+        body = (getattr(resp, 'text', '') or '')
+    except Exception:
+        body = ''
+    # CallMeBot success body: "Message queued to send." — failures say "ERROR:".
     if name in ('callmebot',):
-        try:
-            body = (getattr(resp, 'text', '') or '')
-        except Exception:
-            body = ''
-        # CallMeBot success body: "Message queued to send."
         if 'ERROR' in body.upper():
             logger.warning('WhatsApp alert via %s body-error: %s', name, body.strip()[:180])
             return False
+    # UltraMsg answers HTTP 200 even on failure, with a JSON error payload
+    # (e.g. {"status":"error","errorMessage":"..."}). Inspect the body too,
+    # otherwise an undelivered message would be falsely marked as sent.
+    elif name in ('ultramsg',):
+        import json as _json
+        try:
+            data = _json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        if isinstance(data, dict):
+            status = str(data.get('status', '') or data.get('result', '') or '').lower()
+            if (status in ('error', 'failure', 'failed')
+                    or data.get('errorMessage') or data.get('error')):
+                logger.warning('WhatsApp alert via %s body-error: %s', name, body.strip()[:180])
+                return False
     return True
 
 # ── WhatsApp providers ────────────────────────────────────────────────────────
@@ -197,6 +212,7 @@ def _send_whatsapp_alert(message: str, phone: str = None):
         if _provider_success(name, resp):
             logger.info('WhatsApp admin alert sent via %s to +%s', name, digits)
             _ALERT_LAST_PROVIDER['name'] = name
+            _ALERT_LAST_PROVIDER['at'] = time.time()
             return name
         logger.warning('WhatsApp alert via %s rejected (HTTP %s): %s',
                        name, getattr(resp, 'status_code', '?'),

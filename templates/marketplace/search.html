@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Rechèch: {{ query }} - Mache Glory2YahPub{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block content %}
+<div class="search-page">
+    <!-- Search Header -->
+    <div class="search-header">
+        <h1><i class="fas fa-search"></i> Rezilta rechèch</h1>
+        <form action="/mache/search" method="GET" class="search-form">
+            <input type="text" name="q" value="{{ query }}" placeholder="Chèche yon pwodui..." class="search-input" autofocus>
+            <button type="submit" class="search-btn"><i class="fas fa-search"></i> Chèche</button>
+        </form>
+        {% if query %}
+        <p class="search-meta">Rezilta pou "<strong>{{ query }}</strong>" — {{ products|length }} pwodui jwenn</p>
+        {% endif %}
+    </div>
+
+    <!-- Products Grid -->
+    <div class="products-grid">
+        {% if products %}
+            {% for product in products %}
+            {% set p_id = product.ad_id if product is mapping else product.get('ad_id','') %}
+            {% set p_title = product.title if product is mapping else product.get('title','') %}
+            {% set p_price = product.price_gkach if product is mapping else product.get('price_gkach', 0) %}
+            {% set p_images = product.images if product is mapping else product.get('images', []) %}
+            {% set p_likes = product.like_count if product is mapping else product.get('like_count', 0) %}
+            {% set p_views = product.view_count if product is mapping else product.get('view_count', 0) %}
+
+            <div class="product-card">
+                <a href="/ad/{{ p_id }}" class="product-link">
+                    <div class="product-image">
+                        {% if p_images and p_images|length > 0 %}
+                        <img src="/static/uploads/{{ p_images[0] }}" alt="{{ p_title }}" loading="lazy">
+                        {% else %}
+                        <div class="product-placeholder">📦</div>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">{{ p_title[:40] }}{% if p_title|length > 40 %}...{% endif %}</h3>
+                        <div class="product-stats">
+                            {% if p_likes > 0 %}<span class="stat">❤️ {{ p_likes }}</span>{% endif %}
+                            {% if p_views > 0 %}<span class="stat">👁 {{ p_views }}</span>{% endif %}
+                        </div>
+                        <div class="product-footer">
+                            <div class="product-price">
+                                {% if p_price > 0 %}
+                                <span class="price-amount">🪙 {{ p_price }}</span>
+                                {% else %}
+                                <span class="price-free">Gratis</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-marketplace">
+                <div class="empty-icon">🔍</div>
+                <h3 class="empty-title">Pa gen rezilta</h3>
+                <p class="empty-text">Eseye yon lòt mo kle oswa <a href="/mache/">tounen nan Mache a</a>.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Back link -->
+    <div class="search-back">
+        <a href="/mache/"><i class="fas fa-arrow-left"></i> Retounen nan Mache</a>
+    </div>
+</div>
+
+<style>
+.search-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.search-header {
+    margin-bottom: 24px;
+}
+.search-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+}
+.search-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.search-input:focus {
+    border-color: #2563eb;
+}
+.search-btn {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.search-btn:hover {
+    transform: translateY(-1px);
+}
+.search-meta {
+    font-size: 0.9rem;
+    color: #666;
+}
+.search-back {
+    margin-top: 30px;
+    text-align: center;
+}
+.search-back a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+}
+.search-back a:hover {
+    text-decoration: underline;
+}
+
+/* Reuse marketplace grid styles */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+.product-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.product-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.product-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f8f8f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.product-placeholder {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+.product-info {
+    padding: 12px 16px;
+}
+.product-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 6px;
+}
+.product-stats {
+    display: flex;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 8px;
+}
+.product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.price-amount {
+    font-weight: 700;
+    color: #dc2626;
+    font-size: 1rem;
+}
+.price-free {
+    font-weight: 700;
+    color: #059669;
+    font-size: 1rem;
+}
+.empty-marketplace {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+}
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+.empty-title {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 8px;
+}
+.empty-text {
+    color: #666;
+}
+.empty-text a {
+    color: #2563eb;
+}
+</style>
+{% endblock %}

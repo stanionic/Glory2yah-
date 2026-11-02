@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/konferans.css?v=8">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="/static/css/konferans.css?v=10">
 <style>
     main {
         padding: 0 !important;
@@ -14,7 +15,7 @@
         grid-template-columns: 1fr 340px;
         gap: 20px;
         min-height: calc(100vh - 60px);
-        padding: 20px;
+        padding: 20px 20px 80px 20px;
         background: #111827;
     }
 
@@ -589,8 +590,30 @@
         gap: 14px;
         flex: 1;
         min-height: 420px;
+        position: relative;
     }
-    
+    .konf-video-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: rgba(255,255,255,0.5);
+        background: #0a0f1a;
+        border-radius: 16px;
+        border: 1px dashed rgba(255,255,255,0.12);
+    }
+    .konf-video-placeholder p {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .konf-video-placeholder span {
+        color: rgba(255,255,255,0.4);
+    }
+
     .konf-video-wrapper {
         position: relative;
         background: #000;
@@ -1154,6 +1177,200 @@
         .konf-media-display.showing { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
     }
 
+    /* ===== FEAT3: Global transition animations for UI elements ===== */
+    .konf-panel-enter {
+        animation: konfPanelSlideIn 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes konfPanelSlideIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0)    scale(1);    }
+    }
+    .konf-panel-exit {
+        animation: konfPanelFadeOut 250ms ease both;
+    }
+    @keyframes konfPanelFadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to   { opacity: 0; transform: scale(0.96); }
+    }
+    .konf-fade-in {
+        animation: konfFadeIn 400ms ease both;
+    }
+    @keyframes konfFadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    .konf-scale-in {
+        animation: konfScaleIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes konfScaleIn {
+        from { opacity: 0; transform: scale(0.85); }
+        to   { opacity: 1; transform: scale(1);    }
+    }
+    /* Modal backdrop transition */
+    .konf-modal-backdrop {
+        transition: opacity 300ms ease, visibility 300ms ease;
+    }
+    .konf-modal-backdrop.konf-modal-visible {
+        opacity: 1;
+        visibility: visible;
+    }
+    .konf-modal-backdrop.konf-modal-hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+    /* Chat message slide-in */
+    .konf-chat-msg-enter {
+        animation: konfMsgSlide 280ms ease both;
+    }
+    @keyframes konfMsgSlide {
+        from { opacity: 0; transform: translateX(-12px); }
+        to   { opacity: 1; transform: translateX(0);     }
+    }
+    /* Participants list item animation */
+    .konf-participant-enter {
+        animation: konfPartFade 300ms ease both;
+    }
+    @keyframes konfPartFade {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0);   }
+    }
+    /* Video tile appearance */
+    .konf-video-wrapper {
+        animation: konfVideoTileIn 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes konfVideoTileIn {
+        from { opacity: 0; transform: scale(0.9);   }
+        to   { opacity: 1; transform: scale(1);     }
+    }
+
+    /* ===== FEAT1: Link Viewer Modal ===== */
+    .konf-link-viewer-modal {
+        width: 90vw;
+        max-width: 900px;
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+    }
+    .konf-link-viewer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        background: #1F2937;
+        border-bottom: 1px solid #374151;
+    }
+    .konf-link-viewer-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #fff;
+    }
+    .konf-link-viewer-toolbar {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        background: #111827;
+        border-bottom: 1px solid #1f2937;
+        align-items: center;
+    }
+    .konf-link-url-input {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #374151;
+        background: #1f2937;
+        color: #fff;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 200ms;
+    }
+    .konf-link-url-input:focus {
+        border-color: var(--konf-accent-light);
+    }
+    .konf-link-url-input::placeholder {
+        color: rgba(255,255,255,0.4);
+    }
+    .konf-link-go-btn, .konf-link-share-btn {
+        white-space: nowrap;
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+    .konf-link-viewer-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #0f172a;
+        border-bottom: 1px solid #1f2937;
+    }
+    .konf-link-viewer-url-display {
+        flex: 1;
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.5);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0 8px;
+    }
+    .konf-link-viewer-frame-wrap {
+        flex: 1;
+        position: relative;
+        background: #000;
+        overflow: hidden;
+    }
+    .konf-link-viewer-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: #fff;
+    }
+    .konf-link-viewer-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.5);
+        gap: 12px;
+        pointer-events: none;
+    }
+    .konf-link-viewer-placeholder p {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    /* ===== FEAT2: Image-as-Camera ===== */
+    .konf-image-avatar-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #1a1a2e;
+        z-index: 2;
+        animation: konfScaleIn 300ms ease both;
+    }
+    .konf-image-avatar-overlay img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .konf-image-avatar-badge {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        background: rgba(196, 162, 75, 0.9);
+        color: #000;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        z-index: 3;
+    }
+
 </style>
 {% endblock %}
 
@@ -1290,7 +1507,11 @@
         <div class="konf-main-area">
             <!-- Video Grid -->
             <div class="konf-video-grid" id="videoContainer">
-                <!-- Videos added dynamically -->
+                <div class="konf-video-placeholder" id="videoPlaceholder">
+                    <i class="fas fa-video-slash" style="font-size:3rem;opacity:0.35"></i>
+                    <p>Pa gen video aktif</p>
+                    <span style="font-size:0.8rem;opacity:0.6">Aktive kamera ou oswa tann lòt patisipan yo rive.</span>
+                </div>
             </div>
 
             <!-- Media Display Area (shown when owner shares media) -->
@@ -1354,7 +1575,7 @@
                     </button>
                     <div class="konf-quality-menu">
                         <a class="konf-quality-item active" data-quality="low" href="#" onclick="changeQuality('low'); return false;">
-                            <i class="fas fa-signal" style="color:#facc15"></i> Eko (360p) – Faible débit
+                            <i class="fas fa-signal" style="color:#facc15"></i> Eko (360p) – Debi ba
                         </a>
                         <a class="konf-quality-item" data-quality="hd" href="#" onclick="changeQuality('hd'); return false;">
                             <i class="fas fa-tv" style="color:#E8C874"></i> HD (720p)
@@ -1364,7 +1585,7 @@
                         </a>
                         <div style="height:1px;background:rgba(255,255,255,0.08);margin:6px 0"></div>
                         <a class="konf-quality-item" data-quality="audio" href="#" onclick="changeQuality('audio'); return false;">
-                            <i class="fas fa-volume-off" style="color:#f472b6"></i> Odio sèlman – Éco max
+                            <i class="fas fa-volume-off" style="color:#f472b6"></i> Odio sèlman – Eko max
                         </a>
                         <a class="konf-quality-item" href="#" onclick="toggleAutoBandwidth(); return false;" id="autoBWItem">
                             <i class="fas fa-magic" style="color:#C9A24B"></i> Adaptatif: <span id="autoBWLabel">Aktif</span>
@@ -1467,6 +1688,22 @@
                     <span class="konf-ctrl-icon"><i class="fas fa-photo-video"></i></span> <span>Medya</span>
                 </button>
                 <input type="file" id="mediaFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display:none">
+
+                <!-- Link Viewer: open & share URLs in the room -->
+                <button id="linkViewerBtn" class="konf-ctrl-btn konf-ctrl-info" title="Louvri yon Link/URL nan fenèt la" onclick="openLinkViewer()">
+                    <span class="konf-ctrl-icon"><i class="fas fa-link"></i></span> <span>Link</span>
+                </button>
+
+                <!-- Image-as-Camera: replace webcam with a custom image -->
+                <button id="imageAvatarBtn" class="konf-ctrl-btn konf-ctrl-secondary" title="Ranplase kamera ak yon imaj"
+                        onclick="document.getElementById('imageAvatarInput').click()">
+                    <span class="konf-ctrl-icon"><i class="fas fa-image"></i></span> <span>Imaj-Kamera</span>
+                </button>
+                <input type="file" id="imageAvatarInput" accept="image/*" style="display:none">
+                <button id="imageAvatarReset" class="konf-ctrl-btn konf-ctrl-warning" style="display:none" title="Retounen kamera"
+                        onclick="resetImageAvatar()">
+                    <span class="konf-ctrl-icon"><i class="fas fa-video"></i></span> <span>Retabli Kam</span>
+                </button>
 
                 <button id="leaveRoom" class="konf-ctrl-btn konf-ctrl-danger" style="margin-left: auto;" title="Kite sal la">
                     <span class="konf-ctrl-icon"><i class="fas fa-sign-out-alt"></i></span> <span>Kite</span>
@@ -1618,6 +1855,39 @@
 </div>
 {% endif %}
 
+<!-- Link Viewer Modal: open URLs inside the room window -->
+<div class="konf-modal-backdrop" id="linkViewerModal" style="display:none">
+    <div class="konf-modal konf-link-viewer-modal">
+        <div class="konf-link-viewer-header">
+            <h3><i class="fas fa-link" style="color:var(--konf-accent-light)"></i> Link Viewer</h3>
+            <button class="konf-stream-modal-close" onclick="closeLinkViewer()" title="Fèmen">&times;</button>
+        </div>
+        <div class="konf-link-viewer-toolbar">
+            <input type="url" id="linkViewerInput" class="konf-link-url-input" placeholder="Tape ou kole yon URL isit… (eg: https://example.com)">
+            <button class="konf-btn konf-btn-primary konf-link-go-btn" onclick="loadLinkInViewer()">
+                <i class="fas fa-external-link-alt"></i> Louvri
+            </button>
+            <button class="konf-btn konf-btn-outline konf-link-share-btn" onclick="shareLinkToChat()" title="Pataje link nan chat">
+                <i class="fas fa-share"></i> Pataje
+            </button>
+        </div>
+        <div class="konf-link-viewer-nav">
+            <button class="konf-mini-btn" onclick="linkViewerBack()" title="Retounen"><i class="fas fa-arrow-left"></i></button>
+            <button class="konf-mini-btn" onclick="linkViewerForward()" title="Avanse"><i class="fas fa-arrow-right"></i></button>
+            <button class="konf-mini-btn" onclick="linkViewerRefresh()" title="Refrechi"><i class="fas fa-sync-alt"></i></button>
+            <span class="konf-link-viewer-url-display" id="linkViewerUrlDisplay"></span>
+            <button class="konf-mini-btn" onclick="openLinkExternal()" title="Louvri nan nouvo tab"><i class="fas fa-external-link-alt"></i></button>
+        </div>
+        <div class="konf-link-viewer-frame-wrap">
+            <iframe id="linkViewerFrame" class="konf-link-viewer-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" src="about:blank"></iframe>
+            <div class="konf-link-viewer-placeholder" id="linkViewerPlaceholder">
+                <i class="fas fa-globe" style="font-size:3rem;opacity:0.3"></i>
+                <p>Tape yon URL piwo epi klike <strong>Louvri</strong> pou wè paj la isit.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
 <script>
@@ -1653,28 +1923,28 @@
             },
             audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } },
             maxBitrateKbps: 400, // ~24 kbit/min
-            label: '<i class="fas fa-signal"></i> Mode Économique (360p) – Faible débit',
+            label: '<i class="fas fa-signal"></i> Eko (360p) – Debi ba',
             class: 'eco'
         },
         hd: {
             video: { width: { ideal: 1280, max: 1280 }, height: { ideal: 720, max: 720 }, frameRate: { ideal: 25, max: 30 } },
             audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true } },
             maxBitrateKbps: 1600,
-            label: '<i class="fas fa-tv"></i> Mode HD (720p)',
+            label: '<i class="fas fa-tv"></i> HD (720p)',
             class: 'hd'
         },
         uhd: {
             video: { width: { ideal: 1920, max: 1920 }, height: { ideal: 1080, max: 1080 }, frameRate: { ideal: 30, max: 30 } },
             audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true } },
             maxBitrateKbps: 3200,
-            label: '<i class="fas fa-film"></i> Mode UHD (1080p)',
+            label: '<i class="fas fa-film"></i> UHD (1080p)',
             class: 'uhd'
         },
         audio: {
             video: false,
             audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true } },
             maxBitrateKbps: 64,
-            label: '<i class="fas fa-volume-off"></i> Mode Odio Sèlman (Éco max)',
+            label: '<i class="fas fa-volume-off"></i> Odio Sèlman (Eko max)',
             class: 'eco'
         }
     };
@@ -2241,6 +2511,8 @@
     }
     function addVideoStream(id, stream, name, audioOnly = false) {
         if (document.getElementById(`video-${id}`)) return;
+        const ph = document.getElementById('videoPlaceholder');
+        if (ph) ph.style.display = 'none';
         const wrapper = document.createElement('div');
         wrapper.className = 'konf-video-wrapper' + (audioOnly ? ' audio-only' : '');
         wrapper.id = `video-${id}`;
@@ -2255,12 +2527,17 @@
         wrapper.appendChild(video);
         wrapper.appendChild(label);
         videoContainer.appendChild(wrapper);
-        layoutGrid(videoContainer.childElementCount);
+        layoutGrid(videoContainer.querySelectorAll('.konf-video-wrapper').length);
     }
     function removeVideoStream(id) {
         const el = document.getElementById(`video-${id}`);
         if (el) el.remove();
-        layoutGrid(videoContainer.childElementCount);
+        const count = videoContainer.querySelectorAll('.konf-video-wrapper').length;
+        layoutGrid(count);
+        if (count === 0) {
+            const ph = document.getElementById('videoPlaceholder');
+            if (ph) ph.style.display = 'flex';
+        }
     }
     function updateParticipantsList(participants) {
         participantsList.innerHTML = '';
@@ -4046,7 +4323,7 @@
             }
             const v = document.getElementById(`video-${data.sid}`);
             if (v) v.remove();
-            if (typeof layoutGrid === 'function') layoutGrid(videoContainer.childElementCount);
+            if (typeof layoutGrid === 'function') layoutGrid(videoContainer.querySelectorAll('.konf-video-wrapper').length);
         } catch(_) {}
     });
 
@@ -4958,6 +5235,265 @@
         el.classList.toggle('active', el.getAttribute('data-quality') === currentQuality);
     });
     document.querySelectorAll('.konf-avmode-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-avmode') === currentAVMode));
+
+    // =====================================================================
+    // ===== FEAT1: Link Viewer — open & manipulate URLs in the room =====
+    // =====================================================================
+    (function initLinkViewer() {
+        const modal = document.getElementById('linkViewerModal');
+        const input = document.getElementById('linkViewerInput');
+        const frame = document.getElementById('linkViewerFrame');
+        const placeholder = document.getElementById('linkViewerPlaceholder');
+        const urlDisplay = document.getElementById('linkViewerUrlDisplay');
+        if (!modal || !input || !frame) return;
+
+        // Open modal with Enter key on input
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); loadLinkInViewer(); }
+        });
+
+        window.openLinkViewer = function() {
+            modal.style.display = 'flex';
+            modal.classList.add('konf-modal-visible');
+            modal.classList.remove('konf-modal-hidden');
+            setTimeout(() => input.focus(), 100);
+        };
+
+        window.closeLinkViewer = function() {
+            modal.classList.remove('konf-modal-visible');
+            modal.classList.add('konf-modal-hidden');
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
+        };
+
+        window.loadLinkInViewer = function() {
+            let url = input.value.trim();
+            if (!url) return;
+            if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+            try {
+                new URL(url); // validate
+            } catch (_) {
+                showToast('<i class="fas fa-exclamation-triangle"></i> URL la pa valab.', 'error', 3000);
+                return;
+            }
+            frame.src = url;
+            frame.style.display = 'block';
+            if (placeholder) placeholder.style.display = 'none';
+            if (urlDisplay) urlDisplay.textContent = url;
+            showToast('<i class="fas fa-link"></i> Link louvri nan fenèt la.', 'success', 2500);
+        };
+
+        window.shareLinkToChat = function() {
+            const url = input.value.trim();
+            if (!url) { showToast('Pa gen URL pou pataje.', 'warn', 2000); return; }
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.value = url;
+                chatInput.focus();
+                showToast('<i class="fas fa-share"></i> Link mete nan chat — peye Envwaye.', 'info', 3000);
+            }
+        };
+
+        window.linkViewerBack = function() {
+            try { frame.contentWindow.history.back(); } catch (_) {}
+        };
+        window.linkViewerForward = function() {
+            try { frame.contentWindow.history.forward(); } catch (_) {}
+        };
+        window.linkViewerRefresh = function() {
+            if (frame.src && frame.src !== 'about:blank') frame.src = frame.src;
+        };
+        window.openLinkExternal = function() {
+            const url = input.value.trim();
+            if (url) window.open(url.startsWith('http') ? url : 'https://' + url, '_blank', 'noopener');
+        };
+
+        // Close on backdrop click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeLinkViewer();
+        });
+    })();
+
+    // =====================================================================
+    // ===== FEAT2: Image-as-Camera — replace webcam with a custom image =====
+    // =====================================================================
+    (function initImageAvatar() {
+        const fileInput = document.getElementById('imageAvatarInput');
+        const resetBtn = document.getElementById('imageAvatarReset');
+        const avatarBtn = document.getElementById('imageAvatarBtn');
+        if (!fileInput || !resetBtn || !avatarBtn) return;
+
+        let imageAvatarActive = false;
+        let savedVideoTrack = null;
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('<i class="fas fa-exclamation-triangle"></i> Chwazi yon imaj (JPG, PNG, etc.)', 'error', 3000);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                applyImageAvatar(ev.target.result);
+            };
+            reader.readAsDataURL(file);
+            fileInput.value = ''; // reset for re-selection
+        });
+
+        function applyImageAvatar(dataUrl) {
+            imageAvatarActive = true;
+            // Find local video element
+            const localVideo = document.querySelector('#videoContainer video[data-user="local"]') ||
+                               document.querySelector('#videoContainer .konf-video-wrapper video');
+            if (localVideo) {
+                // Pause the real video track
+                if (localStream) {
+                    localStream.getVideoTracks().forEach(t => { savedVideoTrack = t; t.enabled = false; });
+                }
+                // Overlay the image on the video wrapper
+                const wrapper = localVideo.closest('.konf-video-wrapper');
+                if (wrapper) {
+                    // Remove existing overlay if any
+                    let overlay = wrapper.querySelector('.konf-image-avatar-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'konf-image-avatar-overlay';
+                        wrapper.appendChild(overlay);
+                    }
+                    overlay.innerHTML = `<img src="${dataUrl}" alt="Image Avatar">
+                        <span class="konf-image-avatar-badge"><i class="fas fa-image"></i> Imaj</span>`;
+                    overlay.style.display = 'flex';
+                }
+            } else {
+                // No video element yet (spectator mode) — create a virtual tile
+                const container = document.getElementById('videoContainer');
+                if (container) {
+                    let tile = document.getElementById('imageAvatarTile');
+                    if (!tile) {
+                        tile = document.createElement('div');
+                        tile.id = 'imageAvatarTile';
+                        tile.className = 'konf-video-wrapper konf-scale-in';
+                        tile.innerHTML = `<div class="konf-image-avatar-overlay" style="position:relative;min-height:200px">
+                            <img src="${dataUrl}" alt="Image Avatar">
+                            <span class="konf-image-avatar-badge"><i class="fas fa-image"></i> Imaj</span>
+                        </div>
+                        <div class="konf-video-label">${(userName || 'Ou') + ' (Imaj)'}</div>`;
+                        container.appendChild(tile);
+                    } else {
+                        tile.querySelector('img').src = dataUrl;
+                    }
+                }
+            }
+            resetBtn.style.display = '';
+            avatarBtn.style.display = 'none';
+            showToast('<i class="fas fa-image"></i> Imaj ranplase kamera a.', 'success', 3000);
+        }
+
+        window.resetImageAvatar = function() {
+            imageAvatarActive = false;
+            // Remove overlays
+            document.querySelectorAll('.konf-image-avatar-overlay').forEach(el => el.remove());
+            const tile = document.getElementById('imageAvatarTile');
+            if (tile) tile.remove();
+            // Re-enable video track
+            if (localStream) {
+                localStream.getVideoTracks().forEach(t => { t.enabled = true; });
+            }
+            resetBtn.style.display = 'none';
+            avatarBtn.style.display = '';
+            showToast('<i class="fas fa-video"></i> Kamera retabli.', 'info', 2500);
+        };
+    })();
+
+    // =====================================================================
+    // ===== FEAT3: Transition helpers — animate panels on show/hide =====
+    // =====================================================================
+    (function initTransitions() {
+        // Animate the media display when it becomes visible
+        const mediaDisplay = document.getElementById('mediaDisplay');
+        if (mediaDisplay) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(m) {
+                    if (m.type === 'attributes' && m.attributeName === 'style') {
+                        const st = window.getComputedStyle(mediaDisplay);
+                        if (st.display !== 'none') {
+                            mediaDisplay.classList.add('showing');
+                            mediaDisplay.classList.add('konf-panel-enter');
+                        } else {
+                            mediaDisplay.classList.remove('showing');
+                            mediaDisplay.classList.remove('konf-panel-enter');
+                        }
+                    }
+                });
+            });
+            observer.observe(mediaDisplay, { attributes: true, attributeFilter: ['style'] });
+        }
+
+        // Animate chat messages on insertion
+        const chatContainer = document.getElementById('chatContainer');
+        if (chatContainer) {
+            const chatObs = new MutationObserver(function(muts) {
+                muts.forEach(function(m) {
+                    m.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            node.classList.add('konf-chat-msg-enter');
+                        }
+                    });
+                });
+            });
+            chatObs.observe(chatContainer, { childList: true });
+        }
+
+        // Animate participants list on change
+        const partList = document.getElementById('participantsList');
+        if (partList) {
+            const partObs = new MutationObserver(function(muts) {
+                muts.forEach(function(m) {
+                    m.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            node.classList.add('konf-participant-enter');
+                        }
+                    });
+                });
+            });
+            partObs.observe(partList, { childList: true });
+        }
+
+        // Animate sidebar panels on toggle
+        const mediaLib = document.querySelector('.konf-media-library-scroll');
+        if (mediaLib) {
+            const libObs = new MutationObserver(function(muts) {
+                muts.forEach(function(m) {
+                    if (m.type === 'attributes' && m.attributeName === 'style') {
+                        const st = window.getComputedStyle(mediaLib);
+                        if (st.display !== 'none') {
+                            mediaLib.classList.add('konf-panel-enter');
+                        }
+                    }
+                });
+            });
+            libObs.observe(mediaLib, { attributes: true, attributeFilter: ['style'] });
+        }
+
+        // Animate moderation panel and invite panel on show
+        ['moderationPanel', 'invitePanel'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                const obs = new MutationObserver(function(muts) {
+                    muts.forEach(function(m) {
+                        if (m.type === 'attributes') {
+                            const st = window.getComputedStyle(el);
+                            if (st.display !== 'none') {
+                                el.classList.add('konf-panel-enter');
+                            }
+                        }
+                    });
+                });
+                obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+            }
+        });
+    })();
+
 </script>
 </div>
 {% endblock %}

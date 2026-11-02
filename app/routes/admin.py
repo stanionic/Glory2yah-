@@ -815,6 +815,13 @@ def gkach_proof(filename):
 @admin_required
 def manage_gkach():
     """Manage user Gkach balances and requests"""
+    # Import ValidationError once at function top so it is bound on EVERY branch.
+    # It was previously imported only inside the withdrawal branch (below), but
+    # an `except ValidationError` in the edit_balance branch references it too;
+    # because any in-function import binds the name as function-local for the
+    # whole scope, the edit_balance path raised UnboundLocalError (500) whenever
+    # a deduction failed validation.
+    from app.utils.validators import ValidationError
     if request.method == 'POST':
         action = request.form.get('action')
         
@@ -882,7 +889,7 @@ def manage_gkach():
             db.session.commit()
             flash('Kont Gkach efase avèk siksè!', 'success')
         elif action in ('approve_withdrawal', 'reject_withdrawal'):
-            from app.utils.validators import ValidationError
+            # ValidationError already imported at function top.
             tx_id = request.form.get('transaction_id')
             reviewer_note = request.form.get('reviewer_note', '')
             admin_action = 'approve' if action == 'approve_withdrawal' else 'reject'

@@ -1821,7 +1821,11 @@ def room(room_code):
         room = KonferansRoom.query.filter_by(room_code=room_code, is_active=True).first()
 
         if not room:
-            return "Sal sa pa egziste oubyen li pa aktif.", 404
+            return render_template(
+                'error.html',
+                error='Sal sa pa egziste oubyen li pa aktif.',
+                error_code=404,
+            ), 404
 
         user_name = request.args.get('user_name') or request.form.get('user_name') or 'Envite'
 

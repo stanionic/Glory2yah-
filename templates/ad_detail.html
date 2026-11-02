@@ -178,6 +178,7 @@
 {% endif %}
 {# ---- Canonical URL avoids SEO duplicate content penalty ---- #}
 <link rel="canonical" href="{{ og_url }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 {% endblock %}
 
 {# Also override the HTML <title> so the browser tab matches the preview #}
@@ -250,6 +251,11 @@
     color: #666;
     font-weight: 600;
     margin-bottom: 20px;
+}
+
+.product-price.price-free {
+    color: #059669;
+    font-style: italic;
 }
 
 .product-stock {
@@ -548,8 +554,12 @@
 
         <div class="product-info">
             <h1>{{ ad.title }}</h1>
+            {% if ad.price_gkach and ad.price_gkach > 0 %}
             <div class="product-price">{{ ad.price_gkach }} Gkach</div>
             <div class="product-price-htg">{{ ad.price_gkach|gkach_to_htg|format_htg }}</div>
+            {% else %}
+            <div class="product-price price-free">Gratis</div>
+            {% endif %}
             {% if ad.ad_type == 'sell' %}
             {% set qty_raw = ad.quantity if ad.quantity is defined and ad.quantity is not none and ad.quantity != '' else 1 %}
             {% set qty_n = qty_raw if qty_raw is number else (qty_raw|default(1)|int) %}
@@ -557,7 +567,7 @@
                 {% if qty_n >= 10 %}
                 <span class="stock-high"><i class="fas fa-check-circle"></i> Anpil nan estòk ({{ qty_n }} disponib)</span>
                 {% elif qty_n >= 4 %}
-                <span class="stock-med"><i class="fas fa-boxes"></i> Genyen kèk ({{ qty_n }} disponib)</span>
+                <span class="stock-med"><i class="fas fa-boxes"></i> Gen {{ qty_n }} nan stok</span>
                 {% elif qty_n >= 1 %}
                 <span class="stock-low"><i class="fas fa-exclamation-triangle"></i> Ti kantite! ({{ qty_n }} sèlman)</span>
                 {% else %}
@@ -569,7 +579,7 @@
 
             <div class="action-buttons">
                 <button class="btn-primary" onclick="addToCart('{{ ad.ad_id }}')">
-                    <i class="fas fa-shopping-cart"></i> Ajoute nan Panier
+                    <i class="fas fa-shopping-cart"></i> Ajoute nan Panyen
                 </button>
                 <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + ad.title) | urlencode }}" 
                    class="btn-secondary" target="_blank">

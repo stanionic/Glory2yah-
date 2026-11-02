@@ -60,8 +60,8 @@ def _create_vitrine(client, name="Lekòl Lespwa"):
 
 
 def test_creator_is_auto_owner(app, client):
-    owner = _make_user(app, "met_kay", "+50910000001")
-    _login(client, owner)
+    owner_id = _make_user(app, "met_kay", "+50910000001")
+    _login(client, owner_id)
     r = _create_vitrine(client)
     assert r.status_code == 201
     data = r.get_json()
@@ -70,9 +70,9 @@ def test_creator_is_auto_owner(app, client):
 
     with app.app_context():
         page = db.session.get(JereBiznisLandingPage, data["id"])
-        assert page.owner_user_id == str(owner.id)
+        assert page.owner_user_id == str(owner_id)
         row = JereBiznisAdmin.query.filter_by(
-            landing_page_id=page.id, user_id=str(owner), active=True
+            landing_page_id=page.id, user_id=str(owner_id), active=True
         ).first()
         assert row is not None and row.role == JereBiznisAdmin.ROLE_OWNER
 
