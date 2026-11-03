@@ -533,9 +533,56 @@
         padding-top: 12px;
         font-size: 1.1rem;
     }
-    .konf-modal-pricing-row.total .v { 
+    .konf-modal-pricing-row.total .v {
         color: #fde047;
         font-size: 1.3rem;
+    }
+    /* Monthly-plan duration chips inside the billing modal */
+    .konf-month-chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 0 0 16px;
+    }
+    .konf-month-chip {
+        flex: 1 1 auto;
+        min-width: 62px;
+        padding: 9px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .konf-month-chip:hover { transform: translateY(-1px); background: rgba(255,255,255,0.12); }
+    .konf-month-chip.active {
+        background: var(--konf-accent, #6366f1);
+        border-color: var(--konf-accent-light, #a5b4fc);
+    }
+    .konf-plan-status {
+        text-align: center;
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.65);
+        margin: -6px 0 14px;
+    }
+    /* Recording download (owner approval + participant transfer) */
+    .konf-dl-progress {
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.12);
+        overflow: hidden;
+        margin-top: 8px;
+    }
+    .konf-dl-progress > span {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: var(--konf-accent-light, #a5b4fc);
+        transition: width 0.2s ease;
     }
     
     .konf-modal-actions { display: flex; gap: 12px; }
@@ -1681,6 +1728,21 @@
                 <button id="buyTimeBtn" class="konf-ctrl-btn konf-ctrl-success" title="Achte tan anplis (Gkach)">
                     <span class="konf-ctrl-icon"><i class="fas fa-coins"></i></span> <span>+Tan</span>
                 </button>
+
+                <!-- Owner only: room-wide permission. Even when ON, each request
+                     still needs an explicit Approve, and bytes never touch the server. -->
+                <button id="allowDownloadBtn" class="konf-ctrl-btn konf-ctrl-secondary"
+                        title="Pèmèt (ou fèmen) demann telechajman patisipan yo">
+                    <span class="konf-ctrl-icon"><i class="fas fa-user-lock"></i></span> <span id="allowDownloadLabel">Telechajman: Fèmen</span>
+                </button>
+                {% endif %}
+
+                <!-- Participants: ask the owner for the recording -->
+                {% if not is_owner %}
+                <button id="requestDownloadBtn" class="konf-ctrl-btn konf-ctrl-info" style="display:none"
+                        title="Mande pwopriyetè a otorize w telechaje Konferans lan">
+                    <span class="konf-ctrl-icon"><i class="fas fa-download"></i></span> <span>Telechaje Konferans</span>
+                </button>
                 {% endif %}
 
                 <!-- Media Upload (teachers and students) -->
@@ -1753,26 +1815,34 @@
     </div>
 </div>
 
-<!-- Billing Modal -->
+<!-- Billing Modal — monthly plan: 500 Gkach pa mwa, konferans ilimite -->
 <div class="konf-modal-backdrop" id="billingModal">
     <div class="konf-modal">
         <div class="konf-modal-icon warn" id="billingModalIcon">⏰</div>
         <h3 id="billingModalTitle">Tan gratis prèske fini</h3>
         <p id="billingModalMessage">
-            Ou gen {{ 45 if not billing_info else billing_info.free_minutes }} minit gratis nan tout.
-            Peye 250 Gkach pou pwochenn èdtan an pou kontinye.
+            Ou gen {{ free_minutes if free_minutes else 45 }} minit gratis nan tout.
+            Apre sa, abònman {{ (billing_gate.monthly_price if billing_gate else 500) }} Gkach pa mwa
+            bay ou konferans <strong>ilimite</strong> nan tout sal ou yo.
         </p>
+        <div class="konf-month-chips" id="billingMonthChips">
+            <button type="button" class="konf-month-chip active" data-months="1">1 mwa</button>
+            <button type="button" class="konf-month-chip" data-months="3">3 mwa</button>
+            <button type="button" class="konf-month-chip" data-months="6">6 mwa</button>
+            <button type="button" class="konf-month-chip" data-months="12">12 mwa</button>
+        </div>
+        <p class="konf-plan-status" id="billingPlanStatus"></p>
         <div class="konf-modal-pricing">
-            <div class="konf-modal-pricing-row"><span class="k">1 Lè Konferans</span><span class="v">250 Gkach</span></div>
+            <div class="konf-modal-pricing-row"><span class="k">Abònman</span><span class="v" id="billingModalUnit">500 Gkach / mwa</span></div>
             <div class="konf-modal-pricing-row"><span class="k">Ou gen kounye a</span><span class="v" id="billingModalBalance">0 Gkach</span></div>
-            <div class="konf-modal-pricing-row total"><span class="k">Total pou peye</span><span class="v" id="billingModalTotal">250 Gkach</span></div>
+            <div class="konf-modal-pricing-row total"><span class="k">Total pou peye</span><span class="v" id="billingModalTotal">500 Gkach</span></div>
         </div>
         <div class="konf-modal-actions">
             <button class="konf-btn konf-btn-outline" id="billingRemindLater" style="background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.15)">
                 <i class="fas fa-clock"></i> Rapèl m nan 10min
             </button>
             <button class="konf-btn konf-btn-success" id="billingPayNow">
-                <i class="fas fa-coins"></i> Peye 250 Gkach
+                <i class="fas fa-coins"></i> Peye kounye a
             </button>
         </div>
         <a href="/achte_gkach" target="_blank" style="display:block;text-align:center;margin-top:14px;color:var(--konf-accent-light);font-size:0.8rem;font-weight:600;text-decoration:none">
@@ -1780,6 +1850,36 @@
         </a>
     </div>
 </div>
+
+<!-- Owner approval: a participant asked to download the KONFERANS -->
+{% if is_owner %}
+<div class="konf-modal-backdrop" id="dlApprovalModal" style="display:none">
+    <div class="konf-modal">
+        <div class="konf-modal-icon warn">⬇️</div>
+        <h3>Mande apwobasyon</h3>
+        <p id="dlApprovalText">Yon patisipan mande telechaje Konferans lan.</p>
+        <div class="konf-modal-actions">
+            <button class="konf-btn konf-btn-outline" id="dlDenyBtn"
+                    style="background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.15)">
+                <i class="fas fa-ban"></i> Refize
+            </button>
+            <button class="konf-btn konf-btn-success" id="dlApproveBtn">
+                <i class="fas fa-check"></i> Apwouve
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Transfer progress (owner = sending, participant = receiving) -->
+<div id="dlTransfer" style="display:none;position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:1250;
+                            min-width:270px;max-width:86vw;padding:12px 16px;border-radius:14px;
+                            background:rgba(15,23,42,0.94);border:1px solid rgba(255,255,255,0.14);
+                            color:#fff;font-size:0.8rem;box-shadow:0 12px 30px rgba(0,0,0,0.45)">
+    <div id="dlTransferLabel" style="font-weight:700;margin-bottom:4px">Transfè…</div>
+    <div class="konf-dl-progress"><span id="dlTransferBar"></span></div>
+</div>
+
 
 <!-- Toast Container -->
 <div class="konf-toast-container" id="toastContainer"></div>
@@ -1901,6 +2001,11 @@
     const GKACH_PER_HOUR = {{ (gkach_per_hour if gkach_per_hour else 250) }};
     const REMINDER_EVERY = {{ (reminder_every_min if reminder_every_min else 10) }};
     const initialBilling = {{ (billing_info | tojson if billing_info else 'null') }};
+    // Monthly plan (500 Gkach/mwa) — the server, not this script, decides when
+    // the room is locked; the countdown below is only the UI for it.
+    const billingGate = {{ (billing_gate | tojson if billing_gate is defined and billing_gate else 'null') }};
+    const MONTHLY_PRICE = {{ (billing_gate.monthly_price if billing_gate is defined and billing_gate else 500) }};
+    let allowDownload = {{ (allow_download if allow_download is defined else False) | tojson }};
 
     const socket = io();
 
@@ -4785,6 +4890,57 @@
         return connected ? { stream: dest.stream, ctx, connected } : null;
     }
 
+    // ===== Device-local recording store (OPFS, memory fallback) =====
+    // The master copy of a KONFERANS stays on the owner's device: every
+    // MediaRecorder slice is appended straight to an OPFS file instead of being
+    // kept in one RAM array, so a long conference cannot exhaust memory. The
+    // server only ever receives the metadata (see /api/recording/register).
+    const DEVICE_STORE_DIR = 'konferans';
+
+    async function deviceStoreDir() {
+        if (!(navigator.storage && navigator.storage.getDirectory)) return null;
+        const root = await navigator.storage.getDirectory();
+        return await root.getDirectoryHandle(DEVICE_STORE_DIR, { create: true });
+    }
+
+    async function deviceStoreGetFile(filename) {
+        const dir = await deviceStoreDir();
+        if (!dir) return null;
+        try {
+            const handle = await dir.getFileHandle(filename);
+            return await handle.getFile();
+        } catch (_) { return null; }
+    }
+
+    // Ordered, incremental writer. `write()` may be called from recorder events
+    // faster than OPFS flushes, so every append is chained on the previous one
+    // to keep the slices in recording order.
+    async function makeRecordingSink(filename) {
+        try {
+            const dir = await deviceStoreDir();
+            if (dir) {
+                const handle = await dir.getFileHandle(filename, { create: true });
+                const writable = await handle.createWritable();
+                let chain = Promise.resolve();
+                let bytes = 0;
+                return {
+                    kind: 'opfs', filename, bytes: () => bytes,
+                    write(blob) { bytes += blob.size; chain = chain.then(() => writable.write(blob)); return chain; },
+                    async close() { await chain; await writable.close(); return { size: bytes, filename }; },
+                    async getBlob() { return await deviceStoreGetFile(filename); },
+                };
+            }
+        } catch (_) { /* no OPFS (insecure context / old browser) → RAM */ }
+        const chunks = [];
+        let bytes = 0;
+        return {
+            kind: 'memory', filename, bytes: () => bytes,
+            write(blob) { bytes += blob.size; chunks.push(blob); return Promise.resolve(); },
+            async close() { return { size: bytes, filename }; },
+            async getBlob() { return chunks.length ? new Blob(chunks, { type: 'audio/webm' }) : null; },
+        };
+    }
+
     async function startWhatsAppSave(title) {
         const mix = collectRoomAudioStream();
         if (!mix) {
@@ -4803,17 +4959,19 @@
 
             const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
             const recorder = new MediaRecorder(mix.stream, { mimeType: mime });
-            const chunks = [];
-            recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+            // Write straight to the device store — no full-conference RAM array.
+            const fname = `konf_${roomCode}_${Date.now()}.webm`;
+            const sink = await makeRecordingSink(fname);
+            recorder.ondataavailable = (e) => { if (e.data && e.data.size) sink.write(e.data); };
             recorder.onstop = async () => {
                 try { mix.ctx.close(); } catch (_) {}
                 setStreamMenuLiveState(false);
-                await finishWhatsAppSave(chunks, title);
+                await finishWhatsAppSave(sink, title);
             };
             recorder.start(2000);
-            waSave = { recorder, chunks };
-            showStreamStatus('<i class="fas fa-record-vinyl"></i> 🔴 Anrejistreman odio an kous… Klike "Sispann Difizyon Live" nan meni Live lan pou fini epi jwenn lyen WhatsApp la.', false);
-            showToast('<i class="fab fa-whatsapp"></i> Anrejistreman odio konferans lan kòmanse!', 'success', 4500);
+            waSave = { recorder, sink, filename: fname };
+            showStreamStatus('<i class="fas fa-record-vinyl"></i> 🔴 Anrejistreman odio an kous… Li rete sou <strong>dispozitif sa a</strong>. Klike "Sispann Difizyon Live" nan meni Live lan pou fini.', false);
+            showToast('<i class="fas fa-save"></i> Anrejistreman odio konferans lan kòmanse (sou dispozitif ou)!', 'success', 4500);
         } catch (e) {
             showStreamStatus('<i class="fas fa-exclamation-circle"></i> Pa ka kòmanse anrejistreman an (navigatè pa sipòte?).', true);
         }
@@ -5087,12 +5245,18 @@
     }
     setupCopyShare();
 
-    // ===== BILLING (owner only) =====
+    // ===== BILLING (owner only) — plan 500 Gkach pa mwa =====
+    // The SERVER decides when a room is locked (socket event 'billing_state');
+    // this countdown only paints the UI. The free window is FREE_MINUTES; past
+    // it an entitled monthly subscription is required, and it buys unlimited
+    // time (no more 250 Gkach pa lè).
+    const BILLING_PING_EVERY_SEC = 60;
     let billingTimerHandle = null;
     let billingElapsedSec = (initialBilling && initialBilling.elapsed_seconds) ? initialBilling.elapsed_seconds : 0;
     let reminderMinuteMilestonesHit = new Set();
-    let nextChargeDueAtMin = FREE_MINUTES + 1; // minute #46 triggers first buy request
-    let purchasedMinutes = 0;
+    let planEntitled = billingGate ? !!billingGate.entitled : true;
+    let planDaysLeft = billingGate ? (billingGate.days_remaining || 0) : 0;
+    let selectedMonths = 1;
 
     function pad(n) { return String(n).padStart(2, '0'); }
     function fmtTime(totalSec) {
@@ -5106,46 +5270,60 @@
         const totalMin = Math.floor(billingElapsedSec / 60);
         txt.textContent = fmtTime(billingElapsedSec);
         badge.classList.remove('free','warning','danger','paid');
-        if (totalMin >= (FREE_MINUTES + purchasedMinutes)) {
+        if (totalMin >= FREE_MINUTES && !planEntitled) {
             badge.classList.add('danger');
-        } else if (totalMin >= (FREE_MINUTES + purchasedMinutes) - 5) {
+        } else if (totalMin >= (FREE_MINUTES - 5) && !planEntitled) {
             badge.classList.add('warning');
-        } else if (purchasedMinutes > 0) {
+        } else if (totalMin >= FREE_MINUTES && planEntitled) {
             badge.classList.add('paid');
         } else {
             badge.classList.add('free');
         }
+        badge.title = planEntitled
+            ? (planDaysLeft > 0 ? `Abònman aktif — ${planDaysLeft} jou rete` : `Tan gratis: ${FREE_MINUTES} minit`)
+            : `Abònman manke — ${MONTHLY_PRICE} Gkach pa mwa`;
     }
-    async function billingTick() {
+    function planStatusLine() {
+        const el = document.getElementById('billingPlanStatus');
+        if (!el) return;
+        if (planEntitled) {
+            el.innerHTML = `<i class="fas fa-check-circle" style="color:#4ade80"></i> Abònman aktif${planDaysLeft ? ` — ${planDaysLeft} jou rete` : ''}.`;
+        } else {
+            el.innerHTML = `<i class="fas fa-circle-exclamation" style="color:#fca5a5"></i> Pa gen abònman aktif — sal la ap fèmen apre ${FREE_MINUTES} minit gratis.`;
+        }
+    }
+    function billingTick() {
         billingElapsedSec++;
         updateTimerUI();
         const totalMin = Math.floor(billingElapsedSec / 60);
 
-        // Free time almost-up alert at 40min, 45min exact
+        // Heads-up 5 minutes before the free window closes.
         if (totalMin === (FREE_MINUTES - 5) && !reminderMinuteMilestonesHit.has('free_5min')) {
             reminderMinuteMilestonesHit.add('free_5min');
-            showToast(`<i class="fas fa-hourglass-half"></i> Rete <strong>5 minit gratis</strong> — peye 250 Gkach pou pwochenn èdtan an lè ou pare.`, 'warn', 6000);
+            showToast(`<i class="fas fa-hourglass-half"></i> Rete <strong>5 minit gratis</strong> — abònman ${MONTHLY_PRICE} Gkach pa mwa pou kontinye san limit.`, 'warn', 6000);
         }
+        // End of the free window: ask the server (it knows if a plan is active)
+        // instead of assuming the worst.
         if (totalMin === FREE_MINUTES && !reminderMinuteMilestonesHit.has('free_end')) {
             reminderMinuteMilestonesHit.add('free_end');
-            openBillingModal('danger', 'Tan gratis fini !',
-                `Ou fè ${FREE_MINUTES} minit gratis. Pou kontinye konferans, peye 250 Gkach pou pwochenn èdtan an. Sinon ou pral sispann videyo/pataj ekran.`, 250);
+            socket.emit('billing_ping', { room_id: roomId });
         }
-        // Every REMINDER_EVERY minutes after FREE_MINUTES -> reminder toast + modal if still unpaid
-        if (totalMin > FREE_MINUTES && ((totalMin - FREE_MINUTES) % REMINDER_EVERY === 0) &&
+        // Nudge the owner every REMINDER_EVERY minutes while unpaid.
+        if (totalMin > FREE_MINUTES && !planEntitled &&
+            ((totalMin - FREE_MINUTES) % REMINDER_EVERY === 0) &&
             !reminderMinuteMilestonesHit.has(`rem_${totalMin}`)) {
             reminderMinuteMilestonesHit.add(`rem_${totalMin}`);
-            const minsBeyond = totalMin - FREE_MINUTES - purchasedMinutes;
-            if (minsBeyond >= 0) {
-                // Still beyond purchased credit — reminder
-                showToast(`<i class="fas fa-bell"></i> Rapèl: ou depase tan gratis ak ${minsBeyond} minit. Peye 250 Gkach pou pwochenn èdtan an!`, 'warn', 7000);
-                openBillingModal('warn', 'Rapèl Tan Konferans',
-                    `Sa fè ${minsBeyond} minit w ap depase tan gratis la. Achte 60 minit pou 250 Gkach pou kontinye san entèripsyon.`, 250);
-            }
+            showToast(`<i class="fas fa-bell"></i> Rapèl: tan gratis la fini. Abònman ${MONTHLY_PRICE} Gkach pa mwa pou rekòmanse.`, 'warn', 7000);
+            openBillingModal('warn', 'Abònman KONFERANS obligatwa',
+                `Tan gratis ${FREE_MINUTES} minit la fini. Abonnen pou ${MONTHLY_PRICE} Gkach pa mwa epi konferans lan ap kontinye SAN LIMIT.`);
+        }
+        // Heartbeat: the authoritative lock check lives on the server.
+        if (billingElapsedSec % BILLING_PING_EVERY_SEC === 0) {
+            socket.emit('billing_ping', { room_id: roomId });
         }
     }
 
-    function openBillingModal(kind, title, message, amountDue) {
+    function openBillingModal(kind, title, message) {
         const backdrop = document.getElementById('billingModal');
         if (!backdrop) return;
         // Don't reopen if already shown unless force
@@ -5158,40 +5336,73 @@
         }
         const t = document.getElementById('billingModalTitle'); if (t) t.textContent = title;
         const m = document.getElementById('billingModalMessage'); if (m) m.textContent = message;
-        const tot = document.getElementById('billingModalTotal'); if (tot) tot.textContent = `${amountDue} Gkach`;
-        // Fetch live balance
-        fetch(`/konferans/api/billing/${encodeURIComponent(roomId)}?user_name=${encodeURIComponent(userName)}`, {
+        refreshPlanTotals();
+        planStatusLine();
+        // Live balance + subscription state from the server
+        fetch(`/konferans/api/subscription/${encodeURIComponent(roomId)}`, {
             headers: { 'Accept': 'application/json' }
         }).then(r => r.json().then(j => ({ok:r.ok, j}))).catch(() => null).then(res => {
-            const bal = (res && res.ok && res.j && typeof res.j.owner_balance === 'number') ? res.j.owner_balance : 0;
-            const el = document.getElementById('billingModalBalance');
-            if (el) el.textContent = `${bal} Gkach`;
+            if (res && res.ok && res.j && res.j.success) {
+                planEntitled = !!res.j.entitled;
+                planDaysLeft = res.j.days_remaining || 0;
+                const bal = document.getElementById('billingModalBalance');
+                if (bal && typeof res.j.owner_balance === 'number') bal.textContent = `${res.j.owner_balance} Gkach`;
+                planStatusLine();
+                updateTimerUI();
+            }
         });
         backdrop.classList.add('show');
     }
     function closeBillingModal() { const bd = document.getElementById('billingModal'); if (bd) bd.classList.remove('show'); }
 
-    async function doPayHour() {
+    function refreshPlanTotals() {
+        const unit = document.getElementById('billingModalUnit');
+        const tot = document.getElementById('billingModalTotal');
+        const btn = document.getElementById('billingPayNow');
+        const due = MONTHLY_PRICE * selectedMonths;
+        if (unit) unit.textContent = `${MONTHLY_PRICE} Gkach / mwa`;
+        if (tot) tot.textContent = `${due} Gkach`;
+        if (btn) btn.innerHTML = `<i class="fas fa-coins"></i> Peye ${due} Gkach`;
+        document.querySelectorAll('#billingMonthChips .konf-month-chip').forEach(chip => {
+            chip.classList.toggle('active', parseInt(chip.dataset.months, 10) === selectedMonths);
+        });
+    }
+
+    async function doPaySubscription() {
+        const due = MONTHLY_PRICE * selectedMonths;
+        const btn = document.getElementById('billingPayNow');
+        if (btn) btn.disabled = true;
         try {
-            const r = await fetch(`/konferans/api/charge_hour/${encodeURIComponent(roomId)}`, {
+            const r = await fetch('/konferans/api/subscription/pay', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRFToken': getCSRFToken()
                 },
-                body: JSON.stringify({ user_name: userName })
+                // One key per click: a retry or double-click can never charge twice.
+                body: JSON.stringify({
+                    room_id: roomId,
+                    months: selectedMonths,
+                    idempotency_key: `konf-${roomId}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+                })
             });
             const j = await r.json().catch(() => ({}));
             if (r.ok && j && j.success) {
-                purchasedMinutes += j.minutes_bought || 60;
+                planEntitled = true;
+                planDaysLeft = j.days_remaining || 30 * (j.months || selectedMonths);
                 const lab = document.getElementById('gkachBalanceLabel');
-                if (lab) lab.innerHTML = `Gkach: <strong>${j.new_balance ?? ''}</strong>`;
+                if (lab && typeof j.new_balance === 'number') lab.innerHTML = `Gkach: <strong>${j.new_balance}</strong>`;
                 closeBillingModal();
-                showToast(`<i class="fas fa-check-circle"></i> ${j.message || ''} Balans: ${j.new_balance ?? 0} Gkach`, 'success', 5500);
+                updateTimerUI();
+                planStatusLine();
+                showToast(`<i class="fas fa-check-circle"></i> ${j.message || 'Abònman aktif!'} Konferans ilimite pandan ${planDaysLeft} jou.`, 'success', 6500);
+                // Tell the room it can breathe again; the server unlocks on its
+                // own next heartbeat, this just avoids a visible lag.
+                socket.emit('billing_ping', { room_id: roomId });
             } else {
                 if (j && j.insufficient_balance) {
-                    showToast(`<i class="fas fa-coins"></i> Balans ensifisan. Bezwen ${j.required || 250} Gkach — <a href="/achte_gkach" target="_blank" style="color:#fff;text-decoration:underline">Ajoute Gkach la</a>.`, 'danger', 8000);
+                    showToast(`<i class="fas fa-coins"></i> Balans ensifisan. Bezwen ${j.required || due} Gkach — <a href="/achte_gkach" target="_blank" style="color:#fff;text-decoration:underline">Ajoute Gkach la</a>.`, 'danger', 8000);
                 } else if (j && j.login_redirect) {
                     if (confirm('Ou dwe re-konekte pou peye. Ale nan paj koneksyon?')) window.location.href = j.login_redirect;
                 } else {
@@ -5200,30 +5411,81 @@
             }
         } catch (e) {
             showToast('<i class="fas fa-exclamation-triangle"></i> Erè rezo pandan peman an. Tanpri reesaye.', 'danger', 5000);
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
+
+    function enforceBillingLock(reason) {
+        // A locked room must actually stop: the owner's tab is the only media
+        // source, so tearing down the relay/recording here is what ends the
+        // conference (the server also refuses new joins and new stream_start).
+        if (!isOwner) return;
+        try { if (typeof stopLiveRelay === 'function') stopLiveRelay(); } catch (_) {}
+        try {
+            if (waSave && waSave.recorder && waSave.recorder.state === 'recording') {
+                waSave.recorder.stop();
+                waSave = null;
+            }
+        } catch (_) {}
+        try { socket.emit('stop_recording', { room_id: roomId }); } catch (_) {}
+        openBillingModal('danger', 'Sal la fèmen',
+            reason || `Tan gratis la fini epi abònman an pa aktif. Abonnen pou ${MONTHLY_PRICE} Gkach pa mwa pou kontinye.`);
+    }
+
+    // ---- server is the boss: mirror its verdict ----
+    socket.on('billing_state', (st) => {
+        if (!st || !isOwner) return;
+        planEntitled = !!st.entitled;
+        planDaysLeft = st.days_remaining || 0;
+        updateTimerUI();
+        planStatusLine();
+    });
+    socket.on('billing_locked', (payload) => {
+        planEntitled = false;
+        updateTimerUI();
+        planStatusLine();
+        enforceBillingLock(payload && payload.message);
+        if (!isOwner) {
+            showToast(`<i class="fas fa-lock"></i> ${payload && payload.message ? payload.message : 'Sal la fèmen: abònman pwopriyetè a pa aktif.'}`, 'warn', 7000);
+        }
+    });
+    socket.on('billing_unlocked', (payload) => {
+        planEntitled = true;
+        updateTimerUI();
+        planStatusLine();
+        showToast(`<i class="fas fa-circle-check"></i> ${payload && payload.message ? payload.message : 'Abònman aktif! Ou ka rekòmanse.'}`, 'success', 5500);
+    });
+
     document.getElementById('billingRemindLater').addEventListener('click', () => {
         closeBillingModal();
-        showToast('<i class="fas fa-clock"></i> Rapèl la repouse nan 10 minit. Pense peye !', 'info', 3500);
+        showToast('<i class="fas fa-clock"></i> Rapèl la repouse nan 10 minit. Pense abonnen !', 'info', 3500);
     });
-    document.getElementById('billingPayNow').addEventListener('click', () => doPayHour());
+    document.getElementById('billingPayNow').addEventListener('click', () => doPaySubscription());
     document.getElementById('billingModal').addEventListener('click', (ev) => {
         if (ev.target && ev.target.id === 'billingModal') closeBillingModal();
     });
+    document.querySelectorAll('#billingMonthChips .konf-month-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            selectedMonths = parseInt(chip.dataset.months, 10) || 1;
+            refreshPlanTotals();
+        });
+    });
     document.getElementById('buyTimeBtn') && document.getElementById('buyTimeBtn').addEventListener('click', () => {
-        openBillingModal('success', 'Achte Tan Anplis',
-            `Achte 60 minit konferans pou ${GKACH_PER_HOUR} Gkach. Tan gratis ou ak tan ou deja peye ap kontinye kout anvan nou soti nan nouvo.`, GKACH_PER_HOUR);
+        openBillingModal('success', 'Plan KONFERANS',
+            `${MONTHLY_PRICE} Gkach pa mwa = konferans ILIMITE pou tout sal ou yo, apre ${FREE_MINUTES} minit gratis chak sal. Peye plizyè mwa davans: tan an ap ajoute.`);
     });
 
     // Kick off billing timer (owner)
     if (isOwner) {
         updateTimerUI();
+        planStatusLine();
         billingTimerHandle = setInterval(billingTick, 1000);
-        // Initial reminder at FREE_MINUTES - 5
+        // Show the server's verdict immediately (no need to wait for minute 45)
+        setTimeout(() => { socket.emit('billing_ping', { room_id: roomId }); }, 1500);
         if (Math.floor(billingElapsedSec / 60) < FREE_MINUTES) {
-            // Show first-time intro toast about billing rules
             setTimeout(() => {
-                showToast(`<i class="fas fa-info-circle"></i> <strong>Enfòmasyon Konferans</strong>: Premye ${FREE_MINUTES} minit GRATIS. Apre sa, 250 Gkach pou chak èdtan — rapèl tout ${REMINDER_EVERY} minit.`, 'info', 9000);
+                showToast(`<i class="fas fa-info-circle"></i> <strong>Enfòmasyon Konferans</strong>: Premye ${FREE_MINUTES} minit GRATIS. Apre sa: ${MONTHLY_PRICE} Gkach pa mwa pou konferans ilimite.`, 'info', 9000);
             }, 3500);
         }
     }

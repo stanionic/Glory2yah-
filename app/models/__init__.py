@@ -21,6 +21,8 @@ from app.models.konferans import (
     KonferansRecording,
     KonferansStreamSession,
     KonferansPlatformConnection,
+    KonferansSubscription,
+    KonferansPayment,
 )
 from app.models.charity import CharityDonation, CharityCause
 from app.models.notification import (
@@ -84,6 +86,8 @@ __all__ = [
     'KonferansRecording',
     'KonferansStreamSession',
     'KonferansPlatformConnection',
+    'KonferansSubscription',
+    'KonferansPayment',
 ]
 
 if _ELEARNING_OK:

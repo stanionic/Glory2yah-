@@ -509,7 +509,9 @@ def create_app(config_name=None):
         from app.models.ad_interactions import AdLike, AdStar, AdComment, AdRating
         from app.models.admin_settings import AdminSettings # Import AdminSettings
         from app.models.party import Party, PartyParticipant
-        from app.models.konferans import KonferansRoom, KonferansRecording
+        from app.models.konferans import (
+            KonferansRoom, KonferansRecording, KonferansSubscription, KonferansPayment,
+        )
         from app.models.mennem_trip import MennemTrip
         from app.models.mennem_driver import MennemDriver
         # Import notification models so notifications / push_subscriptions /
@@ -911,6 +913,9 @@ def create_app(config_name=None):
                     ('credit_bought_minutes', "INTEGER DEFAULT 0"),
                     ('gkach_per_hour', "INTEGER DEFAULT 250"),
                     ('free_minutes',   "INTEGER DEFAULT 45"),
+                    # Participant-download permission (default OFF: the owner
+                    # must opt in before anyone can request a recording).
+                    ('allow_download', "BOOLEAN DEFAULT FALSE"),
                 ]
                 _kr_altered = 0
                 for _col, _dcl in _kr_adds:
@@ -976,6 +981,41 @@ def create_app(config_name=None):
         except Exception as _fb_e:
             db.session.rollback()
             app.logger.warning(f'KONFERANS AUTO-LIVE MIGRATION: skipped: {_fb_e}')
+
+        # =====================================================================
+        # KONFERANS DEVICE-SOURCE RECORDING MIGRATION (idempotent): a recording
+        # may now live ONLY on the owner's device, so the server keeps metadata
+        # and no media path. Columns are NULLABLE / defaulted, existing
+        # server-side files keep working through download_recording.
+        # The new tables (konferans_subscriptions, konferans_payments) are
+        # created by db.create_all() above; db.create_all() does NOT alter
+        # existing tables, hence this block.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect_kr2
+            from sqlalchemy import text as _sa_text_kr2
+            _insp_kr2 = _sa_inspect_kr2(db.engine)
+            if _insp_kr2.has_table('konferans_recordings'):
+                _kr2_cols = {c['name'] for c in _insp_kr2.get_columns('konferans_recordings')}
+                for _col, _dcl in (
+                    ('stored_on_owner_device', 'BOOLEAN DEFAULT FALSE'),
+                    ('owner_user_id',          'INTEGER DEFAULT NULL'),
+                    ('participant_count_hint', 'INTEGER DEFAULT NULL'),
+                ):
+                    if _col not in _kr2_cols:
+                        try:
+                            db.session.execute(_sa_text_kr2(
+                                f'ALTER TABLE konferans_recordings ADD COLUMN {_col} {_dcl}'
+                            ))
+                            db.session.commit()
+                            app.logger.info(
+                                f'KONFERANS RECORDING MIGRATION: added konferans_recordings.{_col}'
+                            )
+                        except Exception:
+                            db.session.rollback()
+        except Exception as _kr2_e:
+            db.session.rollback()
+            app.logger.warning(f'KONFERANS RECORDING MIGRATION: skipped: {_kr2_e}')
 
         # =====================================================================
         # MENNEM MIGRATION (idempotent): extend mennem_trips with the price

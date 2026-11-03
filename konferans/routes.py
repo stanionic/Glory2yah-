@@ -24,6 +24,8 @@ import secrets
 from konferans import stream_relay
 # Optional Facebook auto-Live (Graph API): creates the broadcast + reads the key.
 from konferans import facebook_live
+# Monthly subscription (500 Gkach/mwa) that replaced the 250 Gkach/lè top-up.
+from konferans import subscription as konf_sub
 
 _ALLOWED_RECORDING_EXTS = {'.webm', '.mp4', '.mkv', '.mov', '.ogg', '.m4v'}
 _MAX_RECORDING_MB = 512
@@ -316,8 +318,17 @@ def _stop_stream_session(room_id, reason='manual'):
 
 
 FREE_MINUTES_DEFAULT = 45
+# DEPRECATED pricing: the room no longer bills 250 Gkach/lè. Kept only so
+# legacy rows (konferans_rooms.gkach_per_hour) and old invoices still render.
 GKACH_PER_HOUR_DEFAULT = 250
 REMINDER_INTERVAL_MIN = 10
+# Current model: after the free window the owner needs a monthly subscription.
+KONFERANS_MONTHLY_PRICE = konf_sub.MONTHLY_PRICE_GKACH  # 500 Gkach / mwa
+BILLING_HEARTBEAT_SEC = 60  # owner tab reports elapsed time this often
+
+# Participant-download grants (recording master lives on the owner's device).
+DOWNLOAD_GRANT_TTL_SEC = 10 * 60   # single-use, 10 minutes to complete
+DOWNLOAD_CHUNK_BYTES = 256 * 1024  # advisory size for the device->device relay
 
 konferans_bp = Blueprint('konferans', __name__, url_prefix='/konferans', template_folder='templates')
 
@@ -408,6 +419,272 @@ def _room_owner(room):
         and int(room.user_id) == int(current_user.id)
     )
 
+
+def _room_owner_user(room):
+    """The User row of the room's owner (socket handlers may run for anyone)."""
+    try:
+        if room and room.user_id:
+            return User.query.filter_by(id=int(room.user_id)).first()
+    except Exception:
+        return None
+    return None
+
+
+def _billing_gate(room):
+    """Server-authoritative billing decision for a room.
+
+    The room is free for `free_minutes` (45) from started_at. Past that window
+    the owner must hold an entitled monthly subscription (500 Gkach/mwa).
+
+    Evaluated on the SERVER, not in the owner's browser: the countdown in
+    room.html is only a UI hint, and a client-side-only gate would let an
+    owner keep a room running indefinitely by ignoring the modal.
+
+    Rooms that already bought time under the retired 250 Gkach/lè model keep
+    it: credit_bought_minutes still covers the room until it runs out.
+    """
+    free_min = int(getattr(room, 'free_minutes', 0) or FREE_MINUTES_DEFAULT)
+    started = getattr(room, 'started_at', None)
+    now = datetime.utcnow()
+    elapsed_min = int((now - started).total_seconds() // 60) if started else 0
+
+    sub = {'status': 'EXPIRED', 'entitled': False, 'days_remaining': 0,
+           'expiration': None, 'monthly_price': KONFERANS_MONTHLY_PRICE}
+    try:
+        owner_user = _room_owner_user(room)
+        if owner_user is not None:
+            sub = konf_sub.state_for_user(owner_user)
+    except Exception:
+        pass
+
+    legacy_credit = int(getattr(room, 'credit_bought_minutes', 0) or 0)
+    past_free = elapsed_min >= free_min
+    covered_by_legacy = legacy_credit >= (elapsed_min - free_min)
+    entitled = (not past_free) or bool(sub.get('entitled')) or covered_by_legacy
+
+    return {
+        'entitled': bool(entitled),
+        'locked': not entitled,
+        'elapsed_minutes': elapsed_min,
+        'free_minutes': free_min,
+        'past_free_window': past_free,
+        'subscription_status': sub.get('status'),
+        'days_remaining': sub.get('days_remaining', 0),
+        'expiration': sub.get('expiration'),
+        'monthly_price': sub.get('monthly_price', KONFERANS_MONTHLY_PRICE),
+    }
+
+
+def _safe_billing_gate(room):
+    """_billing_gate() that never breaks page rendering."""
+    try:
+        return _billing_gate(room)
+    except Exception:
+        return {
+            'entitled': True, 'locked': False, 'elapsed_minutes': 0,
+            'free_minutes': FREE_MINUTES_DEFAULT, 'past_free_window': False,
+            'subscription_status': 'UNKNOWN', 'days_remaining': 0,
+            'expiration': None, 'monthly_price': KONFERANS_MONTHLY_PRICE,
+        }
+
+
+def _broadcast_billing(room_id, room=None):
+    """Push the authoritative billing state to the room and lock it if needed."""
+    from flask_socketio import emit as _so_emit
+    try:
+        if room is None:
+            room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+        if not room:
+            return None
+        gate = _billing_gate(room)
+    except Exception as e:
+        print(f"[konferans/billing] gate check failed for {room_id}: {e}")
+        return None
+
+    state = active_rooms.setdefault(room_id, {'participants': [], 'is_recording': False})
+    was_locked = bool(state.get('billing_locked'))
+    state['billing_locked'] = gate['locked']
+    state['billing'] = state.get('billing') or {}
+    state['billing']['free_minutes'] = gate['free_minutes']
+    state['billing']['last_check_minute'] = gate['elapsed_minutes']
+
+    _so_emit('billing_state', gate, room=room_id)
+
+    # A room that just fell out of entitlement gets locked for everyone but the
+    # owner, who is told exactly what to do (subscribe) to bring it back.
+    if gate['locked'] and not was_locked:
+        _so_emit('billing_locked', {
+            'message': ('Tan gratis la fini epi abònman KONFERANS lan pa aktif. '
+                        f'Abonnen pou {gate["monthly_price"]} Gkach pa mwa pou kontinye '
+                        'san limit.'),
+            'monthly_price': gate['monthly_price'],
+        }, room=room_id)
+        try:
+            _stop_room_media_for_billing(room_id, room)
+        except Exception as e:
+            print(f"[konferans/billing] media stop failed for {room_id}: {e}")
+    elif not gate['locked'] and was_locked:
+        _so_emit('billing_unlocked', {'message': 'Abònman aktif! Ou ka rekòmanse konferans lan.'}, room=room_id)
+    return gate
+
+
+def _stop_room_media_for_billing(room_id, room):
+    """Locking a room must actually end the conference, not just grey out buttons.
+
+    The owner's browser is the only media source (see startLiveRelay), so the
+    lock event plus this server-side teardown stops the RTMP relay through the
+    single existing stop path and clears the recording flag; the client tears
+    its MediaRecorder down when it receives 'billing_locked'.
+    """
+    try:
+        _stop_stream_session(room_id, reason='billing')
+    except Exception as e:
+        print(f"[konferans/billing] relay stop error: {e}")
+    if room_id in active_rooms:
+        active_rooms[room_id]['is_recording'] = False
+        active_rooms[room_id]['recording_started_by'] = None
+
+
+def _billing_locked_for(room_id):
+    """Cheap check used by join/stream gates; recomputes from the DB."""
+    try:
+        state = active_rooms.get(room_id, {})
+        if state.get('billing_locked'):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+# =====================================================================
+# PARTICIPANT DOWNLOAD OF A KONFERANS (owner-authorized, device-to-device)
+#
+# The recording master copy lives on the room owner's device, so the server
+# cannot serve the bytes. It acts as the notary instead: it records who asked,
+# asks the owner, mints a single-use grant, and relays the owner's chunks only
+# to that one participant. Nothing is written to disk here.
+# =====================================================================
+download_grants = {}  # token: {room_id, participant_sid, recording_id, ...}
+dl_requests = {}      # req_id: {room_id, participant_sid, recording_id, status}
+
+_DL_GRANT_REDIS_PREFIX = 'konferans:dl_grant:'
+
+
+def _dl_grant_redis_set(token, data, ttl):
+    r = _redis_client()
+    if r is None:
+        return
+    try:
+        r.setex(_DL_GRANT_REDIS_PREFIX + token, ttl, json.dumps(data, default=str))
+    except Exception as e:
+        print(f"[konferans/dl] redis grant write failed: {e}")
+
+
+def _dl_grant_redis_get(token):
+    r = _redis_client()
+    if r is None:
+        return None
+    try:
+        raw = r.get(_DL_GRANT_REDIS_PREFIX + token)
+        return json.loads(raw) if raw else None
+    except Exception:
+        return None
+
+
+def _dl_grant_redis_del(token):
+    r = _redis_client()
+    if r is None:
+        return
+    try:
+        r.delete(_DL_GRANT_REDIS_PREFIX + token)
+    except Exception:
+        pass
+
+
+def _grant_store(token, grant):
+    """Keep the grant local AND shared: the participant's socket usually lives
+    on a different gunicorn worker than the owner's."""
+    download_grants[token] = grant
+    _dl_grant_redis_set(token, grant, DOWNLOAD_GRANT_TTL_SEC)
+
+
+def _grant_lookup(token):
+    grant = download_grants.get(token)
+    if grant is None:
+        grant = _dl_grant_redis_get(token)
+        if grant:
+            download_grants[token] = grant
+    if not grant:
+        return None
+    try:
+        if datetime.fromisoformat(grant.get('expires_at')) < datetime.utcnow():
+            _grant_revoke(token)
+            return None
+    except Exception:
+        pass
+    return grant
+
+
+def _grant_revoke(token):
+    download_grants.pop(token, None)
+    _dl_grant_redis_del(token)
+
+
+def _owner_sid(room_id):
+    """The socket id of the owner currently connected to a room (or None)."""
+    for sid, ident in room_socket_users.get(room_id, {}).items():
+        if ident.get('is_owner'):
+            return sid
+    return None
+
+
+def _find_recording(room_id, recording_id=None, filename=None):
+    """One recording of a room: newest when neither id nor filename is given."""
+    try:
+        query = KonferansRecording.active().filter_by(room_id=room_id)
+        if recording_id:
+            return query.filter_by(id=int(recording_id)).first()
+        if filename:
+            return query.filter_by(filename=secure_filename(str(filename))).first()
+        return query.order_by(KonferansRecording.id.desc()).first()
+    except Exception:
+        return None
+
+
+def _notify_owner_of_download_request(room, participant_name, recording, req_id):
+    """Best-effort owner alert: in-app/push via NotificationHub + WhatsApp."""
+    try:
+        from app.services.notification_hub import NotificationHub
+        NotificationHub.create(
+            recipient_id=room.user_id,
+            notification_type='konferans_download_request',
+            recipient_whatsapp=getattr(room, 'creator_whatsapp', None),
+            title='Demann telechajman KONFERANS',
+            message=(f'{participant_name} vle telechaje Konferans '
+                     f'"{getattr(recording, "title", None) or recording.filename}". '
+                     'Apwouve nan sal la.'),
+            category='konferans',
+            data={'room_id': room.room_id, 'req_id': req_id,
+                  'recording_id': recording.id},
+        )
+    except Exception as e:
+        print(f"[konferans/dl] in-app notify failed: {e}")
+    try:
+        from app.services.notification_service import _send_whatsapp_alert
+        import threading
+        phone = getattr(room, 'creator_whatsapp', None)
+        if phone:
+            threading.Thread(
+                target=_send_whatsapp_alert,
+                args=(f'[KONFERANS] {participant_name} mande telechaje konferans '
+                      f'"{getattr(recording, "title", None) or recording.filename}". '
+                      f'Louvri sal la {getattr(room, "room_code", "")} pou apwouve/reyte.',
+                      phone),
+                daemon=True,
+            ).start()
+    except Exception as e:
+        print(f"[konferans/dl] whatsapp notify failed: {e}")
+
 def register_socketio_handlers(socketio):
     """Register all socketio event handlers"""
     
@@ -456,6 +733,24 @@ def register_socketio_handlers(socketio):
 
         use_waiting = bool(active_rooms.get(room_id, {}).get('waiting_room'))
         room_locked = bool(active_rooms.get(room_id, {}).get('room_locked'))
+
+        # --- BILLING GATE (server-authoritative) ---
+        # Past the free window, an owner without the monthly plan cannot keep
+        # the conference running, and no new participant may enter it. The
+        # owner (and admins) still get in so they can reach the pay screen.
+        gate = None
+        try:
+            gate = _billing_gate(room)
+            active_rooms.setdefault(room_id, {'participants': [], 'is_recording': False})
+            active_rooms[room_id]['billing_locked'] = gate['locked']
+        except Exception:
+            gate = None
+        if gate and gate['locked'] and not can_bypass:
+            emit('join_error', {
+                'message': ('Sal la pa disponib kounye a: peryòd gratis la fini epi '
+                            'abònman pwopriyetè a pa aktif.')
+            }, room=request.sid)
+            return
 
         # Users already admitted once skip re-queueing (the admission_granted
         # handler reloads the page, which re-emits 'join').
@@ -544,6 +839,14 @@ def register_socketio_handlers(socketio):
         }
         emit('room_locks_updated', locks_now, room=request.sid)
 
+        # The owner's tab drives the billing UI: hand it the server's verdict
+        # (and the room-wide download permission) immediately on join/reload.
+        if is_owner_call and gate:
+            emit('billing_state', gate, room=request.sid)
+            emit('download_policy', {
+                'allow_download': bool(getattr(room, 'allow_download', False)),
+            }, room=request.sid)
+
         # Send current whiteboard state to new user
         if room_id in room_whiteboard and room_whiteboard[room_id].get('strokes'):
             emit('whiteboard_state', {
@@ -561,6 +864,243 @@ def register_socketio_handlers(socketio):
         _broadcast_participants(room_id)
         if is_owner_call or is_super_admin:
             _broadcast_waiting(room_id)
+
+    @socketio.on('billing_ping')
+    def handle_billing_ping(data):
+        """Owner-tab heartbeat: the server decides whether the room may run.
+
+        The browser countdown only renders the UI; this is what actually locks
+        a room once the 45 free minutes are gone and no plan is active.
+        """
+        from flask_socketio import emit
+        room_id = (data or {}).get('room_id')
+        if not room_id or not _socket_owner(room_id, request.sid):
+            return
+        gate = _broadcast_billing(room_id)
+        if gate is None:
+            return
+        emit('billing_state', gate, room=request.sid)
+
+    # ---------------- participant download of a KONFERANS ----------------
+    @socketio.on('dl_request')
+    def handle_dl_request(data):
+        """A participant asks for the room's recording.
+
+        Two gates must both be open before the owner is even bothered: the
+        room-wide allow_download toggle, and the owner's explicit approval of
+        THIS request. Until then no byte moves.
+        """
+        from flask_socketio import emit
+        data = data or {}
+        room_id = data.get('room_id')
+        identity = _socket_member(room_id, request.sid)
+        if not room_id or not identity:
+            return
+
+        room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+        if not room:
+            emit('dl_error', {'message': 'Sal la pa egziste oubyen li pa aktif.'}, room=request.sid)
+            return
+
+        if not bool(getattr(room, 'allow_download', False)):
+            emit('dl_error', {
+                'message': 'Pwopriyetè sal la pa pèmèt telechajman pou sal sa a.',
+                'reason': 'not_allowed',
+            }, room=request.sid)
+            return
+
+        rec = _find_recording(room_id, data.get('recording_id'), data.get('filename'))
+        if rec is None:
+            emit('dl_error', {
+                'message': 'Pa gen anrejistreman pou sal sa a.',
+                'reason': 'no_recording',
+            }, room=request.sid)
+            return
+
+        owner_sid = _owner_sid(room_id)
+        if not owner_sid:
+            emit('dl_error', {
+                'message': ("Pwopriyetè a pa konekte kounye a. Li dwe ouvè sal la "
+                            "pou l ka voye Konferans lan bay ou."),
+                'reason': 'owner_offline',
+            }, room=request.sid)
+            return
+
+        req_id = secrets.token_urlsafe(16)
+        dl_requests[req_id] = {
+            'req_id': req_id,
+            'room_id': room_id,
+            'participant_sid': request.sid,
+            'participant_name': identity.get('user_name') or 'Patisipan',
+            'recording_id': rec.id,
+            'filename': rec.filename,
+            'title': getattr(rec, 'title', None),
+            'file_size': int(rec.file_size or 0) or None,
+            'device_source': bool(getattr(rec, 'stored_on_owner_device', False)),
+            'status': 'pending',
+            'requested_at': datetime.utcnow().isoformat(),
+        }
+        _notify_owner_of_download_request(room, dl_requests[req_id]['participant_name'],
+                                          rec, req_id)
+        emit('dl_request_received', dl_requests[req_id], room=owner_sid)
+        emit('dl_request_pending', {
+            'req_id': req_id,
+            'message': 'Demann ou an ale bay pwopriyetè a. Nap tann apwobasyon li…',
+        }, room=request.sid)
+
+    @socketio.on('dl_approve')
+    def handle_dl_approve(data):
+        """Owner approves a pending request → mint a single-use, 10-minute grant."""
+        from flask_socketio import emit
+        data = data or {}
+        req_id = (data.get('req_id') or '').strip()
+        req = dl_requests.get(req_id)
+        if not req or req.get('status') != 'pending':
+            emit('dl_error', {'message': 'Demann sa a pa valab ankò.'}, room=request.sid)
+            return
+        if not _socket_owner(req['room_id'], request.sid):
+            emit('dl_error', {'message': 'Se sèl pwopriyetè sal la ki ka apwouve.'}, room=request.sid)
+            return
+
+        token = secrets.token_urlsafe(24)
+        grant = {
+            'token': token,
+            'req_id': req_id,
+            'room_id': req['room_id'],
+            'participant_sid': req['participant_sid'],
+            'recording_id': req['recording_id'],
+            'filename': req['filename'],
+            'title': req.get('title'),
+            'total_bytes': req.get('file_size'),
+            'bytes_relayed': 0,
+            'chunks_relayed': 0,
+            'max_chunks': int(_MAX_RECORDING_MB * 1024 * 1024 / DOWNLOAD_CHUNK_BYTES) + 64,
+            'created_at': datetime.utcnow().isoformat(),
+            'expires_at': (datetime.utcnow() + timedelta(seconds=DOWNLOAD_GRANT_TTL_SEC)).isoformat(),
+            'chunk_size': DOWNLOAD_CHUNK_BYTES,
+        }
+        _grant_store(token, grant)
+        req['status'] = 'approved'
+
+        emit('dl_granted', {
+            'token': token,
+            'filename': req['filename'],
+            'title': req.get('title'),
+            'total_bytes': req.get('file_size'),
+            'chunk_size': DOWNLOAD_CHUNK_BYTES,
+            'expires_in': DOWNLOAD_GRANT_TTL_SEC,
+            'message': 'Pwopriyetè a apwouve! Telechajman ap kòmanse…',
+        }, room=req['participant_sid'])
+        emit('dl_request_resolved', {'req_id': req_id, 'status': 'approved'}, room=request.sid)
+        # The owner's device is the only copy, so the owner tab is the one that
+        # has to push the bytes — it needs the token and the file name back.
+        emit('dl_grant_owner', {
+            'token': token,
+            'req_id': req_id,
+            'room_id': req['room_id'],
+            'filename': req['filename'],
+            'device_source': req.get('device_source', True),
+            'total_bytes': req.get('file_size'),
+            'chunk_size': DOWNLOAD_CHUNK_BYTES,
+            'expires_in': DOWNLOAD_GRANT_TTL_SEC,
+            'participant_name': req.get('participant_name'),
+        }, room=request.sid)
+
+    @socketio.on('dl_deny')
+    def handle_dl_deny(data):
+        """Owner refuses: the participant is told, nothing else happens."""
+        from flask_socketio import emit
+        data = data or {}
+        req_id = (data.get('req_id') or '').strip()
+        req = dl_requests.get(req_id)
+        if not req or not _socket_owner(req['room_id'], request.sid):
+            return
+        req['status'] = 'denied'
+        emit('dl_denied', {
+            'message': 'Pwopriyetè a refize demann telechajman sa a.',
+        }, room=req['participant_sid'])
+        emit('dl_request_resolved', {'req_id': req_id, 'status': 'denied'}, room=request.sid)
+
+    @socketio.on('dl_chunk')
+    def handle_dl_chunk(data):
+        """Relay one recording chunk from the owner's device to one participant.
+
+        The bytes only pass through this process — they are never written to the
+        server disk, which is what keeps the master copy on the owner's device.
+        """
+        from flask_socketio import emit
+        data = data or {}
+        token = (data.get('token') or '').strip()
+        if not token or not _socket_owner(data.get('room_id'), request.sid):
+            return
+        grant = _grant_lookup(token)
+        if not grant:
+            emit('dl_error', {'message': 'Otorizasyon telechajman an pa valab ankò.'},
+                 room=request.sid)
+            return
+
+        payload = data.get('data')
+        if not isinstance(payload, (bytes, bytearray)):
+            return
+        seq = int(data.get('seq') or 0)
+        if seq < 0 or grant['chunks_relayed'] >= grant['max_chunks']:
+            _grant_revoke(token)
+            emit('dl_error', {'message': 'Transfè a depase limit.'}, room=grant['participant_sid'])
+            return
+
+        grant['bytes_relayed'] = int(grant['bytes_relayed']) + len(payload)
+        grant['chunks_relayed'] = int(grant['chunks_relayed']) + 1
+        if grant.get('total_bytes') and grant['bytes_relayed'] > int(grant['total_bytes']) * 1.1:
+            _grant_revoke(token)
+            emit('dl_error', {'message': 'Transfè a depase gwosè anrejistreman an.'},
+                 room=grant['participant_sid'])
+            return
+        download_grants[token] = grant
+        _dl_grant_redis_set(token, grant, DOWNLOAD_GRANT_TTL_SEC)
+
+        emit('dl_chunk', {
+            'token': token,
+            'seq': seq,
+            'total': data.get('total'),
+            'filename': grant['filename'],
+            'last': bool(data.get('last')),
+            'data': bytes(payload),
+        }, room=grant['participant_sid'])
+
+    @socketio.on('dl_complete')
+    def handle_dl_complete(data):
+        """Owner finished pushing: burn the grant so it cannot be replayed."""
+        from flask_socketio import emit
+        data = data or {}
+        token = (data.get('token') or '').strip()
+        grant = _grant_lookup(token)
+        if not grant or not _socket_owner(grant.get('room_id'), request.sid):
+            return
+        participant_sid = grant['participant_sid']
+        _grant_revoke(token)
+        dl_requests.pop(grant.get('req_id'), None)
+        emit('dl_complete', {
+            'token': token,
+            'filename': grant['filename'],
+            'bytes': grant['bytes_relayed'],
+        }, room=participant_sid)
+        emit('dl_transfer_done', {'filename': grant['filename']}, room=request.sid)
+
+    @socketio.on('dl_cancel')
+    def handle_dl_cancel(data):
+        """Either side aborts; a cancelled grant can never be reused."""
+        from flask_socketio import emit
+        data = data or {}
+        token = (data.get('token') or '').strip()
+        grant = _grant_lookup(token)
+        if not grant:
+            return
+        requester = data.get('by') or 'participant'
+        _grant_revoke(token)
+        emit('dl_cancelled', {
+            'message': 'Telechajman an anile.',
+            'by': requester,
+        }, room=(grant['participant_sid'] if requester == 'owner' else request.sid))
 
     @socketio.on('sending_signal')
     def handle_sending_signal(data):
@@ -621,6 +1161,13 @@ def register_socketio_handlers(socketio):
         if not room_id or room_id not in active_rooms or not _socket_owner(room_id, request.sid):
             return
 
+        # A locked room must not keep producing new media either.
+        if _billing_locked_for(room_id):
+            emit('billing_locked', {
+                'message': 'Sal la fèmen paske tan gratis la fini. Abonnen pou ou ka anrejistre.'
+            }, room=request.sid)
+            return
+
         active_rooms[room_id]['is_recording'] = True
         active_rooms[room_id]['recording_started_by'] = room_participants.get(room_id, {}).get(request.sid)
 
@@ -655,6 +1202,13 @@ def register_socketio_handlers(socketio):
         ingest_url = (data.get('ingest_url') or '').strip()
         stream_key = (data.get('stream_key') or '').strip()
         if not room_id or not _socket_owner(room_id, request.sid):
+            return
+        # Past the free window with no active plan the room may not start a new
+        # broadcast: that would keep feeding ffmpeg for free.
+        if _billing_locked_for(room_id):
+            emit('billing_locked', {
+                'message': 'Sal la fèmen paske tan gratis la fini. Abonnen pou 500 Gkach pa mwa anvan ou rekòmanse.'
+            }, room=request.sid)
             return
         session = _session_get(room_id)
         if not session:
@@ -1595,10 +2149,14 @@ def index():
         recordings = (
             KonferansRecording.query
             .order_by(KonferansRecording.created_at.desc())
-            .limit(12)
+            .limit(24)
             .all()
         )
         for rec in recordings:
+            # A device-source recording has no file under static/recordings —
+            # linking it here would only produce a 404 tile on the homepage.
+            if getattr(rec, 'stored_on_owner_device', False):
+                continue
             room = KonferansRoom.query.filter_by(room_id=rec.room_id).first()
             ext = os.path.splitext(rec.filename)[1].lower()
             if ext in {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'}:
@@ -1909,7 +2467,11 @@ def room(room_code):
                              billing_info=billing_info,
                              free_minutes=FREE_MINUTES_DEFAULT,
                              gkach_per_hour=GKACH_PER_HOUR_DEFAULT,
-                             reminder_every_min=REMINDER_INTERVAL_MIN)
+                             reminder_every_min=REMINDER_INTERVAL_MIN,
+                             # Server verdict drives the billing UI (monthly plan)
+                             # instead of the browser-only countdown.
+                             billing_gate=_safe_billing_gate(room),
+                             allow_download=bool(getattr(room, 'allow_download', False)))
 
     except Exception as e:
         print(f"Error loading room: {e}")
@@ -1944,11 +2506,27 @@ def get_billing_state(room_id):
         except Exception:
             owner_balance = 0
 
+        # Subscription drives the answer now (500 Gkach/mwa), not hourly credit.
+        try:
+            sub_state = konf_sub.state_for_user(current_user)
+        except Exception:
+            sub_state = {'status': 'EXPIRED', 'entitled': False, 'days_remaining': 0,
+                         'expiration': None, 'monthly_price': KONFERANS_MONTHLY_PRICE}
+
         return jsonify({
             'success': True,
             'elapsed_seconds': elapsed_sec,
             'elapsed_minutes': elapsed_min,
             'free_minutes': FREE_MINUTES_DEFAULT,
+            # --- monthly-plan fields (current billing model) ---
+            'monthly_price': KONFERANS_MONTHLY_PRICE,
+            'entitled': sub_state['entitled'],
+            'subscription_status': sub_state['status'],
+            'subscription_expiration': sub_state['expiration'],
+            'days_remaining': sub_state['days_remaining'],
+            'past_free_window': elapsed_min >= FREE_MINUTES_DEFAULT,
+            'locked': bool(active_rooms.get(room_id, {}).get('billing_locked')),
+            # --- legacy pay-as-you-go fields (no longer charged) ---
             'gkach_per_hour': GKACH_PER_HOUR_DEFAULT,
             'reminder_every_min': REMINDER_INTERVAL_MIN,
             'owner_balance': owner_balance,
@@ -1962,13 +2540,61 @@ def get_billing_state(room_id):
         return jsonify({'success': False, 'error': 'Erè nan rekipere fakturasyon an.'}), 500
 
 
+@konferans_bp.route('/api/subscription/<room_id>', methods=['GET'])
+@login_required
+def get_subscription_state(room_id):
+    """Owner-only view of the monthly plan that keeps this room alive."""
+    try:
+        room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+        if not room:
+            return jsonify({'success': False, 'error': 'Sal sa pa egziste.'}), 404
+        if not _room_owner(room):
+            return jsonify({'success': False, 'error': 'Se sèl pwopriyetè sal la ki ka wè enfòmasyon sa yo.'}), 403
+
+        state = konf_sub.state_for_user(current_user)
+        state['success'] = True
+        state['room_id'] = room_id
+        state['free_minutes'] = FREE_MINUTES_DEFAULT
+        try:
+            state['owner_balance'] = int(GkachService.get_balance(current_user.whatsapp) or 0)
+        except Exception:
+            state['owner_balance'] = 0
+        return jsonify(state)
+
+    except Exception as e:
+        print(f"Error fetching subscription: {e}")
+        return jsonify({'success': False, 'error': 'Erè nan rekipere abònman an.'}), 500
+
+
+@konferans_bp.route('/api/subscription/pay', methods=['POST'])
+@login_required
+def pay_subscription():
+    """Buy/extend the KONFERANS monthly plan (500 Gkach x months).
+
+    Idempotent on `idempotency_key`: a double-clicked "Peye" button or a
+    retried request can never charge the owner twice.
+    """
+    try:
+        data = request.get_json(silent=True) or request.form or {}
+        months = data.get('months', 1)
+        idem = (data.get('idempotency_key') or '').strip() or str(uuid.uuid4())
+        code, payload = konf_sub.pay_months(current_user, months, idem,
+                                            room_id=data.get('room_id'))
+        return jsonify(payload), code
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error paying subscription: {e}")
+        return jsonify({'success': False, 'error': 'Erè nan peman abònman an.'}), 500
+
+
 @konferans_bp.route('/api/charge_hour/<room_id>', methods=['POST'])
 @login_required
 def charge_gkach_hour(room_id):
-    """Charge owner for the next conference hour (250 Gkach/h).
+    """DEPRECATED alias for the old 250 Gkach/lè top-up.
 
-    Called by owner after free 45 minutes to buy 60 additional minutes.
-    Atomic: deduct Gkach + update billing state in active_rooms.
+    The route is kept because rooms opened before the monthly-plan change hold
+    this URL in their open tab: buying "one hour" now buys one month (500 Gkach)
+    of unlimited conferencing. New clients must call /api/subscription/pay.
     """
     try:
         room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
@@ -1978,70 +2604,17 @@ def charge_gkach_hour(room_id):
         if not _room_owner(room):
             return jsonify({'success': False, 'error': 'Se sèl pwopriyete sal la ki ka peye pou sal la.'}), 403
 
-        if not getattr(current_user, 'whatsapp', None):
-            return jsonify({'success': False, 'error': 'Ou bezwen yon WhatsApp asosye ak kont ou pou peye Gkach.'}), 400
-
-        amount = GKACH_PER_HOUR_DEFAULT  # 250 Gkach per hour
-        minutes_bought = 60
-
-        try:
-            GkachService.deduct_balance(
-                current_user.whatsapp,
-                amount,
-                f"Konferans sal {room.room_code} ({room.room_name}): 60 minit adisyonèl",
-                'konferans_charge'
-            )
-        except ValidationError as ve:
-            return jsonify({
-                'success': False,
-                'error': str(ve),
-                'insufficient_balance': True,
-                'required': amount,
-            }), 402
-
-        # Update in-memory state + DB persistence
-        if room_id not in active_rooms:
-            active_rooms[room_id] = {'participants': [], 'is_recording': False, 'recording_started_by': None}
-        bill = active_rooms[room_id].setdefault('billing', {
-            'gkach_charged_total': 0,
-            'last_reminder_minutes': 0,
-            'free_minutes': FREE_MINUTES_DEFAULT,
-            'gkach_per_hour': GKACH_PER_HOUR_DEFAULT,
-            'credit_bought_minutes': 0,
-            'last_charge_minute': FREE_MINUTES_DEFAULT,
-        })
-        bill['gkach_charged_total'] = int(bill.get('gkach_charged_total', 0)) + amount
-        bill['credit_bought_minutes'] = int(bill.get('credit_bought_minutes', 0)) + minutes_bought
-
-        # Persist to DB so charges survive server restarts (preserve-first)
-        try:
-            _db_room = KonferansRoom.query.filter_by(room_id=room_id).first()
-            if _db_room:
-                _db_room.gkach_charged_total = int(getattr(_db_room, 'gkach_charged_total', 0) or 0) + amount
-                _db_room.credit_bought_minutes = int(getattr(_db_room, 'credit_bought_minutes', 0) or 0) + minutes_bought
-                if not getattr(_db_room, 'gkach_per_hour', None):
-                    _db_room.gkach_per_hour = GKACH_PER_HOUR_DEFAULT
-                if not getattr(_db_room, 'free_minutes', None):
-                    _db_room.free_minutes = FREE_MINUTES_DEFAULT
-                db.session.commit()
-        except Exception:
-            db.session.rollback()
-
-        new_balance = 0
-        try:
-            new_balance = int(GkachService.get_balance(current_user.whatsapp) or 0)
-        except Exception:
-            new_balance = 0
-
-        return jsonify({
-            'success': True,
-            'message': f'Peman reysi! Ou achte 60 minit pou {amount} Gkach.',
-            'amount_charged': amount,
-            'minutes_bought': minutes_bought,
-            'new_balance': new_balance,
-            'total_charged': bill['gkach_charged_total'],
-            'credit_bought_minutes': bill['credit_bought_minutes'],
-        })
+        idem = str(uuid.uuid4())
+        code, payload = konf_sub.pay_months(current_user, 1, idem, room_id=room_id)
+        if payload.get('success'):
+            # Keep the legacy response shape so stale tabs stay happy.
+            payload['minutes_bought'] = 30 * 24 * 60  # a month is unlimited time
+            payload['amount_charged'] = payload.get('amount_charged', KONFERANS_MONTHLY_PRICE)
+            payload['message'] = (f'Abònman aktif! {payload.get("months", 1)} mwa '
+                                  f'pou {payload.get("amount_charged")} Gkach — konferans ilimite.')
+            payload['total_charged'] = payload.get('amount_charged')
+            payload['credit_bought_minutes'] = payload['minutes_bought']
+        return jsonify(payload), code
 
     except Exception as e:
         db.session.rollback()
@@ -2480,6 +3053,195 @@ def upload_recording(room_id):
         print(f"Error uploading recording: {e}")
         return jsonify({'success': False, 'message': 'Erè nan telechajman anrejistreman an.'}), 500
 
+@konferans_bp.route('/api/recording/register', methods=['POST'])
+@login_required
+def register_device_recording():
+    """Register the METADATA of a KONFERANS kept on the owner's device.
+
+    The bytes never reach the server — the plan is that the conference lives on
+    the room owner's device — so this only creates the row that lets
+    participants discover a recording exists and ask for it. No file is
+    written, and download_recording() will refuse to serve it.
+    """
+    try:
+        data = request.get_json(silent=True) or request.form or {}
+        room_id = (data.get('room_id') or '').strip()
+        room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+        if not room:
+            return jsonify({'success': False, 'message': 'Sal sa pa egziste.'}), 404
+
+        is_admin = False
+        try:
+            is_admin = bool(current_user.is_authenticated and getattr(current_user, 'is_admin', False))
+        except Exception:
+            is_admin = False
+        if not _room_owner(room) and not is_admin:
+            return jsonify({'success': False, 'message': 'Se sèl pwopriyetè sal la ki ka anrejistre konferans lan.'}), 403
+
+        try:
+            file_size = int(data.get('file_size') or 0)
+        except (TypeError, ValueError):
+            file_size = 0
+        if file_size > _MAX_RECORDING_MB * 1024 * 1024:
+            return jsonify({
+                'success': False,
+                'message': f'Dosye a twò gwo. Maksimòm: {_MAX_RECORDING_MB} MB.'
+            }), 413
+
+        ext = os.path.splitext(secure_filename(str(data.get('filename') or '')))[1].lower()
+        if ext not in _ALLOWED_RECORDING_EXTS:
+            ext = '.webm'
+        filename = (f"recording_{room_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    f"_{secrets.token_hex(4)}{ext}")
+        title = (data.get('title') or '').strip()[:255]
+        try:
+            count_hint = int(data.get('participant_count'))
+        except (TypeError, ValueError):
+            count_hint = len(active_rooms.get(room_id, {}).get('participants', []) or [])
+
+        # Sentinel path instead of NULL: an existing database may still enforce
+        # NOT NULL on file_path, and a 'device://' value never resolves to a
+        # real file so no code path can accidentally serve it.
+        recording = KonferansRecording(
+            room_id=room_id,
+            filename=filename,
+            file_path=f'device://{room_id}/{filename}',
+            file_size=file_size or None,
+            expires_at=datetime.utcnow() + timedelta(days=30),
+            stored_on_owner_device=True,
+            owner_user_id=getattr(current_user, 'id', None),
+            participant_count_hint=count_hint,
+            title=title or None,
+        )
+        db.session.add(recording)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Anrejistreman an makònen ak sal la (sou dispozitif ou).',
+            'recording_id': recording.id,
+            'filename': filename,
+            'title': title or None,
+            'file_size': file_size or None,
+            'device_source': True,
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error registering device recording: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan anrejistreman metadata la.'}), 500
+
+
+@konferans_bp.route('/api/room/<room_id>/allow_download', methods=['POST'])
+@login_required
+def set_allow_download(room_id):
+    """Owner opts in/out of letting participants ask for the recording.
+
+    Default is OFF, and even when ON nothing is transferred until the owner
+    approves the individual request.
+    """
+    try:
+        room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+        if not room:
+            return jsonify({'success': False, 'message': 'Sal sa pa egziste.'}), 404
+
+        is_admin = False
+        try:
+            is_admin = bool(current_user.is_authenticated and getattr(current_user, 'is_admin', False))
+        except Exception:
+            is_admin = False
+        if not _room_owner(room) and not is_admin:
+            return jsonify({'success': False, 'message': 'Se sèl pwopriyetè oubyen admin ki ka chanje sa.'}), 403
+
+        data = request.get_json(silent=True) or request.form or {}
+        allow = bool(data.get('allow_download'))
+        try:
+            room.allow_download = allow
+            db.session.commit()
+        except Exception:
+            # Column missing on a database that was never migrated: refuse
+            # rather than pretend the permission is on.
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'message': 'Pa kapab aktive pèmisyon sa a kounye a (baz done pa mete ajou).'
+            }), 500
+
+        try:
+            _so_emit_stream('download_policy', {
+                'allow_download': allow,
+                'changed_by': getattr(current_user, 'pseudo', None) or 'Pwopriyetè',
+            }, room_id)
+        except Exception:
+            pass
+
+        return jsonify({
+            'success': True,
+            'allow_download': allow,
+            'message': ('Patisipan ka mande telechaje Konferans lan kounye a.'
+                        if allow else 'Telechajman patisipan fèmen.'),
+        })
+
+    except Exception as e:
+        print(f"Error updating download permission: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan modifye pèmisyon an.'}), 500
+
+
+@konferans_bp.route('/api/recordings/<room_id>', methods=['GET'])
+@login_required
+def list_room_recordings(room_id):
+    """What recordings exist for a room, and whether they can be requested.
+
+    Participants only ever see the list when the owner switched the room-wide
+    permission on; owners and admins always see it.
+    """
+    try:
+        room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
+        if not room:
+            return jsonify({'success': False, 'message': 'Sal sa pa egziste.'}), 404
+
+        is_admin = False
+        try:
+            is_admin = bool(current_user.is_authenticated and getattr(current_user, 'is_admin', False))
+        except Exception:
+            is_admin = False
+        is_owner = _room_owner(room)
+        allow = bool(getattr(room, 'allow_download', False))
+        if not (is_owner or is_admin or allow):
+            return jsonify({'success': True, 'allow_download': False, 'items': []})
+
+        rows = (KonferansRecording.active()
+                .filter_by(room_id=room_id)
+                .order_by(KonferansRecording.created_at.desc())
+                .limit(20).all())
+        items = []
+        for rec in rows:
+            device = bool(getattr(rec, 'stored_on_owner_device', False))
+            items.append({
+                'recording_id': rec.id,
+                'filename': rec.filename,
+                'title': getattr(rec, 'title', None),
+                'file_size': rec.file_size,
+                'created_at': rec.created_at.isoformat() if rec.created_at else None,
+                'device_source': device,
+                # Device-source files have no direct URL: they go through the
+                # request/approve socket flow.
+                'download_url': None if device else url_for('konferans.download_recording',
+                                                            filename=rec.filename),
+            })
+        return jsonify({
+            'success': True,
+            'allow_download': allow,
+            'is_owner': is_owner,
+            'owner_online': bool(_owner_sid(room_id)) if room_id in active_rooms else False,
+            'items': items,
+        })
+
+    except Exception as e:
+        print(f"Error listing recordings: {e}")
+        return jsonify({'success': False, 'message': 'Erè nan lis anrejistreman yo.'}), 500
+
+
 @konferans_bp.route('/update_room_name', methods=['POST'])
 def update_room_name():
     """Update room name — P2 FIX: owner check + broadcast + proper status codes."""
@@ -2551,6 +3313,11 @@ def download_recording(filename):
         except Exception:
             is_admin = False
         rec = KonferansRecording.query.filter_by(filename=safe).first()
+        if rec and getattr(rec, 'stored_on_owner_device', False):
+            # Master copy lives on the owner's device: there is no server file
+            # to hand out. The participant must go through the approval flow.
+            return ("Konferans sa a sou dispozitif pwopriyetè a. "
+                    "Tanpri mande apwobasyon li nan sal la."), 404
         if rec and not is_admin:
             room = KonferansRoom.query.filter_by(room_id=rec.room_id).first() if rec.room_id else None
             is_owner = _room_owner(room)
