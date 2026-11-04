@@ -5,7 +5,7 @@ Homepage and core pages
 import os
 import random
 import re
-from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for, make_response
 from app.services.ad_service import AdService
 from app.services.redis_service import RedisService
 from app import redis_client, limiter
@@ -340,6 +340,39 @@ def gadematch():
                            admin_settings=admin_settings)
 
 
+# =============================================================================
+# PWA — root-scoped service worker + manifest
+#
+# A service worker can only control the folder it is served from (and deeper).
+# static/sw.js is therefore served at `/sw.js` so its scope is '/' and it can
+# wrap the whole site. Without a registered SW Chrome never fires
+# `beforeinstallprompt`, so the install popup did nothing at all and there was
+# no offline mode — i.e. the PWA was effectively dead. `install.js` registers
+# this URL.
+# =============================================================================
+@main_bp.route('/sw.js')
+def serve_service_worker():
+    from flask import send_from_directory
+    resp = make_response(send_from_directory(current_app.static_folder, 'sw.js'))
+    resp.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+    # Must revalidate on every load, otherwise a stale worker keeps controlling
+    # clients for up to 24h and a fix never reaches the users.
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    resp.headers['Service-Worker-Allowed'] = '/'
+    return resp
+
+
+@main_bp.route('/manifest.json')
+def serve_pwa_manifest():
+    from flask import send_from_directory
+    resp = make_response(send_from_directory(current_app.static_folder, 'manifest.json'))
+    resp.headers['Content-Type'] = 'application/manifest+json; charset=utf-8'
+    resp.headers['Cache-Control'] = 'public, max-age=3600'
+    return resp
+
+
 @main_bp.route('/health')
 def health_check():
     """Health check endpoint"""
@@ -411,6 +444,22 @@ def health_check():
         }
     except Exception:
         pass
+
+    # DIAGNOSTIC: the boot-to-boot durability canary. 'instance_on_persistent_disk'
+    # above is only a PATH STRING comparison, so it happily says "true" on an
+    # ephemeral folder. storage_persisted is measured instead: it compares the
+    # journal kept inside instance/ with a pointer kept outside it, across real
+    # restarts, and it is the field that proves whether accounts survive.
+    try:
+        from app.utils.persistence import health_summary as _persist_summary
+        state = current_app.config.get('PERSISTENCE_BOOT_STATE')
+        summary = _persist_summary(state)
+        if summary is not None:
+            summary['sqlite_fallback_candidates'] = current_app.config.get(
+                'SQLITE_FALLBACK_CANDIDATES')
+        health['auth_persistence'] = summary
+    except Exception:
+        health['auth_persistence'] = None
     
     status_code = 200 if health['status'] == 'healthy' else 503
     return jsonify(health), status_code

@@ -1,32 +1,56 @@
 {
+  "id": "/",
   "name": "Glory2YahPub - Rezo Sosyal & Marketplace",
   "short_name": "GloryYah",
   "description": "Facebook + TikTok + AliExpress + Social Commerce + Gkach nan yon sèl aplikasyon mobil. Vande, achte, pataje epi touche ak Gkach.",
   "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#FFFFFF",
   "theme_color": "#002366",
   "orientation": "portrait",
-  "scope": "/",
   "lang": "ht",
   "dir": "ltr",
   "categories": ["business", "shopping", "social", "entertainment", "lifestyle"],
   "prefer_related_applications": false,
-  "related_applications": [],
-  "description": "Facebook + TikTok + AliExpress + Social Commerce + Gkach nan yon sèl aplikasyon mobil.",
-  "screenshots": [],
+  "icons": [
+    {
+      "src": "/static/images/pwa-icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/pwa-icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/images/pwa-icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Marketplace",
       "short_name": "Mache",
       "description": "Navige pwodwi ak sèvis",
-      "url": "/mache",
+      "url": "/mache/",
       "icons": [
         {
-          "src": "/static/images/logo.png",
+          "src": "/static/images/pwa-icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any maskable"
+          "type": "image/png"
         }
       ]
     },
@@ -37,10 +61,9 @@
       "url": "/gkach/wallet",
       "icons": [
         {
-          "src": "/static/images/logo.png",
+          "src": "/static/images/pwa-icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any maskable"
+          "type": "image/png"
         }
       ]
     },
@@ -51,10 +74,9 @@
       "url": "/",
       "icons": [
         {
-          "src": "/static/images/logo.png",
+          "src": "/static/images/pwa-icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any maskable"
+          "type": "image/png"
         }
       ]
     },
@@ -62,44 +84,14 @@
       "name": "Anons Mwen",
       "short_name": "Anons",
       "description": "Jere anons ou yo",
-      "url": "/auth/my-ads",
+      "url": "/auth/ads",
       "icons": [
         {
-          "src": "/static/images/logo.png",
+          "src": "/static/images/pwa-icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/png",
-          "purpose": "any maskable"
+          "type": "image/png"
         }
       ]
-    }
-  ],
-  "icons": [
-    {
-      "src": "/static/images/logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/static/images/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/static/images/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/static/glory2yahpub_demo.mp4",
-      "sizes": "1280x720",
-      "type": "video/mp4",
-      "form_factor": "wide",
-      "label": "Glory2YahPub Demo"
     }
   ]
 }

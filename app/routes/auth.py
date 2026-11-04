@@ -55,6 +55,47 @@ def _find_user_by_identifier(identifier):
     return None
 
 
+def _find_users_by_identifier(identifier):
+    """EVERY strict-matching account for one typed identifier, best candidate first.
+
+    Why a list and not `.first()`: `users.whatsapp` is indexed but NOT unique, so
+    one person can own several rows — legacy accounts created before phone
+    normalisation ('+509' vs '+50942882076'), or a re-registration made when the
+    first one seemed unreachable. `User.query.filter(...).first()` then returned
+    an ARBITRARY row (SQLite: the oldest), and the typed password — which belongs
+    to the account they actually use — was verified against the wrong row and
+    rejected: "Modpas ou pa koresponn ak kont sa a". The user's only way back in
+    then looks like creating yet another account, which is precisely the reported
+    bug. The password is what identifies the account, so login tries all
+    candidates and keeps the one that matches.
+
+    Ordering: pseudo exact (a pseudo is unique, so it is unambiguous), then the
+    WhatsApp matches most-recently-active first, then cleaned variants, then the
+    case-insensitive pseudo. Never fuzzy: only exact equality, so no takeover.
+    """
+    if not identifier:
+        return []
+    ident = identifier.strip()
+    clean_wa = _clean_whatsapp(ident)
+    recent = db.func.coalesce(User.last_login, User.created_at)
+
+    seen, out = set(), []
+
+    def _add(rows):
+        for u in rows:
+            if u is not None and u.id not in seen:
+                seen.add(u.id)
+                out.append(u)
+
+    _add(User.query.filter(User.pseudo == ident).all())
+    _add(User.query.filter(User.whatsapp == ident).order_by(recent.desc(), User.id.desc()).all())
+    if clean_wa and clean_wa != ident:
+        _add(User.query.filter(User.pseudo == clean_wa).all())
+        _add(User.query.filter(User.whatsapp == clean_wa).order_by(recent.desc(), User.id.desc()).all())
+    _add(User.query.filter(db.func.lower(User.pseudo) == ident.lower()).all())
+    return out
+
+
 def _cache_identifier_rate_limit(key_prefix: str, identifier: str, limit: int, window_seconds: int) -> bool:
     """Return True if rate-limit EXCEEDED (blocked), False if OK.
     Uses SimpleCache/Redis via flask_caching (cache from app)."""
@@ -286,8 +327,23 @@ def login():
                 flash('Tout chan yo obligatwa.', 'error')
                 return _redirect_back_with_params(last_identifier=identifier)
 
-            # Strict match only — NO substring LIKE (prevent takeover)
-            user = _find_user_by_identifier(identifier)
+            # Strict match only — NO substring LIKE (prevent takeover). Several
+            # accounts can legitimately share one WhatsApp number, and only the
+            # password says which one is meant, so resolve against the candidate
+            # list instead of an arbitrary first row (see _find_users_by_identifier).
+            candidates = _find_users_by_identifier(identifier)
+            user = None
+            for _cand in candidates:
+                _ok = False
+                try:
+                    _ok = bool(_cand.check_password(password))
+                except Exception:
+                    _ok = False
+                if not _ok:
+                    _ok = bool(_check_forgot_temp_password(_cand.id, password))
+                if _ok:
+                    user = _cand
+                    break
 
             if not user:
                 # BUGFIX: rate-limit ONLY on actual failure (was counting successful logins).
@@ -304,8 +360,8 @@ def login():
                     )
                     return _redirect_back_with_params(last_identifier=identifier)
                 current_app.logger.warning(
-                    "Login failed: identifier=%s (no user found strict)",
-                    identifier[:8] + "***",
+                    "Login failed: identifier=%s (%d strict candidate(s), none matched the password)",
+                    identifier[:8] + "***", len(candidates),
                 )
                 flash(
                     '❌ WhatsApp oswa pseudo ou pa egziste, oswa modpas ou pa bon. '
@@ -411,12 +467,27 @@ def login():
 @auth_bp.route('/logout')
 def logout():
     """User logout - preserve CSRF token in session.
-    Note: no @login_required so even if session expired, we ALWAYS clear any session cleanly."""
-    if current_user.is_authenticated:
-        logout_user()
-    # Preserve CSRF token to avoid issues on next login
+    Note: no @login_required so even if session expired, we ALWAYS clear any session cleanly.
+
+    BUGFIX — logout used to leave the user signed in. Flask-Login 0.6.x does NOT
+    delete the remember-me cookie itself: `logout_user()` only writes the marker
+    `session['_remember'] = 'clear'`, and the cookie is removed later, when the
+    response is finalised. The old code called `session.clear()` right after,
+    which erased that marker — so the 1-year `glory2yah_remember` cookie stayed
+    in the browser and the very next request silently logged the same account
+    back in. Besides being a security problem on shared phones, it made the real
+    failure invisible: people could only get "logged out for good" when a
+    restart rotated the SECRET_KEY or wiped the database, i.e. exactly the
+    "I have to create a new account" report. Keep the marker (and the CSRF
+    token) through the clear, and always call logout_user() even when the
+    session looks anonymous so a stale cookie is finally removed.
+    """
+    logout_user()
+    remember_marker = session.get('_remember')
     csrf_token = session.get('_csrf_token')
     session.clear()
+    if remember_marker == 'clear':
+        session['_remember'] = 'clear'
     if csrf_token:
         session['_csrf_token'] = csrf_token
     flash('Ou dekonekte avèk siksè.', 'info')

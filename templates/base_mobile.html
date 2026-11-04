@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1e40af">
     <title>{% block title %}Glory2YahPub{% endblock %}</title>
+
+    <!-- PWA: without the manifest + service worker registration this layout was
+         invisible to the install flow (marketplace is a mobile landing page). -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/pwa-icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="/static/images/pwa-icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GloryYah">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <!-- Preload logo -->
     <link rel="preload" href="{{ url_for('static', filename='images/logo.png') }}" as="image">
@@ -539,5 +549,8 @@
         
         {% block extra_js %}{% endblock %}
     </script>
+
+    <!-- PWA install prompt + service worker registration (scope '/') -->
+    <script src="/static/js/install.js"></script>
 </body>
 </html>

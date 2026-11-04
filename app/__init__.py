@@ -1130,9 +1130,13 @@ def create_app(config_name=None):
                             f'[boot {_time_g.strftime("%Y-%m-%d %H:%M:%S UTC", _time_g.gmtime())}] '
                             f'pid={_os_g.getpid()} persistent=1\n'
                         )
-                    # Read back to confirm actual persistence (test previous writes survived)
+                    # NOTE: this only proves the folder is WRITABLE *right now*.
+                    # It passes on a 100% ephemeral filesystem too, so it is NOT
+                    # a persistence test — the real verdict comes from the
+                    # boot-to-boot canary below.
                     if _os_g.path.exists(marker_file) and _os_g.path.getsize(marker_file) > 10:
                         _disk_guard_ok = True
+                        _disk_guard_note = '⚠️ Marker écrivable (durabilité non testée ici — voir canary)'
                     else:
                         _disk_guard_ok = False
                         _disk_guard_note = '❌ Marker guard FAIL — fichier marker introuvable/trop court'
@@ -1181,6 +1185,89 @@ def create_app(config_name=None):
                 pass
 
         # =====================================================================
+        # DURABILITY CANARY — MESURÉ DE BOOT À BOOT (la vraie réponse)
+        # Le test du marker ci-dessus ne prouve que l'écriture instantanée : il
+        # réussit même sur un filesystem entièrement éphémère, ce qui a laissé
+        # tout le monde croire pendant des mois que les données étaient sûres
+        # alors que les comptes des utilisateurs étaient effacés à chaque
+        # redémarrage ("il faut recréer un compte dès qu'on se déconnecte").
+        # La durabilité ne se mesure qu'à TRAVERS un redémarrage :
+        #   journal présent   -> instance/ SURVIT (vrai disque persistant)
+        #   mirror seul présent -> instance/ a ÉTÉ RÉINITIALISÉ = perte comptes
+        #   rien              -> 1er boot, aucune preuve encore
+        # Le verdict est exposé dans /health (auth_persistence).
+        # =====================================================================
+        try:
+            from app.utils import persistence as _persist_c
+            _inst_c = app.config.get('INSTANCE_DIR') or ''
+            _root_c = _os.path.dirname(_os.path.abspath(_inst_c)) if _inst_c else None
+            _uri_c = str(app.config.get('SQLALCHEMY_DATABASE_URI') or '')
+            _dbfile_c = _persist_c._sqlite_file_from_uri(_uri_c)
+
+            def _cnt_c(_t):
+                try:
+                    from sqlalchemy import text as _text_c
+                    return int(db.session.execute(_text_c(f'SELECT COUNT(1) FROM {_t}')).scalar() or 0)
+                except Exception:
+                    return 0
+
+            _boot_state = _persist_c.record_boot(_inst_c, {
+                'db_scheme': _uri_c.split('://', 1)[0] if '://' in _uri_c else 'unknown',
+                'db_file': _os.path.basename(_dbfile_c) if _dbfile_c else None,
+                'users': _cnt_c('users'),
+                'ads': _cnt_c('ads'),
+                'secret_key_fp': _persist_c.secret_fingerprint(app.config.get('SECRET_KEY')),
+                'secret_key_source': app.config.get('SECRET_KEY_SOURCE'),
+                'disk': _persist_c.devices(_inst_c, _root_c) if _inst_c else None,
+                'sqlite_files': _persist_c.sqlite_inventory(_inst_c, _dbfile_c) if _inst_c else [],
+            }, root_dir=_root_c)
+            app.config['PERSISTENCE_BOOT_STATE'] = _boot_state
+
+            _persisted = _boot_state.get('storage_persisted')
+            _boots_c = _boot_state.get('boots_seen')
+            _users_c = (_boot_state.get('this_boot') or {}).get('users')
+            _users_prev = (_boot_state.get('previous_boot') or {}).get('users')
+            if _persisted is True:
+                _disk_guard_ok = True
+                _disk_guard_note = (
+                    f'✅ CANARY: boot #{_boots_c} — instance/ a SURVÉCU au restart précédent '
+                    f'(users {_users_prev} -> {_users_c})'
+                )
+            elif _persisted is False:
+                _disk_guard_ok = False
+                _disk_guard_note = (
+                    f'❌ CANARY: boot #{_boots_c} — instance/ a ÉTÉ EFFACÉ entre deux boots; '
+                    f'les {_users_prev} comptes du boot précédent sont perdus'
+                )
+                app.logger.critical(
+                    'AUTH DATA LOSS CONFIRMED: the instance folder did NOT survive the '
+                    'previous restart (boot #%s). Every user who registered before it is '
+                    'now "unknown" and has to create a new account. Fix: attach the 1GB '
+                    'persistent disk at /opt/render/project/src/instance AND/OR set '
+                    'DATABASE_URL to a managed PostgreSQL instance.'
+                    % _boots_c
+                )
+            else:
+                _disk_guard_note = (
+                    f'ℹ️ CANARY: boot #{_boots_c} — durabilité pas encore prouvée '
+                    f'(il faudra un restart pour trancher)'
+                )
+            if _boot_state.get('secret_key_rotated'):
+                app.logger.critical(
+                    'SECRET_KEY CHANGED since the previous boot (source=%s): every session '
+                    'cookie AND every remember-me cookie is now invalid, so all users were '
+                    'logged out even if their accounts are intact. Set a fixed SECRET_KEY '
+                    'environment variable in the Render dashboard.'
+                    % app.config.get('SECRET_KEY_SOURCE')
+                )
+            app.logger.warning(f'PERSISTENCE CANARY: {_disk_guard_note}')
+        except Exception as _e_canary:
+            try:
+                app.logger.warning(f'PERSISTENCE CANARY: skipped (non-fatal): {_e_canary!r}')
+            except Exception:
+                pass
+
+        # =====================================================================
         # STARTUP PERSISTENCE BANNER — RASSURER L'UTILISATEUR
         # (L'utilisateur a peur que les données soient effacées à chaque commit
         # GitHub. On affiche EXPLICITEMENT en console l'état de la persistance.)
@@ -1192,8 +1279,14 @@ def create_app(config_name=None):
                 db_scheme = 'PostgreSQL (Render Managed)'
                 db_note = 'Hébergé par Render — SURVIT À TOUS LES COMMITS / DEPLOYS'
             elif db_uri.startswith('sqlite'):
-                db_scheme = 'SQLite Persistant'
-                db_note = 'Fichier dans instance/ — SURVIT À TOUS LES COMMITS / DEPLOYS'
+                db_scheme = 'SQLite (fallback sans DATABASE_URL)'
+                _cv_c = (app.config.get('PERSISTENCE_BOOT_STATE') or {}).get('storage_persisted')
+                if _cv_c is True:
+                    db_note = 'instance/ PROUVE durable (a survécu à un restart)'
+                elif _cv_c is False:
+                    db_note = '❌ instance/ ÉPHÉMÈRE — effacé à chaque restart'
+                else:
+                    db_note = '⚠️ Durabilité pas encore prouvée (1er boot)'
             else:
                 db_scheme = db_uri.split('://')[0] if '://' in db_uri else 'Inconnu'
                 db_note = 'Vérifier configuration'
@@ -1224,11 +1317,11 @@ def create_app(config_name=None):
                 '║    • uploads_staging/  → EXCLU (zone pre-POSTGRES anti-effacement)           ║',
                 '║    • uploads_backup/   → EXCLU (snapshot miroir sur disque persistant)       ║',
                 '║                                                                              ║',
-                '║  ⚠️ RAPPEL IMPORTANT : Vos images et BD NE SERONT JAMAIS EFFACÉES             ║',
-                '║  par un git commit / git push. Les données vivent SUR LE DISQUE PERSISTENT   ║',
-                '║  1GB de Render (mountPath: /opt/render/project/src/instance), PAS dans       ║',
-                '║  le conteneur de build éphémère. Chaque deploy RECRÉE le symlink :           ║',
-                '║    static/uploads  →  instance/uploads (disque persistent)                   ║',
+                '║  ⚠️ VERDICT DE PERSISTANCE (canary boot-à-boot, pas une promesse) :       ║',
+                '║  Si le verdict est ÉPHÉMÈRE, les comptes sont perdus au prochain restart :    ║',
+                '║  il FAUT DATABASE_URL (PostgreSQL) ou le disque persistant monté sur          ║',
+                '║  /opt/render/project/src/instance. Le marker seul ne prouve RIEN DU TOUT.    ║',
+                f'║  CANARY : {_disk_guard_note[:66]:<66}║',
                 '╚══════════════════════════════════════════════════════════════════════════════╝',
                 '',
             ]

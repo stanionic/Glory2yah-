@@ -67,6 +67,10 @@ instance/uploads_backup/
 instance/stage_guard_*.txt
 instance/.uploads_persistent_marker.txt
 instance/.staging_integrity_*.md5
+instance/.boot_journal.jsonl
+
+# Durability canary mirror pointer (lives on the ephemeral code filesystem)
+.g2y_boot_mirror.json
 
 # Local persistence test artifacts (not for repo)
 _test_config_persistence.py

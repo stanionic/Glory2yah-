@@ -37,11 +37,18 @@ def _on_render():
 def _load_secret_key():
     """Load or generate a persistent SECRET_KEY (never None).
     Priority: env SECRET_KEY > instance/.flask_secret_key (persistent) > cwd/.flask_secret_key.
+
+    Returns (key, source). 'source' records WHERE the signing key came from, so
+    /health can prove whether it is stable across boots. A key that has to be
+    generated on the spot ('generated') changes at every cold start, which
+    invalidates every session AND every remember-me cookie: users get logged out
+    and can no longer come back even when their account still exists. Only an
+    injected SECRET_KEY env var (or one on a durable disk) is truly stable.
     """
     env_key = os.environ.get('SECRET_KEY', '')
     weak = ('', 'your-secret-key-here-change-this-in-production', 'None', None)
     if env_key not in weak:
-        return env_key
+        return env_key, 'env:SECRET_KEY'
     inst_dir = _instance_dir()
     candidates = [
         os.path.join(inst_dir, '.flask_secret_key'),
@@ -53,7 +60,7 @@ def _load_secret_key():
                 with open(secret_key_file, 'r') as f:
                     data = f.read().strip()
                     if data:
-                        return data
+                        return data, f'file:{os.path.basename(os.path.dirname(secret_key_file) or ".")}/.flask_secret_key'
             except Exception:
                 pass
     key = secrets.token_hex(32)
@@ -66,7 +73,7 @@ def _load_secret_key():
                 f.write(key)
         except Exception:
             pass
-    return key
+    return key, 'generated (unstable across restarts)'
 
 def _normalize_database_url(url=None):
     """None/empty-safe DSN normalization.
@@ -135,37 +142,68 @@ _SQLITE_FALLBACK_CANONICAL = 'glory2yahpub.db'
 _SQLITE_FALLBACK_LEGACY = ('glory2yahpub_prod_fallback.db', 'glory2yahpub_dev.db')
 
 
-def _sqlite_has_rows(path):
-    """True when an EXISTING SQLite file has at least one `users` row.
-    Read-only, never creates a file, never raises (any problem => False)."""
+def _sqlite_users_count(path):
+    """How many `users` rows an EXISTING SQLite file holds (0 when missing).
+
+    Opens strictly read-only ('mode=ro'): a config-time probe must never create
+    a file nor take a write lock, because that is exactly how an empty database
+    used to get "discovered" and then adopted as if it were the real store.
+    Never raises: any problem (no table, locked, corrupt) => 0.
+    """
     try:
         if not (path and os.path.exists(path)):
-            return False
+            return 0
         import sqlite3
-        con = sqlite3.connect(path)
+        uri = 'file:' + os.path.abspath(path).replace(os.sep, '/') + '?mode=ro'
+        con = sqlite3.connect(uri, uri=True)
         try:
             cur = con.cursor()
-            cur.execute("SELECT 1 FROM users LIMIT 1")
-            return cur.fetchone() is not None
+            cur.execute('SELECT COUNT(1) FROM users')
+            return int(cur.fetchone()[0] or 0)
         finally:
             con.close()
     except Exception:
-        return False
+        return 0
+
+
+def _sqlite_has_rows(path):
+    """True when an EXISTING SQLite file has at least one `users` row."""
+    return _sqlite_users_count(path) > 0
 
 
 def _select_sqlite_fallback_path(inst_dir):
     """Resolve the durable SQLite file for the production DATABASE_URL-missing
-    fallback. Prefer the canonical name if it exists/has data; otherwise ADOPT
-    the first legacy file that already contains users; else return the canonical
-    (fresh) path. Guarantees one stable store and prevents empty-DB orphaning."""
-    canonical = os.path.join(inst_dir, _SQLITE_FALLBACK_CANONICAL)
-    if _sqlite_has_rows(canonical):
-        return canonical
-    for legacy in _SQLITE_FALLBACK_LEGACY:
-        p = os.path.join(inst_dir, legacy)
-        if _sqlite_has_rows(p):
-            return p
-    return canonical
+    fallback.
+
+    Rule: the file holding the MOST users wins, the canonical name only breaks
+    ties. The previous version walked a hard-coded name list and stopped at the
+    first file with rows, so a freshly created canonical file (or an admin-only
+    legacy file) could permanently orphan every real account sitting in another
+    file — which is what made returning users "unknown" and forced them to
+    register again. Comparing row counts makes the choice self-healing: whatever
+    store already has the community in it is the one that gets opened.
+    When every candidate is empty/absent we still return the canonical path so a
+    brand-new deploy starts on the stable name.
+    """
+    names = (_SQLITE_FALLBACK_CANONICAL,) + _SQLITE_FALLBACK_LEGACY
+    scored = []
+    for idx, name in enumerate(names):
+        p = os.path.join(inst_dir, name)
+        scored.append((_sqlite_users_count(p), -idx, p))
+    scored.sort(reverse=True)
+    best_users, _, best_path = scored[0]
+    if best_users <= 0:
+        return os.path.join(inst_dir, _SQLITE_FALLBACK_CANONICAL)
+    return best_path
+
+
+def _sqlite_fallback_candidates(inst_dir):
+    """Diagnostic map {filename: users_count} for every fallback candidate."""
+    try:
+        return {n: _sqlite_users_count(os.path.join(inst_dir, n))
+                for n in ((_SQLITE_FALLBACK_CANONICAL,) + _SQLITE_FALLBACK_LEGACY)}
+    except Exception:
+        return {}
 
 
 class Config:
@@ -249,7 +287,7 @@ class Config:
         self.INSTANCE_DIR = inst_dir
         self.ON_RENDER = on_render
         # SECRET_KEY — never None (env > instance file > cwd file > auto)
-        self.SECRET_KEY = _load_secret_key()
+        self.SECRET_KEY, self.SECRET_KEY_SOURCE = _load_secret_key()
         # Redis — default localhost dev, override via env
         redis_url = os.environ.get('REDIS_URL')
         self.REDIS_URL = redis_url or 'redis://localhost:6379/0'
@@ -456,8 +494,8 @@ class ProductionConfig(Config):
                     "Set DATABASE_URL (Render → Environment → your PostgreSQL "
                     "managed instance connectionString)."
                 )
-            # Pick a SINGLE durable file on the persistent disk and ADOPT any
-            # legacy file that already holds users, so a dev→prod filename
+            # Pick a SINGLE durable file on the persistent disk and ADOPT the
+            # file that already holds the most users, so a dev→prod filename
             # switch never silently opens an empty DB and loses accounts.
             fallback_path = _select_sqlite_fallback_path(inst_dir)
             db_url = 'sqlite:///' + fallback_path.replace(os.sep, '/')
@@ -467,9 +505,26 @@ class ProductionConfig(Config):
             os.environ['G2Y_PG_FALLBACK_ACTIVE'] = '1'
             self.PRODUCTION_SQLITE_FALLBACK = True
             self.PRODUCTION_SQLITE_FALLBACK_FILE = os.path.basename(fallback_path)
+            self.SQLITE_FALLBACK_CANDIDATES = _sqlite_fallback_candidates(inst_dir)
+            # Loud, dashboard-visible warning: running on SQLite means accounts
+            # only survive if instance/ really is the mounted persistent disk.
+            try:
+                import logging as _logging
+                _logging.getLogger('glory2yah.config').critical(
+                    'DATABASE_URL IS NOT SET — falling back to SQLite file '
+                    '%s (users seen per candidate: %s). Accounts and uploads '
+                    'survive restarts ONLY if that folder is a mounted Render '
+                    'persistent disk; otherwise every cold start wipes all users '
+                    'and they are forced to register again. Fix: add your '
+                    'PostgreSQL connectionString as DATABASE_URL.',
+                    fallback_path, self.SQLITE_FALLBACK_CANDIDATES,
+                )
+            except Exception:
+                pass
         else:
             self.PRODUCTION_SQLITE_FALLBACK = False
             self.PRODUCTION_SQLITE_FALLBACK_FILE = None
+            self.SQLITE_FALLBACK_CANDIDATES = {}
 
         self.SQLALCHEMY_DATABASE_URI = db_url
         self.SQLALCHEMY_ENGINE_OPTIONS = _engine_options_for(db_url)

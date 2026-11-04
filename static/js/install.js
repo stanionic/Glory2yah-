@@ -14,7 +14,10 @@
         POPUP_DELAY_INTERACTION: 3000, // 3 seconds after first interaction
         IOS_GUIDE_DELAY: 3000,     // 3 seconds before iOS guide
         ANALYTICS_ENDPOINT: '/pwa/api/analytics',
-        SETTINGS_ENDPOINT: '/pwa/api/settings'
+        SETTINGS_ENDPOINT: '/pwa/api/settings',
+        // Root-scope service worker (served by app/routes/main.py).
+        // Registering /static/sw.js instead would limit the scope to /static/.
+        SERVICE_WORKER_URL: '/sw.js'
     };
 
     // ===== STATE =====
@@ -31,6 +34,83 @@
         dismissed: false,
         user_id: null
     };
+
+    // ===== SERVICE WORKER =====
+
+    /**
+     * Register the service worker. This is what actually makes the app a PWA:
+     * without a registered worker Chrome never fires `beforeinstallprompt`, the
+     * install button does nothing and there is no offline mode.
+     * Runs on every page (also when already running installed), independently of
+     * the popup settings, and never blocks the page when it fails.
+     */
+    function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+        // Service workers need a secure context (https, or localhost for dev).
+        if (!window.isSecureContext) return;
+
+        navigator.serviceWorker.register(CONFIG.SERVICE_WORKER_URL, { scope: '/' })
+            .then(function(registration) {
+                if (registration.waiting) showUpdateBar(registration.waiting);
+
+                registration.addEventListener('updatefound', function() {
+                    const worker = registration.installing;
+                    if (!worker) return;
+                    worker.addEventListener('statechange', function() {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // A newer version is ready; the old one still controls
+                            // this tab, so offer a manual refresh.
+                            showUpdateBar(worker);
+                        }
+                    });
+                });
+            })
+            .catch(function(err) {
+                console.warn('[PWA] Service worker registration failed:', err);
+            });
+    }
+
+    /**
+     * Small bottom banner to apply a waiting service worker version.
+     * Never auto-reloads: a user may be mid-upload / mid-conference.
+     */
+    function showUpdateBar(worker) {
+        if (document.getElementById('pwa-update-bar')) return;
+        const bar = document.createElement('div');
+        bar.id = 'pwa-update-bar';
+        bar.setAttribute('role', 'status');
+        bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;' +
+            'display:flex;gap:12px;align-items:center;justify-content:center;' +
+            'padding:10px 14px;background:#002366;color:#fff;font-size:14px;' +
+            'font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;';
+        const label = document.createElement('span');
+        label.textContent = 'Yon nouvo vèsyon Glory2YahPub disponib.';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Mete ajou';
+        btn.style.cssText = 'background:#ffb703;color:#002366;border:0;border-radius:6px;' +
+            'padding:6px 12px;font-weight:700;cursor:pointer;';
+        btn.addEventListener('click', function() {
+            let reloaded = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+                if (reloaded) return;
+                reloaded = true;
+                window.location.reload();
+            });
+            worker.postMessage({ type: 'SKIP_WAITING' });
+        });
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.textContent = '×';
+        close.setAttribute('aria-label', 'Fèmen');
+        close.style.cssText = 'background:transparent;color:#fff;border:0;font-size:18px;' +
+            'cursor:pointer;line-height:1;';
+        close.addEventListener('click', function() { bar.remove(); });
+        bar.appendChild(label);
+        bar.appendChild(btn);
+        bar.appendChild(close);
+        document.body.appendChild(bar);
+    }
 
     // ===== UTILITY FUNCTIONS =====
 
@@ -445,6 +525,10 @@
      * Set up all event listeners and initial state
      */
     function init() {
+        // Service worker first: it is what makes the app installable/offline,
+        // and it must be registered even when the app is already installed.
+        registerServiceWorker();
+
         // Check if already installed
         if (checkIfInstalled()) {
             console.log('Glory2YahPub already running as installed app');
