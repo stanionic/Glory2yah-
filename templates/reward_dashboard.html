@@ -203,7 +203,7 @@ th {
     {% else %}
     {{ ui.empty_state(icon='📣', title='Ou poko pataje okenn piblisite',
                       subtitle='Pataje yon piblisite epi jwenn 10 Gkach pou chak 100 klik inik.',
-                      action_label='🏪 Ale nan Marketplace', action_href=url_for('achte')) }}
+                      action_label='🏪 Ale nan Marketplace', action_href=url_for('marketplace.index')) }}
     {% endif %}
 
     {% if recent_txns %}
@@ -242,7 +242,7 @@ th {
     {% endif %}
 
     <div style="text-align: center; margin-top: 40px;">
-        {{ ui.button('🏪 Ale nan Marketplace', href=url_for('achte'), variant='primary', size='lg') }}
+        {{ ui.button('🏪 Ale nan Marketplace', href=url_for('marketplace.index'), variant='primary', size='lg') }}
     </div>
 </div>
 

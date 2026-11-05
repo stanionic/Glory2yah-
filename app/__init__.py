@@ -2247,17 +2247,29 @@ def register_template_filters(app):
             if endpoint in endpoint_map:
                 try:
                     return flask_url_for(endpoint_map[endpoint], **values)
-                except:
+                except Exception:
                     pass
             
             # Try original endpoint
             try:
                 return flask_url_for(endpoint, **values)
-            except:
-                # Fallback to main.index, then root path
+            except Exception:
+                # UNKNOWN ENDPOINT. We still fall back to the home page so a typo
+                # in one template can never bring down a whole page (there are
+                # hundreds of legacy bare-name references left), but the fallback
+                # used to be SILENT: a wrong link looked exactly like a working
+                # one. Real example: the admin "edit user" form posted to
+                # '/?user_id=N' instead of '/admin/users/N/edit', so saving a
+                # user silently did nothing. Log it so the mistake is findable.
+                app.logger.warning(
+                    'url_for fallback: endpoint %r is not registered and is not a '
+                    'known legacy alias; rendering home instead. Fix the template '
+                    'to use the blueprint-qualified endpoint (e.g. "main.%s").',
+                    endpoint, endpoint,
+                )
                 try:
                     return flask_url_for('main.index', **values)
-                except:
+                except Exception:
                     return '/'
         
         return dict(url_for=url_for_with_fallback)

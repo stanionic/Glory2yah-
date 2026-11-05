@@ -63,7 +63,7 @@
             <a href="{{ url_for('main.index') }}" class="err-btn err-btn-primary">🏠 Dakèil</a>
             {% if current_user and current_user.is_authenticated %}
             <a href="{{ url_for('auth.profile') }}" class="err-btn err-btn-outline">👤 Pwofil mwen</a>
-            <a href="/ecole_biblique/dashboard" class="err-btn err-btn-outline">📘 Lòt Ekol</a>
+            <a href="{{ url_for('ecole_biblique.index') }}" class="err-btn err-btn-outline">📘 Lòt Ekol</a>
             {% else %}
             <a href="{{ url_for('auth.login') }}" class="err-btn err-btn-outline">🔐 Konekte</a>
             {% endif %}
