@@ -47,12 +47,17 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
-      # SECRET_KEY signs sessions + CSRF tokens. `generateValue: true` only
-      # generates a value ONCE (at first sync) and then keeps it stable across
-      # redeploys — it does NOT change on every deploy. Keeping generateValue
-      # here is safe: sessions and CSRF tokens survive redeploys. If you ever
-      # recreate the service, the key changes once and all sessions/CSRF tokens
-      # invalidate a single time (users just reload and log in again).
+      # SITE_URL is the canonical public origin. Without it the app builds
+      # absolute links from the incoming Host header, which on Render is
+      # glory2yah.onrender.com - so Open Graph tags, share shortlinks and the
+      # links inside WhatsApp messages all pointed at the render domain instead
+      # of the real one.
+      - key: SITE_URL
+        value: https://www.glory2yah.net
+      # SECRET_KEY signs sessions + CSRF tokens. Use a FIXED value so sessions
+      # survive redeploys. generateValue: true only generates ONCE at first sync
+      # but if the service is ever recreated the key changes and ALL users are
+      # logged out. Set a stable value via Render Dashboard → Environment instead.
       - key: SECRET_KEY
         generateValue: true
       # ADMIN_PASSWORD: a KNOWN, stable value (do NOT use generateValue here —

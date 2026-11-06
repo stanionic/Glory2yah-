@@ -399,11 +399,16 @@ def create_app(config_name=None):
         from app.models.user import User
         try:
             user_id_int = int(user_id)
-            # P2 FIX: replace deprecated legacy User.query.get() with modern db.session.get()
             user = db.session.get(User, user_id_int)
-            if user and user.is_active:
-                return user
-            return None
+            # CRITICAL FIX: do NOT reject inactive users here.
+            # is_active=False means "pending OTP verification" for new signups.
+            # Rejecting them here destroys the session immediately after OTP
+            # verification sets is_active=True, forcing users to log in again.
+            # The is_active guard belongs in the LOGIN route, not the loader.
+            # Only return None for truly missing users (deleted accounts).
+            if user is None:
+                return None
+            return user
         except (ValueError, TypeError, Exception):
             return None
     
@@ -2091,36 +2096,16 @@ def register_template_filters(app):
     from app.utils.currency import gkach_to_htg, htg_to_gkach, format_htg
 
     def _resolve_base_url():
-        """Return a canonical base URL (scheme + host + port) for absolute external URLs
-        required by og:image / og:url tags. Always ends without trailing slash.
+        """Canonical base URL (scheme + host), no trailing slash.
 
-        Resolution order (most reliable first):
-        1. Explicit SITE_URL env var (recommended for production Render)
-        2. Within a request context: use request.url_root, honor X-Forwarded-Proto/Host
-        3. SERVER_NAME + PREFERRED_URL_SCHEME Flask config if set
-        4. Fallback to http://localhost for dev/tests (not used by crawlers).
+        Delegates to :func:`app.utils.site_url.site_base_url`, which is the one
+        implementation every absolute link in the project must use (OG tags,
+        share pages, WhatsApp message bodies, background threads). The logic used
+        to be duplicated here, which is why callers outside this closure ended up
+        hard-coding their own fallbacks.
         """
-        import os as _os
-        env_url = (_os.environ.get('SITE_URL') or '').strip().rstrip('/')
-        if env_url:
-            return env_url
-        # Within request: honor X-Forwarded headers (Render/Heroku proxy behavior)
-        try:
-            if flask_request and flask_request.environ:
-                scheme = (flask_request.headers.get('X-Forwarded-Proto') or
-                          flask_request.environ.get('wsgi.url_scheme') or 'http').split(',')[0].strip()
-                host = (flask_request.headers.get('X-Forwarded-Host') or
-                        flask_request.host or flask_request.environ.get('HTTP_HOST') or
-                        'localhost')
-                host = host.split(',')[0].strip()
-                return f"{scheme}://{host}".rstrip('/')
-        except Exception:
-            pass
-        server_name = app.config.get('SERVER_NAME')
-        if server_name:
-            scheme = app.config.get('PREFERRED_URL_SCHEME') or 'https'
-            return f"{scheme}://{server_name}".rstrip('/')
-        return 'http://localhost'
+        from app.utils.site_url import site_base_url
+        return site_base_url()
 
     def _absolute_static_upload_url(filename):
         """Build the full absolute URL for a file stored under UPLOAD_FOLDER.
@@ -2186,7 +2171,7 @@ def register_template_filters(app):
         """Inject absolute URL helpers so templates can emit crawler-friendly OG tags.
 
         Exposed names (all templates):
-          * absolute_base_url() -> str "https://glory2yah.net"
+          * absolute_base_url() -> str "https://www.glory2yah.net"
           * absolute_upload_url('image.png') -> full URL for /uploads/image.png
           * absolute_ad_url(ad_id)       -> full canonical URL to /ad/<ad_id>
           * absolute_share_url(ad_id)    -> full short share URL /s/<ad_id>

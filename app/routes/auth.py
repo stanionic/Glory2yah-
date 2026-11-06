@@ -25,6 +25,87 @@ def _clean_whatsapp(raw: str) -> str:
     return cleaned or raw
 
 
+def _wants_json():
+    """True for the fetch() calls made by the OTP widget.
+
+    Keyed on an explicit header rather than the Accept mime types: browsers send
+    Accept: text/html,*/* on fetch too, so mime negotiation would mis-route the
+    AJAX call and hand back a whole HTML page.
+    """
+    return (request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or request.form.get('ajax') == '1')
+
+
+def _is_pending_signup(user):
+    """An account created by the OTP signup flow that never finished verifying.
+
+    The `has_history` test is what makes this precise. `is_active=False` alone
+    also matches legacy accounts an administrator switched off, and those people
+    must keep seeing "contact administrator" - not be funnelled into a phone
+    verification they were never enrolled in.
+    """
+    if user is None or user.is_active or user.phone_verified:
+        return False
+    try:
+        from app.services import otp_service
+        return otp_service.has_history(user.whatsapp, user_id=user.id)
+    except Exception:
+        return False
+
+
+def _pending_verify_user():
+    """The still-unverified account this browser is mid-signup with, or None."""
+    uid = session.get('pending_verify_uid')
+    if not uid:
+        return None
+    try:
+        user = db.session.get(User, int(uid))
+    except (TypeError, ValueError):
+        session.pop('pending_verify_uid', None)
+        return None
+    if user is None or user.phone_verified or user.is_active:
+        # Already finished (back-button, or verified in another tab): do not
+        # offer a second activation of a live account.
+        session.pop('pending_verify_uid', None)
+        return None
+    if not _is_pending_signup(user):
+        session.pop('pending_verify_uid', None)
+        return None
+    return user
+
+
+def _mask_phone(raw):
+    """+50942882076 -> +509•••••2076 (show enough to recognise the number)."""
+    s = str(raw or '')
+    if len(s) <= 6:
+        return s[:2] + '•' * max(0, len(s) - 2)
+    return s[:4] + '•' * (len(s) - 7) + s[-3:]
+
+
+def _activate_after_verification(user):
+    """Flip a pending signup into a live, logged-in, bonus-credited account.
+
+    Order matters: the account is committed as active BEFORE the welcome bonus is
+    attempted, so a bonus failure can never strand a verified user outside the
+    app, and can never be re-claimed (issue_welcome_bonus is idempotent).
+    """
+    user.is_active = True
+    user.phone_verified = True
+    user.last_login = datetime.utcnow()
+    db.session.commit()
+
+    try:
+        from app.services.gkach_service import GkachService
+        GkachService.issue_welcome_bonus(user.whatsapp, _commit=True)
+    except Exception as exc:
+        current_app.logger.error(
+            'Welcome bonus failed for verified user %s: %s', user.id, exc, exc_info=True)
+
+    login_user(user, remember=True)
+    session.permanent = True
+    session.pop('pending_verify_uid', None)
+
+
 def _clean_pseudo(raw: str) -> str:
     return (raw or '').strip()
 
@@ -180,54 +261,92 @@ def register():
             # Validate password BEFORE any DB write (P1 FIX — was never called)
             validate_password(password)
 
-            # Check if pseudo exists
+            # --- duplicate handling -------------------------------------------
+            # A never-verified account for this pseudo/number is the SAME human
+            # retrying a signup that stalled, not a squatter: blocking them on a
+            # uniqueness error they cannot resolve themselves is how you lose a
+            # user for good. So a pending signup resumes; a real account still
+            # errors as before.
             existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
-            if existing_pseudo:
-                flash(f'Pseudo "{pseudo_clean}" la deja pran. Tanpri chwazi yon lòt.', 'error')
+            existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
+
+            pending_retry = existing_pseudo if _is_pending_signup(existing_pseudo) else None
+            if pending_retry is None and _is_pending_signup(existing_whatsapp):
+                pending_retry = existing_whatsapp
+
+            if pending_retry is not None and existing_pseudo is not None \
+                    and existing_whatsapp is not None \
+                    and existing_pseudo.id != existing_whatsapp.id:
+                # pseudo belongs to one pending account, number to another:
+                # ambiguous, do not silently merge two rows.
+                flash('Gen konfli ak yon kont an atant verifikasyon. Tanpri konekte oswa kontakte nou.', 'error')
                 return redirect(url_for('auth.register'))
 
-            # Check if WhatsApp already registered
-            existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
-            if existing_whatsapp:
-                flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
-                return redirect(url_for('auth.login'))
+            if pending_retry is None:
+                if existing_pseudo:
+                    flash(f'Pseudo "{pseudo_clean}" la deja pran. Tanpri chwazi yon lòt.', 'error')
+                    return redirect(url_for('auth.register'))
 
-            # Create user
-            user = User(
-                whatsapp=whatsapp_clean,
-                pseudo=pseudo_clean,
-                name=name if name else pseudo_clean,
-                bio=bio,
-                auth_provider='whatsapp',
-                is_active=True
+                if existing_whatsapp:
+                    flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
+                    return redirect(url_for('auth.login'))
+
+            if pending_retry is not None:
+                # Resume the stalled signup on the existing row (keeps the same
+                # id, so no orphan Gkach account is created either).
+                user = pending_retry
+                user.whatsapp = whatsapp_clean
+                user.pseudo = pseudo_clean
+                user.name = name if name else pseudo_clean
+                user.set_password(password)
+                db.session.commit()
+            else:
+                # Create user - PENDING: is_active stays False until the WhatsApp
+                # code is confirmed, which also keeps Flask-Login's default
+                # `is_active` check from ever handing out a session.
+                user = User(
+                    whatsapp=whatsapp_clean,
+                    pseudo=pseudo_clean,
+                    name=name if name else pseudo_clean,
+                    bio=bio,
+                    auth_provider='whatsapp',
+                    is_active=False,
+                    phone_verified=False
+                )
+                user.set_password(password)
+
+                db.session.add(user)
+                db.session.commit()
+
+                # Create Gkach account
+                user_gkach = UserGkach(
+                    user_id=user.id,
+                    user_whatsapp=whatsapp_clean,
+                    gkach_balance=0
+                )
+                db.session.add(user_gkach)
+                db.session.commit()
+
+            # No auto-login and NO welcome bonus here: the 500-Gkach signup gift
+            # is issued only after the number is proven (see verify_phone),
+            # otherwise anyone could mint bonuses with numbers they do not own.
+            from app.services import otp_service
+            _otp, delivered_via = otp_service.issue_and_send(
+                whatsapp_clean, user_id=user.id, ip_address=request.remote_addr
             )
-            user.set_password(password)
+            session['pending_verify_uid'] = user.id
 
-            db.session.add(user)
-            db.session.commit()
-
-            # Create Gkach account
-            user_gkach = UserGkach(
-                user_id=user.id,
-                user_whatsapp=whatsapp_clean,
-                gkach_balance=0
-            )
-            db.session.add(user_gkach)
-            db.session.commit()
-
-            from app.services.gkach_service import GkachService
-            GkachService.issue_welcome_bonus(user.whatsapp, _commit=True)
-
-            # Auto-login the user right after registration
-            login_user(user, remember=True)
-            session.permanent = True  # auto-register keep session
-
-            # Update last login
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-
-            flash('Kont kreye avèk siksè! Byenveni nan Glory2YahPub!', 'success')
-            return redirect(url_for('main.index'))
+            if delivered_via:
+                flash('Nou voye yon kòd 6 chif sou WhatsApp ou. Tanpri antre l pou aktive kont ou.', 'info')
+            else:
+                # Honest failure: the account is waiting, but no gateway could
+                # reach them. Tell the user instead of showing a spinner forever.
+                flash(
+                    'Kont ou an kreye men nou pa rive voye kòd la WhatsApp kounye a. '
+                    'Eseye "Voye kòd la ankò" oswa kontakte administrateur a.',
+                    'error'
+                )
+            return redirect(url_for('auth.verify_phone'))
 
         except ValidationError as e:
             current_app.logger.warning("Register validation failed: %s", e)
@@ -240,6 +359,126 @@ def register():
             return redirect(url_for('auth.register'))
     
     return render_template('auth/register.html')
+
+
+@auth_bp.route('/verify', methods=['GET', 'POST'])
+@limiter.limit("60 per hour")
+def verify_phone():
+    """Enter the 6-digit WhatsApp code to activate a freshly created account.
+
+    The account already exists (created by :func:`register`) but is inactive, so
+    nothing here needs to survive a refresh or a back-button: the pending row is
+    the state, the session only points at it.
+    """
+    user = _pending_verify_user()
+    if user is None:
+        if current_user.is_authenticated:
+            return redirect(url_for('main.index'))
+        flash('Pa gen yon enskripsyon an atant pou verifye. Kreye yon kont anvan.', 'info')
+        return redirect(url_for('auth.register'))
+
+    from app.services import otp_service
+
+    if request.method == 'POST':
+        status, _row = otp_service.verify(user.whatsapp, request.form.get('code', ''))
+        st = otp_service.state(user.whatsapp)
+
+        if status == otp_service.OK:
+            _activate_after_verification(user)
+            message = 'Kont ou aktif! Byenveni nan Glory2YahPub 🎉'
+            if _wants_json():
+                return jsonify({'ok': True, 'message': message,
+                                'redirect': url_for('main.index')})
+            flash(message, 'success')
+            return redirect(url_for('main.index'))
+
+        messages = {
+            otp_service.WRONG: 'Kòd la pa kòrèk. Eseye ankò.',
+            otp_service.EXPIRED: 'Kòd la ekspire. Tanpri mande yon lòt.',
+            otp_service.LOCKED: 'Twòp tantativ. Tanpri mande yon nouvo kòd.',
+            otp_service.MISSING: 'Tanpri antre kòd 6 chif la.',
+        }
+        message = messages.get(status, 'Kòd la pa valide.')
+
+        if _wants_json():
+            # Always HTTP 200: the request itself succeeded, `ok` carries the
+            # verdict. A 4xx here would push the widget into its error branch
+            # and lose the specific message (and the attempts budget).
+            return jsonify({
+                'ok': False,
+                'status': status,
+                'message': message,
+                'resend_in': st.get('resend_in', 0),
+                'attempts_left': st.get('attempts_left', 0),
+            })
+
+        flash(message, 'error')
+        if status in (otp_service.EXPIRED, otp_service.LOCKED):
+            # No auto-reissue: sending WhatsApp messages has a cost and an
+            # abusive caller could otherwise force one per failed attempt.
+            session['otp_suggest_resend'] = True
+        return redirect(url_for('auth.verify_phone'))
+
+    st = otp_service.state(user.whatsapp)
+    suggest_resend = bool(session.pop('otp_suggest_resend', False)) or not st.get('usable', False)
+    return render_template(
+        'auth/verify_phone.html',
+        masked_phone=_mask_phone(user.whatsapp),
+        pseudo=user.pseudo,
+        otp_state=st,
+        suggest_resend=suggest_resend,
+        ttl_seconds=int(otp_service.OTP_TTL.total_seconds()),
+        resend_seconds=int(otp_service.RESEND_COOLDOWN.total_seconds()),
+        max_attempts=otp_service.MAX_ATTEMPTS,
+    )
+
+
+@auth_bp.route('/verify/resend', methods=['POST'])
+@limiter.limit("20 per hour")
+def resend_otp():
+    """Issue + push a new code for the pending signup (cooldown-guarded)."""
+    user = _pending_verify_user()
+    if user is None:
+        payload = {'ok': False, 'status': 'no_pending',
+                   'message': 'Pa gen kont an atant verifikasyon.',
+                   'redirect': url_for('auth.register')}
+        return jsonify(payload) if _wants_json() else redirect(url_for('auth.register'))
+
+    from app.services import otp_service
+
+    wait = otp_service.resend_wait(user.whatsapp)
+    if wait:
+        payload = {'ok': False, 'status': 'cooldown', 'wait': wait,
+                   'message': f'Tann {wait} segond anvan ou mande yon lòt kòd.'}
+        return jsonify(payload)
+
+    _otp, delivered_via = otp_service.issue_and_send(
+        user.whatsapp, user_id=user.id, ip_address=request.remote_addr
+    )
+
+    if delivered_via == 'dev_fallback':
+        # Local development: no gateway can reach an arbitrary number, so the
+        # code is in the server console. Say so plainly instead of pretending a
+        # WhatsApp arrived - but only where debug mode allows it.
+        return jsonify({
+            'ok': True, 'delivered': delivered_via,
+            'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
+            'message': 'Mod DEV: kòd la nan konsol serveur a (pa gen gateway WhatsApp).',
+        })
+
+    if delivered_via:
+        return jsonify({
+            'ok': True, 'delivered': delivered_via,
+            'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
+            'message': 'Nou voye yon nouvo kòd sou WhatsApp ou.',
+        })
+
+    return jsonify({
+        'ok': False, 'status': 'undelivered',
+        'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
+        'message': ('Nou pa rive voye kòd la kounye a. Eseye ankò pita oswa '
+                    'kontakte administrateur a.'),
+    })
 
 
 # IP-level limiter: relatively generous because it counts EVERY page view (GET)
@@ -402,6 +641,21 @@ def login():
                 return _redirect_back_with_params(last_identifier=identifier)
 
             if not user.is_active:
+                # Two different situations share the is_active flag, and telling
+                # them apart is what decides whether the user has a way out:
+                #   * a signup that never finished WhatsApp verification
+                #     -> send them back to the code screen (the password they
+                #        just proved they own is what authorises this)
+                #   * an account an administrator switched off
+                #     -> keep the "contact administrator" dead end
+                if _is_pending_signup(user):
+                    session['pending_verify_uid'] = user.id
+                    flash(
+                        'Kont ou poko verifye. Tanpri antre kòd 6 chif nou voye '
+                        'sou WhatsApp ou a pou aktive l.',
+                        'info',
+                    )
+                    return redirect(url_for('auth.verify_phone'))
                 flash('Kont ou an dezaktive. Kontakte administrateur a.', 'error')
                 return _redirect_back_with_params(last_identifier=identifier)
 
@@ -464,30 +718,157 @@ def login():
     )
 
 
+@auth_bp.route('/login/otp/request', methods=['POST'])
+@limiter.limit("10 per hour")
+def login_otp_request():
+    """Push a one-time login code to the WhatsApp number of an EXISTING account.
+
+    This is a companion to :func:`login`, not a replacement: the password path
+    stays exactly as it was, so a WhatsApp delivery outage can never lock someone
+    out of an account they already hold. The identifier accepts the same
+    pseudo-or-WhatsApp value as the password form (see :func:`_find_users_by_identifier`).
+    """
+    if current_user.is_authenticated:
+        return jsonify({'ok': False, 'message': 'Ou deja konekte.'})
+
+    identifier = (request.form.get('identifier') or '').strip()
+    if not identifier:
+        return jsonify({'ok': False, 'message': 'Tanpri antre WhatsApp ou oswa pseudo.'})
+
+    if _cache_identifier_rate_limit('login_otp_id', identifier, 5, 900):
+        current_app.logger.warning(
+            'Login-OTP rate-limit BLOCKED for identifier=%s', identifier[:8] + '***')
+        return jsonify({'ok': False, 'status': 'rate_limited',
+                        'message': 'Twòp demann kòd. Tanpri tann 15 minit.'})
+
+    # Only an ACTIVE account, and only one that actually owns a number, can be
+    # reached this way — an OTP must never become a way around an admin block.
+    user = None
+    for cand in _find_users_by_identifier(identifier):
+        if cand.is_active and cand.whatsapp:
+            user = cand
+            break
+
+    if user is None:
+        return jsonify({
+            'ok': False, 'status': 'not_found',
+            'message': 'Pa gen kont aktif ki koresponn ak idantifyan sa. '
+                       'Tcheke ekriti a oswa kreye yon kont.',
+        })
+
+    from app.services import otp_service
+    from app.models.otp import OtpCode
+
+    wait = otp_service.resend_wait(user.whatsapp, OtpCode.PURPOSE_LOGIN)
+    if wait:
+        return jsonify({'ok': False, 'status': 'cooldown', 'wait': wait,
+                        'message': f'Tann {wait} segond anvan ou mande yon lòt kòd.'})
+
+    _otp, delivered_via = otp_service.issue_and_send(
+        user.whatsapp, user_id=user.id,
+        purpose=OtpCode.PURPOSE_LOGIN, ip_address=request.remote_addr,
+    )
+
+    if not delivered_via:
+        # Honest failure: no gateway could reach that number. Point the user at
+        # the password form they already have instead of a dead-end spinner.
+        return jsonify({
+            'ok': False, 'status': 'undelivered',
+            'message': 'Nou pa rive voye kòd la kounye a. Tanpri konekte ak modpas ou.',
+        })
+
+    session['pending_login_otp_uid'] = user.id
+    return jsonify({
+        'ok': True, 'delivered': delivered_via,
+        'masked_phone': _mask_phone(user.whatsapp),
+        'message': 'Nou voye yon kòd 6 chif sou WhatsApp ou.',
+    })
+
+
+@auth_bp.route('/login/otp/verify', methods=['POST'])
+@limiter.limit("40 per hour")
+def login_otp_verify():
+    """Exchange a valid login code for a session. The password is never involved."""
+    if current_user.is_authenticated:
+        return jsonify({'ok': True, 'redirect': url_for('main.index')})
+
+    uid = session.get('pending_login_otp_uid')
+    if not uid:
+        return jsonify({'ok': False, 'status': 'no_pending',
+                        'message': 'Tanpri mande yon kòd anvan.'})
+
+    try:
+        user = db.session.get(User, int(uid))
+    except (TypeError, ValueError):
+        user = None
+
+    if user is None or not user.is_active or not user.whatsapp:
+        session.pop('pending_login_otp_uid', None)
+        return jsonify({'ok': False, 'status': 'unavailable',
+                        'message': 'Kont sa a pa disponib ankò. Tanpri rekòmanse.'})
+
+    from app.services import otp_service
+    from app.models.otp import OtpCode
+
+    status, _row = otp_service.verify(
+        user.whatsapp, request.form.get('code', ''), purpose=OtpCode.PURPOSE_LOGIN)
+    st = otp_service.state(user.whatsapp, OtpCode.PURPOSE_LOGIN)
+
+    if status != otp_service.OK:
+        messages = {
+            otp_service.WRONG: 'Kòd la pa kòrèk. Eseye ankò.',
+            otp_service.EXPIRED: 'Kòd la ekspire. Tanpri mande yon lòt.',
+            otp_service.LOCKED: 'Twòp tantativ. Tanpri mande yon nouvo kòd.',
+            otp_service.MISSING: 'Tanpri antre kòd 6 chif la.',
+        }
+        return jsonify({
+            'ok': False, 'status': status,
+            'message': messages.get(status, 'Kòd la pa valide.'),
+            'attempts_left': st.get('attempts_left', 0),
+            'resend_in': st.get('resend_in', 0),
+        })
+
+    login_user(user, remember=True, force=True)
+    session.permanent = True
+    session['_remember_set'] = True
+    session.pop('pending_login_otp_uid', None)
+
+    try:
+        if cache:
+            cache.delete(f'rl:login_otp_id:{user.pseudo}')
+            cache.delete(f'rl:login_otp_id:{user.whatsapp}')
+    except Exception:
+        pass
+
+    user.last_login = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'message': f'Byenveni, {user.pseudo}! Ou konekte avèk siksè.',
+        'redirect': url_for('main.index'),
+    })
+
+
 @auth_bp.route('/logout')
 def logout():
-    """User logout - preserve CSRF token in session.
-    Note: no @login_required so even if session expired, we ALWAYS clear any session cleanly.
+    """User logout — properly clears the remember-me cookie.
 
-    BUGFIX — logout used to leave the user signed in. Flask-Login 0.6.x does NOT
-    delete the remember-me cookie itself: `logout_user()` only writes the marker
-    `session['_remember'] = 'clear'`, and the cookie is removed later, when the
-    response is finalised. The old code called `session.clear()` right after,
-    which erased that marker — so the 1-year `glory2yah_remember` cookie stayed
-    in the browser and the very next request silently logged the same account
-    back in. Besides being a security problem on shared phones, it made the real
-    failure invisible: people could only get "logged out for good" when a
-    restart rotated the SECRET_KEY or wiped the database, i.e. exactly the
-    "I have to create a new account" report. Keep the marker (and the CSRF
-    token) through the clear, and always call logout_user() even when the
-    session looks anonymous so a stale cookie is finally removed.
+    CRITICAL FIX: Flask-Login 0.6.x sets session['_remember'] = 'clear' inside
+    logout_user() to signal that the remember-me cookie must be deleted when the
+    response is finalised. The old code called session.clear() right after, which
+    erased that marker — so the 1-year cookie stayed in the browser and the very
+    next request silently re-logged the same account back in. That is exactly the
+    "I have to create a new account after logging out" report.
+
+    Fix: preserve the '_remember' marker AND the CSRF token through the clear.
     """
-    logout_user()
-    remember_marker = session.get('_remember')
-    csrf_token = session.get('_csrf_token')
+    logout_user()                          # sets session['_remember'] = 'clear'
+    remember_marker = session.get('_remember')   # capture BEFORE clear
+    csrf_token      = session.get('_csrf_token')
     session.clear()
-    if remember_marker == 'clear':
-        session['_remember'] = 'clear'
+    if remember_marker:                    # restore so Flask-Login can delete the cookie
+        session['_remember'] = remember_marker
     if csrf_token:
         session['_csrf_token'] = csrf_token
     flash('Ou dekonekte avèk siksè.', 'info')
