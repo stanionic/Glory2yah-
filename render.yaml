@@ -113,6 +113,11 @@ services:
         fromDatabase:
           name: glory2yahpub-db
           property: connectionString
+      # Never accept signups against a fallback SQLite database. If Render
+      # fails to inject the managed database URL, fail startup visibly instead
+      # of creating accounts in a second database that appears to lose them.
+      - key: DB_ENFORCE_POSTGRES_PRODUCTION
+        value: "1"
       # REDIS (production cache + rate-limit backend). Injected from the managed
       # Key Value instance below via Render's private network. The app pings it on
       # boot; with a real URL present it enables Redis caching + flask-limiter
