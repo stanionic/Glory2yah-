@@ -54,6 +54,16 @@ def create_app(config_name=None):
     from app.config import get_config
     app.config.from_object(get_config(config_name))
 
+    trusted_proxy_count = app.config.get('TRUSTED_PROXY_COUNT', 0)
+    if trusted_proxy_count:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=trusted_proxy_count,
+            x_proto=trusted_proxy_count,
+            x_host=trusted_proxy_count,
+        )
+
     # Setup secret key - always comes from config
     secret_key = app.config.get("SECRET_KEY")
     if not secret_key:

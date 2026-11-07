@@ -156,11 +156,13 @@ def test_detail_page_og_publish_no_price():
 
 
 def test_regression_share_routes_regression_existing():
-    """Régression: /s/b/<batch_id> toujours 302 (pas modifié)."""
+    """Unsigned batch referral links must not display or count a batch click."""
     r = client.get('/s/b/batch_nonexistent')
-    # Pas loggé → 401 redirect vers /auth/login (car @login_required)
-    assert r.status_code in (302, 401) and '/auth/login' in (r.headers.get('Location','') or ''), f"batch_click auth protection doit exister: status={r.status_code} Location={r.headers.get('Location')}"
-    print(f"[PASS] test_regression_share_routes_regression_existing — /s/b/.. still protected.")
+    assert r.status_code == 302 and r.headers.get('Location') == '/', (
+        f"unsigned batch link must be rejected: "
+        f"status={r.status_code} Location={r.headers.get('Location')}"
+    )
+    print("[PASS] test_regression_share_routes_regression_existing — unsigned batch link rejected.")
 
 
 try:

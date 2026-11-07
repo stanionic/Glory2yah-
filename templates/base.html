@@ -22,6 +22,8 @@
     <link rel="stylesheet" href="/static/css/admin.css">
     <link rel="stylesheet" href="/static/css/components.css">
     {% block extra_css %}{% endblock %}
+    <style>
+    </style>
 </head>
 <body class="g2y-body">
     {#- Option B "React-style": reusable component macros. Import once at the
@@ -90,6 +92,8 @@
     <main class="g2y-main" id="mainContent">
         {% block content %}{% endblock %}
     </main>
+
+    {% include 'components/_designer_contact.html' %}
 
     <!-- ═══ MODERN STICKY BOTTOM NAV (TikTok/Facebook style) ═══ -->
     {# — ⚠️ request.endpoint is None during 404/500 handling (before route match).

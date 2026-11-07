@@ -60,6 +60,7 @@
     padding: 25px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-bottom: 30px;
+    overflow-x: auto;
 }
 
 .tracking-table h2 {
@@ -114,6 +115,11 @@ th {
     color: #856404;
 }
 
+.share-url-field {
+    width: min(320px, 55vw);
+    padding: 8px;
+}
+
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: 1fr;
@@ -157,43 +163,53 @@ th {
         </div>
     </div>
 
-    {% if trackings %}
+    {% if share_batches %}
     <div class="tracking-table">
-        <h2>Piblisite w Pataje</h2>
+        <h2>Gwoup piblisite pou pataje</h2>
+        <p>Lyen yo mare ak kont ou. Moun k ap klike yo dwe konekte pou klik la ka konte.</p>
         <table>
             <thead>
                 <tr>
-                    <th>Piblisite</th>
+                    <th>Gwoup</th>
                     <th>Klik</th>
-                    <th>Vant</th>
                     <th>Pwogre</th>
                     <th>Estati</th>
+                    <th>Lyen pataj</th>
                 </tr>
             </thead>
             <tbody>
-                {% for track in trackings %}
+                {% for share in share_batches %}
                 <tr>
                     <td>
-                        <strong>{{ track.ad.title if track.ad else 'Unknown' }}</strong>
+                        <strong>{{ share.batch.batch_id }}</strong>
                     </td>
-                    <td>{{ track.clicks }}</td>
-                    <td>{{ track.sales }}</td>
+                    <td>{{ share.clicks }}</td>
                     <td>
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ (track.clicks % 100) }}%"></div>
+                            <div class="progress-fill" style="width: {{ (share.progress / required_clicks * 100) }}%"></div>
                         </div>
-                        <small>{{ track.clicks % 100 }}/100 pou pwochen rekonpans</small>
+                        <small>{{ share.progress }}/{{ required_clicks }} pou pwochen rekonpans</small>
                     </td>
                     <td>
-                        {% if track.clicks >= 100 %}
+                        {% if share.earned %}
                         <span class="badge badge-success">
-                            <i class="fas fa-check"></i> {{ (track.clicks // 100) * 10 }} Gkach jwenn
+                            <i class="fas fa-check"></i> {{ share.earned }} Gkach jwenn
                         </span>
                         {% else %}
                         <span class="badge badge-warning">
-                            <i class="fas fa-clock"></i> {{ 100 - (track.clicks % 100) }} klik ankò
+                            <i class="fas fa-clock"></i> {{ share.remaining }} klik ankò
                         </span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <input class="share-url-field" type="url" value="{{ share.share_url }}" readonly
+                               aria-label="Lyen pataj pou gwoup {{ share.batch.batch_id }}">
+                        <button type="button" class="btn btn-primary" onclick="copyRewardShareLink(this)">
+                            <i class="fas fa-copy"></i> Kopye
+                        </button>
+                        <a class="btn btn-success"
+                           href="https://wa.me/?text={{ share.share_url | urlencode }}"
+                           target="_blank" rel="noopener noreferrer">WhatsApp</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -201,8 +217,8 @@ th {
         </table>
     </div>
     {% else %}
-    {{ ui.empty_state(icon='📣', title='Ou poko pataje okenn piblisite',
-                      subtitle='Pataje yon piblisite epi jwenn 10 Gkach pou chak 100 klik inik.',
+    {{ ui.empty_state(icon='📣', title='Pa gen gwoup piblisite apwouve pou pataje',
+                      subtitle='Lyen rekonpans yo ap disponib lè yon gwoup gen piblisite apwouve.',
                       action_label='🏪 Ale nan Marketplace', action_href=url_for('marketplace.index')) }}
     {% endif %}
 
@@ -245,5 +261,20 @@ th {
         {{ ui.button('🏪 Ale nan Marketplace', href=url_for('marketplace.index'), variant='primary', size='lg') }}
     </div>
 </div>
+
+<script>
+function copyRewardShareLink(button) {
+    const input = button.parentElement.querySelector('.share-url-field');
+    input.focus();
+    input.select();
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(() => {
+            button.innerHTML = '<i class="fas fa-check"></i> Kopye';
+        }).catch(() => document.execCommand('copy'));
+    } else {
+        document.execCommand('copy');
+    }
+}
+</script>
 
 {% endblock %}

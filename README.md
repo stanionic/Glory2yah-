@@ -64,8 +64,10 @@ python run.py
 - **Infinite Scroll**: Seamless product loading
 
 #### 🪙 Gkach Reward System
-- **Viral Sharing**: Get unique referral links
-- **Click Rewards**: 10 Gkach per 100 clicks
+- **Viral Sharing**: Signed referral links for approved ad batches
+- **Click Rewards**: 10 Gkach per 100 unique, authenticated clicks
+- **Anti-Fraud**: Self-clicks, repeated accounts/devices, and excess clicks per IP are rejected
+- **Progress Tracking**: Copy/share links and monitor each batch from the reward dashboard
 - **Sales Commission**: 2% of every sale
 - **Wallet Dashboard**: Track earnings and balance
 

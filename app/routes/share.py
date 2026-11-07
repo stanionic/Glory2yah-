@@ -19,15 +19,41 @@ import hashlib as _hashlib
 
 from flask import (
     Blueprint, redirect, request, url_for, current_app, flash, make_response,
-    render_template, abort,
+    render_template,
 )
-from flask_login import login_required, current_user
+from flask_login import current_user
+from itsdangerous import BadSignature, URLSafeSerializer
 from app.services.gkach_service import GkachService
 from app import limiter
 from datetime import date
 
 
 share_bp = Blueprint('share', __name__)
+
+
+def create_batch_referral_token(batch_id, user_id):
+    """Create an unforgeable referral token bound to one batch and user."""
+    serializer = URLSafeSerializer(
+        current_app.config['SECRET_KEY'],
+        salt='g2y-batch-referral-v1',
+    )
+    return serializer.dumps({'batch_id': str(batch_id), 'user_id': str(user_id)})
+
+
+def _read_batch_referral_token(token, batch_id):
+    if not token:
+        return None
+    serializer = URLSafeSerializer(
+        current_app.config['SECRET_KEY'],
+        salt='g2y-batch-referral-v1',
+    )
+    try:
+        payload = serializer.loads(token)
+    except BadSignature:
+        return None
+    if not isinstance(payload, dict) or payload.get('batch_id') != str(batch_id):
+        return None
+    return payload.get('user_id')
 
 
 def _sign_device_id(device_id):
@@ -54,26 +80,16 @@ def _verify_device_id(value):
 
 
 def _get_or_create_device_id():
-    """Return the signed device/browser id, creating one if absent/invalid."""
+    """Return a raw device id, creating one if absent or invalid."""
     raw = request.cookies.get('g2y_device')
     verified = _verify_device_id(raw)
     if verified:
         return verified
-    return _sign_device_id(str(_uuid.uuid4()))
+    return str(_uuid.uuid4())
 
 
 def _get_client_ip():
-    """Resolve the real client IP behind a reverse proxy (Render/Heroku).
-
-    Priority: X-Forwarded-For (first entry) → X-Real-IP → remote_addr.
-    Used only for the GKach click anti-fraud per-IP limit.
-    """
-    xff = (request.headers.get('X-Forwarded-For') or '').split(',')[0].strip()
-    if xff:
-        return xff
-    xri = (request.headers.get('X-Real-IP') or '').strip()
-    if xri:
-        return xri
+    """Use the peer address, or a proxy-validated address from ProxyFix."""
     return request.remote_addr or ''
 
 
@@ -178,76 +194,83 @@ def single_ad(short_id):
 
 @share_bp.route('/b/<batch_id>')
 @limiter.limit("6 per minute")
-@login_required
 def batch_click(batch_id):
-    """Handle click on a shared batch link - P1 FIX: auth required + owner check + dedup"""
+    """Track a signed referral and display the approved ads in its batch."""
     from app.models.batch import Batch
+    from app.models.batch_ad import BatchAd
     from app.models.ad import Ad
+    from app.models.user import User
     from app import db
-    import uuid as _uuid
 
-    # Business rule: any logged-in user may share an approved batch, but the
-    # reward must always be credited to the authenticated sharer, never to a
-    # client-controlled referrer value. The `r` query parameter is informational
-    # only for legacy links and must be ignored because it can be forged.
-    referrer_whatsapp = current_user.whatsapp
-    if not referrer_whatsapp:
-        flash('Ou dwe konekte pou partage batch sa a.', 'error')
-        return redirect(url_for('auth.login'))
+    referrer_id = _read_batch_referral_token(request.args.get('ref'), batch_id)
+    if referrer_id is None:
+        flash('Lyen pataj sa a pa valab.', 'warning')
+        return redirect(url_for('main.index'))
 
-    referrer_whatsapp = referrer_whatsapp.strip()
+    try:
+        referrer_user = db.session.get(User, int(referrer_id))
+    except (TypeError, ValueError):
+        referrer_user = None
+    if not referrer_user or not referrer_user.is_active or not referrer_user.whatsapp:
+        flash('Kont moun ki pataje lyen sa a pa disponib.', 'warning')
+        return redirect(url_for('main.index'))
 
     batch = Batch.query.filter_by(batch_id=batch_id).first()
     if not batch:
         flash('Gwoup piblisite sa pa jwenn.', 'error')
         return redirect(url_for('main.index'))
 
-    batch_ads = None
-    try:
-        from app.models.batch_ad import BatchAd
-        batch_ads = BatchAd.query.filter_by(batch_id=batch_id).all()
-    except Exception:
-        batch_ads = []
-
-    if current_user.whatsapp != referrer_whatsapp:
-        pass
-
-    try:
-        today = date.today().isoformat()
-        dedup_key = f"{current_user.whatsapp}|{batch_id}|{today}"
-        from app.models.user_gkach import UserGkach
-        referrer_account = UserGkach.query.filter_by(user_whatsapp=referrer_whatsapp).first()
-        if not referrer_account:
-            referrer_account = UserGkach(user_whatsapp=referrer_whatsapp, gkach_balance=0)
-            db.session.add(referrer_account)
-            db.session.flush()
-
-        # Resolve real client IP and signed device/browser id (anti-fraud limits)
-        clicker_ip = _get_client_ip()
-        device_id = _get_or_create_device_id()
-
-        GkachService.track_batch_click(
-            batch_id,
-            referrer_whatsapp,
-            clicker_whatsapp=current_user.whatsapp,
-            dedup_key=dedup_key,
-            clicker_ip=clicker_ip,
-            clicker_device=device_id,
+    ads = (
+        Ad.query.join(BatchAd, BatchAd.ad_id == Ad.ad_id)
+        .filter(
+            BatchAd.batch_id == batch_id,
+            Ad.admin_status == 'approved',
+            Ad.deleted_at.is_(None),
         )
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error tracking click: {e}")
-
-    resp = make_response(redirect(url_for('main.index', batch=batch_id)))
-    # Persist the signed device cookie (10 years) to enforce the per-device limit
-    resp.set_cookie(
-        'g2y_device',
-        _get_or_create_device_id(),
-        max_age=60 * 60 * 24 * 365 * 10,
-        httponly=True,
-        samesite='Lax',
-        secure=request.is_secure,
+        .order_by(BatchAd.position.asc(), BatchAd.id.asc())
+        .all()
     )
-    return resp
+    if not ads:
+        flash('Gwoup sa a pa gen piblisite apwouve pou montre.', 'warning')
+        return redirect(url_for('main.index'))
 
+    device_id = None
+    if current_user.is_authenticated and current_user.whatsapp:
+        try:
+            device_id = _get_or_create_device_id()
+            tracked = GkachService.track_batch_click(
+                batch_id,
+                referrer_user.whatsapp,
+                clicker_whatsapp=current_user.whatsapp,
+                dedup_key=f'{current_user.whatsapp}|{batch_id}|{date.today().isoformat()}',
+                clicker_ip=_get_client_ip(),
+                clicker_device=device_id,
+            )
+            if not tracked:
+                flash('Klik sa a pa konte oswa li te deja anrejistre.', 'info')
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Error tracking signed batch referral')
+            flash('Nou pa kapab anrejistre klik la kounye a.', 'error')
+    elif current_user.is_authenticated:
+        flash('Nimewo WhatsApp pa disponib pou konte klik sa a.', 'warning')
+
+    response = make_response(render_template(
+        'batch.html',
+        batch=batch,
+        ads=ads,
+        login_for_rewards_url=(
+            url_for('auth.login', next=request.full_path)
+            if not current_user.is_authenticated else None
+        ),
+    ))
+    if device_id:
+        response.set_cookie(
+            'g2y_device',
+            _sign_device_id(device_id),
+            max_age=60 * 60 * 24 * 365,
+            httponly=True,
+            samesite='Lax',
+            secure=request.is_secure,
+        )
+    return response

@@ -1,0 +1,119 @@
+<style>
+    .g2y-designer-promo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        width: min(1120px, calc(100% - 32px));
+        margin: 24px auto 92px;
+        padding: 16px 20px;
+        border: 1px solid #e9dfc6;
+        border-left: 4px solid #d3a735;
+        border-radius: 14px;
+        background: linear-gradient(115deg, #fffdf7, #f8fafc);
+        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+        color: #334155;
+        font-family: inherit;
+    }
+
+    .g2y-designer-promo__copy {
+        display: grid;
+        gap: 4px;
+    }
+
+    .g2y-designer-promo__label {
+        color: #876718;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .g2y-designer-promo__message {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.45;
+    }
+
+    .g2y-designer-promo__link {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: #12346b;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background-color 160ms ease, transform 160ms ease;
+    }
+
+    .g2y-designer-promo__link:hover {
+        background: #0b2858;
+        transform: translateY(-1px);
+    }
+
+    .g2y-designer-promo__link:focus-visible {
+        outline: 3px solid #d3a735;
+        outline-offset: 3px;
+    }
+
+    .g2y-designer-promo__whatsapp {
+        color: #a9d8bd;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 560px) {
+        .g2y-designer-promo {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 12px;
+            width: calc(100% - 24px);
+            margin-top: 20px;
+            padding: 15px;
+        }
+
+        .g2y-designer-promo__link {
+            width: 100%;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .g2y-designer-promo {
+            margin-bottom: 24px;
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .g2y-designer-promo {
+            border-color: #3b4658;
+            border-left-color: #d3a735;
+            background: linear-gradient(115deg, #1d2735, #172033);
+            color: #e2e8f0;
+        }
+
+        .g2y-designer-promo__label {
+            color: #e6c46f;
+        }
+    }
+</style>
+
+<footer class="g2y-designer-promo" aria-label="Publicité du concepteur">
+    <div class="g2y-designer-promo__copy">
+        <span class="g2y-designer-promo__label">Publicité du concepteur</span>
+        <p class="g2y-designer-promo__message">Une question ou un projet ? Échangez directement avec le concepteur.</p>
+    </div>
+    <a class="g2y-designer-promo__link"
+       href="https://wa.me/50948592888"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="Contacter le concepteur sur WhatsApp">
+        <span>Contacter le concepteur</span>
+        <span class="g2y-designer-promo__whatsapp" aria-hidden="true">WhatsApp ↗</span>
+    </a>
+</footer>

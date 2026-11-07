@@ -7,6 +7,7 @@ from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
 from app.utils.validators import validate_amount, validate_whatsapp, ValidationError
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 import uuid
 
 
@@ -235,7 +236,8 @@ class GkachService:
             pass
 
     @staticmethod
-    def add_balance(whatsapp, amount, description='', transaction_type='credit', _commit=True):
+    def add_balance(whatsapp, amount, description='', transaction_type='credit',
+                    _commit=True, transaction_id=None):
         """
         Add Gkach to account
         Thread-safe with database locking.
@@ -258,7 +260,7 @@ class GkachService:
         account.gkach_balance += amount
 
         transaction = GkachTransaction(
-            transaction_id=str(uuid.uuid4()),
+            transaction_id=transaction_id or str(uuid.uuid4()),
             user_whatsapp=whatsapp,
             transaction_type=transaction_type,
             amount=amount,
@@ -770,8 +772,18 @@ class GkachService:
         from flask import current_app
         from app.models.batch import Batch
         from app.models.batch_click import BatchClick
+        from app.models.gkach_transaction import GkachTransaction
 
-        batch = Batch.query.filter_by(batch_id=batch_id).first()
+        if not batch_id or not referrer_whatsapp or not clicker_whatsapp:
+            return False
+
+        referrer_whatsapp = str(referrer_whatsapp).strip()
+        clicker_whatsapp = str(clicker_whatsapp).strip()
+        if not referrer_whatsapp or not clicker_whatsapp:
+            return False
+
+        # Serialize rewards per batch on databases that support row locks.
+        batch = Batch.query.filter_by(batch_id=batch_id).with_for_update().first()
         if not batch:
             return False
 
@@ -780,7 +792,7 @@ class GkachService:
             return False
 
         # Guard: the clicker must not be the referrer (no self-reward)
-        if clicker_whatsapp and referrer_whatsapp and str(clicker_whatsapp).strip() == str(referrer_whatsapp).strip():
+        if clicker_whatsapp == referrer_whatsapp:
             return False
 
         # Determine unique click count for this (batch, referrer)
@@ -789,66 +801,105 @@ class GkachService:
             referrer_whatsapp=referrer_whatsapp,
         )
 
-        if clicker_whatsapp:
-            # Only count this click if this exact person has NOT already clicked
-            # this batch for this referrer (uniqueness per person).
-            already_clicked = query.filter_by(
-                clicker_whatsapp=clicker_whatsapp
-            ).first()
-            if already_clicked:
+        # Only count this click if this exact person has NOT already clicked.
+        if query.filter_by(clicker_whatsapp=clicker_whatsapp).first():
+            return False
+
+        # Anti-fraud IP limit: same IP cannot feed unlimited unique clickers.
+        if clicker_ip:
+            max_per_ip = int(current_app.config.get('GKACH_MAX_CLICKS_PER_IP', 3) or 3)
+            ip_clicks = BatchClick.query.filter_by(
+                batch_id=batch_id,
+                referrer_whatsapp=referrer_whatsapp,
+                clicker_ip=clicker_ip,
+            ).count()
+            if ip_clicks >= max_per_ip:
                 return False
 
-            # Anti-fraud IP limit: same IP cannot feed unlimited unique clickers
-            if clicker_ip:
-                max_per_ip = int(current_app.config.get('GKACH_MAX_CLICKS_PER_IP', 3) or 3)
-                ip_clicks = BatchClick.query.filter_by(
-                    batch_id=batch_id,
-                    referrer_whatsapp=referrer_whatsapp,
-                    clicker_ip=clicker_ip,
-                ).count()
-                if ip_clicks >= max_per_ip:
-                    return False
+        # Anti-fraud device limit: one browser cannot feed multiple accounts.
+        if clicker_device:
+            max_per_device = int(current_app.config.get('GKACH_MAX_CLICKS_PER_DEVICE', 1) or 1)
+            device_clicks = BatchClick.query.filter_by(
+                batch_id=batch_id,
+                referrer_whatsapp=referrer_whatsapp,
+                clicker_device=clicker_device,
+            ).count()
+            if device_clicks >= max_per_device:
+                return False
 
-            # Anti-fraud device limit: same browser/device cannot feed multiple icons
-            if clicker_device:
-                max_per_device = int(current_app.config.get('GKACH_MAX_CLICKS_PER_DEVICE', 1) or 1)
-                device_clicks = BatchClick.query.filter_by(
-                    batch_id=batch_id,
-                    referrer_whatsapp=referrer_whatsapp,
-                    clicker_device=clicker_device,
-                ).count()
-                if device_clicks >= max_per_device:
-                    return False
-
-            click = BatchClick(
+        click = BatchClick(
+            batch_id=batch_id,
+            referrer_whatsapp=referrer_whatsapp,
+            clicker_whatsapp=clicker_whatsapp,
+            clicker_ip=clicker_ip,
+            clicker_device=clicker_device,
+        )
+        db.session.add(click)
+        try:
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            if BatchClick.query.filter_by(
                 batch_id=batch_id,
                 referrer_whatsapp=referrer_whatsapp,
                 clicker_whatsapp=clicker_whatsapp,
-                clicker_ip=clicker_ip,
-                clicker_device=clicker_device,
-            )
-            db.session.add(click)
-            # db.session.flush() to make the new row visible to the count below
-            db.session.flush()
+            ).first():
+                return False
+            raise
 
         # Total UNIQUE clicks earned by this referrer on this batch
         unique_clicks = query.count()
 
-        batch.share_count = unique_clicks
+        batch.share_count = BatchClick.query.filter_by(batch_id=batch_id).count()
 
-        # Auto-credit by Admin/platform: 10 Gkach every 100 UNIQUE clicks
-        required = int(current_app.config.get('GKACH_CLICKS_REQUIRED', 100) or 100)
-        reward = int(current_app.config.get('GKACH_REWARD_AMOUNT', 10) or 10)
+        # Auto-credit by Admin/platform at each configured click milestone.
+        required = max(1, int(current_app.config.get('GKACH_CLICKS_REQUIRED', 100) or 100))
+        reward = max(1, int(current_app.config.get('GKACH_REWARD_AMOUNT', 10) or 10))
+        reward_transaction_id = None
 
         if unique_clicks > 0 and unique_clicks % required == 0:
-            GkachService.add_balance(
-                referrer_whatsapp,
-                reward,
-                f"Rekonpans Admin: +{reward} Gkach pou {required} klik inik sou batch {batch_id}",
-                'reward'
-            )
-            batch.click_rewards += reward
+            milestone = unique_clicks // required
+            reward_transaction_id = str(uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                f'g2y-batch-reward:{batch_id}:{referrer_whatsapp}:{required}:{milestone}',
+            ))
+            legacy_rewards = GkachTransaction.query.filter_by(
+                user_whatsapp=referrer_whatsapp,
+                transaction_type='reward',
+                status='completed',
+            ).filter(
+                GkachTransaction.description.like(f'%batch {batch_id}')
+            ).count()
+            already_paid = GkachTransaction.query.filter_by(
+                transaction_id=reward_transaction_id,
+            ).first()
+            if milestone > legacy_rewards and not already_paid:
+                GkachService.add_balance(
+                    referrer_whatsapp,
+                    reward,
+                    f"Rekonpans Admin: +{reward} Gkach pou {required} klik inik sou batch {batch_id}",
+                    'reward',
+                    _commit=False,
+                    transaction_id=reward_transaction_id,
+                )
+                batch.click_rewards = (batch.click_rewards or 0) + reward
 
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            if BatchClick.query.filter_by(
+                batch_id=batch_id,
+                referrer_whatsapp=referrer_whatsapp,
+                clicker_whatsapp=clicker_whatsapp,
+            ).first():
+                return False
+            if reward_transaction_id and GkachTransaction.query.filter_by(
+                transaction_id=reward_transaction_id,
+            ).first():
+                return False
+            raise
+
+        if reward_transaction_id:
+            GkachService._invalidate_balance_cache(referrer_whatsapp)
         return True
-

@@ -13,19 +13,35 @@
     {% endfor %}
     <meta property="og:url" content="{{ og.url }}">
     <meta property="og:type" content="website">
+    {% elif ads %}
+    <meta property="og:title" content="{{ ads[0].title }}">
+    <meta property="og:description" content="{{ ads[0].description[:200] }}">
+    {% if ads[0].get_first_image() %}
+    <meta property="og:image" content="{{ url_for('static', filename='uploads/' + ads[0].get_first_image(), _external=True) }}">
+    {% endif %}
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:type" content="website">
     {% endif %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}
 
 {% block content %}
 <div class="container">
+    {% if login_for_rewards_url %}
+    <div class="alert alert-info" role="status">
+        Konekte sou Glory2YahPub pou klik inik ou a ka konte pou rekonpans moun ki pataje lyen sa a.
+        <a href="{{ login_for_rewards_url }}">Konekte pou kontinye</a>
+    </div>
+    {% endif %}
     {% if ads %}
     <div class="carousel-container">
         <div class="carousel">
             {% for slide in ads | batch(3) %}
             <div class="carousel-slide">
                 {% for ad in slide %}
-                <div class="whatsapp-ad-card" onclick="showAdModal('{{ ad.ad_id }}', '{{ ad.images }}', '{{ ad.video }}', '{{ ad.media_type }}', '{{ ad.title }}', '{{ ad.description }}', '{{ ad.price_gkach }}')">
+                <div class="whatsapp-ad-card"
+                     data-ad='{{ {"ad_id": ad.ad_id, "images": ad.images or "", "video": ad.video or "", "media_type": ad.media_type, "title": ad.title, "description": ad.description, "price_gkach": ad.price_gkach}|tojson }}'
+                     onclick="showAdModal(this)">
                     <div class="ad-image">
                         {% if ad.media_type == 'video' %}
                         <video controls loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
@@ -51,8 +67,8 @@
                         <div class="ad-actions">
                             {% if ad.ad_type == 'sell' %}
                             <p><strong>Pri: {{ ad.price_gkach }} Gkach</strong></p>
-                            <a href="{{ url_for('shopping_cart', ad_id=ad.ad_id) }}" class="btn btn-blue btn-icon" onclick="event.stopPropagation()"><i class="fas fa-shopping-cart"></i></a>
-                            <a href="{{ url_for('submit_ad') }}" class="btn btn-gold btn-icon">
+                            <a href="{{ url_for('cart.add', product_id=ad.ad_id) }}" class="btn btn-blue btn-icon" onclick="event.stopPropagation()"><i class="fas fa-shopping-cart"></i></a>
+                            <a href="{{ url_for('main.submit_ad') }}" class="btn btn-gold btn-icon">
                                 <i class="fas fa-bullhorn"></i>
                             </a>
                     {% else %}
@@ -61,7 +77,7 @@
                        class="btn btn-whatsapp btn-icon" target="_blank">
                         <i class="fab fa-whatsapp"></i>
                     </a>
-                    <a href="{{ url_for('submit_ad') }}" class="btn btn-gold btn-icon">
+                    <a href="{{ url_for('main.submit_ad') }}" class="btn btn-gold btn-icon">
                         <i class="fas fa-bullhorn"></i>
                     </a>
                     {% endif %}
@@ -393,17 +409,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function shareBatch() {
-    const batchId = "{{ batch.batch_id }}";
-
     const shareUrl = window.location.href;
     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-    window.open(facebookShareUrl, '_blank');
-
-    fetch(`/api/batch/${batchId}/share`, { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-        });
+    window.open(facebookShareUrl, '_blank', 'noopener,noreferrer');
 }
 
 function copyLink() {
@@ -416,31 +424,42 @@ function copyLink() {
     });
 }
 
-function showAdModal(adId, images, video, mediaType, title, description, price) {
+function showAdModal(card) {
+    const ad = JSON.parse(card.dataset.ad);
     const modal = document.getElementById('ad-modal');
     const modalImages = document.getElementById('modal-images');
     const modalDescription = document.getElementById('modal-description');
+    const uploadsUrl = '{{ url_for("static", filename="uploads/") }}';
 
     modalImages.innerHTML = '';
-    if (mediaType === 'video') {
+    if (ad.media_type === 'video' && ad.video) {
         const videoElement = document.createElement('video');
-        videoElement.src = '{{ url_for("static", filename="uploads/") }}' + video;
+        videoElement.src = uploadsUrl + encodeURIComponent(ad.video);
         videoElement.controls = true;
         videoElement.autoplay = true;
         videoElement.style.maxWidth = '100%';
         videoElement.style.height = 'auto';
         modalImages.appendChild(videoElement);
     } else {
-        const imageList = images.split(',');
+        const imageList = String(ad.images || '').split(',').map(img => img.trim()).filter(Boolean);
         imageList.forEach(img => {
             const imgElement = document.createElement('img');
-            imgElement.src = '{{ url_for("static", filename="uploads/") }}' + img;
+            imgElement.src = uploadsUrl + encodeURIComponent(img);
             imgElement.alt = 'Piblisite Imaj';
             modalImages.appendChild(imgElement);
         });
     }
 
-    modalDescription.innerHTML = '<h3>' + title + '</h3><p>' + description + '</p><p><strong>Pri: ' + price + ' Gkach</strong></p>';
+    modalDescription.replaceChildren();
+    const title = document.createElement('h3');
+    title.textContent = ad.title || '';
+    const description = document.createElement('p');
+    description.textContent = ad.description || '';
+    const price = document.createElement('p');
+    const priceLabel = document.createElement('strong');
+    priceLabel.textContent = 'Pri: ' + (ad.price_gkach || 0) + ' Gkach';
+    price.appendChild(priceLabel);
+    modalDescription.append(title, description, price);
     modal.style.display = 'block';
 }
 

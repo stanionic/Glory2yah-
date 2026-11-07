@@ -286,6 +286,11 @@ class Config:
         # Persistent paths under <instance>/ (Render persistent disk mount)
         self.INSTANCE_DIR = inst_dir
         self.ON_RENDER = on_render
+        self.TRUSTED_PROXY_COUNT = int(
+            os.environ.get('TRUSTED_PROXY_COUNT', '1' if on_render else '0')
+        )
+        if self.TRUSTED_PROXY_COUNT < 0:
+            raise ValueError('TRUSTED_PROXY_COUNT must be zero or greater')
         # Canonical public origin - used for OG tags, share links and WhatsApp
         # message bodies. Left EMPTY when unset on purpose: app.utils.site_url
         # then falls back to the live request host (localhost on a dev box)
