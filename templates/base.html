@@ -134,8 +134,7 @@
             </div>
             {#- Services are data-driven (React .map style): a list of "props"
                 objects rendered through the service_item component. The admin
-                tile is appended only for authenticated admins. Output markup is
-                identical to the previous hard-coded tiles (same classes). -#}
+                tile is only visible to active, authenticated admins. -#}
             {%- set _services = [
                 {'href': '/gadematch',     'icon': '📺', 'name': 'GADE TV',       'desc': 'TV direk'},
                 {'href': '/achte_gkach',   'icon': '🪙', 'name': 'GKach',         'desc': 'Achte Gkach'},
@@ -150,7 +149,7 @@
                 {'href': '/jere-biznis',   'icon': '🏢', 'name': 'Jere Biznis',   'desc': 'Jesyon enstitisyon'},
                 {'href': '/mennenm',       'icon': '🚗', 'name': 'Mennenm',       'desc': 'Jwenn chofè'},
             ] -%}
-            {%- if current_user.is_authenticated and current_user.is_admin %}
+            {%- if current_user.is_authenticated and current_user.is_active and current_user.is_admin %}
                 {%- set _services = _services + [
                     {'href': '/admin/login', 'icon': '⚙️', 'name': 'Admin', 'desc': 'Jesyon'}
                 ] -%}

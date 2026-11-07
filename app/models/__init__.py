@@ -28,6 +28,7 @@ from app.models.charity import CharityDonation, CharityCause
 from app.models.notification import (
     Notification, PushSubscription, NotificationPreference,
 )
+from app.models.otp import OtpCode
 
 try:
     from app.models.elearning import (
@@ -88,6 +89,7 @@ __all__ = [
     'KonferansPlatformConnection',
     'KonferansSubscription',
     'KonferansPayment',
+    'OtpCode',
 ]
 
 if _ELEARNING_OK:

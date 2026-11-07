@@ -1031,18 +1031,26 @@ def register_socketio_handlers(socketio):
         from flask_socketio import emit
         data = data or {}
         token = (data.get('token') or '').strip()
-        if not token or not _socket_owner(data.get('room_id'), request.sid):
+        room_id = data.get('room_id')
+        if not token or not room_id or not _socket_owner(room_id, request.sid):
             return
         grant = _grant_lookup(token)
         if not grant:
             emit('dl_error', {'message': 'Otorizasyon telechajman an pa valab ankò.'},
                  room=request.sid)
             return
+        if grant.get('room_id') != room_id:
+            emit('dl_error', {'message': 'Otorizasyon telechajman an pa valab pou sal sa a.'},
+                 room=request.sid)
+            return
 
         payload = data.get('data')
         if not isinstance(payload, (bytes, bytearray)):
             return
-        seq = int(data.get('seq') or 0)
+        try:
+            seq = int(data.get('seq') or 0)
+        except (TypeError, ValueError):
+            return
         if seq < 0 or grant['chunks_relayed'] >= grant['max_chunks']:
             _grant_revoke(token)
             emit('dl_error', {'message': 'Transfè a depase limit.'}, room=grant['participant_sid'])
@@ -1095,26 +1103,39 @@ def register_socketio_handlers(socketio):
         grant = _grant_lookup(token)
         if not grant:
             return
-        requester = data.get('by') or 'participant'
+        is_owner = _socket_owner(grant.get('room_id'), request.sid)
+        is_participant = grant.get('participant_sid') == request.sid
+        if not is_owner and not is_participant:
+            return
+
+        # Never trust a client-supplied "by" role: only the granted participant
+        # or the authenticated owner socket may revoke this transfer.
+        requester = 'owner' if is_owner else 'participant'
         _grant_revoke(token)
         emit('dl_cancelled', {
             'message': 'Telechajman an anile.',
             'by': requester,
-        }, room=(grant['participant_sid'] if requester == 'owner' else request.sid))
+        }, room=(grant['participant_sid'] if is_owner else request.sid))
 
     @socketio.on('sending_signal')
     def handle_sending_signal(data):
-        """Handle WebRTC signaling (offer/answer/candidate)"""
+        """Relay WebRTC signaling only between members of the same room."""
         from flask_socketio import emit
+        data = data or {}
+        room_id = data.get('room_id')
         user_to_signal = data.get('user_to_signal')
         signal = data.get('signal')
-        
-        if user_to_signal and signal:
-            emit('user_joined_signal', {
-                'signal': signal,
-                'caller_id': request.sid,
-                'user_name': room_participants.get(data.get('room_id'), {}).get(request.sid, 'Unknown')
-            }, room=user_to_signal)
+
+        sender = _socket_member(room_id, request.sid)
+        recipient = _socket_member(room_id, user_to_signal)
+        if not room_id or not signal or not sender or not recipient or user_to_signal == request.sid:
+            return
+
+        emit('user_joined_signal', {
+            'signal': signal,
+            'caller_id': request.sid,
+            'user_name': sender.get('user_name', 'Unknown'),
+        }, room=user_to_signal)
 
     @socketio.on('chat_message')
     def handle_chat_message(data):
@@ -1398,23 +1419,23 @@ def register_socketio_handlers(socketio):
         room_id = data.get('room_id')
         room_name = (data.get('room_name') or '').strip()
 
-        if not room_id or not room_name:
+        if not room_id or not room_name or not _socket_owner(room_id, request.sid):
             return
 
-        # Load room and validate ownership from the authenticated socket identity.
+        # Persist only when the owned room still exists and is active.
         room = KonferansRoom.query.filter_by(room_id=room_id, is_active=True).first()
-        if room and _socket_owner(room_id, request.sid):
-            try:
-                if len(room_name) > 120:
-                    room_name = room_name[:120]
-                room.room_name = room_name
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-        elif not _socket_member(room_id, request.sid):
+        if not room:
+            return
+        try:
+            if len(room_name) > 120:
+                room_name = room_name[:120]
+            room.room_name = room_name
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
             return
 
-        # Broadcast to all participants in the room (even if persist skipped, reflect in-session)
+        # Broadcast the persisted name to all participants in the room.
         emit('room_name_changed', {
             'room_id': room_id,
             'room_name': room_name
@@ -1428,7 +1449,7 @@ def register_socketio_handlers(socketio):
         room_id = data.get('room_id')
         stroke = data.get('stroke')
 
-        if not room_id or not stroke:
+        if not room_id or not stroke or not _socket_member(room_id, request.sid):
             return
 
         if room_id not in room_whiteboard:
@@ -1447,7 +1468,7 @@ def register_socketio_handlers(socketio):
         from flask_socketio import emit
         room_id = data.get('room_id')
 
-        if not room_id:
+        if not room_id or not _socket_owner(room_id, request.sid):
             return
 
         if room_id in room_whiteboard:
@@ -1461,7 +1482,8 @@ def register_socketio_handlers(socketio):
         from flask_socketio import emit
         room_id = data.get('room_id')
 
-        if not room_id or room_id not in room_whiteboard:
+        if (not room_id or room_id not in room_whiteboard
+                or not _socket_owner(room_id, request.sid)):
             return
 
         if room_whiteboard[room_id]['strokes']:
@@ -1558,7 +1580,8 @@ def register_socketio_handlers(socketio):
         question = data.get('question')
         options = data.get('options')
 
-        if not room_id or not question or not options or len(options) < 2:
+        if (not room_id or not question or not options or len(options) < 2
+                or not _socket_owner(room_id, request.sid)):
             return
 
         if room_id not in room_polls:
@@ -1623,7 +1646,7 @@ def register_socketio_handlers(socketio):
         room_id = data.get('room_id')
         poll_id = data.get('poll_id')
 
-        if not room_id or not poll_id:
+        if not room_id or not poll_id or not _socket_owner(room_id, request.sid):
             return
 
         if room_id not in room_polls or poll_id not in room_polls[room_id]:
@@ -1663,7 +1686,8 @@ def register_socketio_handlers(socketio):
         """Handle lower hand"""
         from flask_socketio import emit
         room_id = data.get('room_id')
-        user_name = data.get('user_name') or room_participants.get(room_id, {}).get(request.sid)
+        identity = _socket_member(room_id, request.sid)
+        user_name = identity.get('user_name') if identity else None
 
         if not room_id or not user_name:
             return
@@ -1684,7 +1708,7 @@ def register_socketio_handlers(socketio):
         room_id = data.get('room_id')
         rooms = data.get('rooms', [])
 
-        if not room_id or not rooms:
+        if not room_id or not rooms or not _socket_owner(room_id, request.sid):
             return
 
         if room_id not in room_breakouts:

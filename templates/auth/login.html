@@ -349,6 +349,87 @@
     .login-card, .login-spinner { animation: none; }
     *, *::before, *::after { scroll-behavior: auto !important; }
 }
+
+/* --- OTP login (passwordless companion to the password form) --- */
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 18px;
+    color: #9aa5b8;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+.login-divider::before, .login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e7ebf2;
+}
+
+.login-otp-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 50px;
+    padding: 13px 16px;
+    border: 1px solid #d6dfd6;
+    border-radius: 5px;
+    background: #fff;
+    color: var(--login-ink);
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.login-otp-toggle:hover { background: #f1f5fb; border-color: #4a6fc7; transform: translateY(-1px); }
+.login-otp-toggle:active { transform: translateY(0); }
+
+.login-otp-panel { display: none; }
+.login-otp-panel.open { display: block; animation: loginEnter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+.login-otp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.login-otp-head h3 { margin: 0; color: #1c2924; font-size: 17px; }
+
+.login-otp-back {
+    padding: 6px 10px;
+    border: 1px solid #e7ebf2;
+    border-radius: 5px;
+    background: #fff;
+    color: #657188;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.login-otp-back:hover { background: #f1f5fb; color: var(--login-ink); }
+
+.login-otp-code {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #d6dfd6;
+    border-radius: 5px;
+    background: #fbfcfa;
+    color: var(--login-ink);
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.4em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+}
+.login-otp-code:focus {
+    outline: none;
+    border-color: #4a6fc7;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,35,102,0.12);
+}
+.login-otp-code::placeholder { color: #cbd3dd; font-weight: 400; letter-spacing: 0.3em; }
+
+.login-otp-hint { margin: 9px 0 0; font-size: 12.5px; color: #7c8798; }
+.login-otp-target { color: var(--login-ink); font-weight: 700; }
 </style>
 
 <div class="login-page">
@@ -445,6 +526,46 @@
             </div>
         </form>
 
+        {# — Passwordless companion. Hidden by default so the password path is
+             untouched: if WhatsApp delivery is down, nobody loses access. #}
+        <div class="login-divider" id="loginOtpDivider"><span>OSWA</span></div>
+        <button type="button" class="login-otp-toggle" id="loginOtpToggle"
+                aria-expanded="false" aria-controls="loginOtpPanel">
+            <i class="fas fa-comment-dots" aria-hidden="true"></i>
+            <span>Konekte ak yon kòd WhatsApp</span>
+        </button>
+
+        <div class="login-otp-panel" id="loginOtpPanel" aria-live="polite">
+            <div class="login-otp-head">
+                <h3>Kòd 6 chif</h3>
+                <button type="button" class="login-otp-back" id="loginOtpBack">← Modpas</button>
+            </div>
+
+            <div id="loginOtpResult" class="login-flashes" aria-live="assertive"></div>
+
+            <div class="form-group">
+                <label for="otpIdentifier" class="form-label">WhatsApp oswa Pseudo</label>
+                <input id="otpIdentifier" type="text" class="form-input"
+                       placeholder="Antre WhatsApp ou oswa pseudo"
+                       autocomplete="username">
+            </div>
+
+            <div class="form-group" id="loginOtpCodeGroup" hidden>
+                <label for="otpCode" class="form-label">Kòd 6 chif la</label>
+                <input id="otpCode" type="text" class="login-otp-code"
+                       inputmode="numeric" autocomplete="one-time-code"
+                       pattern="[0-9]*" maxlength="6" placeholder="••••••">
+                <p class="login-otp-hint" id="loginOtpHint"></p>
+            </div>
+
+            <div class="form-group">
+                <button type="button" class="login-button" id="loginOtpAction">
+                    <span class="login-button-label">Voye kòd la sou WhatsApp</span>
+                    <span class="login-spinner" id="loginOtpSpinner" aria-hidden="true" hidden></span>
+                </button>
+            </div>
+        </div>
+
         <div class="register-prompt">
             <p class="register-prompt-text">
                 Ou pa gen kont?
@@ -490,6 +611,179 @@
         loginSubmit.setAttribute('aria-busy', 'true');
         buttonLabel.textContent = 'Ap konekte...';
         loginSpinner.hidden = false;
+    });
+})();
+</script>
+
+<script>
+(() => {
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const divider = document.getElementById('loginOtpDivider');
+    const toggle = document.getElementById('loginOtpToggle');
+    const panel = document.getElementById('loginOtpPanel');
+    const backBtn = document.getElementById('loginOtpBack');
+    const idInput = document.getElementById('otpIdentifier');
+    const codeGroup = document.getElementById('loginOtpCodeGroup');
+    const codeInput = document.getElementById('otpCode');
+    const hint = document.getElementById('loginOtpHint');
+    const action = document.getElementById('loginOtpAction');
+    const actionLabel = action.querySelector('.login-button-label');
+    const spinner = document.getElementById('loginOtpSpinner');
+    const resultBox = document.getElementById('loginOtpResult');
+
+    let step = 'request';
+
+    function toast(kind, message) {
+        resultBox.innerHTML = '';
+        if (!message) return;
+        const icons = { error: '❌', success: '✅', warning: '⚠️', info: 'ℹ️' };
+        const el = document.createElement('div');
+        el.className = 'login-flash login-flash-' + kind;
+        const icon = document.createElement('span');
+        icon.textContent = icons[kind] || 'ℹ️';
+        const text = document.createElement('span');
+        text.textContent = message;
+        el.appendChild(icon);
+        el.appendChild(text);
+        resultBox.appendChild(el);
+    }
+
+    function setBusy(busy, busyLabel) {
+        action.disabled = busy;
+        spinner.hidden = !busy;
+        if (busy) actionLabel.textContent = busyLabel;
+    }
+
+    function setStep(next) {
+        step = next;
+        if (next === 'request') {
+            codeGroup.hidden = true;
+            actionLabel.textContent = 'Voye kòd la sou WhatsApp';
+            idInput.readOnly = false;
+        } else {
+            codeGroup.hidden = false;
+            actionLabel.textContent = 'Konekte';
+            idInput.readOnly = true;
+            codeInput.focus();
+        }
+    }
+
+    function openPanel() {
+        divider.style.display = 'none';
+        toggle.style.display = 'none';
+        panel.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+        if (step === 'request') idInput.focus();
+    }
+
+    function closePanel() {
+        panel.classList.remove('open');
+        divider.style.display = '';
+        toggle.style.display = '';
+        toggle.setAttribute('aria-expanded', 'false');
+        resultBox.innerHTML = '';
+        setStep('request');
+        codeInput.value = '';
+        toggle.focus();
+    }
+
+    toggle.addEventListener('click', openPanel);
+    backBtn.addEventListener('click', closePanel);
+
+    codeInput.addEventListener('input', () => {
+        codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
+    });
+
+    async function post(url) {
+        const body = new FormData();
+        body.append('csrf_token', CSRF);
+        const res = await fetch(url, {
+            method: 'POST',
+            body,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        });
+        return res.json();
+    }
+
+    action.addEventListener('click', async () => {
+        const identifier = idInput.value.trim();
+
+        if (step === 'request') {
+            if (!identifier) {
+                toast('error', 'Tanpri antre WhatsApp ou oswa pseudo.');
+                idInput.focus();
+                return;
+            }
+            setBusy(true, 'Ap voye kòd la...');
+            try {
+                const body = new FormData();
+                body.append('csrf_token', CSRF);
+                body.append('identifier', identifier);
+                const res = await fetch('{{ url_for("auth.login_otp_request") }}', {
+                    method: 'POST',
+                    body,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                const data = await res.json();
+                if (!data.ok) {
+                    toast(data.status === 'cooldown' ? 'warning' : 'error', data.message);
+                } else {
+                    step = 'verify';
+                    codeGroup.hidden = false;
+                    actionLabel.textContent = 'Konekte';
+                    idInput.readOnly = true;
+                    hint.textContent = '';
+                    if (data.masked_phone) {
+                        hint.textContent = '';
+                        const span = document.createElement('span');
+                        span.textContent = 'Kòd la ale sou ' + data.masked_phone;
+                        hint.appendChild(span);
+                    }
+                    toast('info', data.message);
+                    codeInput.focus();
+                }
+            } catch (err) {
+                toast('error', 'Erè rezo. Tanpri eseye ankò.');
+            }
+            setBusy(false);
+            return;
+        }
+
+        const code = codeInput.value.trim();
+        if (code.length !== 6) {
+            toast('error', 'Tanpri antre kòd 6 chif la.');
+            codeInput.focus();
+            return;
+        }
+        setBusy(true, 'Ap verifye...');
+        try {
+            const body = new FormData();
+            body.append('csrf_token', CSRF);
+            body.append('code', code);
+            const res = await fetch('{{ url_for("auth.login_otp_verify") }}', {
+                method: 'POST',
+                body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            const data = await res.json();
+            if (data.ok) {
+                toast('success', data.message);
+                actionLabel.textContent = 'Konekte ✓';
+                setTimeout(() => { window.location.href = data.redirect || '/'; }, 600);
+                return;
+            }
+            toast('error', data.message);
+            if (typeof data.attempts_left === 'number' && data.attempts_left > 0) {
+                codeInput.value = '';
+                codeInput.focus();
+            }
+        } catch (err) {
+            toast('error', 'Erè rezo. Tanpri eseye ankò.');
+        }
+        setBusy(false);
     });
 })();
 </script>

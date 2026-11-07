@@ -30,6 +30,16 @@ socketio = SocketIO()
 redis_client = None
 
 
+def _safe_log_text(value):
+    """Convert log text to plain ASCII so Windows console encoding errors do not break startup."""
+    text = str(value)
+    try:
+        text.encode('cp1252')
+        return text
+    except UnicodeEncodeError:
+        return text.encode('ascii', 'replace').decode('ascii')
+
+
 def create_app(config_name=None):
     """Application factory pattern"""
     
@@ -527,6 +537,7 @@ def create_app(config_name=None):
         from app.models.notification import (
             Notification, PushSubscription, NotificationPreference,
         )
+        from app.models.otp import OtpCode
         try:
             from app.models.app_installation import AppInstallation  # PWA tracking model
         except ImportError:
@@ -1265,10 +1276,10 @@ def create_app(config_name=None):
                     'environment variable in the Render dashboard.'
                     % app.config.get('SECRET_KEY_SOURCE')
                 )
-            app.logger.warning(f'PERSISTENCE CANARY: {_disk_guard_note}')
+            app.logger.warning(_safe_log_text(f'PERSISTENCE CANARY: {_disk_guard_note}'))
         except Exception as _e_canary:
             try:
-                app.logger.warning(f'PERSISTENCE CANARY: skipped (non-fatal): {_e_canary!r}')
+                app.logger.warning(_safe_log_text(f'PERSISTENCE CANARY: skipped (non-fatal): {_e_canary!r}'))
             except Exception:
                 pass
 
@@ -1332,10 +1343,10 @@ def create_app(config_name=None):
             ]
             for bl in banner_lines:
                 try:
-                    app.logger.info(bl)
+                    app.logger.info(_safe_log_text(bl))
                 except Exception:
                     try:
-                        print(bl)
+                        print(_safe_log_text(bl))
                     except Exception:
                         pass
         except Exception as _e_pb_banner:
@@ -1379,11 +1390,140 @@ def create_app(config_name=None):
         #   - Existing admin passwords are NEVER overwritten
         #   - Pseudo/WhatsApp fields MAY be synchronized (non-critical)
         # =====================================================================
+        testing_admin_bootstrap_allowed = str(
+            _os.environ.get('ALLOW_TEST_ADMIN_BOOTSTRAP', '0')
+        ).strip().lower() in {'1', 'true', 'yes', 'on'}
+        testing_default_bootstrap_disabled = (
+            config_name == 'testing' and not testing_admin_bootstrap_allowed
+        )
         try:
             admin_phone    = _os.environ.get('ADMIN_WHATSAPP', '+50942882076')
             admin_password = _os.environ.get('ADMIN_PASSWORD', None)  # Changed: None instead of default
             admin_pseudo   = _os.environ.get('ADMIN_PSEUDO',   'Admin509')
             admin_name     = _os.environ.get('ADMIN_NAME',     'Glory2YahPub')
+
+            # In unit tests we intentionally do not seed the default admin user with
+            # the public WhatsApp number used by registration tests, otherwise the
+            # signup flow sees that number as already occupied and redirects to login.
+            # Only an explicit opt-in flag should create a bootstrap admin in test mode;
+            # .env defaults must not silently collide with the OTP signup test number.
+            if testing_default_bootstrap_disabled:
+                app.logger.info('Testing mode: skipping default admin bootstrap to avoid clashing with registration tests.')
+                admin_user = None
+            else:
+                admin_user = None
+                
+                # Search for existing admin: first by pseudo, then by phone, then any admin
+                if admin_pseudo:
+                    admin_user = User.query.filter(User.pseudo.ilike(admin_pseudo)).first()
+                if (not admin_user) and admin_phone:
+                    admin_user = User.query.filter_by(whatsapp=admin_phone).first()
+                if not admin_user:
+                    any_admin = User.query.filter_by(is_admin=True).first()
+                    if any_admin:
+                        admin_user = any_admin
+                
+                if not admin_user:
+                    # No admin exists → CREATE (password is REQUIRED)
+                    if not admin_password:
+                        # In development: use default; in production: REQUIRE env var
+                        if config_name == 'production':
+                            app.logger.error(
+                                "SECURITY: No admin exists and ADMIN_PASSWORD not set. "
+                                "In production, ADMIN_PASSWORD environment variable is REQUIRED."
+                            )
+                        else:
+                            # Development only: use default
+                            admin_password = 'StanGlory2YahPub1986'
+                            app.logger.warning(
+                                "Development mode: using default admin password. "
+                                "Set ADMIN_PASSWORD environment variable to override."
+                            )
+                    
+                    if admin_password:
+                        admin_user = User(
+                            whatsapp=admin_phone,
+                            pseudo=admin_pseudo,
+                            name=admin_name,
+                            auth_provider='whatsapp',
+                            is_active=True,
+                            is_admin=True
+                        )
+                        admin_user.set_password(admin_password)
+                        db.session.add(admin_user)
+                        db.session.flush()
+                        admin_gkach = UserGkach.query.filter_by(user_whatsapp=admin_user.whatsapp).first()
+                        if not admin_gkach:
+                            db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
+                        db.session.commit()
+                        app.logger.info(
+                            f"Admin user CREATED: pseudo={admin_pseudo!r} whatsapp={admin_phone!r} "
+                            f"(password set from {'ADMIN_PASSWORD env var' if _os.environ.get('ADMIN_PASSWORD') else 'development default'})"
+                        )
+                else:
+                    # Admin exists → SYNCHRONIZE non-critical fields only (NO password reset)
+                    changed = False
+                    if admin_user.is_admin is not True:
+                        admin_user.is_admin = True
+                        changed = True
+                    if admin_user.is_active is not True:
+                        admin_user.is_active = True
+                        changed = True
+                    if admin_phone and (admin_user.whatsapp != admin_phone):
+                        admin_user.whatsapp = admin_phone
+                        changed = True
+                    if admin_pseudo and (admin_user.pseudo != admin_pseudo):
+                        admin_user.pseudo = admin_pseudo
+                        changed = True
+                    if admin_name and (admin_user.name != admin_name):
+                        admin_user.name = admin_name
+                        changed = True
+                    # SECURITY FIX: Do NOT reset password on every boot
+                    # Password is only set during account creation, not synchronized on boot
+                    if admin_user.auth_provider != 'whatsapp':
+                        admin_user.auth_provider = 'whatsapp'
+                        changed = True
+                    # BREAK-GLASS admin password recovery (opt-in, DEFAULT OFF):
+                    #   The normal policy above NEVER overwrites an existing admin's
+                    #   password — which is secure, but means that if the password is
+                    #   ever lost (e.g. Render generated a random ADMIN_PASSWORD via
+                    #   `generateValue: true` that nobody recorded) the admin is locked
+                    #   out with no in-app way back in.
+                    #   Set ADMIN_PASSWORD_RESET=1 together with a known ADMIN_PASSWORD
+                    #   to force the admin password to that value on THIS boot. Use it
+                    #   once to regain access, change the password in-app, then set
+                    #   ADMIN_PASSWORD_RESET=0 (or remove it) and redeploy — the
+                    #   password then persists again and is never auto-reset.
+                    _pw_reset = str(_os.environ.get('ADMIN_PASSWORD_RESET', '')).strip().lower()
+                    if _pw_reset in ('1', 'true', 'yes', 'on') and admin_password:
+                        admin_user.set_password(admin_password)
+                        changed = True
+                        app.logger.warning(
+                            "Admin password FORCE-RESET from ADMIN_PASSWORD because "
+                            "ADMIN_PASSWORD_RESET is enabled. Set ADMIN_PASSWORD_RESET=0 "
+                            "after regaining access so the password is not reset again."
+                        )
+                    if changed:
+                        # Ensure UserGkach row exists (for old migrations)
+                        g = UserGkach.query.filter(
+                            (UserGkach.user_id == admin_user.id) |
+                            (UserGkach.user_whatsapp == admin_user.whatsapp)
+                        ).first()
+                        if not g:
+                            db.session.add(UserGkach(user_id=admin_user.id, user_whatsapp=admin_user.whatsapp, gkach_balance=0))
+                        db.session.commit()
+                        app.logger.info(
+                            f"Admin user SYNCHRONIZED: pseudo={admin_user.pseudo!r} "
+                            f"whatsapp={admin_user.whatsapp!r} is_admin={admin_user.is_admin} "
+                            f"(password NOT reset - preserved from previous boot)"
+                        )
+        except RuntimeError as _skip_admin_bootstrap:
+            if str(_skip_admin_bootstrap) != 'skip-default-admin-bootstrap':
+                raise
+        except Exception as e:
+            app.logger.warning(f"Could not process admin user setup: {e}")
+            db.session.rollback()
+
             admin_user = None
             
             # Search for existing admin: first by pseudo, then by phone, then any admin
@@ -1490,6 +1630,9 @@ def create_app(config_name=None):
                         f"whatsapp={admin_user.whatsapp!r} is_admin={admin_user.is_admin} "
                         f"(password NOT reset - preserved from previous boot)"
                     )
+        except RuntimeError as _skip_admin_bootstrap:
+            if str(_skip_admin_bootstrap) != 'skip-default-admin-bootstrap':
+                raise
         except Exception as e:
             app.logger.warning(f"Could not process admin user setup: {e}")
             db.session.rollback()
@@ -2260,6 +2403,29 @@ def register_template_filters(app):
         return dict(url_for=url_for_with_fallback)
 
 
+class _AsciiSafeStreamHandler(logging.StreamHandler):
+    """Avoid Windows cp1252 unicode log crashes while preserving message content."""
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            stream = self.stream
+            if stream is None:
+                return
+            safe = _safe_log_text(msg)
+            try:
+                if stream.encoding:
+                    safe.encode(stream.encoding)
+            except Exception:
+                safe = _safe_log_text(msg)
+            stream.write(safe + self.terminator)
+            self.flush()
+        except RecursionError:
+            raise
+        except Exception:
+            self.handleError(record)
+
+
 def setup_logging(app):
     """Setup application logging — persistent on Render, logs land on the persistent
     instance/ disk so they survive deploys. Use app.config['LOG_DIR']."""
@@ -2271,8 +2437,14 @@ def setup_logging(app):
         file_handler = logging.FileHandler(os.path.join(log_dir, 'glory2yahpub.log'))
         file_handler.setLevel(log_level)
         app.logger.addHandler(file_handler)
+
+        stream_handler = _AsciiSafeStreamHandler()
+        stream_handler.setLevel(log_level)
+        stream_handler.setFormatter(logging.Formatter('%(levelname)s in %(module)s: %(message)s'))
+        app.logger.addHandler(stream_handler)
         app.logger.setLevel(log_level)
-    except Exception as e:
+        app.logger.propagate = False
+    except Exception:
         # If file logging fails, just use stdout
         pass
 

@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}Verifye Kont - Glory2YahPub{% endblock %}
+
+{% block content %}
+<style>
+.verify-page {
+    --vf-ink: #002366;
+    --vf-accent: #FFD700;
+    --vf-paper: #f7f9fc;
+    min-height: calc(100dvh - var(--g2y-header-height, 60px) - var(--g2y-bottom-nav-height, 70px));
+    background-color: var(--vf-paper);
+    background-image: linear-gradient(rgba(0,35,102,0.035) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,35,102,0.035) 1px, transparent 1px);
+    background-size: 36px 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 32px 20px 96px;
+}
+
+.verify-card {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.88fr) minmax(360px, 1.12fr);
+    background: #fff;
+    border: 1px solid #d9e1ed;
+    border-radius: 8px;
+    box-shadow: 0 20px 54px rgba(23, 48, 38, 0.12);
+    width: 100%;
+    max-width: 940px;
+    overflow: hidden;
+    animation: verifyEnter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes verifyEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.verify-header {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100%;
+    padding: 52px 42px;
+    overflow: hidden;
+    color: #fff;
+    background: var(--vf-ink);
+}
+
+.verify-header::after {
+    position: absolute;
+    right: -66px;
+    bottom: -74px;
+    width: 210px;
+    height: 210px;
+    border: 1px solid rgba(209,237,120,0.32);
+    border-radius: 50%;
+    box-shadow: 0 0 0 22px rgba(209,237,120,0.04), 0 0 0 46px rgba(209,237,120,0.035);
+    content: "";
+    pointer-events: none;
+}
+
+.verify-kicker,
+.verify-form-kicker {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.verify-kicker { color: var(--vf-accent); }
+
+.verify-logo {
+    width: 54px;
+    height: 54px;
+    margin: 25px 0 24px;
+    background: var(--vf-accent);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--vf-ink);
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.verify-title {
+    max-width: 290px;
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 750;
+    line-height: 1.1;
+}
+
+.verify-subtitle {
+    max-width: 290px;
+    margin: 0;
+    color: rgba(255,255,255,0.76);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.verify-steps {
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+    color: rgba(255,255,255,0.72);
+    font-size: 13px;
+    line-height: 1.9;
+}
+
+.verify-steps li { display: flex; gap: 9px; align-items: baseline; }
+.verify-steps b { color: var(--vf-accent); font-weight: 800; }
+
+.verify-form-panel { min-width: 0; padding: 48px 54px 38px; }
+.verify-form-heading { margin-bottom: 26px; }
+.verify-form-kicker { color: #4a6fc7; }
+
+.verify-form-title {
+    margin: 9px 0 6px;
+    color: #1c2924;
+    font-size: 27px;
+    line-height: 1.15;
+}
+
+.verify-form-description { margin: 0; color: #68736d; font-size: 14px; }
+.verify-form-description strong { color: var(--vf-ink); }
+
+.verify-flashes { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+.verify-flash {
+    padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.4;
+    display: flex; gap: 10px; align-items: flex-start; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.verify-flash-error   { background: #fdecea; color: #7a2722; border: 1px solid #f9c2bd; }
+.verify-flash-success { background: #eafaf1; color: #175e36; border: 1px solid #b9e6cc; }
+.verify-flash-warning { background: #fff8e1; color: #856404; border: 1px solid #ffe08a; }
+.verify-flash-info    { background: #e9f4ff; color: #114d84; border: 1px solid #c2defd; }
+
+.verify-code-input {
+    width: 100%;
+    padding: 16px 18px;
+    border: 1px solid #d6dfd6;
+    border-radius: 6px;
+    background: #fbfcfa;
+    color: var(--vf-ink);
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 0.42em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    box-sizing: border-box;
+}
+
+.verify-code-input:focus {
+    outline: none;
+    border-color: #4a6fc7;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,35,102,0.12);
+}
+
+.verify-code-input::placeholder { color: #cbd3dd; font-weight: 400; letter-spacing: 0.3em; }
+
+.verify-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #657188;
+}
+
+.verify-attempts { font-variant-numeric: tabular-nums; }
+.verify-attempts.low { color: #b3261e; font-weight: 700; }
+
+.verify-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    margin-top: 22px;
+    padding: 14px 16px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--vf-ink);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    box-shadow: 0 5px 14px rgba(0,35,102,0.17);
+}
+
+.verify-button:hover { background: #001a4d; transform: translateY(-1px); }
+.verify-button:active { transform: translateY(0); }
+.verify-button:disabled { opacity: 0.72; cursor: wait; transform: none; }
+
+.verify-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: verifySpin 700ms linear infinite;
+}
+@keyframes verifySpin { to { transform: rotate(360deg); } }
+
+.verify-resend-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e7ebf2;
+}
+
+.verify-resend-text { font-size: 13px; color: #657188; margin: 0; }
+
+.verify-resend-btn {
+    padding: 9px 14px;
+    border: 1px solid #d6dfd6;
+    border-radius: 6px;
+    background: #fff;
+    color: var(--vf-ink);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease;
+}
+
+.verify-resend-btn:hover:not(:disabled) { background: #f1f5fb; border-color: #4a6fc7; }
+.verify-resend-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.verify-back {
+    display: block;
+    margin-top: 22px;
+    text-align: center;
+    font-size: 13.5px;
+    color: #657188;
+    text-decoration: none;
+}
+.verify-back:hover { color: var(--vf-ink); text-decoration: underline; }
+
+.verify-dev-note {
+    margin-top: 14px;
+    padding: 11px 12px;
+    background: #fff9df;
+    border: 1px solid #f1e5a9;
+    border-left: 3px solid var(--vf-accent);
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #64551b;
+}
+
+@media (max-width: 480px) {
+    .verify-page { min-height: auto; padding: 18px 14px 96px; }
+    .verify-card { grid-template-columns: minmax(0, 1fr); max-width: 430px; }
+    .verify-header { min-height: auto; padding: 24px 24px 26px; }
+    .verify-header::after { right: -116px; bottom: -150px; }
+    .verify-logo { width: 42px; height: 42px; margin: 16px 0; font-size: 14px; }
+    .verify-steps { display: none; }
+    .verify-form-panel { padding: 28px 24px 24px; }
+    .verify-title { max-width: none; font-size: 25px; }
+    .verify-card { border-radius: 10px; }
+}
+
+@media (min-width: 481px) and (max-width: 760px) {
+    .verify-card { grid-template-columns: minmax(210px, 0.8fr) minmax(300px, 1.2fr); }
+    .verify-header { padding: 34px 26px; }
+    .verify-form-panel { padding: 36px 32px 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .verify-card, .verify-spinner { animation: none; }
+}
+</style>
+
+<div class="verify-page">
+    <div class="verify-card">
+        <div class="verify-header">
+            <p class="verify-kicker">GLORY2YAHPUB / SEKIRITE</p>
+            <div class="verify-logo" aria-hidden="true">G2Y</div>
+            <h1 class="verify-title">Verifye nimewo ou.</h1>
+            <p class="verify-subtitle">Nou voye yon kòd 6 chif sou WhatsApp ou pou konfime se ou menm ki kreye kont lan.</p>
+            <ul class="verify-steps">
+                <li><b>1.</b><span>Louvri WhatsApp ou</span></li>
+                <li><b>2.</b><span>Jwenn mesaj Glory2YahPub</span></li>
+                <li><b>3.</b><span>Antre kòd 6 chif la</span></li>
+            </ul>
+        </div>
+
+        <section class="verify-form-panel" aria-labelledby="verifyFormTitle">
+            <div class="verify-form-heading">
+                <p class="verify-form-kicker">AKTIVASYON KONT</p>
+                <h2 class="verify-form-title" id="verifyFormTitle">Antre kòd la</h2>
+                <p class="verify-form-description">
+                    {% if pseudo %}Bonjou <strong>{{ pseudo }}</strong>.{% endif %}
+                    Kòd la ale sou <strong>{{ masked_phone }}</strong>.
+                </p>
+            </div>
+
+            <div id="verifyFlashes" aria-live="polite">
+            {% with msgs = get_flashed_messages(with_categories=true) %}
+              {% if msgs %}
+              <div class="verify-flashes">
+                {% for cat, msg in msgs %}
+                <div class="verify-flash verify-flash-{{ cat }}">
+                  {% if cat == 'success' %}✅{% elif cat == 'error' %}❌{% elif cat == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+                  <span>{{ msg }}</span>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% endwith %}
+            </div>
+
+            <div id="verifyResult" class="verify-flashes" aria-live="assertive"></div>
+
+            <form id="verifyForm" action="{{ url_for('auth.verify_phone') }}" method="POST" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <label for="code" class="verify-sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Kòd 6 chif</label>
+                <input id="code" name="code" type="text" class="verify-code-input"
+                       inputmode="numeric" autocomplete="one-time-code"
+                       pattern="[0-9]*" maxlength="6" placeholder="••••••"
+                       autofocus required>
+
+                <div class="verify-meta">
+                    <span id="verifyCountdown" class="verify-countdown"></span>
+                    <span id="verifyAttempts" class="verify-attempts{% if otp_state.attempts_left <= 2 %} low{% endif %}">
+                        {{ otp_state.attempts_left }} esè ki rete
+                    </span>
+                </div>
+
+                <button type="submit" class="verify-button" id="verifySubmit">
+                    <span class="verify-button-label">Aktive kont mwen</span>
+                    <span class="verify-spinner" id="verifySpinner" aria-hidden="true" hidden></span>
+                </button>
+            </form>
+
+            {% if otp_state.provider == 'dev_fallback' %}
+            <div class="verify-dev-note">
+                💡 Mod DEV: pa gen gateway WhatsApp ki konekte, kòd la parèt nan konsòl sèvè a.
+            </div>
+            {% endif %}
+
+            <div class="verify-resend-row">
+                <p class="verify-resend-text">Ou pa resevwa kòd la?</p>
+                <button type="button" class="verify-resend-btn" id="verifyResend"
+                        data-url="{{ url_for('auth.resend_otp') }}"
+                        {% if otp_state.resend_in %}disabled{% endif %}>
+                    <span id="verifyResendLabel">
+                        {% if otp_state.resend_in %}Voye ankò ({{ otp_state.resend_in }}s){% else %}Voye kòd la ankò{% endif %}
+                    </span>
+                </button>
+            </div>
+
+            <a href="{{ url_for('auth.register') }}" class="verify-back">← Itilize yon lòt nimewo</a>
+        </section>
+    </div>
+</div>
+
+<script>
+(() => {
+    const TTL = {{ ttl_seconds|int }};
+    const COOLDOWN = {{ resend_seconds|int }};
+    const MAX_ATTEMPTS = {{ max_attempts|int }};
+    const CSRF = "{{ csrf_token() }}";
+
+    const form = document.getElementById('verifyForm');
+    const codeInput = document.getElementById('code');
+    const submitBtn = document.getElementById('verifySubmit');
+    const spinner = document.getElementById('verifySpinner');
+    const label = submitBtn.querySelector('.verify-button-label');
+    const resultBox = document.getElementById('verifyResult');
+    const attemptsEl = document.getElementById('verifyAttempts');
+    const countdownEl = document.getElementById('verifyCountdown');
+    const resendBtn = document.getElementById('verifyResend');
+    const resendLabel = document.getElementById('verifyResendLabel');
+
+    const t0 = Date.now();
+    let resendLeft = {{ otp_state.resend_in|int }};
+
+    function toast(kind, message) {
+        resultBox.innerHTML = '';
+        if (!message) return;
+        const icons = { error: '❌', success: '✅', warning: '⚠️', info: 'ℹ️' };
+        const el = document.createElement('div');
+        el.className = 'verify-flash verify-flash-' + kind;
+        const icon = document.createElement('span');
+        icon.textContent = icons[kind] || 'ℹ️';
+        const text = document.createElement('span');
+        text.textContent = message;
+        el.appendChild(icon);
+        el.appendChild(text);
+        resultBox.appendChild(el);
+    }
+
+    function setBusy(busy) {
+        submitBtn.disabled = busy;
+        spinner.hidden = !busy;
+        label.textContent = busy ? 'Ap verifye...' : 'Aktive kont mwen';
+    }
+
+    function tick() {
+        const elapsed = Math.floor((Date.now() - t0) / 1000);
+        const left = TTL - elapsed;
+        if (left > 0) {
+            const m = String(Math.floor(left / 60)).padStart(2, '0');
+            const s = String(left % 60).padStart(2, '0');
+            countdownEl.textContent = 'Kòd la ekspire nan ' + m + ':' + s;
+        } else {
+            countdownEl.textContent = 'Kòd la ekspire. Mande yon lòt.';
+        }
+        if (resendLeft > 0) {
+            resendLeft -= 1;
+            resendBtn.disabled = true;
+            resendLabel.textContent = 'Voye ankò (' + resendLeft + 's)';
+        } else if (resendBtn.disabled) {
+            resendBtn.disabled = false;
+            resendLabel.textContent = 'Voye kòd la ankò';
+        }
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    codeInput.addEventListener('input', () => {
+        codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
+    });
+
+    form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const code = codeInput.value.trim();
+        if (code.length !== 6) {
+            toast('error', 'Tanpri antre kòd 6 chif la.');
+            codeInput.focus();
+            return;
+        }
+        setBusy(true);
+        try {
+            const body = new FormData();
+            body.append('code', code);
+            body.append('csrf_token', CSRF);
+            const res = await fetch(form.action, {
+                method: 'POST',
+                body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            const data = await res.json();
+            if (data.ok) {
+                toast('success', data.message || 'Kont ou aktif!');
+                setBusy(false);
+                label.textContent = 'Kont aktif ✓';
+                setTimeout(() => { window.location.href = data.redirect || '/'; }, 700);
+                return;
+            }
+            toast('error', data.message || 'Kòd la pa valide.');
+            if (typeof data.attempts_left === 'number') {
+                attemptsEl.textContent = data.attempts_left + ' esè ki rete';
+                attemptsEl.classList.toggle('low', data.attempts_left <= 2);
+            }
+            if (typeof data.resend_in === 'number' && data.resend_in > 0) {
+                resendLeft = data.resend_in;
+            }
+            codeInput.value = '';
+            codeInput.focus();
+        } catch (err) {
+            toast('error', 'Erè rezo. Tanpri eseye ankò.');
+        }
+        setBusy(false);
+    });
+
+    resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+        resendLabel.textContent = 'Ap voye...';
+        try {
+            const body = new FormData();
+            body.append('csrf_token', CSRF);
+            const res = await fetch(resendBtn.dataset.url, {
+                method: 'POST',
+                body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            const data = await res.json();
+            toast(data.ok ? 'success' : 'warning', data.message || '');
+            resendLeft = COOLDOWN;
+            attemptsEl.textContent = MAX_ATTEMPTS + ' esè ki rete';
+            attemptsEl.classList.remove('low');
+        } catch (err) {
+            toast('error', 'Erè rezo. Tanpri eseye ankò.');
+            resendBtn.disabled = false;
+            resendLabel.textContent = 'Voye kòd la ankò';
+        }
+    });
+})();
+</script>
+{% endblock %}

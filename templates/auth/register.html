@@ -5,240 +5,628 @@
 {% block content %}
 <style>
 .register-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    --rg-ink: #0d1b3a;
+    --rg-ink-strong: #07152c;
+    --rg-accent: #f4c542;
+    --rg-accent-soft: #fff4c7;
+    --rg-card-bg: rgba(255, 255, 255, 0.94);
+    --rg-paper: #f3f7fb;
+    --rg-border: #dfe8f3;
+    --rg-text: #1b2b3a;
+    --rg-muted: #64748b;
+    --rg-success: #0f9f6e;
+    --rg-error: #be2d2d;
+    min-height: calc(100dvh - var(--g2y-header-height, 60px) - var(--g2y-bottom-nav-height, 70px));
+    background:
+        radial-gradient(circle at top left, rgba(244,197,66,0.2), transparent 28%),
+        linear-gradient(135deg, rgba(13,27,58,0.06), rgba(13,27,58,0.01)),
+        var(--rg-paper);
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    box-sizing: border-box;
+    padding: 32px 20px 96px;
 }
 
 .register-card {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 32px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    width: 100%;
-    max-width: 420px;
-    padding: 40px 30px;
-    animation: fadeInUp 0.6s ease;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(400px, 1.1fr);
+    width: min(100%, 980px);
+    min-height: 680px;
+    background: var(--rg-card-bg);
+    border: 1px solid var(--rg-border);
+    border-radius: 22px;
+    box-shadow: 0 30px 70px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+    animation: registerEnter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes registerEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.register-header {
-    text-align: center;
-    margin-bottom: 36px;
+.register-aside {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 42px 36px 36px;
+    color: #fff;
+    background:
+        linear-gradient(155deg, rgba(11,17,31,0.45), rgba(11,17,31,0.2)),
+        linear-gradient(180deg, var(--rg-ink) 0%, #10224d 100%);
+}
+
+.register-aside::before {
+    position: absolute;
+    inset: 18px auto auto 18px;
+    width: 120px;
+    height: 120px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.02);
+    content: "";
+}
+
+.register-aside::after {
+    position: absolute;
+    right: -66px;
+    bottom: -72px;
+    width: 220px;
+    height: 220px;
+    border: 1px solid rgba(244,197,66,0.28);
+    border-radius: 50%;
+    box-shadow: 0 0 0 24px rgba(244,197,66,0.04), 0 0 0 52px rgba(244,197,66,0.025);
+    content: "";
+    pointer-events: none;
+}
+
+.register-kicker {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    color: var(--rg-accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+.register-brand-row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 28px 0 20px;
 }
 
 .register-logo {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 24px;
+    width: 56px;
+    height: 56px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 32px;
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    background: linear-gradient(135deg, var(--rg-accent) 0%, #ffe38d 100%);
+    border-radius: 16px;
+    color: var(--rg-ink-strong);
+    font-size: 18px;
+    font-weight: 900;
+    box-shadow: 0 18px 40px rgba(244,197,66,0.22);
+}
+
+.register-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.82);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.register-badge::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #7fe7b5;
+    box-shadow: 0 0 0 4px rgba(127,231,181,0.16);
 }
 
 .register-title {
-    font-size: 28px;
-    font-weight: 800;
-    color: #1a1a1a;
-    margin: 0 0 8px;
+    position: relative;
+    z-index: 1;
+    max-width: 300px;
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: clamp(2rem, 2vw + 1rem, 3rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
 }
 
 .register-subtitle {
-    font-size: 15px;
-    color: #65676b;
+    position: relative;
+    z-index: 1;
+    max-width: 300px;
     margin: 0;
+    color: rgba(255,255,255,0.78);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.register-perks {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 12px;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+    color: rgba(255,255,255,0.8);
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.register-perks li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.register-perks i {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: rgba(244,197,66,0.14);
+    color: var(--rg-accent);
+    font-size: 10px;
+}
+
+.register-panel {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    padding: 38px 42px 30px;
+}
+
+.register-heading {
+    margin-bottom: 20px;
+}
+
+.register-form-kicker {
+    margin: 0;
+    color: #4a6fc7;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.register-form-title {
+    margin: 9px 0 6px;
+    color: #122033;
+    font-size: clamp(1.7rem, 1vw + 1.1rem, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+.register-form-description {
+    margin: 0;
+    color: #66768e;
+    font-size: 14px;
+}
+
+.register-flashes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.register-flash {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.register-flash-error { background: #fdecec; color: #7a2722; border: 1px solid #f6c3bf; }
+.register-flash-success { background: #ebfaf4; color: #155f3d; border: 1px solid #c6ecd8; }
+.register-flash-warning { background: #fff7e5; color: #8a5d00; border: 1px solid #f7d98b; }
+.register-flash-info { background: #edf4ff; color: #194f90; border: 1px solid #cfe0ff; }
+
+.otp-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 0 0 18px;
+    padding: 12px 13px;
+    background: linear-gradient(180deg, #eef7ff, #edf3ff);
+    border: 1px solid #d0e2ff;
+    border-left: 3px solid #4a6fc7;
+    border-radius: 12px;
+    color: #1d4a7f;
+    font-size: 12.8px;
+    line-height: 1.5;
+}
+
+.otp-note i {
+    margin-top: 2px;
+    color: #4a6fc7;
+}
+
+.register-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
 }
 
 .form-label {
     display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 10px;
+    margin-bottom: 7px;
+    color: #213447;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .form-input {
     width: 100%;
-    padding: 16px 18px;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid #d8e1ee;
+    border-radius: 12px;
+    background: #f8fbff;
+    color: #1d2a38;
     font-size: 15px;
-    border: 2px solid #e4e6eb;
-    border-radius: 16px;
-    background: #f8f9fa;
-    color: #1a1a1a;
-    transition: all 0.3s ease;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
     box-sizing: border-box;
+}
+
+.form-input:hover {
+    border-color: #cad7ea;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    border-color: #4a6fc7;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(74,111,199,0.12);
 }
 
-.form-input::placeholder {
-    color: #a0a3a8;
+.form-input::placeholder { color: #8b9bb0; }
+
+.field-hint {
+    margin: 7px 0 0;
+    color: #71819a;
+    font-size: 12px;
+}
+
+.field-error {
+    min-height: 0;
+    margin: 7px 0 0;
+    color: var(--rg-error);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.password-wrap {
+    position: relative;
+}
+
+.password-wrap .form-input {
+    padding-right: 52px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #56677f;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    background: #eef3fb;
+    color: var(--rg-ink);
 }
 
 .register-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    padding: 16px;
-    font-size: 16px;
-    font-weight: 700;
-    color: white;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 16px;
+    min-height: 54px;
+    margin-top: 8px;
+    padding: 14px 18px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--rg-ink) 0%, #163870 100%);
+    color: #fff;
+    font-size: 15.5px;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
-    margin-top: 24px;
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    box-shadow: 0 16px 24px rgba(13,27,58,0.24);
 }
 
 .register-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+    filter: brightness(1.03);
 }
 
 .register-button:active {
     transform: translateY(0);
 }
 
+.register-button:disabled {
+    cursor: wait;
+    opacity: 0.8;
+    transform: none;
+}
+
+.register-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.42);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: registerSpin 700ms linear infinite;
+}
+
+@keyframes registerSpin { to { transform: rotate(360deg); } }
+
 .login-prompt {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #e6edf7;
     text-align: center;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid #f0f2f5;
 }
 
 .login-prompt-text {
-    font-size: 14px;
-    color: #65676b;
     margin: 0;
+    font-size: 14px;
+    color: #66788f;
 }
 
 .login-link {
     font-weight: 700;
-    color: #667eea;
+    color: var(--rg-ink);
     text-decoration: none;
-    transition: all 0.2s ease;
 }
 
 .login-link:hover {
-    color: #764ba2;
+    color: #001a4d;
     text-decoration: underline;
 }
 
-.password-hint {
-    margin-top: 12px;
-    padding: 14px;
-    background: #fff8e1;
-    border-radius: 12px;
-    border-left: 4px solid #ffc107;
-}
-
-.password-hint-text {
-    font-size: 13px;
-    color: #856404;
-    margin: 0;
-    line-height: 1.6;
-}
-
-@media (max-width: 480px) {
+@media (max-width: 860px) {
     .register-card {
-        padding: 32px 24px;
-        border-radius: 24px;
+        grid-template-columns: minmax(0, 1fr);
+        max-width: 540px;
+        min-height: auto;
     }
-    
+
+    .register-aside {
+        min-height: auto;
+        padding: 30px 26px 24px;
+    }
+
+    .register-aside::after {
+        right: -120px;
+        bottom: -150px;
+    }
+
+    .register-perks {
+        display: none;
+    }
+
+    .register-logo {
+        width: 44px;
+        height: 44px;
+        margin-right: 4px;
+    }
+
+    .register-panel {
+        padding: 30px 24px 26px;
+    }
+}
+
+@media (max-width: 520px) {
+    .register-page {
+        min-height: auto;
+        padding: 18px 14px 96px;
+    }
+
+    .register-grid {
+        grid-template-columns: 1fr;
+    }
+
     .register-title {
-        font-size: 24px;
+        max-width: none;
     }
-    
-    .form-input {
-        padding: 14px 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .register-card,
+    .register-spinner {
+        animation: none;
     }
 }
 </style>
 
 <div class="register-page">
     <div class="register-card">
-        <div class="register-header">
-            <div class="register-logo">🏠</div>
-            <h1 class="register-title">Kreye kont ou gratis</h1>
-            <p class="register-subtitle">Antre detay ou yo pou kòmanse vann ak achte</p>
-        </div>
+        <aside class="register-aside">
+            <p class="register-kicker">GLORY2YAHPUB / KOMINOTE</p>
 
-        <form action="{{ url_for('auth.register') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="form-group">
-                <label for="name" class="form-label">Non konplè</label>
-                <input id="name" name="name" type="text" required 
-                       class="form-input"
-                       placeholder="Antre non ou konplè">
+            <div class="register-brand-row">
+                <div class="register-logo" aria-hidden="true">G2Y</div>
+                <div class="register-badge">Kominote</div>
             </div>
 
-            <div class="form-group">
-                <label for="pseudo" class="form-label">Pseudo (Username)</label>
-                <input id="pseudo" name="pseudo" type="text" required 
-                       class="form-input"
-                       placeholder="Chwazi yon pseudo">
+            <h1 class="register-title">Kreye kont ou gratis.</h1>
+            <p class="register-subtitle">Vann, achte ak pataje nan yon sèl espas — ansanm ak kominote a.</p>
+
+            <ul class="register-perks">
+                <li><i class="fas fa-check"></i><span>Yon sèl kont pou tout sèvis yo</span></li>
+                <li><i class="fas fa-check"></i><span>Pibliye piblisite ak istwa ou</span></li>
+                <li><i class="fas fa-check"></i><span>Konekte ak pseudo oswa nimewo WhatsApp</span></li>
+            </ul>
+        </aside>
+
+        <section class="register-panel" aria-labelledby="registerFormTitle">
+            <div class="register-heading">
+                <p class="register-form-kicker">NOUVO KONT</p>
+                <h2 class="register-form-title" id="registerFormTitle">Enskri kounye a</h2>
+                <p class="register-form-description">Sa pran mwens pase yon minit.</p>
             </div>
 
-            <div class="form-group">
-                <label for="whatsapp" class="form-label">Nimewo WhatsApp</label>
-                <input id="whatsapp" name="whatsapp" type="tel" placeholder="+509..." required 
-                       class="form-input">
+            <div id="registerFlashes" aria-live="polite">
+                {% with msgs = get_flashed_messages(with_categories=true) %}
+                    {% if msgs %}
+                        <div class="register-flashes">
+                            {% for cat, msg in msgs %}
+                                <div class="register-flash register-flash-{{ cat }}">
+                                    {% if cat == 'success' %}✅{% elif cat == 'error' %}❌{% elif cat == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+                                    <span>{{ msg }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
             </div>
 
-            <div class="form-group">
-                <label for="password" class="form-label">Modpas</label>
-                <input id="password" name="password" type="password" required 
-                       class="form-input"
-                       placeholder="Chwazi modpas ou...">
-                <div class="password-hint">
-                    <p class="password-hint-text">
-                        💡 <strong>De (2) opsyon modpas:</strong><br>
-                        • 6 chif sèlman (ex: 123456)<br>
-                        • Alfanimerik: lèt ak chif (ex: pass123)
-                    </p>
+            <div class="otp-note">
+                <i class="fas fa-shield-alt"></i>
+                <span>Nou pral voye yon <strong>kòd 6 chif</strong> sou WhatsApp ou. Kont ou aktive sèlman apre ou antre kòd la.</span>
+            </div>
+
+            <form id="registerForm" action="{{ url_for('auth.register') }}" method="POST" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="register-grid">
+                    <div class="form-group full">
+                        <label for="name" class="form-label">Non konplè</label>
+                        <input id="name" name="name" type="text" class="form-input"
+                               placeholder="Jan Batis" autocomplete="name"
+                               value="{{ request.form.get('name', '') }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pseudo" class="form-label">Pseudo</label>
+                        <input id="pseudo" name="pseudo" type="text" class="form-input"
+                               placeholder="janbatis" autocomplete="username"
+                               value="{{ request.form.get('pseudo', '') }}" required>
+                        <p class="field-hint">Lèt, chif, _ oswa -</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="whatsapp" class="form-label">Nimewo WhatsApp</label>
+                        <input id="whatsapp" name="whatsapp" type="tel" class="form-input"
+                               placeholder="+509 4XXX XXXX" autocomplete="tel"
+                               value="{{ request.form.get('whatsapp', '') }}" required>
+                        <p class="field-hint">Kòd verifikasyon an ale sou nimewo sa a</p>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="password" class="form-label">Modpas</label>
+                        <div class="password-wrap">
+                            <input id="password" name="password" type="password" class="form-input"
+                                   placeholder="6 chif oswa lèt ak chif" autocomplete="new-password" required>
+                            <button type="button" class="password-toggle" id="passwordToggle"
+                                    aria-label="Montre modpas" aria-pressed="false">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <p class="field-hint">Minsten 6 karaktè — 6 chif (ex: 123456) oswa lèt ak chif (ex: pass123)</p>
+                        <p class="field-error" id="passwordError"></p>
+                    </div>
                 </div>
+
+                <button type="submit" class="register-button" id="registerSubmit">
+                    <span class="register-button-label">Enskri kounye a</span>
+                    <span class="register-spinner" id="registerSpinner" aria-hidden="true" hidden></span>
+                </button>
+            </form>
+
+            <div class="login-prompt">
+                <p class="login-prompt-text">
+                    Ou gen kont deja?
+                    <a href="{{ url_for('auth.login') }}" class="login-link">Konekte isit la</a>
+                </p>
             </div>
-
-            <button type="submit" class="register-button">
-                Enskri kounye a
-            </button>
-        </form>
-
-        <div class="login-prompt">
-            <p class="login-prompt-text">
-                Ou gen kont deja?
-                <a href="{{ url_for('auth.login') }}" class="login-link">Konekte isit la</a>
-            </p>
-        </div>
+        </section>
     </div>
 </div>
+
+<script>
+(() => {
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.getElementById('passwordToggle');
+    const passwordError = document.getElementById('passwordError');
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('registerSubmit');
+    const spinner = document.getElementById('registerSpinner');
+    const label = submitBtn.querySelector('.register-button-label');
+
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', () => {
+            const show = passwordInput.type === 'password';
+            passwordInput.type = show ? 'text' : 'password';
+            passwordToggle.setAttribute('aria-pressed', String(show));
+            passwordToggle.setAttribute('aria-label', show ? 'Kache modpas' : 'Montre modpas');
+            passwordToggle.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+        });
+    }
+
+    form.addEventListener('submit', (ev) => {
+        passwordError.textContent = '';
+        const pw = passwordInput.value.trim();
+        if (pw.length < 6) {
+            ev.preventDefault();
+            passwordError.textContent = 'Modpas la dwe gen omwen 6 karaktè.';
+            passwordInput.focus();
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
+        label.textContent = 'Ap kreye kont...';
+        spinner.hidden = false;
+    });
+})();
+</script>
 {% endblock %}

@@ -69,8 +69,20 @@ def _provider_success(name, resp):
         body = ''
     # CallMeBot success body: "Message queued to send." — failures say "ERROR:".
     if name in ('callmebot',):
-        if 'ERROR' in body.upper():
-            logger.warning('WhatsApp alert via %s body-error: %s', name, body.strip()[:180])
+        # HARDENED from a live observation: a real rejection came back as
+        # "APIKey is invalid. Please create a new one..." with NO "ERROR" token,
+        # and this gateway is known to answer HTTP 200 for undelivered messages.
+        # Matching only 'ERROR' would therefore mark a failed alert as sent.
+        #
+        # Deliberately POSITIVE-marker based rather than scanning for failure
+        # words: CallMeBot echoes the message text back in its response body, so
+        # an alert whose own content said "invalid"/"blocked" would be scored as
+        # a delivery failure. A missed queue confirmation shows up as visible
+        # retry noise; a false "delivered" hides the loss entirely.
+        _up = body.upper()
+        if 'QUEUED' not in _up:
+            logger.warning('WhatsApp alert via %s not acknowledged (%s)',
+                           name, body.strip()[:180] or 'empty body')
             return False
     # UltraMsg answers HTTP 200 even on failure, with a JSON error payload
     # (e.g. {"status":"error","errorMessage":"..."}). Inspect the body too,

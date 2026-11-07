@@ -218,7 +218,10 @@ def notify_seller_delivery_request(seller_whatsapp, buyer_whatsapp, delivery_add
             update_cart_url = url_for('seller_update_cart', delivery_id=delivery_id, _external=True)
     except Exception as e:
         logger.error(f"Error generating URL for delivery {delivery_id}: {str(e)}")
-        update_cart_url = f"https://yourdomain.com/seller_update_cart/{delivery_id}"  # Fallback
+        # Real canonical domain (was a literal "yourdomain.com" placeholder that
+        # was being texted to sellers as a dead link).
+        from app.utils.site_url import absolute_url
+        update_cart_url = absolute_url(f"/seller_update_cart/{delivery_id}")
 
     message = f"🛒 NOUVO DEMANN LIVREZON - REÇU PANIER\n\n📦 Piblisite: {ad_title}\n💰 Pri piblisite: {ad_price} Gkach\n👤 Achte pa: {buyer_whatsapp}\n📍 Adrès livrezon: {delivery_address}\n\n📋 Detay:\n- ID Livrezon: {delivery_id}\n- Pri inisyal: {ad_price} Gkach\n- Kou livrezon: TBD\n- Total: TBD\n\n🔗 Klik sou lyen sa a pou mete ajou panier an: {update_cart_url}\n\n⚠️ Tanpri revize detay yo epi mete ajou pri ak adrès livrezon si nesesè."
     return generate_whatsapp_link(seller_whatsapp, message)
@@ -237,7 +240,8 @@ def notify_buyer_delivery_updated(buyer_whatsapp, delivery_cost, total_price, de
                 updated_cart_url = url_for('check_balance', ad_id=delivery.ad_id, _external=True)
         except Exception as e:
             logger.error(f"Error generating URL for balance check {delivery.ad_id}: {str(e)}")
-            updated_cart_url = f"https://yourdomain.com/achte/check_balance/{delivery.ad_id}"  # Fallback
+            from app.utils.site_url import absolute_url
+            updated_cart_url = absolute_url(f"/achte/check_balance/{delivery.ad_id}")
         message = f"Pri livrezon mete ajou! Kou livrezon: {delivery_cost} Gkach, Total: {total_price} Gkach.\n\nKlike sou lyen sa a pou konfime achte: {updated_cart_url}"
     else:
         message = f"Pri livrezon mete ajou! Kou livrezon: {delivery_cost} Gkach, Total: {total_price} Gkach.\n\nKontakte vandè pou konfime achte."

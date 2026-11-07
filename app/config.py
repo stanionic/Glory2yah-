@@ -286,6 +286,15 @@ class Config:
         # Persistent paths under <instance>/ (Render persistent disk mount)
         self.INSTANCE_DIR = inst_dir
         self.ON_RENDER = on_render
+        # Canonical public origin - used for OG tags, share links and WhatsApp
+        # message bodies. Left EMPTY when unset on purpose: app.utils.site_url
+        # then falls back to the live request host (localhost on a dev box)
+        # instead of every dev-generated link pointing at production.
+        _site = (os.environ.get('SITE_URL') or os.environ.get('PUBLIC_BASE_URL')
+                 or os.environ.get('BASE_URL') or '').strip().rstrip('/')
+        self.SITE_URL = _site
+        self.PUBLIC_BASE_URL = _site
+        self.BASE_URL = _site
         # SECRET_KEY — never None (env > instance file > cwd file > auto)
         self.SECRET_KEY, self.SECRET_KEY_SOURCE = _load_secret_key()
         # Redis — default localhost dev, override via env
