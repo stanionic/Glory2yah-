@@ -250,7 +250,7 @@
 .register-flash-warning { background: #fff7e5; color: #8a5d00; border: 1px solid #f7d98b; }
 .register-flash-info { background: #edf4ff; color: #194f90; border: 1px solid #cfe0ff; }
 
-.otp-note {
+.registration-note {
     display: flex;
     gap: 10px;
     align-items: flex-start;
@@ -265,7 +265,7 @@
     line-height: 1.5;
 }
 
-.otp-note i {
+.registration-note i {
     margin-top: 2px;
     color: #4a6fc7;
 }
@@ -530,9 +530,9 @@
                 {% endwith %}
             </div>
 
-            <div class="otp-note">
+            <div class="registration-note">
                 <i class="fas fa-shield-alt"></i>
-                <span>Nou pral voye yon <strong>kòd 6 chif</strong> sou WhatsApp ou. Kont ou aktive sèlman apre ou antre kòd la.</span>
+                <span>Kont ou ap aktive touswit. Nimewo WhatsApp ou ap itil si ou bezwen rekipere modpas ou.</span>
             </div>
 
             <form id="registerForm" action="{{ url_for('auth.register') }}" method="POST" novalidate>
@@ -559,7 +559,7 @@
                         <input id="whatsapp" name="whatsapp" type="tel" class="form-input"
                                placeholder="+509 4XXX XXXX" autocomplete="tel"
                                value="{{ request.form.get('whatsapp', '') }}" required>
-                        <p class="field-hint">Kòd verifikasyon an ale sou nimewo sa a</p>
+                        <p class="field-hint">N ap itilize nimewo sa a pou rekiperasyon modpas.</p>
                     </div>
 
                     <div class="form-group full">

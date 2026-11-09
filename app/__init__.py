@@ -421,9 +421,9 @@ def create_app(config_name=None):
             user_id_int = int(user_id)
             user = db.session.get(User, user_id_int)
             # CRITICAL FIX: do NOT reject inactive users here.
-            # is_active=False means "pending OTP verification" for new signups.
-            # Rejecting them here destroys the session immediately after OTP
-            # verification sets is_active=True, forcing users to log in again.
+            # is_active=False can mean a legacy signup is pending activation.
+            # Rejecting inactive users here would also destroy a session if an
+            # account is deactivated while its user is signed in.
             # The is_active guard belongs in the LOGIN route, not the loader.
             # Only return None for truly missing users (deleted accounts).
             if user is None:

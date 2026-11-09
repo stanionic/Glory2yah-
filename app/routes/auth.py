@@ -52,15 +52,16 @@ def _mask_phone(raw):
     return s[:4] + '•' * (len(s) - 7) + s[-3:]
 
 
-def _activate_after_verification(user):
-    """Flip a pending signup into a live, logged-in, bonus-credited account.
+def _complete_signup(user, *, phone_verified=False):
+    """Activate a signup, credit its welcome bonus, and log the user in.
 
     Order matters: the account is committed as active BEFORE the welcome bonus is
-    attempted, so a bonus failure can never strand a verified user outside the
+    attempted, so a bonus failure can never strand the user outside the
     app, and can never be re-claimed (issue_welcome_bonus is idempotent).
     """
     user.is_active = True
-    user.phone_verified = True
+    if phone_verified:
+        user.phone_verified = True
     user.last_login = datetime.utcnow()
     db.session.commit()
 
@@ -69,7 +70,7 @@ def _activate_after_verification(user):
         GkachService.issue_welcome_bonus(user.whatsapp, _commit=True)
     except Exception as exc:
         current_app.logger.error(
-            'Welcome bonus failed for verified user %s: %s', user.id, exc, exc_info=True)
+            'Welcome bonus failed for new user %s: %s', user.id, exc, exc_info=True)
 
     login_user(user, remember=True)
     session.permanent = True
@@ -228,11 +229,8 @@ def register():
             validate_password(password)
 
             # --- duplicate handling -------------------------------------------
-            # A never-verified account for this pseudo/number is the SAME human
-            # retrying a signup that stalled, not a squatter: blocking them on a
-            # uniqueness error they cannot resolve themselves is how you lose a
-            # user for good. So a pending signup resumes; a real account still
-            # errors as before.
+            # A legacy pending signup may retry with the same pseudo and number;
+            # real accounts still follow the existing duplicate-account errors.
             existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
             existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
             if existing_pseudo and existing_whatsapp \
@@ -264,13 +262,13 @@ def register():
                     name=name if name else pseudo_clean,
                     bio=bio,
                     auth_provider='whatsapp',
-                    is_active=False,
+                    is_active=True,
                     phone_verified=False
                 )
                 user.set_password(password)
 
                 db.session.add(user)
-                db.session.commit()
+                db.session.flush()
 
                 # Create Gkach account
                 user_gkach = UserGkach(
@@ -281,28 +279,9 @@ def register():
                 db.session.add(user_gkach)
                 db.session.commit()
 
-            from app.services import otp_service
-            wait = otp_service.resend_wait(
-                user.whatsapp, OtpCode.PURPOSE_REGISTER
-            ) if pending_retry else 0
-            if wait:
-                delivered_via = 'cooldown'
-            else:
-                _otp, delivered_via = otp_service.issue_and_send(
-                    user.whatsapp, user_id=user.id,
-                    purpose=OtpCode.PURPOSE_REGISTER,
-                    ip_address=request.remote_addr,
-                )
-            session['pending_verify_uid'] = user.id
-            if delivered_via == 'dev_fallback':
-                flash(f'Mod DEV: Kòd OTP la se {_otp.dev_code}.', 'info')
-            elif delivered_via == 'cooldown':
-                flash(f'Tanpri tann {wait} segond anvan ou mande yon lòt kòd.', 'info')
-            elif delivered_via:
-                flash('Nou voye yon kòd 6 chif sou WhatsApp ou. Antre l pou aktive kont ou.', 'info')
-            else:
-                flash('Kont ou an kreye, men nou pa rive voye kòd WhatsApp la kounye a. Eseye ankò pita.', 'error')
-            return redirect(url_for('auth.verify_phone'))
+            _complete_signup(user)
+            flash('Kont ou kreye avèk siksè. Byenveni!', 'success')
+            return redirect(url_for('main.index'))
 
         except ValidationError as e:
             current_app.logger.warning("Register validation failed: %s", e)
@@ -334,7 +313,7 @@ def verify_phone():
             purpose=OtpCode.PURPOSE_REGISTER, user_id=user.id,
         )
         if status == otp_service.OK:
-            _activate_after_verification(user)
+            _complete_signup(user, phone_verified=True)
             return jsonify({
                 'ok': True,
                 'message': 'Kont ou verifye avèk siksè!',
@@ -533,9 +512,9 @@ def login():
 
             if not user.is_active:
                 if _is_pending_signup(user):
-                    session['pending_verify_uid'] = user.id
-                    flash('Verifye nimewo WhatsApp ou pou aktive kont la.', 'info')
-                    return redirect(url_for('auth.verify_phone'))
+                    _complete_signup(user)
+                    flash(f'✅ Byenveni, {user.pseudo}! Ou konekte avèk siksè.', 'success')
+                    return redirect(url_for('main.index'))
                 flash('Kont sa a dezaktive. Kontakte administratè a pou asistans.', 'error')
                 return _redirect_back_with_params(last_identifier=identifier)
 

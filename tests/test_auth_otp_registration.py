@@ -15,8 +15,11 @@ def app():
         db.drop_all()
 
 
-def test_registration_creates_pending_account_and_otp(app, monkeypatch):
-    monkeypatch.setattr(otp_service, 'send_code', lambda otp, code: 'test')
+def test_registration_creates_active_account_without_otp(app, monkeypatch):
+    def unexpected_otp(*args, **kwargs):
+        raise AssertionError('registration must not issue an OTP')
+
+    monkeypatch.setattr(otp_service, 'issue_and_send', unexpected_otp)
     client = app.test_client()
 
     response = client.post('/auth/register', data={
@@ -27,40 +30,55 @@ def test_registration_creates_pending_account_and_otp(app, monkeypatch):
     })
 
     assert response.status_code == 302
-    assert response.headers['Location'].endswith('/auth/verify')
+    assert response.headers['Location'].endswith('/')
     with app.app_context():
         user = User.query.filter_by(pseudo='otp_test_user').one()
-        assert user.is_active is False
+        assert user.is_active is True
         assert user.phone_verified is False
         assert user.is_admin is False
-        otp = OtpCode.query.filter_by(user_id=user.id).one()
-        assert otp.phone == user.whatsapp == '+50942882076'
-        assert otp.purpose == OtpCode.PURPOSE_REGISTER
+        assert user.whatsapp == '+50942882076'
+        assert OtpCode.query.filter_by(user_id=user.id).count() == 0
+        user_id = user.id
+
+    with client.session_transaction() as session:
+        assert session['_user_id'] == str(user_id)
 
 
-def test_registration_otp_activates_user_without_admin_approval(app, monkeypatch):
-    monkeypatch.setattr(otp_service, 'generate_code', lambda: '012345')
-    monkeypatch.setattr(otp_service, 'send_code', lambda otp, code: 'test')
+def test_legacy_pending_registration_can_retry_without_otp(app, monkeypatch):
+    def unexpected_otp(*args, **kwargs):
+        raise AssertionError('registration retry must not issue an OTP')
+
+    monkeypatch.setattr(otp_service, 'issue_and_send', unexpected_otp)
     client = app.test_client()
+    with app.app_context():
+        pending = User(
+            pseudo='legacy_pending',
+            name='Legacy Pending',
+            whatsapp='+50942882077',
+            is_active=False,
+            phone_verified=False,
+        )
+        pending.set_password('old-password')
+        db.session.add(pending)
+        db.session.commit()
+        otp_service.issue(
+            pending.whatsapp, user_id=pending.id,
+            purpose=OtpCode.PURPOSE_REGISTER,
+        )
 
     response = client.post('/auth/register', data={
-        'name': 'Verified User',
-        'pseudo': 'verified_user',
+        'name': 'Legacy Pending',
+        'pseudo': 'legacy_pending',
         'whatsapp': '+50942882077',
         'password': 'pass123',
     })
     assert response.status_code == 302
-    assert response.headers['Location'].endswith('/auth/verify')
-
-    assert client.get('/auth/verify').status_code == 200
-    response = client.post('/auth/verify', data={'code': '012345'})
-    assert response.status_code == 200
-    assert response.json['ok'] is True
+    assert response.headers['Location'].endswith('/')
 
     with app.app_context():
-        user = User.query.filter_by(pseudo='verified_user').one()
+        user = User.query.filter_by(pseudo='legacy_pending').one()
         assert user.is_active is True
-        assert user.phone_verified is True
+        assert user.phone_verified is False
         assert user.is_admin is False
 
 
@@ -88,7 +106,7 @@ def test_active_non_admin_can_log_in(app):
         assert session['_user_id'] == str(user_id)
 
 
-def test_pending_and_blocked_users_cannot_bypass_activation_or_block(app):
+def test_pending_signup_can_log_in_without_otp_but_blocked_user_cannot(app):
     client = app.test_client()
     with app.app_context():
         pending = User(
@@ -116,15 +134,20 @@ def test_pending_and_blocked_users_cannot_bypass_activation_or_block(app):
         'password': 'pass123',
     })
     assert response.status_code == 302
-    assert response.headers['Location'].endswith('/auth/verify')
+    assert response.headers['Location'].endswith('/')
+    with app.app_context():
+        user = User.query.filter_by(pseudo='pending_login').one()
+        assert user.is_active is True
+        assert user.phone_verified is False
 
-    response = client.post('/auth/login', data={
+    blocked_client = app.test_client()
+    response = blocked_client.post('/auth/login', data={
         'identifier': 'blocked_login',
         'password': 'pass123',
     })
     assert response.status_code == 302
     assert response.headers['Location'].startswith('/auth/login')
-    with client.session_transaction() as session:
+    with blocked_client.session_transaction() as session:
         assert '_user_id' not in session
 
 
