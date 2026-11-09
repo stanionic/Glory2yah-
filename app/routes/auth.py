@@ -337,7 +337,13 @@ def register():
             session['pending_verify_uid'] = user.id
 
             if delivered_via:
-                flash('Nou voye yon kòd 6 chif sou WhatsApp ou. Tanpri antre l pou aktive kont ou.', 'info')
+                if delivered_via == 'dev_fallback':
+                    flash(
+                        f'Mod DEV: Kòd OTP la: {_otp.dev_code}',
+                        'info',
+                    )
+                else:
+                    flash('Nou voye yon kòd 6 chif sou WhatsApp ou. Tanpri antre l pou aktive kont ou.', 'info')
             else:
                 # Honest failure: the account is waiting, but no gateway could
                 # reach them. Tell the user instead of showing a spinner forever.
@@ -457,14 +463,13 @@ def resend_otp():
     )
 
     if delivered_via == 'dev_fallback':
-        # Local development: no gateway can reach an arbitrary number, so the
-        # code is in the server console. Say so plainly instead of pretending a
-        # WhatsApp arrived - but only where debug mode allows it.
-        return jsonify({
+        response = {
             'ok': True, 'delivered': delivered_via,
             'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
-            'message': 'Mod DEV: kòd la nan konsol serveur a (pa gen gateway WhatsApp).',
-        })
+            'message': 'Mod DEV: Pa gen founisè WhatsApp ki rive voye kòd la.',
+            'dev_code': _otp.dev_code,
+        }
+        return jsonify(response)
 
     if delivered_via:
         return jsonify({
@@ -778,11 +783,15 @@ def login_otp_request():
         })
 
     session['pending_login_otp_uid'] = user.id
-    return jsonify({
+    response = {
         'ok': True, 'delivered': delivered_via,
         'masked_phone': _mask_phone(user.whatsapp),
         'message': 'Nou voye yon kòd 6 chif sou WhatsApp ou.',
-    })
+    }
+    if delivered_via == 'dev_fallback':
+        response['message'] = 'Mod DEV: Pa gen founisè WhatsApp ki rive voye kòd la.'
+        response['dev_code'] = _otp.dev_code
+    return jsonify(response)
 
 
 @auth_bp.route('/login/otp/verify', methods=['POST'])

@@ -493,7 +493,13 @@
                 credentials: 'same-origin',
             });
             const data = await res.json();
-            toast(data.ok ? 'success' : 'warning', data.message || '');
+            // DEV MODE: if server returns the code directly, pre-fill the input
+            if (data.dev_code) {
+                codeInput.value = data.dev_code;
+                toast('warning', 'Mod DEV — kòd la: ' + data.dev_code);
+            } else {
+                toast(data.ok ? 'success' : 'warning', data.message || '');
+            }
             resendLeft = COOLDOWN;
             attemptsEl.textContent = MAX_ATTEMPTS + ' esè ki rete';
             attemptsEl.classList.remove('low');

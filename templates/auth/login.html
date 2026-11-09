@@ -735,13 +735,19 @@
                     actionLabel.textContent = 'Konekte';
                     idInput.readOnly = true;
                     hint.textContent = '';
+                    if (data.dev_code) {
+                        codeInput.value = data.dev_code;
+                        hint.textContent = 'Kòd devlopman lokal la pare pou tès.';
+                    }
                     if (data.masked_phone) {
-                        hint.textContent = '';
+                        if (!data.dev_code) hint.textContent = '';
                         const span = document.createElement('span');
-                        span.textContent = 'Kòd la ale sou ' + data.masked_phone;
+                        span.textContent = data.dev_code
+                            ? 'Nimewo kont lan: ' + data.masked_phone
+                            : 'Kòd la ale sou ' + data.masked_phone;
                         hint.appendChild(span);
                     }
-                    toast('info', data.message);
+                    toast(data.dev_code ? 'warning' : 'info', data.message);
                     codeInput.focus();
                 }
             } catch (err) {

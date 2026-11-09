@@ -16,11 +16,11 @@ already used for passwords, so this costs nothing extra.
 
 Delivery reality check
 ----------------------
-``send_code()`` returns the provider that *accepted* the message. That matters:
-CallMeBot (the currently configured gateway) only delivers to the single number
-that registered for its API key, so it structurally cannot reach a brand-new
-registrant. Callers must treat ``None`` as "not delivered" rather than success —
-see :func:`dev_fallback_allowed` for the local-development escape hatch.
+``send_code()`` skips CallMeBot because its API key is bound to one
+pre-registered number. The remaining provider chain tries UltraMsg first, then
+Meta Cloud API and the configured webhook. Callers must treat ``None`` as "not
+delivered" rather than success — see :func:`dev_fallback_allowed` for the
+local-development escape hatch.
 """
 import logging
 import os
@@ -50,8 +50,19 @@ MISSING = 'missing'
 
 
 def normalize_phone(raw):
-    """Digits only - what every WhatsApp gateway in the chain expects."""
-    return re.sub(r'\D', '', (raw or '').strip())
+    """Normalize a phone number to the E.164-like format used by User.whatsapp."""
+    if not raw:
+        return ''
+    digits = ''.join(c for c in str(raw) if c.isdigit())
+    return '+' + digits if digits else ''
+
+
+def phone_variants(raw):
+    """Return canonical and legacy digits-only forms for existing OTP rows."""
+    normalized = normalize_phone(raw)
+    if not normalized:
+        return ()
+    return normalized, normalized[1:]
 
 
 def generate_code():
@@ -62,17 +73,20 @@ def generate_code():
 def dev_fallback_allowed():
     """True only on a real local dev box, where the code may be logged.
 
-    Deliberately conservative: a Render deployment or a ``production``
-    ``FLASK_ENV`` can never log a live code, and if anything about the Flask app
-    context is unavailable we answer False (fail closed).
+    A code is exposed only when Flask debug mode is enabled on a non-production,
+    non-Render environment. Missing app context fails closed.
     """
     try:
-        if (os.environ.get('RENDER') or '').strip():
+        if any((os.environ.get(name) or '').strip()
+               for name in ('RENDER', 'RENDER_SERVICE_ID', 'RENDER_EXTERNAL_URL')):
+            return False
+        port = (os.environ.get('PORT') or '').strip()
+        if port and port != '5000':
             return False
         if (os.environ.get('FLASK_ENV') or '').strip().lower() == 'production':
             return False
-        return bool(current_app.debug)
-    except Exception:
+        return current_app.debug
+    except RuntimeError:
         return False
 
 
@@ -110,11 +124,12 @@ def issue(phone, user_id=None, purpose=OtpCode.PURPOSE_REGISTER, ip_address=None
 
     now = datetime.utcnow()
     stale = OtpCode.query.filter(
-        OtpCode.phone == phone,
+        OtpCode.phone.in_(phone_variants(phone)),
         OtpCode.purpose == purpose,
         OtpCode.consumed_at.is_(None),
         OtpCode.expires_at > now,
     ).all()
+
     for row in stale:
         row.expires_at = now  # immediately unusable
 
@@ -130,14 +145,15 @@ def issue(phone, user_id=None, purpose=OtpCode.PURPOSE_REGISTER, ip_address=None
     )
     db.session.add(otp)
     db.session.commit()
+
     return otp, code
 
 
 def send_code(otp, code):
     """Push ``code`` to ``otp.phone``. Returns the provider name, or ``None``.
 
-    A ``None`` return means *no* gateway delivered it - which with the current
-    single-number CallMeBot key is the expected outcome for a brand-new user.
+    A ``None`` return means *no* gateway delivered it. CallMeBot is skipped
+    because its API key is bound to one pre-registered number.
     In local debug we log the code so the flow stays testable; in production we
     log only the failure, never the secret.
     """
@@ -148,16 +164,19 @@ def send_code(otp, code):
     provider = None
     try:
         from app.services.notification_service import _send_whatsapp_alert
-        provider = _send_whatsapp_alert(_build_message(code), phone)
+        provider = _send_whatsapp_alert(
+            _build_message(code),
+            phone[1:],
+        )
     except Exception as exc:  # a broken gateway must not break registration
-        logger.error('OTP delivery raised for +%s: %s', phone, exc)
+        logger.error('OTP delivery raised for %s: %s', phone, exc)
         provider = None
 
     if provider:
         otp.delivery_provider = provider
         otp.delivered_at = datetime.utcnow()
         db.session.commit()
-        logger.info('OTP delivered to +%s via %s', phone, provider)
+        logger.info('OTP delivered to %s via %s', phone, provider)
         return provider
 
     if dev_fallback_allowed():
@@ -165,17 +184,13 @@ def send_code(otp, code):
         # the code in the console to keep the flow testable end-to-end.
         otp.delivery_provider = 'dev_fallback'
         db.session.commit()
-        logger.warning(
-            '*** DEV OTP (no WhatsApp gateway reached +%s): code=%s '
-            '*** This branch is disabled whenever RENDER is set, FLASK_ENV is '
-            'production, or the app is not in debug mode.', phone, code,
-        )
+        logger.warning('No WhatsApp provider delivered the OTP; using local debug fallback.')
         return 'dev_fallback'
 
     logger.warning(
-        'OTP for +%s was NOT delivered: no configured WhatsApp gateway accepts '
-        'arbitrary numbers (CallMeBot is bound to one pre-registered line). '
-        'Configure ULTRAMSG_*, WHATSAPP_CLOUD_*, or WHATSAPP_ALERT_WEBHOOK_URL.',
+        'OTP for %s was NOT delivered: configure ULTRAMSG_* (preferred), '
+        'WHATSAPP_CLOUD_*, or WHATSAPP_ALERT_WEBHOOK_URL. CallMeBot is not '
+        'used for OTP delivery because it is bound to one pre-registered line.',
         phone,
     )
     return None
@@ -188,14 +203,17 @@ def issue_and_send(phone, user_id=None, purpose=OtpCode.PURPOSE_REGISTER, ip_add
     business handling it once delivery was attempted.
     """
     otp, code = issue(phone, user_id=user_id, purpose=purpose, ip_address=ip_address)
-    return otp, send_code(otp, code)
+    delivered_via = send_code(otp, code)
+    if delivered_via == 'dev_fallback':
+        otp.dev_code = code
+    return otp, delivered_via
 
 
 def resend_wait(phone, purpose=OtpCode.PURPOSE_REGISTER):
     """Seconds the user must still wait before another code, ``0`` if free."""
-    phone = normalize_phone(phone)
+    phones = phone_variants(phone)
     last = (
-        OtpCode.query.filter_by(phone=phone, purpose=purpose)
+        OtpCode.query.filter(OtpCode.phone.in_(phones), OtpCode.purpose == purpose)
         .order_by(OtpCode.created_at.desc(), OtpCode.id.desc())
         .first()
     )
@@ -212,13 +230,15 @@ def has_history(phone, user_id=None, purpose=OtpCode.PURPOSE_REGISTER):
     Used by the login route to tell "account is pending phone verification"
     apart from "an administrator disabled this legacy account" - the first has
     an OTP row, the second does not.
+
     """
+    phones = phone_variants(phone)
     q = OtpCode.query.filter_by(purpose=purpose)
     if user_id is not None:
         q = q.filter(db.or_(OtpCode.user_id == user_id,
-                            OtpCode.phone == normalize_phone(phone)))
+                            OtpCode.phone.in_(phones)))
     else:
-        q = q.filter(OtpCode.phone == normalize_phone(phone))
+        q = q.filter(OtpCode.phone.in_(phones))
     return q.first() is not None
 
 
@@ -233,10 +253,14 @@ def verify(phone, raw_code, purpose=OtpCode.PURPOSE_REGISTER):
     candidate = re.sub(r'\D', '', raw_code or '')
 
     newest_any = (
-        OtpCode.query.filter_by(phone=phone, purpose=purpose)
+        OtpCode.query.filter(
+            OtpCode.phone.in_(phone_variants(phone)),
+            OtpCode.purpose == purpose,
+        )
         .order_by(OtpCode.created_at.desc(), OtpCode.id.desc())
         .first()
     )
+
     if not candidate:
         return MISSING, None
 
@@ -272,22 +296,27 @@ def state(phone, purpose=OtpCode.PURPOSE_REGISTER):
     attempts budget) - never the code, its hash, nor any expiry oracle beyond the
     countdown the user is already being given.
     """
-    phone = normalize_phone(phone)
+    phones = phone_variants(phone)
     newest = (
-        OtpCode.query.filter_by(phone=phone, purpose=purpose)
+        OtpCode.query.filter(
+            OtpCode.phone.in_(phones),
+            OtpCode.purpose == purpose,
+        )
         .order_by(OtpCode.created_at.desc(), OtpCode.id.desc())
         .first()
     )
+
     if newest is None:
         return {'exists': False, 'usable': False, 'provider': None,
                 'attempts_left': MAX_ATTEMPTS, 'resend_in': 0}
+
     return {
         'exists': True,
         'usable': newest.is_usable,
         'expired': bool(newest.is_expired or newest.is_consumed),
         'provider': newest.delivery_provider,
         'attempts_left': max(0, MAX_ATTEMPTS - (newest.attempts or 0)),
-        'resend_in': resend_wait(phone, purpose),
+        'resend_in': resend_wait(newest.phone, purpose),
     }
 
 

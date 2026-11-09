@@ -69,10 +69,12 @@ class OtpCode(BaseModel):
     @classmethod
     def pending_for(cls, phone, purpose=PURPOSE_REGISTER):
         """The newest still-usable code for ``phone``, or ``None``."""
+        from app.services.otp_service import phone_variants
+
         now = datetime.utcnow()
         return (
             cls.query
-            .filter(cls.phone == phone,
+            .filter(cls.phone.in_(phone_variants(phone)),
                     cls.purpose == purpose,
                     cls.consumed_at.is_(None),
                     cls.expires_at > now)

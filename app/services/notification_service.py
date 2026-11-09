@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Master switch for WhatsApp admin alerts. Set ADMIN_WHATSAPP_ALERTS=0 (or
 # false/no/off) in .env to silence them; enabled by default. Sending still
-# requires CALLMEBOT_APIKEY (see _send_whatsapp_alert).
+# requires at least one configured provider (see _send_whatsapp_alert).
 _ALERT_THROTTLE_LOCK = threading.Lock()
 _ALERT_LAST_SENT = {}
 
@@ -189,13 +189,14 @@ def whatsapp_alert_status():
 
 
 
-def _send_whatsapp_alert(message: str, phone: str = None):
+def _send_whatsapp_alert(message: str, phone: str = None, allow_callmebot=False):
     """Send a WhatsApp message to the admin number (fire-and-forget).
 
     Walks the provider chain and returns the name of the provider that accepted
     the message, or ``None`` when no provider is configured / all failed. Every
     failure is swallowed and logged — this function MUST never raise: it runs in
-    a daemon thread spawned by :func:`alert_admin`.
+    a daemon thread spawned by :func:`alert_admin`. CallMeBot is opt-in here
+    and only enabled by the admin-alert path; OTP delivery uses other providers.
 
     Configure at least ONE provider in `.env`:
       * ``CALLMEBOT_APIKEY``                                   (free, easiest)
@@ -213,7 +214,8 @@ def _send_whatsapp_alert(message: str, phone: str = None):
 
     digits = phone or _admin_whatsapp(digits_only=True)
 
-    for name, provider in _WHATSAPP_PROVIDERS:
+    providers = _WHATSAPP_PROVIDERS if allow_callmebot else _WHATSAPP_PROVIDERS[1:]
+    for name, provider in providers:
         try:
             resp = provider(digits, message, _req)
         except Exception as exc:
@@ -260,7 +262,12 @@ def alert_admin(message: str, throttle_seconds: int = 0):
                 for k in [k for k, v in _ALERT_LAST_SENT.items() if v < cutoff]:
                     _ALERT_LAST_SENT.pop(k, None)
             _ALERT_LAST_SENT[message] = now
-    threading.Thread(target=_send_whatsapp_alert, args=(message,), daemon=True).start()
+    threading.Thread(
+        target=_send_whatsapp_alert,
+        args=(message,),
+        kwargs={'allow_callmebot': True},
+        daemon=True,
+    ).start()
 
 
 def admin_event(action: str, detail: str = '', actor: str = '', send_whatsapp: bool = True):
