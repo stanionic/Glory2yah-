@@ -90,19 +90,32 @@ def dev_fallback_allowed():
         return False
 
 
-def _build_message(code):
+def _build_message(code, purpose):
     mins = int(OTP_TTL.total_seconds() // 60)
     # The link is built from the canonical site URL rather than url_for(_external=True):
     # this message leaves the process, and on Render the request Host header is the
     # *.onrender.com domain - a recipient should never be sent that.
+    if purpose == OtpCode.PURPOSE_PASSWORD_RESET:
+        verify_path = '/auth/forgot-password'
+    elif purpose == OtpCode.PURPOSE_LOGIN:
+        verify_path = '/auth/login'
+    else:
+        verify_path = '/auth/verify'
     try:
         from app.utils.site_url import absolute_url
-        link = absolute_url('/auth/verify')
+        link = absolute_url(verify_path)
     except Exception:
         link = ''
+    if purpose == OtpCode.PURPOSE_PASSWORD_RESET:
+        action = 'chanje modpas kont ou'
+    elif purpose == OtpCode.PURPOSE_LOGIN:
+        action = 'konekte nan kont ou'
+    else:
+        action = 'aktive kont ou'
     text = (
         f"🔐 Glory2YahPub - Kòd verifikasyon ou: {code}\n"
-        f"Antre kòd 6 chif sa a pou aktive kont ou. Li ekspire nan {mins} minit.\n"
+        f"Antre kòd 6 chif sa a pou {action}. "
+        f"Li ekspire nan {mins} minit.\n"
         f"Pa pataje kòd sa a ak pèsonn."
     )
     if link:
@@ -165,7 +178,7 @@ def send_code(otp, code):
     try:
         from app.services.notification_service import _send_whatsapp_alert
         provider = _send_whatsapp_alert(
-            _build_message(code),
+            _build_message(code, otp.purpose),
             phone[1:],
         )
     except Exception as exc:  # a broken gateway must not break registration
@@ -235,14 +248,13 @@ def has_history(phone, user_id=None, purpose=OtpCode.PURPOSE_REGISTER):
     phones = phone_variants(phone)
     q = OtpCode.query.filter_by(purpose=purpose)
     if user_id is not None:
-        q = q.filter(db.or_(OtpCode.user_id == user_id,
-                            OtpCode.phone.in_(phones)))
+        q = q.filter(OtpCode.user_id == user_id)
     else:
         q = q.filter(OtpCode.phone.in_(phones))
     return q.first() is not None
 
 
-def verify(phone, raw_code, purpose=OtpCode.PURPOSE_REGISTER):
+def verify(phone, raw_code, purpose=OtpCode.PURPOSE_REGISTER, user_id=None):
     """Check a submitted code. Returns ``(status, otp_row)``.
 
     Statuses: ``OK`` accepted, ``WRONG`` mismatch (attempt counted),
@@ -252,19 +264,20 @@ def verify(phone, raw_code, purpose=OtpCode.PURPOSE_REGISTER):
     phone = normalize_phone(phone)
     candidate = re.sub(r'\D', '', raw_code or '')
 
-    newest_any = (
-        OtpCode.query.filter(
-            OtpCode.phone.in_(phone_variants(phone)),
-            OtpCode.purpose == purpose,
-        )
-        .order_by(OtpCode.created_at.desc(), OtpCode.id.desc())
-        .first()
+    newest_query = OtpCode.query.filter(
+        OtpCode.phone.in_(phone_variants(phone)),
+        OtpCode.purpose == purpose,
     )
+    if user_id is not None:
+        newest_query = newest_query.filter(OtpCode.user_id == user_id)
+    newest_any = newest_query.order_by(
+        OtpCode.created_at.desc(), OtpCode.id.desc()
+    ).first()
 
     if not candidate:
         return MISSING, None
 
-    otp = OtpCode.pending_for(phone, purpose)
+    otp = OtpCode.pending_for(phone, purpose, user_id=user_id)
     if otp is None:
         # Either nothing was ever issued, or the last one expired / was spent.
         if newest_any is None:

@@ -34,6 +34,7 @@ class OtpCode(BaseModel):
     # because both can legitimately be live for the same number at the same time.
     PURPOSE_REGISTER = 'register'
     PURPOSE_LOGIN = 'login'
+    PURPOSE_PASSWORD_RESET = 'password_reset'
 
     phone = db.Column(db.String(20), nullable=False, index=True)
     # Nullable: a code can be issued before/without an account (e.g. a future
@@ -67,20 +68,20 @@ class OtpCode(BaseModel):
         return (not self.is_consumed) and (not self.is_expired) and (self.attempts or 0) < MAX_ATTEMPTS
 
     @classmethod
-    def pending_for(cls, phone, purpose=PURPOSE_REGISTER):
+    def pending_for(cls, phone, purpose=PURPOSE_REGISTER, user_id=None):
         """The newest still-usable code for ``phone``, or ``None``."""
         from app.services.otp_service import phone_variants
 
         now = datetime.utcnow()
-        return (
-            cls.query
-            .filter(cls.phone.in_(phone_variants(phone)),
-                    cls.purpose == purpose,
-                    cls.consumed_at.is_(None),
-                    cls.expires_at > now)
-            .order_by(cls.created_at.desc(), cls.id.desc())
-            .first()
+        query = cls.query.filter(
+            cls.phone.in_(phone_variants(phone)),
+            cls.purpose == purpose,
+            cls.consumed_at.is_(None),
+            cls.expires_at > now,
         )
+        if user_id is not None:
+            query = query.filter(cls.user_id == user_id)
+        return query.order_by(cls.created_at.desc(), cls.id.desc()).first()
 
     def __repr__(self):
         return (f'<OtpCode {self.phone} purpose={self.purpose} '

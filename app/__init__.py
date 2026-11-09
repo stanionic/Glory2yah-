@@ -548,6 +548,7 @@ def create_app(config_name=None):
             Notification, PushSubscription, NotificationPreference,
         )
         from app.models.otp import OtpCode
+        from app.models.account_report import AccountReport
         try:
             from app.models.app_installation import AppInstallation  # PWA tracking model
         except ImportError:

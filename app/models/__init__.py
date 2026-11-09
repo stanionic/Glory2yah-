@@ -29,6 +29,7 @@ from app.models.notification import (
     Notification, PushSubscription, NotificationPreference,
 )
 from app.models.otp import OtpCode
+from app.models.account_report import AccountReport
 
 try:
     from app.models.elearning import (
@@ -90,6 +91,7 @@ __all__ = [
     'KonferansSubscription',
     'KonferansPayment',
     'OtpCode',
+    'AccountReport',
 ]
 
 if _ELEARNING_OK:

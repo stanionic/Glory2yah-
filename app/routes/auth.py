@@ -4,15 +4,17 @@ Login, Register, Logout with security
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.security import check_password_hash
+from sqlalchemy.exc import IntegrityError
 from app import db, limiter, csrf, cache
 from app.models.user import User
+from app.models.account_report import AccountReport
+from app.models.otp import OtpCode
 from app.models.user_gkach import UserGkach
 from app.utils.validators import (
     validate_whatsapp, validate_email_address, validate_password,
     validate_pseudo, ValidationError
 )
-from datetime import datetime, timedelta
+from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -36,42 +38,10 @@ def _wants_json():
             or request.form.get('ajax') == '1')
 
 
-def _is_pending_signup(user):
-    """An account created by the OTP signup flow that never finished verifying.
-
-    The `has_history` test is what makes this precise. `is_active=False` alone
-    also matches legacy accounts an administrator switched off, and those people
-    must keep seeing "contact administrator" - not be funnelled into a phone
-    verification they were never enrolled in.
-    """
-    if user is None or user.is_active or user.phone_verified:
-        return False
-    try:
-        from app.services import otp_service
-        return otp_service.has_history(user.whatsapp, user_id=user.id)
-    except Exception:
-        return False
 
 
-def _pending_verify_user():
-    """The still-unverified account this browser is mid-signup with, or None."""
-    uid = session.get('pending_verify_uid')
-    if not uid:
-        return None
-    try:
-        user = db.session.get(User, int(uid))
-    except (TypeError, ValueError):
-        session.pop('pending_verify_uid', None)
-        return None
-    if user is None or user.phone_verified or user.is_active:
-        # Already finished (back-button, or verified in another tab): do not
-        # offer a second activation of a live account.
-        session.pop('pending_verify_uid', None)
-        return None
-    if not _is_pending_signup(user):
-        session.pop('pending_verify_uid', None)
-        return None
-    return user
+
+
 
 
 def _mask_phone(raw):
@@ -104,6 +74,27 @@ def _activate_after_verification(user):
     login_user(user, remember=True)
     session.permanent = True
     session.pop('pending_verify_uid', None)
+
+
+def _is_pending_signup(user):
+    if user is None or user.is_active or user.phone_verified:
+        return False
+    from app.services import otp_service
+    return otp_service.has_history(
+        user.whatsapp, user_id=user.id, purpose=OtpCode.PURPOSE_REGISTER
+    )
+
+
+def _pending_verify_user():
+    uid = session.get('pending_verify_uid')
+    try:
+        user = db.session.get(User, int(uid)) if uid is not None else None
+    except (TypeError, ValueError):
+        user = None
+    if not _is_pending_signup(user):
+        session.pop('pending_verify_uid', None)
+        return None
+    return user
 
 
 def _clean_pseudo(raw: str) -> str:
@@ -197,31 +188,6 @@ def _cache_identifier_rate_limit(key_prefix: str, identifier: str, limit: int, w
     return False
 
 
-FORGOT_TEMP_PW_TTL_SEC = 3600  # 1 hour
-_FORGOT_KEY = "forgot_temp_pw:{}"
-
-def _store_forgot_temp_password(user_id: int, temp_pw_plain: str) -> None:
-    """Store temp pw SHA256 hash in cache (never overwrite main password_hash)."""
-    if not cache: return
-    import hashlib
-    h = hashlib.sha256(temp_pw_plain.encode("utf-8")).hexdigest()
-    cache.set(_FORGOT_KEY.format(user_id), h, timeout=FORGOT_TEMP_PW_TTL_SEC)
-
-def _check_forgot_temp_password(user_id: int, password_plain: str) -> bool:
-    """Check if candidate password matches any valid temp reset pw hash in cache."""
-    if not cache or not user_id or not password_plain:
-        return False
-    import hashlib
-    h_expected = cache.get(_FORGOT_KEY.format(user_id))
-    if not h_expected:
-        return False
-    h_cand = hashlib.sha256(password_plain.encode("utf-8")).hexdigest()
-    try:
-        return h_cand == h_expected
-    except Exception:
-        return False
-
-
 @auth_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("10 per hour")
 def register():
@@ -235,7 +201,7 @@ def register():
             whatsapp = request.form.get('whatsapp', '').strip()
             pseudo = request.form.get('pseudo', '').strip()
             name = request.form.get('name', '').strip()
-            password = request.form.get('password', '').strip()
+            password = request.form.get('password', '')
             bio = request.form.get('bio', '').strip()
 
             current_app.logger.info(
@@ -269,41 +235,29 @@ def register():
             # errors as before.
             existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
             existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
-
-            pending_retry = existing_pseudo if _is_pending_signup(existing_pseudo) else None
-            if pending_retry is None and _is_pending_signup(existing_whatsapp):
-                pending_retry = existing_whatsapp
-
-            if pending_retry is not None and existing_pseudo is not None \
-                    and existing_whatsapp is not None \
+            if existing_pseudo and existing_whatsapp \
                     and existing_pseudo.id != existing_whatsapp.id:
-                # pseudo belongs to one pending account, number to another:
-                # ambiguous, do not silently merge two rows.
-                flash('Gen konfli ak yon kont an atant verifikasyon. Tanpri konekte oswa kontakte nou.', 'error')
+                flash('Gen konfli ant pseudo ak nimewo sa yo. Tanpri konekte oswa kontakte nou.', 'error')
                 return redirect(url_for('auth.register'))
 
-            if pending_retry is None:
+            pending_retry = existing_pseudo or existing_whatsapp
+            if pending_retry and not _is_pending_signup(pending_retry):
                 if existing_pseudo:
                     flash(f'Pseudo "{pseudo_clean}" la deja pran. Tanpri chwazi yon lòt.', 'error')
                     return redirect(url_for('auth.register'))
+                flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
+                return redirect(url_for('auth.login'))
 
-                if existing_whatsapp:
-                    flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
-                    return redirect(url_for('auth.login'))
-
-            if pending_retry is not None:
-                # Resume the stalled signup on the existing row (keeps the same
-                # id, so no orphan Gkach account is created either).
+            if pending_retry:
+                if pending_retry.pseudo != pseudo_clean or pending_retry.whatsapp != whatsapp_clean:
+                    flash('Kont sa a poko verifye. Sèvi ak menm pseudo ak nimewo WhatsApp la.', 'error')
+                    return redirect(url_for('auth.register'))
                 user = pending_retry
-                user.whatsapp = whatsapp_clean
-                user.pseudo = pseudo_clean
                 user.name = name if name else pseudo_clean
+                user.bio = bio
                 user.set_password(password)
                 db.session.commit()
             else:
-                # Create user - PENDING: is_active stays False until the WhatsApp
-                # code is confirmed, which also keeps Flask-Login's default
-                # `is_active` check from ever handing out a session.
                 user = User(
                     whatsapp=whatsapp_clean,
                     pseudo=pseudo_clean,
@@ -327,31 +281,27 @@ def register():
                 db.session.add(user_gkach)
                 db.session.commit()
 
-            # No auto-login and NO welcome bonus here: the 500-Gkach signup gift
-            # is issued only after the number is proven (see verify_phone),
-            # otherwise anyone could mint bonuses with numbers they do not own.
             from app.services import otp_service
-            _otp, delivered_via = otp_service.issue_and_send(
-                whatsapp_clean, user_id=user.id, ip_address=request.remote_addr
-            )
-            session['pending_verify_uid'] = user.id
-
-            if delivered_via:
-                if delivered_via == 'dev_fallback':
-                    flash(
-                        f'Mod DEV: Kòd OTP la: {_otp.dev_code}',
-                        'info',
-                    )
-                else:
-                    flash('Nou voye yon kòd 6 chif sou WhatsApp ou. Tanpri antre l pou aktive kont ou.', 'info')
+            wait = otp_service.resend_wait(
+                user.whatsapp, OtpCode.PURPOSE_REGISTER
+            ) if pending_retry else 0
+            if wait:
+                delivered_via = 'cooldown'
             else:
-                # Honest failure: the account is waiting, but no gateway could
-                # reach them. Tell the user instead of showing a spinner forever.
-                flash(
-                    'Kont ou an kreye men nou pa rive voye kòd la WhatsApp kounye a. '
-                    'Eseye "Voye kòd la ankò" oswa kontakte administrateur a.',
-                    'error'
+                _otp, delivered_via = otp_service.issue_and_send(
+                    user.whatsapp, user_id=user.id,
+                    purpose=OtpCode.PURPOSE_REGISTER,
+                    ip_address=request.remote_addr,
                 )
+            session['pending_verify_uid'] = user.id
+            if delivered_via == 'dev_fallback':
+                flash(f'Mod DEV: Kòd OTP la se {_otp.dev_code}.', 'info')
+            elif delivered_via == 'cooldown':
+                flash(f'Tanpri tann {wait} segond anvan ou mande yon lòt kòd.', 'info')
+            elif delivered_via:
+                flash('Nou voye yon kòd 6 chif sou WhatsApp ou. Antre l pou aktive kont ou.', 'info')
+            else:
+                flash('Kont ou an kreye, men nou pa rive voye kòd WhatsApp la kounye a. Eseye ankò pita.', 'error')
             return redirect(url_for('auth.verify_phone'))
 
         except ValidationError as e:
@@ -370,120 +320,89 @@ def register():
 @auth_bp.route('/verify', methods=['GET', 'POST'])
 @limiter.limit("60 per hour")
 def verify_phone():
-    """Enter the 6-digit WhatsApp code to activate a freshly created account.
-
-    The account already exists (created by :func:`register`) but is inactive, so
-    nothing here needs to survive a refresh or a back-button: the pending row is
-    the state, the session only points at it.
-    """
     user = _pending_verify_user()
     if user is None:
         if current_user.is_authenticated:
             return redirect(url_for('main.index'))
-        flash('Pa gen yon enskripsyon an atant pou verifye. Kreye yon kont anvan.', 'info')
+        flash('Pa gen kont an atant verifikasyon. Tanpri kreye yon kont.', 'info')
         return redirect(url_for('auth.register'))
 
     from app.services import otp_service
-
     if request.method == 'POST':
-        status, _row = otp_service.verify(user.whatsapp, request.form.get('code', ''))
-        st = otp_service.state(user.whatsapp)
-
+        status, _otp = otp_service.verify(
+            user.whatsapp, request.form.get('code', ''),
+            purpose=OtpCode.PURPOSE_REGISTER, user_id=user.id,
+        )
         if status == otp_service.OK:
             _activate_after_verification(user)
-            message = 'Kont ou aktif! Byenveni nan Glory2YahPub 🎉'
-            if _wants_json():
-                return jsonify({'ok': True, 'message': message,
-                                'redirect': url_for('main.index')})
-            flash(message, 'success')
-            return redirect(url_for('main.index'))
+            return jsonify({
+                'ok': True,
+                'message': 'Kont ou verifye avèk siksè!',
+                'redirect': url_for('main.index'),
+            })
 
         messages = {
             otp_service.WRONG: 'Kòd la pa kòrèk. Eseye ankò.',
-            otp_service.EXPIRED: 'Kòd la ekspire. Tanpri mande yon lòt.',
-            otp_service.LOCKED: 'Twòp tantativ. Tanpri mande yon nouvo kòd.',
+            otp_service.EXPIRED: 'Kòd la ekspire. Mande yon lòt.',
+            otp_service.LOCKED: 'Twòp tantativ. Mande yon nouvo kòd.',
             otp_service.MISSING: 'Tanpri antre kòd 6 chif la.',
         }
-        message = messages.get(status, 'Kòd la pa valide.')
+        state = otp_service.state(user.whatsapp, OtpCode.PURPOSE_REGISTER)
+        return jsonify({
+            'ok': False,
+            'status': status,
+            'message': messages.get(status, 'Kòd la pa valide.'),
+            'attempts_left': state['attempts_left'],
+            'resend_in': state['resend_in'],
+        }), 400
 
-        if _wants_json():
-            # Always HTTP 200: the request itself succeeded, `ok` carries the
-            # verdict. A 4xx here would push the widget into its error branch
-            # and lose the specific message (and the attempts budget).
-            return jsonify({
-                'ok': False,
-                'status': status,
-                'message': message,
-                'resend_in': st.get('resend_in', 0),
-                'attempts_left': st.get('attempts_left', 0),
-            })
-
-        flash(message, 'error')
-        if status in (otp_service.EXPIRED, otp_service.LOCKED):
-            # No auto-reissue: sending WhatsApp messages has a cost and an
-            # abusive caller could otherwise force one per failed attempt.
-            session['otp_suggest_resend'] = True
-        return redirect(url_for('auth.verify_phone'))
-
-    st = otp_service.state(user.whatsapp)
-    suggest_resend = bool(session.pop('otp_suggest_resend', False)) or not st.get('usable', False)
     return render_template(
         'auth/verify_phone.html',
-        masked_phone=_mask_phone(user.whatsapp),
         pseudo=user.pseudo,
-        otp_state=st,
-        suggest_resend=suggest_resend,
+        masked_phone=_mask_phone(user.whatsapp),
+        otp_state=otp_service.state(user.whatsapp, OtpCode.PURPOSE_REGISTER),
         ttl_seconds=int(otp_service.OTP_TTL.total_seconds()),
         resend_seconds=int(otp_service.RESEND_COOLDOWN.total_seconds()),
         max_attempts=otp_service.MAX_ATTEMPTS,
     )
 
 
-@auth_bp.route('/verify/resend', methods=['POST'])
-@limiter.limit("20 per hour")
+@auth_bp.route('/resend-otp', methods=['POST'])
+@limiter.limit("10 per hour")
 def resend_otp():
-    """Issue + push a new code for the pending signup (cooldown-guarded)."""
     user = _pending_verify_user()
     if user is None:
-        payload = {'ok': False, 'status': 'no_pending',
-                   'message': 'Pa gen kont an atant verifikasyon.',
-                   'redirect': url_for('auth.register')}
-        return jsonify(payload) if _wants_json() else redirect(url_for('auth.register'))
+        return jsonify({'ok': False, 'message': 'Pa gen kont an atant verifikasyon.'}), 400
 
     from app.services import otp_service
-
-    wait = otp_service.resend_wait(user.whatsapp)
+    wait = otp_service.resend_wait(user.whatsapp, OtpCode.PURPOSE_REGISTER)
     if wait:
-        payload = {'ok': False, 'status': 'cooldown', 'wait': wait,
-                   'message': f'Tann {wait} segond anvan ou mande yon lòt kòd.'}
-        return jsonify(payload)
-
-    _otp, delivered_via = otp_service.issue_and_send(
-        user.whatsapp, user_id=user.id, ip_address=request.remote_addr
-    )
-
-    if delivered_via == 'dev_fallback':
-        response = {
-            'ok': True, 'delivered': delivered_via,
-            'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
-            'message': 'Mod DEV: Pa gen founisè WhatsApp ki rive voye kòd la.',
-            'dev_code': _otp.dev_code,
-        }
-        return jsonify(response)
-
-    if delivered_via:
         return jsonify({
-            'ok': True, 'delivered': delivered_via,
-            'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
-            'message': 'Nou voye yon nouvo kòd sou WhatsApp ou.',
-        })
+            'ok': False,
+            'wait': wait,
+            'message': f'Tann {wait} segond anvan ou mande yon lòt kòd.',
+        }), 429
 
-    return jsonify({
-        'ok': False, 'status': 'undelivered',
-        'wait': int(otp_service.RESEND_COOLDOWN.total_seconds()),
-        'message': ('Nou pa rive voye kòd la kounye a. Eseye ankò pita oswa '
-                    'kontakte administrateur a.'),
-    })
+    otp, delivered_via = otp_service.issue_and_send(
+        user.whatsapp, user_id=user.id,
+        purpose=OtpCode.PURPOSE_REGISTER, ip_address=request.remote_addr,
+    )
+    if not delivered_via:
+        return jsonify({
+            'ok': False,
+            'message': 'Nou pa rive voye kòd la kounye a. Eseye ankò pita.',
+        }), 503
+
+    response = {
+        'ok': True,
+        'message': 'Nou voye yon nouvo kòd 6 chif sou WhatsApp ou.',
+    }
+    if delivered_via == 'dev_fallback':
+        response['dev_code'] = otp.dev_code
+    return jsonify(response)
+
+
+
 
 
 # IP-level limiter: relatively generous because it counts EVERY page view (GET)
@@ -564,7 +483,7 @@ def login():
     if request.method == 'POST':
         try:
             identifier = request.form.get('identifier', '').strip()
-            password = request.form.get('password', '').strip()
+            password = request.form.get('password', '')
             remember = True  # SESSION FIX: always remember; session permanent=True below
 
             if not identifier or not password:
@@ -583,8 +502,6 @@ def login():
                     _ok = bool(_cand.check_password(password))
                 except Exception:
                     _ok = False
-                if not _ok:
-                    _ok = bool(_check_forgot_temp_password(_cand.id, password))
                 if _ok:
                     user = _cand
                     break
@@ -614,67 +531,14 @@ def login():
                 )
                 return _redirect_back_with_params(last_identifier=identifier)
 
-            # Check password OR valid temporary forgot-password token
-            password_ok = False
-            try:
-                password_ok = bool(user.check_password(password))
-            except Exception:
-                password_ok = False
-            if not password_ok:
-                password_ok = bool(_check_forgot_temp_password(user.id, password))
-
-            if not password_ok:
-                # BUGFIX: rate-limit ONLY on actual failure (was counting successful logins).
-                if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
-                    current_app.logger.warning(
-                        "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
-                    )
-                    flash(
-                        '5 esè koneksyon invalide yo te pase. Tanpri tann 5 minit epi eseye ankò.',
-                        'error',
-                    )
-                    return _redirect_back_with_params(last_identifier=identifier)
-                current_app.logger.warning(
-                    "Login failed: user_id=%s pseudo=%s wrong password",
-                    user.id, user.pseudo,
-                )
-                flash(
-                    '❌ Modpas ou pa koresponn ak kont sa a. '
-                    'Tanpri eseye ankò oswa itilize "Oubliye modpas?" pou resèt.',
-                    'error',
-                )
-                return _redirect_back_with_params(last_identifier=identifier)
-
             if not user.is_active:
-                # Two different situations share the is_active flag, and telling
-                # them apart is what decides whether the user has a way out:
-                #   * a signup that never finished WhatsApp verification
-                #     -> send them back to the code screen (the password they
-                #        just proved they own is what authorises this)
-                #   * an account an administrator switched off
-                #     -> keep the "contact administrator" dead end
                 if _is_pending_signup(user):
                     session['pending_verify_uid'] = user.id
-                    flash(
-                        'Kont ou poko verifye. Tanpri antre kòd 6 chif nou voye '
-                        'sou WhatsApp ou a pou aktive l.',
-                        'info',
-                    )
+                    flash('Verifye nimewo WhatsApp ou pou aktive kont la.', 'info')
                     return redirect(url_for('auth.verify_phone'))
-                flash('Kont ou an dezaktive. Kontakte administrateur a.', 'error')
+                flash('Kont sa a dezaktive. Kontakte administratè a pou asistans.', 'error')
                 return _redirect_back_with_params(last_identifier=identifier)
 
-            # If user used temp forgot pw, clear it so single-use only
-            if _check_forgot_temp_password(user.id, password):
-                try:
-                    if cache:
-                        cache.delete(_FORGOT_KEY.format(user.id))
-                except Exception:
-                    pass
-                flash(
-                    "Tanpri chanje modpas ou nan pwofil ou rapidman (modpas pwovizwa a itilize 1 fwa sèlman).",
-                    "warning",
-                )
 
             # BUGFIX: successful login — CLEAR the per-identifier failure counter
             try:
@@ -683,8 +547,7 @@ def login():
             except Exception:
                 pass
 
-            # Login user, remember=always, force=True (bypass inactive check — already validated above)
-            login_user(user, remember=True, force=True)
+            login_user(user, remember=True)
 
             from flask import session as _s
             _s.permanent = True
@@ -820,7 +683,8 @@ def login_otp_verify():
     from app.models.otp import OtpCode
 
     status, _row = otp_service.verify(
-        user.whatsapp, request.form.get('code', ''), purpose=OtpCode.PURPOSE_LOGIN)
+        user.whatsapp, request.form.get('code', ''),
+        purpose=OtpCode.PURPOSE_LOGIN, user_id=user.id)
     st = otp_service.state(user.whatsapp, OtpCode.PURPOSE_LOGIN)
 
     if status != otp_service.OK:
@@ -959,7 +823,10 @@ def change_password():
         
         if not current_user.check_password(current_password):
             return jsonify({'success': False, 'message': 'Modpas aktyèl envalid'}), 400
-        
+
+        if current_user.check_password(new_password):
+            return jsonify({'success': False, 'message': 'Nouvo modpas dwe diferan ak aktyèl la'}), 400
+
         validate_password(new_password)
         
         current_user.set_password(new_password)
@@ -1007,6 +874,13 @@ def delete_account():
         Ad.query.filter_by(user_whatsapp=user_wa).delete()
         GkachTransaction.query.filter_by(user_whatsapp=user_wa).delete()
         CartItem.query.filter_by(user_id=user_id).delete()
+        AccountReport.query.filter(
+            db.or_(
+                AccountReport.reporter_id == user_id,
+                AccountReport.reported_user_id == user_id,
+            )
+        ).delete(synchronize_session=False)
+        OtpCode.query.filter_by(user_id=user_id).delete(synchronize_session=False)
 
         # Reload actual User ORM row from DB by id (SAFE)
         victim = db.session.get(User, user_id)
@@ -1196,68 +1070,193 @@ def delete_story(story_id):
     return redirect(url_for('auth.my_stories'))
 
 
-def generate_temp_password():
-    """Generate a random 6-digit temporary password"""
-    import random
-    return str(random.randint(100000, 999999))
+@auth_bp.route('/report-account', methods=['GET'])
+@login_required
+@limiter.limit("30 per hour")
+def search_accounts_to_report():
+    """Search the account database so a member can report the correct user."""
+    search = (request.args.get('q') or '').strip()[:100]
+    users = []
+    if search:
+        escaped = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = f'%{escaped}%'
+        users = (
+            User.query
+            .filter(
+                User.id != current_user.id,
+                db.or_(User.is_admin.is_(False), User.is_admin.is_(None)),
+                db.or_(
+                    User.pseudo.ilike(pattern, escape='\\'),
+                    User.name.ilike(pattern, escape='\\'),
+                    User.whatsapp.ilike(pattern, escape='\\'),
+                ),
+            )
+            .order_by(User.pseudo.asc(), User.id.asc())
+            .limit(25)
+            .all()
+        )
+    reported_ids = {
+        row[0] for row in AccountReport.query.with_entities(
+            AccountReport.reported_user_id
+        ).filter_by(reporter_id=current_user.id).all()
+    }
+    return render_template(
+        'auth/report_account.html',
+        users=users,
+        search=search,
+        reported_ids=reported_ids,
+    )
+
+
+@auth_bp.route('/report-account/<int:user_id>', methods=['POST'])
+@login_required
+@limiter.limit("10 per hour")
+def report_account(user_id):
+    """Submit one reasoned report per member/account pair."""
+    target = User.query.get_or_404(user_id)
+    if target.id == current_user.id:
+        flash('Ou pa ka denonse pwòp kont ou.', 'error')
+        return redirect(url_for('auth.search_accounts_to_report'))
+    if target.is_admin:
+        flash('Ou pa kapab denonse yon kont administratè nan fòm sa a.', 'error')
+        return redirect(url_for('auth.search_accounts_to_report'))
+
+    reason = (request.form.get('reason') or '').strip()
+    if len(reason) < 10 or len(reason) > 1000:
+        flash('Eksplike rezon an ak omwen 10 karaktè (maksimòm 1000).', 'error')
+        return redirect(url_for('auth.search_accounts_to_report', q=target.pseudo))
+
+    existing = AccountReport.query.filter_by(
+        reporter_id=current_user.id,
+        reported_user_id=target.id,
+    ).first()
+    if existing:
+        flash('Ou deja voye yon denonsyasyon pou kont sa a.', 'info')
+        return redirect(url_for('auth.search_accounts_to_report', q=target.pseudo))
+
+    db.session.add(AccountReport(
+        reporter_id=current_user.id,
+        reported_user_id=target.id,
+        reason=reason,
+    ))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        if not AccountReport.query.filter_by(
+                reporter_id=current_user.id,
+                reported_user_id=target.id,
+        ).first():
+            raise
+        flash('Ou deja voye yon denonsyasyon pou kont sa a.', 'info')
+        return redirect(url_for('auth.search_accounts_to_report', q=target.pseudo))
+    current_app.logger.info(
+        'Account reported: reporter_id=%s target_id=%s',
+        current_user.id, target.id,
+    )
+    flash('Denonsyasyon an voye bay ekip administrasyon an.', 'success')
+    return redirect(url_for('auth.search_accounts_to_report', q=target.pseudo))
 
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
 def forgot_password():
-    """Forgot password: show 6-digit temp password ONLY to the requesting user.
-    P1 FIX: NEVER overwrite the original password_hash. Temp pw is stored in CACHE
-    (SHA256 hash) for 1 hour, single-use only, removed on successful login.
-    Original user can still login normally even if an attacker runs this route."""
+    """Recover an active account with a WhatsApp OTP and a new password."""
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
 
-    temp_password = None
-
     if request.method == 'POST':
-        identifier = request.form.get('identifier', '').strip()
+        action = request.form.get('action', 'send_code')
+        from app.services import otp_service
 
-        if not identifier:
-            flash('Tanpri antre WhatsApp ou oswa pseudo.', 'error')
-            return redirect(url_for('auth.forgot_password'))
+        if action == 'reset_password':
+            uid = session.get('pending_password_reset_uid')
+            try:
+                user_id = int(uid) if uid is not None else None
+            except (TypeError, ValueError):
+                user_id = None
+            user = db.session.get(User, user_id) if user_id else None
+            if user is None or not user.is_active or not user.whatsapp:
+                session.pop('pending_password_reset_uid', None)
+                flash('Demann lan pa valide. Mande yon nouvo kòd pou kont ou.', 'error')
+                return redirect(url_for('auth.forgot_password'))
 
-        # Per-identifier rate limit (forgot pw is very sensitive)
-        if _cache_identifier_rate_limit("forgot_pw_id", identifier, 2, 900):
+            code = (request.form.get('code') or '').strip()
+            password = request.form.get('new_password') or ''
+            confirmation = request.form.get('confirm_password') or ''
+            if password != confirmation:
+                flash('Nouvo modpas yo pa menm.', 'error')
+                return redirect(url_for('auth.forgot_password'))
+            try:
+                validate_password(password)
+            except ValidationError as exc:
+                flash(str(exc), 'error')
+                return redirect(url_for('auth.forgot_password'))
+
+            if len(code) != otp_service.OTP_LENGTH or not code.isdigit():
+                flash('Antre kòd 6 chif ou te resevwa a.', 'error')
+                return redirect(url_for('auth.forgot_password'))
+
+            status, otp = otp_service.verify(
+                user.whatsapp, code, purpose=OtpCode.PURPOSE_PASSWORD_RESET,
+                user_id=user.id,
+            )
+            if status != otp_service.OK or otp is None or otp.user_id != user.id:
+                messages = {
+                    otp_service.WRONG: 'Kòd la pa kòrèk. Eseye ankò.',
+                    otp_service.EXPIRED: 'Kòd la ekspire. Mande yon nouvo kòd.',
+                    otp_service.LOCKED: 'Twòp tantativ. Mande yon nouvo kòd.',
+                    otp_service.MISSING: 'Pa gen kòd valab. Mande yon nouvo kòd.',
+                }
+                flash(messages.get(status, 'Kòd la pa valide.'), 'error')
+                return redirect(url_for('auth.forgot_password'))
+
+            user.set_password(password)
+            db.session.commit()
+            session.pop('pending_password_reset_uid', None)
+            flash('Modpas ou chanje. Konekte ak nouvo modpas ou a.', 'success')
+            return redirect(url_for('auth.login'))
+
+        identifier = (request.form.get('identifier') or '').strip()
+        if identifier and not _cache_identifier_rate_limit(
+                'forgot_pw_id', identifier, 2, 900):
+            user = next(
+                (candidate for candidate in _find_users_by_identifier(identifier)
+                 if candidate.is_active and candidate.whatsapp),
+                None,
+            )
+            if user:
+                wait = otp_service.resend_wait(
+                    user.whatsapp, OtpCode.PURPOSE_PASSWORD_RESET
+                )
+                if not wait:
+                    otp, delivered_via = otp_service.issue_and_send(
+                        user.whatsapp,
+                        user_id=user.id,
+                        purpose=OtpCode.PURPOSE_PASSWORD_RESET,
+                        ip_address=request.remote_addr,
+                    )
+                    if delivered_via:
+                        session['pending_password_reset_uid'] = user.id
+                        if delivered_via == 'dev_fallback':
+                            flash(
+                                f'Mod DEV: Kòd rekiperasyon an se {otp.dev_code}.',
+                                'info',
+                            )
+                else:
+                    current_app.logger.info(
+                        'Password reset OTP cooldown for user_id=%s', user.id
+                    )
+        elif identifier:
             current_app.logger.warning(
-                "Forgot pw rate-limit BLOCKED id=%s", identifier[:6] + "***",
+                'Password reset rate limit reached for identifier length=%s',
+                len(identifier),
             )
-            flash('Tanpri tann 15 minit antre 2 demann modpas pwovizwa.', 'error')
-            return redirect(url_for('auth.forgot_password'))
-
-        # STRICT find user (same strict lookup as login)
-        user = _find_user_by_identifier(identifier)
-
-        if not user:
-            # Never reveal if account exists or not (anti-enumeration)
-            flash(
-                "Si kont lan egziste ak WhatsApp oswa pseudo sa, tanpri gade anba a wè modpas pwovizwa a. "
-                "Tanpri konekte avè l epi chanje li rapidman.",
-                'success',
-            )
-            return redirect(url_for('auth.forgot_password'))
-
-        # Generate temporary password
-        temp_password = generate_temp_password()
-
-        # P1 SAFETY: NEVER call user.set_password() (keep original pw working!)
-        #   Store temp hash in cache with 1hr TTL, single use
-        _store_forgot_temp_password(int(user.id), temp_password)
-        db.session.commit()  # no-op (nothing to commit), keep behavior idempotent
-
-        current_app.logger.info(
-            "Forgot pw temp pw issued: user_id=%s pseudo=%s",
-            user.id, user.pseudo,
-        )
 
         flash(
-            'Modpas pwovizwa la valab pou 1 èdtan, 1 fwa sèlman. '
-            'Tanpri chanje modpas ou nan pwofil ou apre w konekte.',
-            'success',
+            'Si yon kont aktif koresponn ak enfòmasyon sa yo, n ap voye yon kòd '
+            'sou WhatsApp ki asosye avè l.',
+            'info',
         )
 
-    return render_template('auth/forgot_password.html', temp_password=temp_password)
+    return render_template('auth/forgot_password.html')

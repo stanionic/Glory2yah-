@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Denonse yon kont - Glory2YahPub{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 860px;">
+    <h1>Denonse yon kont</h1>
+    <p>Chèche kont lan pa pseudo, non oswa WhatsApp, epi esplike sa ki fè w sispèk li.</p>
+
+    <form method="GET" action="{{ url_for('auth.search_accounts_to_report') }}"
+          class="d-flex gap-2 mb-4">
+        <input type="search" name="q" value="{{ search }}" class="form-control"
+               maxlength="100" required placeholder="Chèche yon kont...">
+        <button type="submit" class="btn btn-primary">Chèche</button>
+    </form>
+
+    {% if search and not users %}
+    <div class="alert alert-info">Pa gen kont ki koresponn ak rechèch sa a.</div>
+    {% endif %}
+
+    {% for user in users %}
+    <section class="card mb-3">
+        <div class="card-body">
+            <h2 class="h5 mb-1">{{ user.name or user.pseudo }}</h2>
+            <p class="text-muted mb-3">@{{ user.pseudo }}</p>
+            {% if user.id in reported_ids %}
+            <p class="text-success mb-0">Ou deja denonse kont sa a.</p>
+            {% else %}
+            <form method="POST" action="{{ url_for('auth.report_account', user_id=user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="reason-{{ user.id }}" class="form-label">Rezon denonsyasyon an</label>
+                <textarea id="reason-{{ user.id }}" name="reason" class="form-control mb-2"
+                          minlength="10" maxlength="1000" rows="3" required
+                          placeholder="Bay ase detay pou administratè yo ka verifye..."></textarea>
+                <button type="submit" class="btn btn-outline-danger">Voye denonsyasyon</button>
+            </form>
+            {% endif %}
+        </div>
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -8,6 +8,9 @@
                 <h2>👥 Jere Itilizatè yo</h2>
                 <p class="subtitle">Gere tout kont itilizatè sou platfòm nan</p>
             </div>
+            <a href="{{ url_for('admin.reported_users') }}" class="admin-btn admin-btn-danger">
+                Kont denonse{% if open_report_count %} ({{ open_report_count }}){% endif %}
+            </a>
         </div>
 
         <div class="admin-stats">

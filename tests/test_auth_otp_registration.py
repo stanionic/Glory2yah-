@@ -32,8 +32,100 @@ def test_registration_creates_pending_account_and_otp(app, monkeypatch):
         user = User.query.filter_by(pseudo='otp_test_user').one()
         assert user.is_active is False
         assert user.phone_verified is False
+        assert user.is_admin is False
         otp = OtpCode.query.filter_by(user_id=user.id).one()
         assert otp.phone == user.whatsapp == '+50942882076'
+        assert otp.purpose == OtpCode.PURPOSE_REGISTER
+
+
+def test_registration_otp_activates_user_without_admin_approval(app, monkeypatch):
+    monkeypatch.setattr(otp_service, 'generate_code', lambda: '012345')
+    monkeypatch.setattr(otp_service, 'send_code', lambda otp, code: 'test')
+    client = app.test_client()
+
+    response = client.post('/auth/register', data={
+        'name': 'Verified User',
+        'pseudo': 'verified_user',
+        'whatsapp': '+50942882077',
+        'password': 'pass123',
+    })
+    assert response.status_code == 302
+    assert response.headers['Location'].endswith('/auth/verify')
+
+    assert client.get('/auth/verify').status_code == 200
+    response = client.post('/auth/verify', data={'code': '012345'})
+    assert response.status_code == 200
+    assert response.json['ok'] is True
+
+    with app.app_context():
+        user = User.query.filter_by(pseudo='verified_user').one()
+        assert user.is_active is True
+        assert user.phone_verified is True
+        assert user.is_admin is False
+
+
+def test_active_non_admin_can_log_in(app):
+    client = app.test_client()
+    with app.app_context():
+        user = User(
+            pseudo='public_login',
+            name='Public Login',
+            whatsapp='+50940000011',
+            is_active=True,
+            phone_verified=True,
+        )
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    response = client.post('/auth/login', data={
+        'identifier': 'public_login',
+        'password': 'pass123',
+    })
+    assert response.status_code == 302
+    with client.session_transaction() as session:
+        assert session['_user_id'] == str(user_id)
+
+
+def test_pending_and_blocked_users_cannot_bypass_activation_or_block(app):
+    client = app.test_client()
+    with app.app_context():
+        pending = User(
+            pseudo='pending_login',
+            name='Pending Login',
+            whatsapp='+50940000006',
+            is_active=False,
+            phone_verified=False,
+        )
+        pending.set_password('pass123')
+        blocked = User(
+            pseudo='blocked_login',
+            name='Blocked Login',
+            whatsapp='+50940000007',
+            is_active=False,
+            phone_verified=True,
+        )
+        blocked.set_password('pass123')
+        db.session.add_all([pending, blocked])
+        db.session.commit()
+        otp_service.issue(pending.whatsapp, user_id=pending.id)
+
+    response = client.post('/auth/login', data={
+        'identifier': 'pending_login',
+        'password': 'pass123',
+    })
+    assert response.status_code == 302
+    assert response.headers['Location'].endswith('/auth/verify')
+
+    response = client.post('/auth/login', data={
+        'identifier': 'blocked_login',
+        'password': 'pass123',
+    })
+    assert response.status_code == 302
+    assert response.headers['Location'].startswith('/auth/login')
+    with client.session_transaction() as session:
+        assert '_user_id' not in session
 
 
 def test_phone_normalization_matches_user_format_and_keeps_legacy_lookup(app):

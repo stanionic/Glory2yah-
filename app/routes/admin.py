@@ -10,6 +10,8 @@ from datetime import datetime
 from app.services.ad_service import AdService, Ad
 from app.services.gkach_service import GkachService
 from app.models.user import User
+from app.models.account_report import AccountReport
+from app.models.otp import OtpCode
 from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
 from app.models.admin_settings import AdminSettings # Import AdminSettings
@@ -375,8 +377,82 @@ def manage_users():
     return render_template(
         'admin_users.html',
         users=users,
+        open_report_count=AccountReport.query.filter_by(status='open').count(),
         current_user=current_user
     )
+
+
+@admin_bp.route('/users/reported')
+@login_required
+@admin_required
+def reported_users():
+    """Search the database for accounts with unresolved user reports."""
+    search = (request.args.get('q') or '').strip()[:100]
+    query = (
+        User.query.join(AccountReport, AccountReport.reported_user_id == User.id)
+        .filter(AccountReport.status == 'open')
+    )
+    if search:
+        escaped = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = f'%{escaped}%'
+        query = query.filter(db.or_(
+            User.pseudo.ilike(pattern, escape='\\'),
+            User.name.ilike(pattern, escape='\\'),
+            User.whatsapp.ilike(pattern, escape='\\'),
+        ))
+
+    users = (
+        query.group_by(User.id)
+        .order_by(db.func.count(AccountReport.id).desc(), User.id.desc())
+        .limit(100)
+        .all()
+    )
+    user_ids = [user.id for user in users]
+    reports = (
+        AccountReport.query.filter(
+            AccountReport.status == 'open',
+            AccountReport.reported_user_id.in_(user_ids),
+        )
+        .order_by(AccountReport.created_at.desc(), AccountReport.id.desc())
+        .all()
+    ) if user_ids else []
+    reporter_ids = {report.reporter_id for report in reports}
+    reporters = {
+        user.id: user for user in User.query.filter(User.id.in_(reporter_ids)).all()
+    } if reporter_ids else {}
+    reports_by_user = {}
+    for report in reports:
+        reports_by_user.setdefault(report.reported_user_id, []).append({
+            'report': report,
+            'reporter': reporters.get(report.reporter_id),
+        })
+    accounts = [{
+        'user': user,
+        'reports': reports_by_user.get(user.id, []),
+    } for user in users]
+    return render_template(
+        'admin_reported_accounts.html',
+        accounts=accounts,
+        search=search,
+    )
+
+
+@admin_bp.route('/users/reports/<int:user_id>/dismiss', methods=['POST'])
+@login_required
+@admin_required
+def dismiss_user_reports(user_id):
+    """Close the open reports for an account after administrative review."""
+    reports = AccountReport.query.filter_by(
+        reported_user_id=user_id, status='open'
+    ).all()
+    if not reports:
+        flash('Pa gen denonsyasyon ki an atant pou kont sa a.', 'info')
+        return redirect(url_for('admin.reported_users'))
+    for report in reports:
+        report.status = 'dismissed'
+    db.session.commit()
+    flash('Denonsyasyon yo make kòm revize.', 'success')
+    return redirect(url_for('admin.reported_users'))
 
 
 @admin_bp.route('/audit')
@@ -478,6 +554,13 @@ def admin_delete_user(user_id):
     
     user = User.query.get_or_404(user_id)
     pseudo = user.pseudo or user.whatsapp
+    AccountReport.query.filter(
+        db.or_(
+            AccountReport.reporter_id == user.id,
+            AccountReport.reported_user_id == user.id,
+        )
+    ).delete(synchronize_session=False)
+    OtpCode.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     UserGkach.query.filter_by(user_id=user.id).delete()
     db.session.delete(user)
     db.session.commit()

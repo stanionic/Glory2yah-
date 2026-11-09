@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Kont denonse - Administrasyon{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-container" style="max-width: 1100px; margin: 0 auto;">
+        <div class="admin-header">
+            <div>
+                <h2>Kont denonse</h2>
+                <p class="subtitle">Chèche nan baz done a epi revize denonsyasyon itilizatè yo.</p>
+            </div>
+            <a href="{{ url_for('admin.manage_users') }}" class="admin-btn admin-btn-info">Tout itilizatè yo</a>
+        </div>
+
+        <div class="admin-card mb-4">
+            <div class="admin-card-body" style="padding: 20px;">
+                <form method="GET" action="{{ url_for('admin.reported_users') }}"
+                      style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <input type="search" name="q" value="{{ search }}" maxlength="100"
+                           placeholder="Chèche pa pseudo, non oswa WhatsApp..."
+                           style="flex:1 1 280px; padding:12px; border:1px solid #cbd5e1; border-radius:10px;">
+                    <button type="submit" class="admin-btn admin-btn-info">Chèche nan denonsyasyon yo</button>
+                </form>
+            </div>
+        </div>
+
+        {% if not accounts %}
+        <div class="admin-card"><div class="admin-card-body" style="padding:24px;">
+            Pa gen kont ki gen denonsyasyon an atant pou rechèch sa a.
+        </div></div>
+        {% endif %}
+
+        {% for account in accounts %}
+        <section class="admin-card mb-4">
+            <div class="admin-card-body" style="padding:22px;">
+                <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                    <div>
+                        <h3 style="margin:0;">{{ account.user.name or account.user.pseudo }} (@{{ account.user.pseudo }})</h3>
+                        <p style="margin:6px 0;">ID {{ account.user.id }} · {{ account.user.whatsapp or 'Pa gen WhatsApp' }} ·
+                            {{ account.reports|length }} denonsyasyon an atant</p>
+                        <p style="margin:6px 0;">Estati:
+                            {% if account.user.is_active %}Aktif{% else %}Dezaktive{% endif %}
+                        </p>
+                    </div>
+                    <a href="{{ url_for('admin.admin_view_user', user_id=account.user.id) }}"
+                       class="admin-btn admin-btn-info admin-btn-sm">Wè kont lan</a>
+                </div>
+
+                <div style="margin:16px 0;">
+                    {% for item in account.reports %}
+                    <article style="border-top:1px solid #e2e8f0; padding:12px 0;">
+                        <strong>Denonse pa:
+                            {{ ('@' ~ item.reporter.pseudo) if item.reporter else 'Kont efase' }}
+                        </strong>
+                        <p style="margin:6px 0; white-space:pre-wrap;">{{ item.report.reason }}</p>
+                        <small>{{ item.report.created_at.strftime('%d/%m/%Y %H:%M') if item.report.created_at else '' }}</small>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    {% if account.user.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('admin.admin_delete_user', user_id=account.user.id) }}"
+                          onsubmit="return confirm('Efase definitivman kont sa a ak tout denonsyasyon li yo?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="admin-btn admin-btn-danger">Efase kont sa a</button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('admin.dismiss_user_reports', user_id=account.user.id) }}"
+                          onsubmit="return confirm('Make tout denonsyasyon sa yo kòm revize san efase kont lan?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="admin-btn admin-btn-warning">Fèmen denonsyasyon yo</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
