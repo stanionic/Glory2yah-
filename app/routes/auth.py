@@ -102,6 +102,18 @@ def _clean_pseudo(raw: str) -> str:
     return (raw or '').strip()
 
 
+def _login_rate_limit_key(identifier):
+    """Canonicalize an identifier so case/phone formatting cannot reset limits."""
+    value = (identifier or '').strip()
+    if not value:
+        return ''
+    if not any(char.isalpha() for char in value):
+        digits = ''.join(char for char in value if char.isdigit())
+        if digits:
+            return '+' + digits
+    return value.casefold()
+
+
 def _find_user_by_identifier(identifier):
     """Strict match only — no substring LIKE, no fuzzy account takeover.
     Priority:
@@ -231,7 +243,11 @@ def register():
             # --- duplicate handling -------------------------------------------
             # A legacy pending signup may retry with the same pseudo and number;
             # real accounts still follow the existing duplicate-account errors.
-            existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
+            # Login accepts pseudos case-insensitively, so registration must
+            # reserve them case-insensitively as well (e.g. Hello vs hello).
+            existing_pseudo = User.query.filter(
+                db.func.lower(User.pseudo) == pseudo_clean.lower()
+            ).first()
             existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
             if existing_pseudo and existing_whatsapp \
                     and existing_pseudo.id != existing_whatsapp.id:
@@ -490,7 +506,8 @@ def login():
                 # _cache_identifier_rate_limit() both checks AND records in one call:
                 #   returns True  → limit already reached (BLOCK, nothing recorded)
                 #   returns False → attempt recorded, allow (with error message)
-                if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
+                rate_key = _login_rate_limit_key(identifier)
+                if _cache_identifier_rate_limit("login_fail_id", rate_key, 5, 300):
                     current_app.logger.warning(
                         "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
                     )
@@ -522,7 +539,9 @@ def login():
             # BUGFIX: successful login — CLEAR the per-identifier failure counter
             try:
                 if cache:
-                    cache.delete(f"rl:login_fail_id:{identifier}")
+                    cache.delete(
+                        f"rl:login_fail_id:{_login_rate_limit_key(identifier)}"
+                    )
             except Exception:
                 pass
 

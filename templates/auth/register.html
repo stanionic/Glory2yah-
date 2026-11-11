@@ -572,7 +572,7 @@
                                 <i class="fas fa-eye" aria-hidden="true"></i>
                             </button>
                         </div>
-                        <p class="field-hint">Minsten 6 karaktè — 6 chif (ex: 123456) oswa lèt ak chif (ex: pass123)</p>
+                        <p class="field-hint">Omwen 6 karaktè — 6 chif (egzanp: 123456) oswa lèt ak chif (egzanp: pass123)</p>
                         <p class="field-error" id="passwordError"></p>
                     </div>
                 </div>
@@ -615,7 +615,7 @@
 
     form.addEventListener('submit', (ev) => {
         passwordError.textContent = '';
-        const pw = passwordInput.value.trim();
+        const pw = passwordInput.value;
         if (pw.length < 6) {
             ev.preventDefault();
             passwordError.textContent = 'Modpas la dwe gen omwen 6 karaktè.';

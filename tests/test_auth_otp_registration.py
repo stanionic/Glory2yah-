@@ -3,7 +3,9 @@ import pytest
 from app import create_app, db
 from app.models.otp import OtpCode
 from app.models.user import User
+from app.routes.auth import _login_rate_limit_key
 from app.services import notification_service, otp_service
+from app.utils.validators import ValidationError, validate_password
 
 
 @pytest.fixture
@@ -104,6 +106,76 @@ def test_active_non_admin_can_log_in(app):
     assert response.status_code == 302
     with client.session_transaction() as session:
         assert session['_user_id'] == str(user_id)
+
+
+def test_logout_clears_remember_cookie_without_deleting_account(app):
+    client = app.test_client()
+    with app.app_context():
+        user = User(
+            pseudo='logout_relogin', name='Logout Relogin',
+            whatsapp='+50940000014', is_active=True,
+        )
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    login_response = client.post('/auth/login', data={
+        'identifier': 'logout_relogin',
+        'password': 'pass123',
+    })
+    assert login_response.status_code == 302
+    assert 'glory2yah_remember=' in login_response.headers.get('Set-Cookie', '')
+
+    logout_response = client.get('/auth/logout')
+    assert logout_response.status_code == 302
+    assert 'glory2yah_remember=' in logout_response.headers.get('Set-Cookie', '')
+    assert 'Expires=Thu, 01 Jan 1970' in logout_response.headers.get('Set-Cookie', '')
+    assert client.get('/auth/profile').status_code == 302
+
+    relogin_response = client.post('/auth/login', data={
+        'identifier': 'logout_relogin',
+        'password': 'pass123',
+    })
+    assert relogin_response.status_code == 302
+    with client.session_transaction() as session:
+        assert session['_user_id'] == str(user_id)
+    with app.app_context():
+        assert db.session.get(User, user_id) is not None
+
+
+def test_password_validation_matches_six_character_registration_rule():
+    with pytest.raises(ValidationError):
+        validate_password('abcde')
+    assert validate_password('abcdef') is True
+    assert validate_password('123456') is True
+
+
+def test_registration_rejects_pseudo_with_conflicting_case(app):
+    client = app.test_client()
+    with app.app_context():
+        user = User(
+            pseudo='Hello', name='Hello', whatsapp='+50940000012',
+            is_active=True,
+        )
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+
+    response = client.post('/auth/register', data={
+        'name': 'Second User',
+        'pseudo': 'hello',
+        'whatsapp': '+50940000013',
+        'password': 'pass123',
+    })
+    assert response.status_code == 302
+    with app.app_context():
+        assert User.query.filter(db.func.lower(User.pseudo) == 'hello').count() == 1
+
+
+def test_login_rate_limit_key_normalizes_pseudo_case_and_phone_formatting():
+    assert _login_rate_limit_key('Hello_User') == 'hello_user'
+    assert _login_rate_limit_key(' +509 (4288) 2076 ') == '+50942882076'
 
 
 def test_pending_signup_can_log_in_without_otp_but_blocked_user_cannot(app):

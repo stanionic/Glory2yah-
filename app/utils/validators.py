@@ -84,7 +84,7 @@ def validate_email_address(email):
 
 def validate_password(password):
     """
-    Validate password - accepts either 6-digit number OR any password >= 4 characters
+    Validate password - accepts either a 6-digit PIN OR any password >= 6 characters
     Returns: True or raises ValidationError
     """
     if not password:
@@ -97,9 +97,9 @@ def validate_password(password):
     if re.fullmatch(r'^\d{6}$', password):
         return True
     
-    # For any other password, require at least 4 characters
-    if len(password) < 4:
-        raise ValidationError("Modpas dwe gen omwen 4 karaktè")
+    # Keep the server rule aligned with the registration form and recovery UI.
+    if len(password) < 6:
+        raise ValidationError("Modpas dwe gen omwen 6 karaktè")
     
     return True
 
