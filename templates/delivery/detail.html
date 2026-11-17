@@ -161,6 +161,7 @@
     {% if current_user.whatsapp == delivery.buyer_whatsapp and s == 'awaiting_buyer_confirmation' %}
     <form action="{{ url_for('delivery.confirm', delivery_id=delivery.delivery_id) }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="expected_total" value="{{ (delivery.total_price or 0) + (delivery.delivery_cost or 0) }}">
         <button type="submit" class="dlv-btn dlv-btn-secondary dlv-btn-block">
             <i class="fas fa-check-circle"></i> Konfime epi Peye kounye a
         </button>
@@ -173,6 +174,19 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="dlv-btn dlv-btn-green dlv-btn-block">
             <i class="fas fa-box-open"></i> Mwen resevwa kòmand lan ✅
+        </button>
+    </form>
+    <div style="height:18px"></div>
+    {% endif %}
+
+    {% set _is_buyer = current_user.whatsapp == delivery.buyer_whatsapp %}
+    {% set _is_seller = current_user.whatsapp == delivery.seller_whatsapp %}
+    {% if (s in ['negotiating','awaiting_buyer_confirmation'] and (_is_buyer or _is_seller)) or (s == 'awaiting_delivery' and _is_seller) %}
+    <form action="{{ url_for('delivery.cancel', delivery_id=delivery.delivery_id) }}" method="POST"
+          onsubmit="return confirm('{{ 'Anile kòmand lan epi rembouse achtè a ?' if s == 'awaiting_delivery' else 'Anile kòmand lan ?' }}');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="dlv-btn dlv-btn-block" style="background:#fff;color:#b42318;border:1px solid #b42318;">
+            <i class="fas fa-ban"></i> Anile kòmand lan
         </button>
     </form>
     <div style="height:18px"></div>
