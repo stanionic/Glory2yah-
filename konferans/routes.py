@@ -2832,6 +2832,9 @@ def start_stream_session(room_id):
                 return jsonify({'success': False, 'error': 'Server URL (ingest) obligatwa pou difizyon RTMP.'}), 400
             if not (ingest_url.startswith('rtmp://') or ingest_url.startswith('rtmps://')):
                 return jsonify({'success': False, 'error': 'Server URL dwe kòmanse ak rtmp:// oubyen rtmps://.'}), 400
+            ok_url, url_err = stream_relay.validate_ingest_url(ingest_url)
+            if not ok_url:
+                return jsonify({'success': False, 'error': url_err}), 400
             if len(stream_key) < 4:
                 return jsonify({'success': False, 'error': 'Stream Key a obligatwa (minimum 4 karaktè).'}), 400
 

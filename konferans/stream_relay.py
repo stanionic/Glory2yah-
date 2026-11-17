@@ -20,6 +20,10 @@ import shutil
 import subprocess
 import threading
 from datetime import datetime
+import ipaddress
+import re
+import socket
+from urllib.parse import urlsplit
 
 # Max accepted size of a single binary chunk (10 MB) — guards against abuse.
 MAX_CHUNK_BYTES = 10 * 1024 * 1024
@@ -65,6 +69,61 @@ def _ffmpeg_binary():
         pass
 
     return None
+
+
+# --- Ingest URL safety ------------------------------------------------------
+# The server opens an outbound RTMP connection to whatever URL the owner types. Without a
+# check that is a way to make the server probe INTERNAL hosts (localhost, private networks,
+# cloud metadata endpoints). Only PUBLIC rtmp:// / rtmps:// hosts are accepted.
+_BAD_URL_CHARS = re.compile(r'[\s\x00-\x1f\x7f\\]')
+_INTERNAL_SUFFIXES = ('.internal', '.local', '.lan', '.localdomain', '.home.arpa')
+_DEFAULT_RTMP_PORT = 1935
+
+
+def _is_public_ip(ip):
+    if getattr(ip, 'ipv4_mapped', None) is not None:      # ::ffff:127.0.0.1 style disguises
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
+
+
+def validate_ingest_url(url, resolver=None):
+    """Return ``(ok, error_message)``. Never echoes the URL (it may contain a stream key).
+
+    Accepts only rtmp:// or rtmps:// URLs whose host is a public address: IP literals are
+    checked directly, host names are RESOLVED and every address must be public. Known
+    limit: DNS is resolved again by ffmpeg, so a hostile DNS server could answer
+    differently the second time (DNS rebinding); this closes the direct, easy cases.
+    """
+    resolver = resolver or socket.getaddrinfo
+    msg = "Server URL pa valid: itilize yon adrès piblik rtmp:// oubyen rtmps://."
+    url = (url or '').strip()
+    if not url or len(url) > 2048 or _BAD_URL_CHARS.search(url):
+        return False, msg
+    try:
+        parts = urlsplit(url)
+        host, port = parts.hostname, parts.port
+    except ValueError:
+        return False, msg
+    if parts.scheme.lower() not in ('rtmp', 'rtmps') or not host or parts.username or parts.password:
+        return False, msg
+    if port is not None and not (1 <= port <= 65535):
+        return False, msg
+    host = host.rstrip('.').lower()
+    if host == 'localhost' or host.endswith(_INTERNAL_SUFFIXES):
+        return False, "Server URL pa kapab pwen sou yon rezo entèn."
+    try:
+        addrs = [ipaddress.ip_address(host)]
+    except ValueError:
+        try:
+            infos = resolver(host, port or _DEFAULT_RTMP_PORT, type=socket.SOCK_STREAM)
+            addrs = [ipaddress.ip_address(i[4][0]) for i in infos]
+        except (OSError, ValueError):
+            return False, "Server URL pa rezoud (DNS). Verifye adrès la."
+        if not addrs:
+            return False, "Server URL pa rezoud (DNS). Verifye adrès la."
+    if not all(_is_public_ip(a) for a in addrs):
+        return False, "Server URL pa kapab pwen sou yon rezo entèn."
+    return True, None
 
 
 def build_rtmp_url(ingest_url, stream_key):
@@ -191,6 +250,10 @@ class _StreamBroadcaster:
 def start_broadcaster(room_id, ingest_url, stream_key):
     """Spawn the ffmpeg publisher for a room. Returns (ok, error, info)."""
     stop_broadcaster(room_id)  # never leak a previous process for the same room
+
+    ok_url, url_err = validate_ingest_url(ingest_url)          # public RTMP(S) hosts only
+    if not ok_url:
+        return False, url_err, None
 
     # CPU guard: encoding is the expensive part, so only one live at a time.
     with _registry_lock:
