@@ -4,6 +4,7 @@ Handles WhatsApp link generation and user notifications
 """
 import logging
 import os
+import re
 import time
 import urllib.parse
 import threading
@@ -82,7 +83,7 @@ def _provider_success(name, resp):
         _up = body.upper()
         if 'QUEUED' not in _up:
             logger.warning('WhatsApp alert via %s not acknowledged (%s)',
-                           name, body.strip()[:180] or 'empty body')
+                           name, _redact_secrets(body.strip()[:180]) or 'empty body')
             return False
     # UltraMsg answers HTTP 200 even on failure, with a JSON error payload
     # (e.g. {"status":"error","errorMessage":"..."}). Inspect the body too,
@@ -97,7 +98,8 @@ def _provider_success(name, resp):
             status = str(data.get('status', '') or data.get('result', '') or '').lower()
             if (status in ('error', 'failure', 'failed')
                     or data.get('errorMessage') or data.get('error')):
-                logger.warning('WhatsApp alert via %s body-error: %s', name, body.strip()[:180])
+                logger.warning('WhatsApp alert via %s body-error: %s', name,
+                               _redact_secrets(body.strip()[:180]))
                 return False
     return True
 
@@ -105,6 +107,25 @@ def _provider_success(name, resp):
 # Provider chain (first CONFIGURED provider that succeeds wins). Every provider
 # is optional: when none is configured the alert is logged + skipped, while the
 # in-app admin notification still lands in the admin notification centre.
+_SECRET_ENV_VARS = ('CALLMEBOT_APIKEY', 'ULTRAMSG_TOKEN', 'WHATSAPP_CLOUD_TOKEN')
+_SECRET_QUERY_RE = re.compile(r'(?i)\b(apikey|api_key|access_token|token|key)=([^&\s\'"]+)')
+
+
+def _redact_secrets(text):
+    """Strip API keys/tokens from text before it reaches the logs.
+
+    ``requests`` exceptions embed the full request URL, and CallMeBot carries
+    its key in the query string (``...&apikey=XXXX``). Without this a failed
+    send would write the key into the server logs.
+    """
+    out = _SECRET_QUERY_RE.sub(lambda m: f'{m.group(1)}=***', str(text))
+    for var in _SECRET_ENV_VARS:
+        value = (os.environ.get(var) or '').strip()
+        if len(value) >= 4:
+            out = out.replace(value, '***')
+    return out
+
+
 def _provider_callmebot(phone, message, _req):
     apikey = (os.environ.get('CALLMEBOT_APIKEY') or '').strip()
     if not apikey:
@@ -219,7 +240,7 @@ def _send_whatsapp_alert(message: str, phone: str = None, allow_callmebot=False)
         try:
             resp = provider(digits, message, _req)
         except Exception as exc:
-            logger.warning('WhatsApp alert via %s raised: %s', name, exc)
+            logger.warning('WhatsApp alert via %s raised: %s', name, _redact_secrets(exc))
             continue
         if resp is None:
             continue  # not configured — try the next provider
@@ -230,7 +251,7 @@ def _send_whatsapp_alert(message: str, phone: str = None, allow_callmebot=False)
             return name
         logger.warning('WhatsApp alert via %s rejected (HTTP %s): %s',
                        name, getattr(resp, 'status_code', '?'),
-                       (getattr(resp, 'text', '') or '')[:180])
+                       _redact_secrets((getattr(resp, 'text', '') or '')[:180]))
 
     logger.warning(
         'WhatsApp admin alert NOT delivered to +%s — no provider configured or all '
@@ -297,22 +318,46 @@ class NotificationService:
     
     @staticmethod
     def generate_whatsapp_link(phone_number, message=""):
-        """Generate WhatsApp wa.me link"""
+        """Generate a WhatsApp wa.me click-to-chat link.
+
+        Returns None (never a broken link) when the number is missing or is not
+        a plausible international number (E.164: 7-15 digits).
+        """
         if not phone_number:
             return None
-            
-        # Clean phone number
-        clean_number = ''.join(c for c in phone_number if c.isdigit() or c == '+')
-        if not clean_number.startswith('+'):
-            clean_number = '+' + clean_number
-            
-        base_url = f"https://wa.me/{clean_number.replace('+', '')}"
-        
+        digits = ''.join(c for c in str(phone_number) if c.isdigit())
+        if not (7 <= len(digits) <= 15):
+            return None
+
+        base_url = f"https://wa.me/{digits}"
         if message:
-            encoded_message = urllib.parse.quote(message)
-            return f"{base_url}?text={encoded_message}"
-            
+            return f"{base_url}?text={urllib.parse.quote(str(message))}"
         return base_url
+
+    @staticmethod
+    def ad_contact_link(ad, viewer_whatsapp=None, page_url=None):
+        """wa.me link letting a visitor contact the owner (seller) of an ad.
+
+        * None when the ad has no usable number, or the viewer IS the owner
+          (nobody needs a "contact seller" button for their own ad).
+        * The pre-filled message names the ad and carries its public URL so the
+          seller knows exactly which ad the visitor means.
+        """
+        get = (lambda k: ad.get(k)) if isinstance(ad, dict) else (lambda k: getattr(ad, k, None))
+        owner = get('user_whatsapp')
+        digits = lambda v: ''.join(c for c in str(v or '') if c.isdigit())
+        if not digits(owner):
+            return None
+        if viewer_whatsapp and digits(viewer_whatsapp) == digits(owner):
+            return None
+        title = ''.join(c for c in str(get('title') or '') if c.isprintable())[:80].strip()
+        price = get('price_gkach') or 0
+        msg = f'Bonjou! Mwen enterese ak "{title}"' if title else 'Bonjou! Mwen enterese ak piblisite w la'
+        if price:
+            msg += f' ({price} Gkach)'
+        if page_url:
+            msg += f' sou Glory2YahPub: {page_url}'
+        return NotificationService.generate_whatsapp_link(owner, msg)
 
     @staticmethod
     def notify_admin_new_ad(user_whatsapp, ad_id):
