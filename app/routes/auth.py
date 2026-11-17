@@ -169,6 +169,63 @@ def _find_users_by_identifier(identifier):
     return out
 
 
+def _is_safe_next(u):
+    """Same-site relative paths only. Rejects //host, backslash variants (browsers
+    read '/\\evil.com' as '//evil.com'), absolute URLs, control chars and scripts."""
+    if not isinstance(u, str) or not u or len(u) > 2048:
+        return False
+    if not u.startswith('/') or u.startswith('//') or '\\' in u or '://' in u:
+        return False
+    if any(ord(c) < 32 or ord(c) == 127 for c in u):
+        return False
+    return 'javascript:' not in u.lower() and '<' not in u and '>' not in u
+
+
+def _cache_identifier_lock_remaining(key_prefix, identifier, limit, window_seconds):
+    """READ-ONLY: seconds until the lock lifts (0 = not locked). Records nothing."""
+    if not identifier or not cache:
+        return 0
+    try:
+        data = cache.get(f"rl:{key_prefix}:{identifier}") or []
+        now = datetime.utcnow().timestamp()
+        fresh = sorted(float(t) for t in data if float(t) >= now - window_seconds)
+        if len(fresh) < limit:
+            return 0
+        # Unlocks when the failure that brings the count back under the limit expires.
+        return max(1, int(fresh[len(fresh) - limit] + window_seconds - now) + 1)
+    except Exception:
+        return 0
+
+
+def _cache_identifier_locked(key_prefix, identifier, limit, window_seconds):
+    return _cache_identifier_lock_remaining(key_prefix, identifier, limit, window_seconds) > 0
+
+
+def _lockout_message(seconds):
+    """'Try again in N minutes (after HH:MM, Haiti time)' - HH:MM only if tz data exists."""
+    minutes = max(1, -(-int(seconds) // 60))
+    msg = f'Twòp esè koneksyon invalide. Tann {minutes} minit'
+    try:
+        from zoneinfo import ZoneInfo
+        from datetime import timezone as _tz, timedelta as _td
+        when = (datetime.now(_tz.utc) + _td(seconds=int(seconds))).astimezone(
+            ZoneInfo('America/Port-au-Prince'))
+        msg += f' (apre {when:%H:%M}, lè Ayiti)'
+    except Exception:
+        pass
+    return msg + ' epi eseye ankò.'
+
+
+def _unknown_identifier_key(identifier):
+    """Throttle key for identifiers matching no account: spelling-insensitive."""
+    import re as _re
+    ident = (identifier or '').strip().lower()
+    if _re.fullmatch(r'[\d+\s().\-]+', ident):
+        ident = _clean_whatsapp(ident)
+    return 'x:' + ident[:100]
+
+
+
 def _cache_identifier_rate_limit(key_prefix: str, identifier: str, limit: int, window_seconds: int) -> bool:
     """Return True if rate-limit EXCEEDED (blocked), False if OK.
     Uses SimpleCache/Redis via flask_caching (cache from app)."""
@@ -226,12 +283,13 @@ def register():
             validate_pseudo(pseudo_clean)
 
             # Validate password BEFORE any DB write (P1 FIX — was never called)
-            validate_password(password)
+            validate_password(password, identifiers=(pseudo_clean, whatsapp_clean))
 
             # --- duplicate handling -------------------------------------------
             # A legacy pending signup may retry with the same pseudo and number;
             # real accounts still follow the existing duplicate-account errors.
-            existing_pseudo = User.query.filter_by(pseudo=pseudo_clean).first()
+            existing_pseudo = User.query.filter(
+                db.func.lower(User.pseudo) == pseudo_clean.lower()).first()
             existing_whatsapp = User.query.filter_by(whatsapp=whatsapp_clean).first()
             if existing_pseudo and existing_whatsapp \
                     and existing_pseudo.id != existing_whatsapp.id:
@@ -401,48 +459,13 @@ def login():
     """
     if current_user.is_authenticated:
         n = request.args.get('next')
-        def _safe_top(u):
-            if not u or not u.startswith('/') or u.startswith('//') or '://' in u:
-                return False
-            try:
-                from werkzeug.urls import url_has_allowed_host_and_scheme as _uh
-                return bool(_uh(u, request.host))
-            except Exception:
-                try:
-                    from werkzeug.security import url_has_allowed_host_and_scheme as _uh
-                    return bool(_uh(u, request.host))
-                except Exception:
-                    return ('javascript:' not in u.lower() and '<' not in u)
+        _safe_top = _is_safe_next
         if _safe_top(n):
             return redirect(n)
         return redirect(url_for('main.index'))
 
     # Resolve deep-link `next` from GET-args OR POST-form. Lasts across redirects.
-    def _safe_next(u):
-        """Check URL safe (open-redirect protection).
-        Defensive import: werkzeug 2.x/3.x moved `url_has_allowed_host_and_scheme`
-        to werkzeug.urls (NOT werkzeug.security). Fallback to basic heuristic on
-        any ImportError (start with /, no //, no ://, no <script).
-        """
-        if not u:
-            return False
-        try:
-            from werkzeug.urls import url_has_allowed_host_and_scheme as _uh
-            return bool(_uh(u, request.host))
-        except Exception:
-            pass
-        try:
-            from werkzeug.security import url_has_allowed_host_and_scheme as _uh
-            return bool(_uh(u, request.host))
-        except Exception:
-            pass
-        return bool(
-            u.startswith('/') and
-            not u.startswith('//') and
-            '://' not in u and
-            'javascript:' not in u.lower() and
-            '<' not in u
-        )
+    _safe_next = _is_safe_next
 
     def _get_next():
         n = request.args.get('next') or request.form.get('next') or ''
@@ -474,8 +497,25 @@ def login():
             # password says which one is meant, so resolve against the candidate
             # list instead of an arbitrary first row (see _find_users_by_identifier).
             candidates = _find_users_by_identifier(identifier)
+            # Lock keys are per ACCOUNT (not per typed string), so spelling variants
+            # (case, +, spaces, pseudo vs number) all share one failure counter.
+            keys = [f'u{c.id}' for c in candidates] or [_unknown_identifier_key(identifier)]
+            remaining = {k: _cache_identifier_lock_remaining("login_fail_id", k, 5, 300)
+                         for k in keys}
+            locked = {k for k, secs in remaining.items() if secs > 0}
+            if locked and len(locked) == len(keys):
+                # Checked BEFORE any password comparison: while locked, even the
+                # correct password is refused, which is what stops brute force.
+                # Same message for unknown identifiers: no account enumeration.
+                current_app.logger.warning(
+                    "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
+                )
+                flash(_lockout_message(min(remaining.values())), 'error')
+                return _redirect_back_with_params(last_identifier=identifier)
             user = None
             for _cand in candidates:
+                if f'u{_cand.id}' in locked:
+                    continue
                 _ok = False
                 try:
                     _ok = bool(_cand.check_password(password))
@@ -486,19 +526,10 @@ def login():
                     break
 
             if not user:
-                # BUGFIX: rate-limit ONLY on actual failure (was counting successful logins).
-                # _cache_identifier_rate_limit() both checks AND records in one call:
-                #   returns True  → limit already reached (BLOCK, nothing recorded)
-                #   returns False → attempt recorded, allow (with error message)
-                if _cache_identifier_rate_limit("login_fail_id", identifier, 5, 300):
-                    current_app.logger.warning(
-                        "Login rate-limit BLOCKED for identifier=%s", identifier[:8] + "***",
-                    )
-                    flash(
-                        '5 esè koneksyon invalide yo te pase. Tanpri tann 5 minit epi eseye ankò.',
-                        'error',
-                    )
-                    return _redirect_back_with_params(last_identifier=identifier)
+                # Record the failure against every account that was actually tried.
+                for _k in keys:
+                    if _k not in locked:
+                        _cache_identifier_rate_limit("login_fail_id", _k, 5, 300)
                 current_app.logger.warning(
                     "Login failed: identifier=%s (%d strict candidate(s), none matched the password)",
                     identifier[:8] + "***", len(candidates),
@@ -522,7 +553,7 @@ def login():
             # BUGFIX: successful login — CLEAR the per-identifier failure counter
             try:
                 if cache:
-                    cache.delete(f"rl:login_fail_id:{identifier}")
+                    cache.delete(f"rl:login_fail_id:u{user.id}")
             except Exception:
                 pass
 
@@ -797,8 +828,10 @@ def edit_profile():
 def change_password():
     """Change user password"""
     try:
-        current_password = request.form.get('current_password', '').strip()
-        new_password = request.form.get('new_password', '').strip()
+        # Passwords are NEVER stripped: register and login use them verbatim, so
+        # stripping here made passwords with edge spaces unchangeable / unusable.
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
         
         if not current_user.check_password(current_password):
             return jsonify({'success': False, 'message': 'Modpas aktyèl envalid'}), 400
@@ -806,7 +839,7 @@ def change_password():
         if current_user.check_password(new_password):
             return jsonify({'success': False, 'message': 'Nouvo modpas dwe diferan ak aktyèl la'}), 400
 
-        validate_password(new_password)
+        validate_password(new_password, identifiers=(current_user.pseudo, current_user.whatsapp))
         
         current_user.set_password(new_password)
         db.session.commit()
@@ -1167,7 +1200,7 @@ def forgot_password():
                 flash('Nouvo modpas yo pa menm.', 'error')
                 return redirect(url_for('auth.forgot_password'))
             try:
-                validate_password(password)
+                validate_password(password, identifiers=(user.pseudo, user.whatsapp))
             except ValidationError as exc:
                 flash(str(exc), 'error')
                 return redirect(url_for('auth.forgot_password'))
