@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Wi-Fi Zone - Glory2YahPub{% endblock %}
+
+{% block content %}
+<style>
+.wz-wrap{min-height:100vh;padding:20px 14px 90px;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 45%,#e0e7ff 100%)}
+.wz-in{max-width:920px;margin:0 auto}
+.wz-hero{background:linear-gradient(135deg,#1d4ed8,#0f172a);color:#fff;border-radius:20px;padding:22px;margin-bottom:16px}
+.wz-hero h1{margin:0 0 6px;font-size:24px}.wz-hero p{margin:0;opacity:.9}
+.wz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.wz-card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 6px 18px rgba(30,64,175,.10)}
+.wz-card h3{margin:0 0 8px;font-size:15px;color:#1e3a8a}
+.wz-big{font-size:26px;font-weight:800;color:#0f172a}.wz-sub{font-size:12px;color:#64748b}
+.wz-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.4px}
+.wz-ONLINE,.wz-ESSAI,.wz-ABONNÉ,.wz-ACTIVE,.wz-SETTLED{background:#dcfce7;color:#166534}
+.wz-OFFLINE,.wz-GRÂCE,.wz-HELD{background:#fef9c3;color:#854d0e}
+.wz-EXPIRÉ,.wz-SUSPENDU,.wz-SUSPENDED,.wz-REVOKED,.wz-SANS{background:#fee2e2;color:#991b1b}
+.wz-REFUNDED,.wz-CONFLICT{background:#e0e7ff;color:#3730a3}
+.wz-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eef2ff}
+.wz-row:last-child{border-bottom:0}
+.wz-btn{display:block;width:100%;border:0;border-radius:12px;padding:12px;font-size:15px;font-weight:700;color:#fff;background:#1d4ed8;cursor:pointer;text-align:center;text-decoration:none}
+.wz-input{width:100%;box-sizing:border-box;padding:12px;border:1.5px solid #c7d2fe;border-radius:12px;font-size:16px;margin-bottom:10px}
+.wz-steps{display:grid;gap:10px}.wz-steps div{background:#fff;border-radius:14px;padding:12px}
+.wz-note{font-size:12px;color:#64748b;margin-top:8px}.wz-empty{color:#64748b;font-size:14px}
+</style>
+<div class="wz-wrap"><div class="wz-in">
+
+<div class="wz-hero">
+  <h1>📶 Wi-Fi Zone</h1>
+  <p>Vann Entènèt bay kliyan ou yo: vouchè, peman ak Gkach, tout nan yon sèl kote.</p>
+</div>
+
+{% if not authenticated %}
+  <div class="wz-steps">
+    <div><strong>1. Enskri</strong> — Ou gen {{ trial_days }} jou gratis, apre sa {{ price }} GKach pa mwa.</div>
+    <div><strong>2. Konekte routè ou</strong> — yon pòtay lokal jere rezo a, menm san entènèt.</div>
+    <div><strong>3. Vann fòfè</strong> — vouchè oswa peman Gkach dirèkteman.</div>
+  </div>
+  <p style="margin-top:14px"><a class="wz-btn" href="{{ url_for('auth.login', next='/wifi/zone') }}">Konekte pou kòmanse</a></p>
+
+{% else %}
+  {% if vendor %}
+    <div class="wz-grid">
+      <div class="wz-card"><h3>Abònman</h3>
+        <span class="wz-chip wz-{{ state_label|replace(' ', '') }}">{{ state_label }}</span>
+        {% if days_left is not none %}<div class="wz-big">{{ days_left }} jou</div>
+        <div class="wz-sub">Pwochen faktirasyon: {{ next_billing.strftime('%d/%m/%Y') }}</div>
+        {% else %}<div class="wz-sub">Pa gen plan aktif</div>{% endif %}</div>
+      <div class="wz-card"><h3>Balans GKach</h3><div class="wz-big">{{ balance }}</div>
+        <div class="wz-sub">Abònman: {{ price }} GKach / 30 jou</div></div>
+      <div class="wz-card"><h3>Routè</h3><div class="wz-big">{{ routers.total }}</div>
+        <div class="wz-sub">{{ routers.online }} online · {{ routers.offline }} offline</div></div>
+      <div class="wz-card"><h3>Vouchè</h3><div class="wz-big">{{ voucher_counts.UNUSED }}</div>
+        <div class="wz-sub">disponib · {{ voucher_counts.REDEEMED }} itilize</div></div>
+    </div>
+
+    <div class="wz-card" style="margin-bottom:14px"><h3>Renouvle abònman an</h3>
+      <form method="post" action="{{ url_for('wifi_ui.zone_renew') }}"
+            onsubmit="return confirm('Peye {{ price }} GKach pou renouvle ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="key" value="{{ renew_key }}">
+        <button class="wz-btn" type="submit">Renouvle ({{ price }} GKach)</button>
+      </form>
+      <div class="wz-note">{% if not can_sell %}Nouvo vant yo sispann jiskaske ou renouvle. Kliyan ki deja peye yo kontinye.{% else %}Ou ka renouvle lè rete 7 jou oswa mwens.{% endif %}</div>
+    </div>
+
+    <div class="wz-card" style="margin-bottom:14px"><h3>Pòtay (gateways)</h3>
+      {% for g in gateways %}
+        <div class="wz-row"><span>{{ g.name }} <span class="wz-sub">· vu {{ g.seen }}</span></span>
+          <span class="wz-chip wz-{{ g.status }}">{{ g.status }}</span></div>
+      {% else %}<div class="wz-empty">Pa gen pòtay ankò. Kreye yon jeton enskripsyon pou konekte premye pòtay ou a.</div>{% endfor %}
+    </div>
+
+    <div class="wz-card" style="margin-bottom:14px"><h3>Fòfè</h3>
+      {% for p in packages %}
+        <div class="wz-row"><span>{{ p.name }} <span class="wz-sub">· {{ p.duration_minutes }} minit</span></span>
+          <span>{% if p.price_gkach %}{{ p.price_gkach }} Gkach{% else %}Gratis{% endif %}
+          {% if not p.is_active %}<span class="wz-chip wz-SUSPENDED">INAKTIF</span>{% endif %}</span></div>
+      {% else %}<div class="wz-empty">Pa gen fòfè ankò.</div>{% endfor %}
+    </div>
+
+    <div class="wz-card" style="margin-bottom:14px"><h3>Peman kliyan yo</h3>
+      <div class="wz-row"><span>Resevwa</span><span class="wz-chip wz-SETTLED">{{ payment_totals.SETTLED }} Gkach</span></div>
+      <div class="wz-row"><span>An atant livrezon</span><span class="wz-chip wz-HELD">{{ payment_totals.HELD }} Gkach</span></div>
+      <div class="wz-row"><span>Rembouse</span><span class="wz-chip wz-REFUNDED">{{ payment_totals.REFUNDED }} Gkach</span></div>
+    </div>
+  {% else %}
+    <div class="wz-card" style="margin-bottom:14px"><h3>Vin yon vandè Entènèt</h3>
+      <p>{{ trial_days }} jou gratis, apre sa {{ price }} GKach pa mwa. Pa bezwen okenn depo.</p>
+      <form method="post" action="{{ url_for('wifi_ui.zone_register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="wz-input" name="business_name" maxlength="120" placeholder="Non biznis ou" required>
+        <button class="wz-btn" type="submit">Kòmanse {{ trial_days }} jou gratis</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="wz-card" style="margin-bottom:14px"><h3>Achte Wi-Fi mwen yo</h3>
+    {% for p in purchases %}
+      <div class="wz-row"><span>{{ p.package_name }} <span class="wz-sub">· {{ p.amount_gkach }} Gkach</span></span>
+        <span class="wz-chip wz-{{ p.status }}">{{ p.status }}</span></div>
+    {% else %}<div class="wz-empty">Ou poko achte okenn fòfè Wi-Fi. Konekte sou yon rezo Wi-Fi Zone pou wè fòfè yo.</div>{% endfor %}
+  </div>
+
+  {% if admin %}
+    <div class="wz-card"><h3>Admin — rezo a</h3>
+      <div class="wz-row"><span>Vandè</span><span>{{ admin.vendors_total }} ({{ admin.vendors_active }} aktif · {{ admin.vendors_suspended }} sispann)</span></div>
+      <div class="wz-row"><span>Pòtay</span><span>{{ admin.gateways_online }} online / {{ admin.gateways_total }}</span></div>
+    </div>
+  {% endif %}
+{% endif %}
+
+</div></div>
+{% endblock %}

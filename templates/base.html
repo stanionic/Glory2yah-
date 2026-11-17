@@ -152,6 +152,7 @@
                 {'href': '/forms',         'icon': '📋', 'name': 'G-Forms',       'desc': 'Fòmilè'},
                 {'href': '/jere-biznis',   'icon': '🏢', 'name': 'Jere Biznis',   'desc': 'Jesyon enstitisyon'},
                 {'href': '/mennenm',       'icon': '🚗', 'name': 'Mennenm',       'desc': 'Jwenn chofè'},
+                {'href': '/wifi/zone',     'icon': '📶', 'name': 'Wi-Fi Zone',    'desc': 'Rezo Entènèt'},
             ] -%}
             {%- if current_user.is_authenticated and current_user.is_active and current_user.is_admin %}
                 {%- set _services = _services + [

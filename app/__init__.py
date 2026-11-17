@@ -588,6 +588,12 @@ def create_app(config_name=None):
                 f"Jere Biznis models unavailable: {type(_jb_models_e).__name__}: {_jb_models_e}"
             )
 
+        # UWZ (Glory2Yah WiFi Network) models - additive wifi_* tables only.
+        try:
+            from app.wifi import models as _uwz_models  # noqa: F401
+        except Exception as _wifi_models_e:
+            app.logger.warning(f'UWZ models unavailable: {_wifi_models_e}')
+
         db.create_all()
 
         # Seed the SOS ALO LEGLIZ event (idempotent, safe to re-run)
@@ -2013,6 +2019,16 @@ def register_blueprints(app):
         app.logger.warning(f'Could not register admin DB migration blueprint: {e}')
 
     app.register_blueprint(share_bp, url_prefix='/s')
+
+    try:
+        from app.wifi.routes import wifi_bp
+        app.register_blueprint(wifi_bp)
+        from app.wifi.gateway_routes import gateway_bp as _uwz_gateway_bp
+        app.register_blueprint(_uwz_gateway_bp)
+        from app.wifi.ui import wifi_ui_bp as _uwz_ui_bp
+        app.register_blueprint(_uwz_ui_bp)
+    except Exception as _wifi_bp_e:
+        app.logger.warning(f'UWZ blueprint unavailable: {_wifi_bp_e}')
     
     # Register EVENTS blueprint (public) + admin events blueprint
     try:

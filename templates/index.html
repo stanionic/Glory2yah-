@@ -171,6 +171,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="btn-icon">✨</span>
                 KREYE PIBLISITE
             </a>
+            <a href="/wifi/zone" class="hero-btn secondary" id="wifiZoneBtn">
+                <span class="btn-icon">📶</span>
+                WI-FI ZONE
+            </a>
         </div>
     </div>
 </section>
@@ -3205,6 +3209,17 @@ document.addEventListener('DOMContentLoaded', () => {
 .hero-btn.primary:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(255, 215, 0, 0.5);
+}
+
+.hero-btn.secondary {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1d4ed8;
+    box-shadow: 0 4px 16px rgba(29, 78, 216, 0.25);
+}
+
+.hero-btn.secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(29, 78, 216, 0.35);
 }
 
 .btn-icon {
