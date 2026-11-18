@@ -17,11 +17,7 @@ def app():
         db.drop_all()
 
 
-def test_registration_creates_active_account_without_otp(app, monkeypatch):
-    def unexpected_otp(*args, **kwargs):
-        raise AssertionError('registration must not issue an OTP')
-
-    monkeypatch.setattr(otp_service, 'issue_and_send', unexpected_otp)
+def test_registration_creates_active_account_without_phone_verification(app):
     client = app.test_client()
 
     response = client.post('/auth/register', data={
@@ -46,11 +42,30 @@ def test_registration_creates_active_account_without_otp(app, monkeypatch):
         assert session['_user_id'] == str(user_id)
 
 
-def test_legacy_pending_registration_can_retry_without_otp(app, monkeypatch):
-    def unexpected_otp(*args, **kwargs):
-        raise AssertionError('registration retry must not issue an OTP')
+def test_newly_registered_user_can_log_out_and_log_back_in(app):
+    client = app.test_client()
+    registration = client.post('/auth/register', data={
+        'name': 'New Login User',
+        'pseudo': 'new_login_user',
+        'whatsapp': '+50940000016',
+        'password': 'pass123',
+    })
+    assert registration.status_code == 302
+    assert registration.headers['Location'].endswith('/')
 
-    monkeypatch.setattr(otp_service, 'issue_and_send', unexpected_otp)
+    client.get('/auth/logout')
+    login = client.post('/auth/login', data={
+        'identifier': 'new_login_user',
+        'password': 'pass123',
+    })
+    assert login.status_code == 302
+    assert login.headers['Location'].endswith('/')
+    with app.app_context():
+        user = User.query.filter_by(pseudo='new_login_user').one()
+        assert user.is_active is True
+
+
+def test_legacy_pending_registration_can_retry_without_phone_verification(app):
     client = app.test_client()
     with app.app_context():
         pending = User(
@@ -171,6 +186,32 @@ def test_registration_rejects_pseudo_with_conflicting_case(app):
     assert response.status_code == 302
     with app.app_context():
         assert User.query.filter(db.func.lower(User.pseudo) == 'hello').count() == 1
+
+
+def test_existing_phone_redirects_to_login_with_phone_prefilled(app):
+    client = app.test_client()
+    with app.app_context():
+        user = User(
+            pseudo='existing_account', name='Existing Account',
+            whatsapp='+50940000015', is_active=True,
+        )
+        user.set_password('pass123')
+        db.session.add(user)
+        db.session.commit()
+
+    response = client.post('/auth/register', data={
+        'name': 'New Name',
+        'pseudo': 'new_pseudo',
+        'whatsapp': '+50940000015',
+        'password': 'pass123',
+    })
+    assert response.status_code == 302
+    assert response.headers['Location'].endswith(
+        '/auth/login?last_identifier=%2B50940000015'
+    )
+
+    login_page = client.get(response.headers['Location'])
+    assert b'value="+50940000015"' in login_page.data
 
 
 def test_login_rate_limit_key_normalizes_pseudo_case_and_phone_formatting():

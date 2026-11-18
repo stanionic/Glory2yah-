@@ -259,8 +259,18 @@ def register():
                 if existing_pseudo:
                     flash(f'Pseudo "{pseudo_clean}" la deja pran. Tanpri chwazi yon lòt.', 'error')
                     return redirect(url_for('auth.register'))
-                flash('Nimewo WhatsApp sa a deja anrejistre. Tanpri konekte.', 'error')
-                return redirect(url_for('auth.login'))
+                flash(
+                    'Nimewo WhatsApp sa a deja anrejistre. '
+                    'Konekte ak nimewo sa a oswa rekipere modpas ou.',
+                    'error',
+                )
+                # A phone number can already belong to an older account whose
+                # pseudo differs from the one typed in this form. Prefilling
+                # the number prevents a failed login caused by retrying the
+                # new pseudo after this redirect.
+                return redirect(url_for(
+                    'auth.login', last_identifier=whatsapp_clean
+                ))
 
             if pending_retry:
                 if pending_retry.pseudo != pseudo_clean or pending_retry.whatsapp != whatsapp_clean:

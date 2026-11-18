@@ -1,0 +1,36 @@
+/* Shared visual theme for login, signup, recovery, and verification screens. */
+:where(.login-page, .register-page, .forgot-page, .verify-page) {
+  --auth-ink: #152c67;
+  --auth-blue: #315fb5;
+  --auth-paper: #f4f7fc;
+  background: radial-gradient(ellipse at 12% 14%,rgba(103,141,255,.15),transparent 34%),radial-gradient(ellipse at 92% 88%,rgba(255,212,91,.17),transparent 30%),var(--auth-paper) !important;
+}
+:where(.login-card,.register-card,.forgot-card,.verify-card) {
+  border: 1px solid rgba(219,226,239,.92) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 28px 80px rgba(25,43,84,.13),0 5px 16px rgba(25,43,84,.05) !important;
+}
+:where(.login-header,.register-aside,.forgot-header,.verify-header) {
+  background: linear-gradient(145deg,#142c68 0%,#204ca0 68%,#3168be 100%) !important;
+}
+:where(.login-form-title,.register-form-title,.forgot-title,.verify-form-title) { color:#15213d !important; letter-spacing:-.035em; }
+:where(.form-input,.register-input,.forgot-page input:not([type=hidden]),.verify-page input:not([type=hidden])) {
+  border:1px solid #e0e6f0 !important; border-radius:13px !important; background:#f8faff !important;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+:where(.form-input,.register-input,.forgot-page input:not([type=hidden]),.verify-page input:not([type=hidden])):focus {
+  border-color:#6b8de0 !important; background:#fff !important; box-shadow:0 0 0 4px rgba(78,115,207,.12) !important; outline:0;
+}
+:where(.login-button,.register-button,.forgot-page button,.verify-page button) {
+  border-radius:13px !important; background:linear-gradient(135deg,#183879,#315fb5) !important;
+  box-shadow:0 9px 20px rgba(34,75,158,.2) !important; transition:transform .16s ease,filter .16s ease;
+}
+:where(.login-button,.register-button,.forgot-page button,.verify-page button):hover { filter:brightness(1.08); transform:translateY(-1px); }
+:where(.login-flash,.register-flash,.verify-flash) { border-radius:13px !important; }
+:where(.forgot-link,.register-link,.login-link) { color:#315fb5 !important; }
+@media(max-width:760px) {
+  :where(.login-card,.register-card,.forgot-card,.verify-card) { width:min(100%,480px) !important; min-height:0 !important; grid-template-columns:minmax(0,1fr) !important; border-radius:22px !important; }
+  :where(.login-header,.register-aside,.forgot-header,.verify-header) { min-height:auto !important; padding:26px 25px 28px !important; }
+  :where(.login-form-panel,.register-form-panel,.forgot-body,.verify-form-panel) { padding:30px 25px 26px !important; }
+}
+@media(prefers-reduced-motion:reduce) { :where(.login-card,.register-card,.forgot-card,.verify-card,.login-button,.register-button) { animation:none !important; transition:none !important; } }
