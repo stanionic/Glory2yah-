@@ -26,3 +26,7 @@ imageio-ffmpeg>=0.4.9,<0.7
 # Reversible encryption for the stored Facebook Page access token (KONFERANS auto-Live).
 cryptography>=42,<47
 segno==1.6.1
+# HTTP client for WhatsApp admin alerts (CallMeBot/UltraMsg/Cloud API/webhook) and Facebook calls.
+# It was imported at runtime but never declared, so on a clean install (Render) every
+# alert was silently skipped with "requests unavailable".
+requests>=2.32.3,<3

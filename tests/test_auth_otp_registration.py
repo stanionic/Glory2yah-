@@ -24,7 +24,7 @@ def test_registration_creates_active_account_without_phone_verification(app):
         'name': 'Test User',
         'pseudo': 'otp_test_user',
         'whatsapp': '+50942882076',
-        'password': 'pass123',
+        'password': 'pass-12345'  # new signups must satisfy the 8-char policy,
     })
 
     assert response.status_code == 302
@@ -87,7 +87,7 @@ def test_legacy_pending_registration_can_retry_without_phone_verification(app):
         'name': 'Legacy Pending',
         'pseudo': 'legacy_pending',
         'whatsapp': '+50942882077',
-        'password': 'pass123',
+        'password': 'pass-12345'  # new signups must satisfy the 8-char policy,
     })
     assert response.status_code == 302
     assert response.headers['Location'].endswith('/')

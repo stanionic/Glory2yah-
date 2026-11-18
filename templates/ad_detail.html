@@ -581,10 +581,12 @@
                 <button class="btn-primary" onclick="addToCart('{{ ad.ad_id }}')">
                     <i class="fas fa-shopping-cart"></i> Ajoute nan Panyen
                 </button>
-                <a href="https://wa.me/{{ ad.user_whatsapp.lstrip('+') if ad.user_whatsapp else '' }}?text={{ ('Mwen enterese ak ' + ad.title) | urlencode }}" 
-                   class="btn-secondary" target="_blank">
+                {% if contact_url %}
+                <a href="{{ contact_url }}"
+                   class="btn-secondary" target="_blank" rel="noopener noreferrer">
                     <i class="fab fa-whatsapp"></i> Kontakte Vandè
                 </a>
+                {% endif %}
             </div>
 
             {% if current_user and current_user.is_authenticated %}

@@ -39,6 +39,13 @@ def validate_whatsapp(phone):
             "Nimewo WhatsAapp ou tro kout: min 7 chif. Ou mete: %r" % original
         )
 
+    # E.164 allows at most 15 digits; longer input is garbage (and overflows
+    # the users.whatsapp VARCHAR(20) column on PostgreSQL).
+    if len(digits_only) > 15:
+        raise ValidationError(
+            "Nimewo WhatsApp tro long: max 15 chif. Ou mete: %r" % original
+        )
+
     # If it's pure digits, prepend + for next step (will be normalized)
     if cleaned.isdigit():
         candidate = '+' + cleaned
@@ -82,25 +89,63 @@ def validate_email_address(email):
         raise ValidationError(f"Email envalid: {str(e)}")
 
 
-def validate_password(password):
-    """
-    Validate password - accepts either a 6-digit PIN OR any password >= 6 characters
-    Returns: True or raises ValidationError
+MIN_PASSWORD_LENGTH = 8
+_COMMON_PASSWORDS = frozenset((
+    "password password1 password123 motdepasse modpas modpas123 azerty123 azertyui "
+    "qwerty123 qwertyui 12345678 123456789 1234567890 11111111 00000000 iloveyou "
+    "glory2yah glory2yahpub haiti509 ayiti123 admin123 welcome1 letmein1 abc12345 changeme"
+).split())
+
+
+def _is_weak_pin(pin):
+    """6-digit PINs stay allowed (a deliberate product feature) but not trivial ones."""
+    if len(set(pin)) == 1:                       # 000000, 111111 ...
+        return True
+    steps = {int(pin[i + 1]) - int(pin[i]) for i in range(5)}
+    if steps in ({1}, {-1}):                     # 123456, 654321 ...
+        return True
+    if pin[:3] == pin[3:]:                       # 123123 style repeats
+        return True
+    if pin[:2] * 3 == pin or pin == pin[::-1]:   # 121212, palindromes (123321)
+        return True
+    return False
+
+
+def validate_password(password, identifiers=()):
+    """Validate a NEW password (never applied to existing passwords at login).
+
+    * 6-digit PIN: allowed unless trivially guessable (000000, 123456, 121212 ...).
+    * anything else: at least 8 characters, not a common password, not a single
+      repeated character, and not the user's own pseudo / phone number.
+    Returns True or raises ValidationError.
     """
     if not password:
         raise ValidationError("Modpas obligatwa")
-    
+
     if len(password) > 128:
         raise ValidationError("Modpas twò long")
-    
-    # Check if it's exactly 6 digits (PIN-style password)
-    if re.fullmatch(r'^\d{6}$', password):
+
+    if re.fullmatch(r'\d{6}', password):
+        if _is_weak_pin(password):
+            raise ValidationError(
+                "PIN sa a twò fasil pou devine. Chwazi yon lòt PIN 6 chif oswa yon modpas 8+ karaktè."
+            )
         return True
-    
-    # Keep the server rule aligned with the registration form and recovery UI.
-    if len(password) < 6:
-        raise ValidationError("Modpas dwe gen omwen 6 karaktè")
-    
+
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise ValidationError(
+            "Modpas dwe gen omwen %d karaktè (oswa yon PIN 6 chif)." % MIN_PASSWORD_LENGTH
+        )
+
+    low = password.lower()
+    if low in _COMMON_PASSWORDS or len(set(password)) == 1:
+        raise ValidationError("Modpas sa a twò komen. Chwazi yon lòt ki pi difisil pou devine.")
+
+    for ident in identifiers or ():
+        ident = (ident or '').strip().lower().lstrip('+')
+        if len(ident) >= 4 and low.lstrip('+') == ident:
+            raise ValidationError("Modpas la pa dwe menm ak pseudo oswa nimewo WhatsApp ou.")
+
     return True
 
 

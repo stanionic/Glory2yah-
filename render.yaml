@@ -60,11 +60,11 @@ services:
       # logged out. Set a stable value via Render Dashboard → Environment instead.
       - key: SECRET_KEY
         generateValue: true
-      # ADMIN_PASSWORD: a KNOWN, stable value (do NOT use generateValue here —
-      # that produced a random password nobody could log in with). Change this
-      # to your own strong password. On first boot the admin is created with it.
+      # ADMIN_PASSWORD is a SECRET: never commit its value to Git.
+      # `sync: false` makes Render ask for it once in the Dashboard (Environment).
+      # The value previously committed in this file is compromised: change it.
       - key: ADMIN_PASSWORD
-        value: StanGlory2YahPub1986
+        sync: false
       # BREAK-GLASS admin recovery: when set to 1, the app force-resets the
       # admin password to ADMIN_PASSWORD on that boot (use once to regain access
       # if the password was ever lost), then persists normally. Leave at 0 for

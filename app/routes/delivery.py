@@ -94,7 +94,9 @@ def set_cost(delivery_id):
 def confirm(delivery_id):
     """Buyer confirms and pays (buyer reserve deducted; seller paid LATER on /complete only."""
     try:
-        DeliveryService.confirm_delivery(delivery_id, current_user.whatsapp)
+        DeliveryService.confirm_delivery(
+            delivery_id, current_user.whatsapp,
+            expected_total=request.form.get('expected_total') or None)
         flash('Peman konfime! Vandè a ap prepare livrezon ou an. Ou ka vire lajan l nan men li lè ou resevwa.', 'success')
         return redirect(url_for('delivery.view', delivery_id=delivery_id))
     except ValidationError as e:
@@ -124,6 +126,26 @@ def complete(delivery_id):
     except ValidationError as e:
         flash(str(e), 'error')
         return redirect(url_for('delivery.view', delivery_id=delivery_id))
+    except Exception as e:
+        current_app.logger.error(f"Delivery complete failed delivery={delivery_id}: {e}")
+        flash('Erè nan konfime resepsyon an.', 'error')
+        return redirect(url_for('delivery.view', delivery_id=delivery_id))
+
+
+@delivery_bp.route('/cancel/<delivery_id>', methods=['POST'])
+@login_required
+def cancel(delivery_id):
+    """Cancel an order (rules + refund live in DeliveryService.cancel_delivery)."""
+    try:
+        DeliveryService.cancel_delivery(
+            delivery_id, current_user.whatsapp, is_admin=bool(current_user.is_admin))
+        flash('Kòmand lan anile. Si peman te fèt, achtè a resevwa tout lajan l tounen.', 'success')
+    except ValidationError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        current_app.logger.error(f"Delivery cancel failed delivery={delivery_id}: {e}")
+        flash('Erè nan anile kòmand lan.', 'error')
+    return redirect(url_for('delivery.view', delivery_id=delivery_id))
 
 
 @delivery_bp.route('/message/<delivery_id>', methods=['POST'])

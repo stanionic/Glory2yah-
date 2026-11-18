@@ -5,6 +5,7 @@ Shopping cart management
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.services.cart_service import CartService, CartItem
+from sqlalchemy.orm.exc import ObjectDeletedError
 from app.utils.validators import ValidationError
 
 
@@ -34,7 +35,7 @@ def add(product_id):
 
     try:
         if request.method == 'POST':
-            quantity = int(request.form.get('quantity', 1))
+            quantity = CartService.parse_quantity(request.form.get('quantity', 1))
         else:
             quantity = 1
             
@@ -65,7 +66,7 @@ def update(item_id):
     from app.utils.validators import validate_amount, ValidationError
 
     try:
-        quantity = int(request.form.get('quantity', 1))
+        quantity = CartService.parse_quantity(request.form.get('quantity', 1))
         CartService.update_quantity(current_user.id, item_id, quantity)
         return jsonify({'success': True})
     except ValidationError as e:
@@ -109,63 +110,19 @@ def checkout():
     charity_causes = CharityCause.query.filter_by(is_active=True).all()
         
     if request.method == 'POST':
-        # Check if AJAX request
+        ok, error, status = _place_orders(items)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            from app.services.delivery_service import DeliveryService
-            from app import db
-
-            sellers = {}
-            for item in items:
-                ad = item.ad
-                if not ad or not ad.user_whatsapp:
-                    db.session.rollback()
-                    return jsonify({
-                        'success': False,
-                        'error': 'Yon pwodui nan panier la pa disponib ankò. Retire li epi eseye ankò.'
-                    }), 400
-                if ad.user_whatsapp not in sellers:
-                    sellers[ad.user_whatsapp] = []
-                sellers[ad.user_whatsapp].append(item)
-
-            # NEGOC_LOGIG: NO PAYMENT HERE — vandè a dwe negosye FRAIS DE LIVRAISON ak achtè a anvan.
-            # Lè achtè a konfime livrezon an (confirm_delivery), se lè sa a peman an rezève.
-            try:
-                for seller_whatsapp, seller_items in sellers.items():
-                    seller_total = sum(item.ad.price_gkach * item.quantity for item in seller_items)
-                    cart_data = [
-                        {
-                            'ad_id': item.product_id,
-                            'ad_title': item.ad.title,
-                            'quantity': item.quantity,
-                            'price': item.ad.price_gkach,
-                            'price_gkach': item.ad.price_gkach,
-                            'shipping_fee': item.shipping_fee or 0.0
-                        } for item in seller_items
-                    ]
-
-                    delivery = DeliveryService.create_delivery(
-                        buyer_whatsapp=current_user.whatsapp,
-                        seller_whatsapp=seller_whatsapp,
-                        cart_items=cart_data,
-                        total_price=seller_total,
-                        delivery_address='Pou negosye'
-                    )
-
-                CartService.clear_cart(current_user.id)
-                db.session.commit()
+            if ok:
                 return jsonify({'success': True})
-            except ValidationError as e:
-                db.session.rollback()
-                return jsonify({'success': False, 'error': str(e)}), 400
-            except Exception as e:
-                db.session.rollback()
-                current_app.logger.error(f"Cart AJAX checkout failed user={current_user.id}: {e}")
-                return jsonify({'success': False, 'error': 'Erè pandan kreye kòmand la. Tanpri eseye ankò oswa kontakte admin.'}), 500
+            return jsonify({'success': False, 'error': error}), status
+        # Regular form submission goes through the SAME order creation as AJAX
+        # (it used to flash "order sent" without creating anything).
+        if ok:
+            flash('Kòmand voye bay vandè yo!', 'success')
+            return redirect(url_for('delivery.my_deliveries'))
+        flash(error, 'error')
+        return redirect(url_for('cart.index'))
 
-        # Regular form submission — P1 FIX: correct endpoint name my_deliveries
-        flash('Kòmand voye bay vandè yo!', 'success')
-        return redirect(url_for('delivery.my_deliveries'))
-        
     # GET request - show checkout page
     totals = CartService.calculate_totals(current_user.id)
     balance = 0
@@ -201,3 +158,69 @@ def api_count():
 def api_cart_count():
     """API endpoint for cart count (compat alias for older frontend calls)"""
     return api_count()
+
+
+def _place_orders(items):
+    """Create one negotiation order per seller, ATOMICALLY.
+
+    * every line is re-validated at purchase time (listing still live, stock, not own);
+    * prices come from the listing, never from the client;
+    * all orders + the cart clearing share ONE transaction: a failure on seller B
+      cannot leave a committed order for seller A (retry would duplicate it);
+    * the cart lines are deleted by id with a row-count check, so a second,
+      concurrent checkout of the same cart finds 0 rows and aborts.
+    Returns (ok, error_message, http_status).
+    """
+    from app import db
+    from app.services.delivery_service import DeliveryService
+
+    try:
+        sellers = {}
+        for item in items:
+            ad = item.ad
+            if not ad or not ad.user_whatsapp:
+                db.session.rollback()
+                return False, 'Yon pwodui nan panier la pa disponib ankò. Retire li epi eseye ankò.', 400
+            CartService.assert_purchasable(ad, current_user)
+            CartService.check_stock(ad, item.quantity)
+            sellers.setdefault(ad.user_whatsapp, []).append(item)
+
+        # NEGOC_LOGIG: NO PAYMENT HERE — vandè a dwe negosye FRAIS DE LIVRAISON ak achtè a anvan.
+        # Lè achtè a konfime livrezon an (confirm_delivery), se lè sa a peman an rezève.
+        for seller_whatsapp, seller_items in sellers.items():
+            seller_total = sum(i.ad.price_gkach * i.quantity for i in seller_items)
+            cart_data = [{
+                'ad_id': i.product_id, 'ad_title': i.ad.title, 'quantity': i.quantity,
+                'price': i.ad.price_gkach, 'price_gkach': i.ad.price_gkach,
+                'shipping_fee': i.shipping_fee or 0.0,
+            } for i in seller_items]
+            DeliveryService.create_delivery(
+                buyer_whatsapp=current_user.whatsapp,
+                seller_whatsapp=seller_whatsapp,
+                cart_items=cart_data,
+                total_price=seller_total,
+                delivery_address='Pou negosye',
+                commit=False,
+            )
+
+        removed = CartItem.query.filter(
+            CartItem.id.in_([i.id for i in items]),
+            CartItem.user_id == current_user.id,
+            CartItem.negotiation_status == 'cart',
+        ).delete(synchronize_session=False)
+        if removed != len(items):
+            db.session.rollback()
+            return False, 'Panier a chanje pandan w t ap konfime. Rafrechi paj la epi eseye ankò.', 409
+        db.session.commit()
+        return True, None, 200
+    except ValidationError as e:
+        db.session.rollback()
+        return False, str(e), 400
+    except ObjectDeletedError:
+        # A concurrent checkout already consumed these cart lines.
+        db.session.rollback()
+        return False, 'Panier a chanje pandan w t ap konfime. Rafrechi paj la epi eseye ankò.', 409
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Cart checkout failed user={current_user.id}: {e}")
+        return False, 'Erè pandan kreye kòmand la. Tanpri eseye ankò oswa kontakte admin.', 500

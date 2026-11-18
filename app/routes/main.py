@@ -1171,9 +1171,18 @@ def view_ad(ad_id):
         # rendered because get_ad() was called before increment_views()).
         AdService.increment_views(ad_id)
         ad = AdService.get_ad(ad_id)
+        # wa.me click-to-chat with the ad owner/seller (None for own ads or when
+        # the ad has no usable number, so the template never shows a broken link).
+        from app.services.notification_service import NotificationService
+        contact_url = NotificationService.ad_contact_link(
+            ad,
+            viewer_whatsapp=(current_user.whatsapp if current_user.is_authenticated else None),
+            page_url=url_for('main.view_ad', ad_id=ad_id, _external=True),
+        )
         return render_template(
             'ad_detail.html',
             ad=ad,
+            contact_url=contact_url,
             current_user=current_user
         )
     except Exception as e:
