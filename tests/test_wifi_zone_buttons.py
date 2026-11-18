@@ -1,4 +1,4 @@
-"""The visible buttons that open the Wi-Fi zone: Sèvis menu, home hero, profile shortcut."""
+"""The visible buttons that open the Wi-Fi zone: Sèvis menu and profile shortcut."""
 import os
 import re
 import sys
@@ -52,14 +52,13 @@ def _anchor(html, needle):
 
 
 @pytest.mark.parametrize('logged_in', [False, True])
-def test_home_page_has_a_wifi_zone_button_for_everyone(app, logged_in):
+def test_home_page_has_no_wifi_zone_hero_button(app, logged_in):
+    """The Wi-Fi Zone entry now lives in the Sèvis menu, not in the hero."""
     c = _login(app) if logged_in else app.test_client()
     html = c.get('/').data.decode()
-    tag = _anchor(html, 'id="wifiZoneBtn"')
-    assert tag and 'href="/wifi/zone"' in tag and 'hero-btn secondary' in tag
-    assert 'WI-FI ZONE' in html and '📶' in html
-    assert 'KREYE PIBLISITE' in html and 'href="/submit_ad"' in html          # existing button untouched
-    assert html.index('KREYE PIBLISITE') < html.index('WI-FI ZONE')            # primary action stays first
+    assert _anchor(html, 'hero-btn secondary') is None                        # hero button removed
+    assert 'KREYE PIBLISITE' in html and 'href="/submit_ad"' in html          # primary action untouched
+    assert 'href="/wifi/zone"' in html and 'Wi-Fi Zone' in html              # still reachable via Sèvis
 
 
 def test_profile_has_a_wifi_zone_shortcut_next_to_the_other_services(app):
