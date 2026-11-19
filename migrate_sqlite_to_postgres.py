@@ -265,7 +265,10 @@ def migrate_urls(
 
             dst_tbl = Table(t, MetaData(), autoload_with=dst)
             if dst.dialect.name == 'postgresql':
-                stmt = insert(dst_tbl).on_conflict_do_nothing()
+                # PostgreSQL-only ON CONFLICT: must use the dialect Insert,
+                # the generic sqlalchemy.insert() has no on_conflict_do_nothing().
+                from sqlalchemy.dialects.postgresql import insert as _pg_insert
+                stmt = _pg_insert(dst_tbl).on_conflict_do_nothing()
             else:
                 stmt = insert(dst_tbl)
             src_tbl = Table(t, MetaData(), autoload_with=_src)
@@ -385,11 +388,15 @@ def _sync_pg_sequences(engine, tables, tgt_insp):
             if not seq:
                 continue
             try:
-                cc.execute(text(
-                    'SELECT setval(:seq::regclass, '
+                # Build the SQL string FIRST, then wrap in text(): TextClause
+                # has no .format() (that was the "TextClause object has no
+                # attribute 'format'" warning that skipped every sequence).
+                _sql = (
+                    'SELECT setval(CAST(:seq AS regclass), '
                     'GREATEST(COALESCE((SELECT MAX({c}) FROM {t}), 0), 1), '
                     'EXISTS (SELECT 1 FROM {t} WHERE {c} IS NOT NULL))'
-                ).format(t=_quote(t), c=_quote(col)), {'seq': seq})
+                ).format(t=_quote(t), c=_quote(col))
+                cc.execute(text(_sql), {'seq': seq})
                 synced.append(t)
             except Exception as e:
                 print(f'  [WARN] {t}.{col} sequence sync failed: {e}')

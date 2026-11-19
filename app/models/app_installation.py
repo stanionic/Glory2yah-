@@ -8,7 +8,13 @@ class AppInstallation(BaseModel):
     __tablename__ = 'app_installations'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_whatsapp = db.Column(db.String(20), db.ForeignKey('users.whatsapp'), nullable=True, index=True)
+    # NB: no ForeignKey here on purpose. users.whatsapp is NOT unique (the app
+    # allows several accounts to share one WhatsApp number and disambiguates by
+    # password), and PostgreSQL rejects a FK that references a non-unique
+    # column. SQLite tolerated it; PostgreSQL raises
+    # "there is no unique constraint matching given keys". Keep the indexed
+    # column, just without the invalid constraint.
+    user_whatsapp = db.Column(db.String(20), nullable=True, index=True)
     device_type = db.Column(db.String(50))
     platform = db.Column(db.String(50))  # ios, android, web
     install_method = db.Column(db.String(50))  # pwa, direct, referral

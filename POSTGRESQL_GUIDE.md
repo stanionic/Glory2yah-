@@ -194,3 +194,40 @@ python setup_postgres.py
 ---
 
 *The app is production-ready with both SQLite and PostgreSQL support!*
+
+---
+
+## Local PostgreSQL cluster (this workstation)
+
+The local app no longer runs on SQLite. `.env` now contains:
+
+```
+DATABASE_URL=postgresql://postgres@127.0.0.1:5433/glory2yahpub
+REDIS_URL=redis://127.0.0.1:6379/0
+```
+
+| Item | Value |
+|---|---|
+| Engine | PostgreSQL 16.2 (from the `pgserver` Python package) |
+| Data directory | `C:\Users\Ops\AppData\Local\Glory2Yah\pgdata` |
+| Host/port | `127.0.0.1:5433` (loopback only) |
+| Start / stop | `instance\start_local_services.bat` / `instance\stop_local_services.bat` |
+| Auto-start | copy of the start script in the Windows Startup folder |
+| Redis | `C:\Users\Ops\AppData\Local\Glory2Yah\redis`, port 6379 |
+
+Notes:
+
+- The app deliberately ignores any `REDIS_URL` containing the literal word
+  `localhost`; use `127.0.0.1` to enable the real local Redis.
+- Sessions remain filesystem-based (`SESSION_TYPE=filesystem`); cache and
+  rate-limits use Redis when it is reachable and fall back to memory otherwise.
+- Rollback to SQLite: comment out `DATABASE_URL`, uncomment
+  `DEV_DATABASE_URL=sqlite:///glory2yahpub_dev.db` in `.env`, restart.
+- Re-copy the SQLite data at any time (idempotent, `--truncate` replaces the
+  target rows):
+
+```
+python migrate_sqlite_to_postgres.py ^
+  --source "sqlite:///C:/Users/Ops/OneDrive/Desktop/dev/Glory2YahPub - Copy/instance/glory2yahpub_dev.db" ^
+  --target "postgresql://postgres@127.0.0.1:5433/glory2yahpub" --truncate
+```
