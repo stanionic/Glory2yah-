@@ -917,6 +917,32 @@ def create_app(config_name=None):
             app.logger.warning(f'WELCOME/CERTIFICATION MIGRATION: skipped: {_welcome_migration_error}')
 
         # =====================================================================
+        # ADMIN SETTINGS MIGRATION (idempotent): widen setting_value to TEXT.
+        # The anti-fraud 'blocked_ips' list is stored as one newline-separated
+        # string. With VARCHAR(255) PostgreSQL raised StringDataRightTruncation
+        # once an admin blocked ~16 IPv4 addresses (SQLite silently accepted
+        # the overflow), which made /admin/rewards/block-ip return HTTP 500.
+        # db.create_all() does not alter existing columns, hence this ALTER.
+        # =====================================================================
+        try:
+            from sqlalchemy import inspect as _sa_inspect_as
+            from sqlalchemy import text as _sa_text_as
+            _insp_as = _sa_inspect_as(db.engine)
+            if _insp_as.has_table('admin_settings'):
+                _as_cols = {c['name']: c for c in _insp_as.get_columns('admin_settings')}
+                _as_type = (_as_cols.get('setting_value') or {}).get('type')
+                _as_len = getattr(_as_type, 'length', None)
+                if db.engine.dialect.name == 'postgresql' and _as_len is not None:
+                    db.session.execute(_sa_text_as(
+                        'ALTER TABLE admin_settings ALTER COLUMN setting_value TYPE TEXT'
+                    ))
+                    db.session.commit()
+                    app.logger.info('ADMIN SETTINGS MIGRATION: widened setting_value to TEXT')
+        except Exception as _as_exc:
+            db.session.rollback()
+            app.logger.warning(f'ADMIN SETTINGS MIGRATION: skipped: {_as_exc}')
+
+        # =====================================================================
         # KONFERANS → E-LEARNING MIGRATION (idempotent): extend konferans_rooms
         # table with new columns introduced by PHASE 2.
         # Existing classic rooms keep room_type='classic' (NULL = classic as well

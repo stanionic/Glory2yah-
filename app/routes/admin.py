@@ -740,15 +740,30 @@ def block_ip():
     Stored as a comma/newline separated list in AdminSettings
     under the key 'blocked_ips'; checked by GkachService._is_ip_blocked.
     """
+    import ipaddress
+
     raw_ip = (request.form.get('ip') or '').strip()
     if not raw_ip:
         flash('Antre yon adrès IP pou bloke.', 'error')
         return redirect(url_for('admin.rewards'))
 
+    # Reject typos and hostnames early: a malformed entry would sit in the
+    # list forever and never match a real client address.
+    try:
+        raw_ip = str(ipaddress.ip_address(raw_ip))
+    except ValueError:
+        flash(f'Adrès IP "{raw_ip}" pa valab (egz. 203.0.113.45 oswa 2001:db8::1).', 'error')
+        return redirect(url_for('admin.rewards'))
+
     blocked_ips = GkachService.get_blocked_ips()
     if raw_ip not in blocked_ips:
-        blocked_ips.append(raw_ip)
-        GkachService.set_blocked_ips(blocked_ips)
+        try:
+            GkachService.set_blocked_ips(blocked_ips + [raw_ip])
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.exception('Could not persist blocked IP %s: %s', raw_ip, exc)
+            flash('Pa kapab anrejistre IP la kounye a. Tanpri eseye ankò.', 'error')
+            return redirect(url_for('admin.rewards'))
         admin_event('BLOKE IP', raw_ip, actor=current_user.pseudo, send_whatsapp=False)
         flash(f'Adrès IP {raw_ip} bloke avèk siksè!', 'success')
     else:
@@ -762,15 +777,20 @@ def block_ip():
 @admin_required
 def unblock_ip():
     """Remove a previously blocked IP."""
-    raw_ip = (request.form.get('ip') or '').strip()
+    raw_ip = GkachService._normalize_ip(request.form.get('ip') or '')
     if not raw_ip:
         flash('Antre yon adrès IP pou debloke.', 'error')
         return redirect(url_for('admin.rewards'))
 
     blocked_ips = GkachService.get_blocked_ips()
     if raw_ip in blocked_ips:
-        blocked_ips = [ip for ip in blocked_ips if ip != raw_ip]
-        GkachService.set_blocked_ips(blocked_ips)
+        try:
+            GkachService.set_blocked_ips([ip for ip in blocked_ips if ip != raw_ip])
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.exception('Could not remove blocked IP %s: %s', raw_ip, exc)
+            flash('Pa kapab retire IP la kounye a. Tanpri eseye ankò.', 'error')
+            return redirect(url_for('admin.rewards'))
         admin_event('DEBLOKE IP', raw_ip, actor=current_user.pseudo, send_whatsapp=False)
         flash(f'Adrès IP {raw_ip} debloke avèk siksè!', 'success')
     else:

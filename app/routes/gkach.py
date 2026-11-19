@@ -227,6 +227,7 @@ def transfer():
 
 @gkach_bp.route('/withdraw', methods=['GET', 'POST'])
 @login_required
+@limiter.limit('5 per hour', methods=['POST'])
 def withdraw():
     """Request cash withdrawal (Gkach -> fiat). Min = GKACH_WITHDRAW_MIN (500 Gk default)."""
     from app.utils.validators import validate_amount, sanitize_text, ValidationError

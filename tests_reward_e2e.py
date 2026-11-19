@@ -28,6 +28,7 @@ from app.models.user_gkach import UserGkach
 from app.models.gkach_transaction import GkachTransaction
 from app.routes.share import _get_client_ip, create_batch_referral_token
 from app.services.gkach_service import GkachService
+from app.utils.validators import ValidationError
 
 REFERRER = '+50942882076'
 
@@ -149,6 +150,51 @@ class RewardE2ETest(unittest.TestCase):
         self.assertEqual(batch.click_rewards, 20)
         self.assertEqual(batch.share_count, 200)
         self.assertEqual(rewards, 2)
+
+    def test_blocked_ip_list_stores_many_entries(self):
+        # The list used to live in VARCHAR(255): PostgreSQL raised
+        # StringDataRightTruncation at ~16 IPv4 entries (HTTP 500).
+        ips = ['203.0.113.%d' % i for i in range(1, 61)]
+        GkachService.set_blocked_ips(ips)
+        self.assertEqual(GkachService.get_blocked_ips(), ips)
+        self.assertTrue(GkachService._is_ip_blocked('203.0.113.60'))
+        self.assertFalse(GkachService._is_ip_blocked('198.51.100.1'))
+        # IPv6 is stored/compared in canonical form
+        GkachService.set_blocked_ips(['2001:0db8::1'])
+        self.assertTrue(GkachService._is_ip_blocked('2001:db8::1'))
+
+    def test_withdrawal_pending_requests_cannot_overbook(self):
+        app.config['GKACH_WITHDRAW_MIN'] = 100
+        GkachService.add_balance(REFERRER, 150, 'seed', 'credit')
+
+        first = GkachService.request_withdrawal(REFERRER, 100)
+        # 150 - 100 already pending = 50 available; a second 100 must fail.
+        with self.assertRaises(ValidationError):
+            GkachService.request_withdrawal(REFERRER, 100)
+        self.assertEqual(len(GkachService.get_pending_withdrawals()), 1)
+
+        self.assertTrue(GkachService.review_withdrawal(first, 'approve'))
+        self.assertEqual(
+            UserGkach.query.filter_by(user_whatsapp=REFERRER).first().gkach_balance, 50)
+        # A processed request cannot be approved twice.
+        with self.assertRaises(ValidationError):
+            GkachService.review_withdrawal(first, 'approve')
+        self.assertEqual(
+            UserGkach.query.filter_by(user_whatsapp=REFERRER).first().gkach_balance, 50)
+
+    def test_withdrawal_is_auto_rejected_if_balance_was_spent(self):
+        app.config['GKACH_WITHDRAW_MIN'] = 100
+        GkachService.add_balance(REFERRER, 100, 'seed', 'credit')
+        tx_id = GkachService.request_withdrawal(REFERRER, 100)
+
+        # Balance disappears before the admin reviews the request.
+        GkachService.deduct_balance(REFERRER, 100, 'spent', 'purchase')
+        with self.assertRaises(ValidationError):
+            GkachService.review_withdrawal(tx_id, 'approve')
+
+        tx = GkachTransaction.query.filter_by(transaction_id=tx_id).first()
+        self.assertEqual(tx.status, 'rejected')
+        self.assertIn('otomatikman', tx.description)
 
     # ---------------- ROUTE LEVEL (device cookie) ----------------
     def test_route_ignores_client_supplied_referrer(self):

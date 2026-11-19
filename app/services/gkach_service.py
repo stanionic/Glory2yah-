@@ -8,6 +8,7 @@ from app.models.gkach_transaction import GkachTransaction
 from app.utils.validators import validate_amount, validate_whatsapp, ValidationError
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+import ipaddress
 import uuid
 
 
@@ -455,9 +456,22 @@ class GkachService:
         if not account:
             raise ValidationError("Kont Gkach pa jwenn")
 
-        if account.gkach_balance < amount:
+        # Pending withdrawals are NOT debited until an admin approves them, so
+        # they must be subtracted here or a user can file several requests that
+        # together exceed the balance (all would show as "pending").
+        pending_total = int(
+            db.session.query(func.coalesce(func.sum(GkachTransaction.amount), 0))
+            .filter_by(
+                user_whatsapp=whatsapp,
+                transaction_type='withdrawal',
+                status='pending',
+            ).scalar() or 0
+        )
+        available = int(account.gkach_balance) - pending_total
+        if available < amount:
             raise ValidationError(
-                f"Balans ensifisan. Ou gen {account.gkach_balance} Gkach, ou vle retire {amount}."
+                f"Balans disponib ensifisan. Ou gen {account.gkach_balance} Gkach"
+                f" ({pending_total} deja mande nan retri ki an atant), ou vle retire {amount}."
             )
 
         payment_method = (payment_method or 'moncash').strip().lower()[:20]
@@ -541,8 +555,20 @@ class GkachService:
                 if not account:
                     raise ValidationError("Kont Gkach pa jwenn")
                 if account.gkach_balance < amount:
+                    # Auto-reject so the request cannot stay 'pending' forever
+                    # after the balance was spent elsewhere (e.g. an earlier
+                    # request was approved, or a purchase went through).
+                    tx.status = 'rejected'
+                    tx.description = (
+                        f"Demann retriz {amount} Gkach rejete otomatikman: "
+                        f"balans {account.gkach_balance} < {amount}"
+                    )
+                    tx.meta_data = _json.dumps(meta, ensure_ascii=False)
+                    db.session.commit()
+                    GkachService._invalidate_balance_cache(whatsapp)
                     raise ValidationError(
-                        f"Balans kounye a pa ase: {account.gkach_balance} < {amount}. Rejete demann lan."
+                        f"Balans kounye a pa ase ({account.gkach_balance} < {amount}). "
+                        "Demann lan rejte otomatikman."
                     )
 
                 old = account.gkach_balance
@@ -567,6 +593,11 @@ class GkachService:
             db.session.commit()
             GkachService._invalidate_balance_cache(whatsapp)
             return True
+        except ValidationError:
+            # Already a user-facing message (e.g. the auto-rejection above,
+            # which was committed before raising): do not wrap it.
+            db.session.rollback()
+            raise
         except Exception as e:
             db.session.rollback()
             raise ValidationError(f"Revizyon retriz echwe: {str(e)}")
@@ -719,36 +750,65 @@ class GkachService:
             raise ValidationError(f"Tranzaksyon echwe: {str(e)}")
 
     @staticmethod
+    def _normalize_ip(ip):
+        """Canonical text form of an IP (compresses IPv6), or the raw value.
+
+        Invalid/legacy values are returned unchanged so an admin can always
+        see and remove them from the block list.
+        """
+        raw = str(ip or '').strip()
+        try:
+            return str(ipaddress.ip_address(raw))
+        except ValueError:
+            return raw
+
+    @staticmethod
     def _is_ip_blocked(ip):
         """Return True if the given client IP is blocked by the Admin.
 
         Blocked IPs are stored as a comma/newline separated string in
         AdminSettings under the key 'blocked_ips' (managed from the admin panel).
         """
-        return str(ip).strip() in GkachService.get_blocked_ips()
+        target = GkachService._normalize_ip(ip)
+        if not target:
+            return False
+        return target in GkachService.get_blocked_ips()
 
     @staticmethod
     def get_blocked_ips():
-        """Return the currently blocked IPs as a list (deduplicated)."""
+        """Return the currently blocked IPs as a normalized, deduplicated list."""
         try:
             from app.models.admin_settings import AdminSettings
             raw = (AdminSettings.get_setting('blocked_ips', '') or '')
             seen = set()
             result = []
             for item in raw.replace('\n', ',').split(','):
-                ip = item.strip()
+                ip = GkachService._normalize_ip(item)
                 if ip and ip not in seen:
                     seen.add(ip)
                     result.append(ip)
             return result
-        except Exception:
+        except Exception as exc:
+            # Deliberately fail open (keep clicking) but never silently:
+            # a broken settings row must be visible in the logs.
+            try:
+                from flask import current_app
+                current_app.logger.warning('blocked_ips read failed: %s', exc)
+            except Exception:
+                pass
             return []
 
     @staticmethod
     def set_blocked_ips(ips):
         """Persist the blocked-IP list into AdminSettings as 'blocked_ips'."""
         from app.models.admin_settings import AdminSettings
-        clean = [str(x).strip() for x in ips if str(x).strip()]
+        clean = []
+        seen = set()
+        for x in ips:
+            ip = GkachService._normalize_ip(x)
+            if ip and ip not in seen:
+                seen.add(ip)
+                clean.append(ip)
         AdminSettings.set_setting('blocked_ips', '\n'.join(clean))
         return clean
 
@@ -779,21 +839,41 @@ class GkachService:
 
         referrer_whatsapp = str(referrer_whatsapp).strip()
         clicker_whatsapp = str(clicker_whatsapp).strip()
+        clicker_ip = GkachService._normalize_ip(clicker_ip) if clicker_ip else None
         if not referrer_whatsapp or not clicker_whatsapp:
+            return False
+
+        def _reject(reason):
+            """Record why a click was refused.
+
+            Rejections used to be completely silent: on CGNAT/mobile networks
+            several real people share one public IP, so legitimate clicks were
+            dropped with no trace and the sharer stayed stuck below the
+            milestone forever. Keep the INFO line so this is auditable.
+            """
+            try:
+                current_app.logger.info(
+                    'BATCH CLICK rejected reason=%s batch=%s referrer=%s '
+                    'clicker=%s ip=%s device=%s',
+                    reason, batch_id, referrer_whatsapp, clicker_whatsapp,
+                    clicker_ip or '-', (clicker_device or '-')[:16],
+                )
+            except Exception:
+                pass
             return False
 
         # Serialize rewards per batch on databases that support row locks.
         batch = Batch.query.filter_by(batch_id=batch_id).with_for_update().first()
         if not batch:
-            return False
+            return _reject('batch_not_found')
 
         # Blocked-IP check (set by Admin in AdminSettings 'blocked_ips')
         if clicker_ip and GkachService._is_ip_blocked(clicker_ip):
-            return False
+            return _reject('blocked_ip')
 
         # Guard: the clicker must not be the referrer (no self-reward)
         if clicker_whatsapp == referrer_whatsapp:
-            return False
+            return _reject('self_referral')
 
         # Determine unique click count for this (batch, referrer)
         query = BatchClick.query.filter_by(
@@ -803,7 +883,7 @@ class GkachService:
 
         # Only count this click if this exact person has NOT already clicked.
         if query.filter_by(clicker_whatsapp=clicker_whatsapp).first():
-            return False
+            return _reject('duplicate_clicker')
 
         # Anti-fraud IP limit: same IP cannot feed unlimited unique clickers.
         if clicker_ip:
@@ -814,7 +894,7 @@ class GkachService:
                 clicker_ip=clicker_ip,
             ).count()
             if ip_clicks >= max_per_ip:
-                return False
+                return _reject('ip_limit')
 
         # Anti-fraud device limit: one browser cannot feed multiple accounts.
         if clicker_device:
@@ -825,7 +905,7 @@ class GkachService:
                 clicker_device=clicker_device,
             ).count()
             if device_clicks >= max_per_device:
-                return False
+                return _reject('device_limit')
 
         click = BatchClick(
             batch_id=batch_id,

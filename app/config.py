@@ -259,10 +259,13 @@ class Config:
     RATELIMIT_STRATEGY = 'fixed-window'
     RATELIMIT_DEFAULT = "200 per day, 50 per hour"
 
-    GKACH_REWARD_AMOUNT = 10
-    GKACH_CLICKS_REQUIRED = 100
-    GKACH_MAX_CLICKS_PER_IP = 3
-    GKACH_MAX_CLICKS_PER_DEVICE = 1
+    # Rewards / anti-fraud. Env-overridable so the caps can be tuned on Render
+    # without a code change (e.g. raise GKACH_MAX_CLICKS_PER_IP on CGNAT mobile
+    # networks where many real users share one public IP).
+    GKACH_REWARD_AMOUNT = int(os.environ.get('GKACH_REWARD_AMOUNT') or 10)
+    GKACH_CLICKS_REQUIRED = int(os.environ.get('GKACH_CLICKS_REQUIRED') or 100)
+    GKACH_MAX_CLICKS_PER_IP = int(os.environ.get('GKACH_MAX_CLICKS_PER_IP') or 3)
+    GKACH_MAX_CLICKS_PER_DEVICE = int(os.environ.get('GKACH_MAX_CLICKS_PER_DEVICE') or 1)
     AUTO_SLIDE_INTERVAL = 2000
     GKACH_TO_HTG_RATE = 1.2
     GKACH_CASHBACK_PCT = 2

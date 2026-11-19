@@ -3,7 +3,11 @@ from app import db
 class AdminSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     setting_name = db.Column(db.String(100), unique=True, nullable=False)
-    setting_value = db.Column(db.String(255), nullable=False)
+    # TEXT, not VARCHAR(255): some settings hold multi-line lists. The
+    # anti-fraud 'blocked_ips' list used to hit the 255-char cap on PostgreSQL
+    # after ~16 IPv4 addresses and raised StringDataRightTruncation (SQLite
+    # silently accepted it). See the idempotent ALTER in app/__init__.py.
+    setting_value = db.Column(db.Text, nullable=False)
 
     def __repr__(self):
         return f"<AdminSetting {self.setting_name}: {self.setting_value}>"
